@@ -16,7 +16,7 @@ export class AuthController {
     const user = req.user;
     req.session.ipAddress = req.ip;
     req.session.userAgent = req.headers['user-agent'];
-    return { user };
+    return { user, session: req.session };
   }
 
   @Post('register')
@@ -28,6 +28,6 @@ export class AuthController {
     req.session.ipAddress = req.ip;
     req.session.userAgent = req.headers['user-agent'];
 
-    return { user };
+    return { user, session: req.session };
   }
 }
