@@ -4,7 +4,7 @@ import { AuthController } from './auth.controller';
 import { User } from '../../common/entities/user.entity';
 import { Account } from '../../common/entities/account.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SessionSerializer } from './serializer.provider';
+import { SessionSerializer } from './providers/serializer.provider';
 import { LocalStrategy } from './strategies/local.strategy';
 
 @Module({
