@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, Account, RegisterDto } from '@repo/api';
 import bcrypt from 'bcrypt';
-import { nanoid } from 'nanoid';
 
 @Injectable()
 export class AuthService {
@@ -33,6 +32,10 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
+    // Dynamic import because nanoid is ESM-only
+    // Jest fails to run tests if imported at the top level
+    const { nanoid } = await import('nanoid');
+
     const { email, username, firstName, lastName, password } = dto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
