@@ -90,6 +90,9 @@ importers:
         specifier: ^0.3.27
         version: 0.3.27(reflect-metadata@0.2.2)(sqlite3@5.1.7)(ts-node@10.9.2)
     devDependencies:
+      '@faker-js/faker':
+        specifier: ^10.1.0
+        version: 10.1.0
       '@jest/globals':
         specifier: ^29.7.0
         version: 29.7.0
@@ -803,6 +806,11 @@ packages:
     dependencies:
       '@eslint/core': 0.17.0
       levn: 0.4.1
+    dev: true
+
+  /@faker-js/faker@10.1.0:
+    resolution: {integrity: sha512-C3mrr3b5dRVlKPJdfrAXS8+dq+rq8Qm5SNRazca0JKgw1HQERFmrVb0towvMmw5uu8hHKNiQasMaR/tydf3Zsg==}
+    engines: {node: ^20.19.0 || ^22.13.0 || ^23.5.0 || >=24.0.0, npm: '>=10'}
     dev: true
 
   /@gar/promisify@1.1.3:
