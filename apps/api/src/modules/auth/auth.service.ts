@@ -1,9 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from 'src/common/entities/user.entity';
-import { Account } from 'src/common/entities/account.entity';
-import { RegisterDto } from 'src/common/dto/register.dto';
+import { User, Account, RegisterDto } from '@repo/api';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 

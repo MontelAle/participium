@@ -1,6 +1,6 @@
 import { Post, Body, Controller, Request, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RegisterDto } from 'src/common/dto/register.dto';
+import { RegisterDto } from '@repo/api';
 import { promisify } from 'util';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 
