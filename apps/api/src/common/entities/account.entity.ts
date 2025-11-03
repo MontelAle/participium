@@ -20,8 +20,8 @@ export class Account {
   @Column('text')
   providerId: string;
 
-  @Column('text')
-  userId: string;
+  @Column('integer')
+  userId: number;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
