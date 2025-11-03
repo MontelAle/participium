@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 
+jest.mock('nanoid', () => ({
+  nanoid: () => 'mocked-id',
+}));
+
 describe('AuthService', () => {
   let service: AuthService;
 
