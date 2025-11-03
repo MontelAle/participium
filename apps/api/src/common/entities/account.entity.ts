@@ -1,6 +1,6 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   Column,
   ManyToOne,
   JoinColumn,
@@ -11,8 +11,8 @@ import { User } from './user.entity';
 
 @Entity('account')
 export class Account {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryColumn('text')
+  id: string;
 
   @Column('text')
   accountId: string;
@@ -20,8 +20,8 @@ export class Account {
   @Column('text')
   providerId: string;
 
-  @Column('integer')
-  userId: number;
+  @Column('text')
+  userId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })

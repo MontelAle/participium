@@ -5,6 +5,7 @@ import { User } from 'src/common/entities/user.entity';
 import { Account } from 'src/common/entities/account.entity';
 import { RegisterDto } from 'src/common/dto/register.dto';
 import bcrypt from 'bcrypt';
+import { nanoid } from 'nanoid';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +17,7 @@ export class AuthService {
     private readonly accountRepository: Repository<Account>,
   ) {}
 
-  async findUserById(userId: number) {
+  async findUserById(userId: string) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
     return user;
@@ -40,6 +41,7 @@ export class AuthService {
 
     return await this.userRepository.manager.transaction(async (manager) => {
       const newUser = manager.getRepository(User).create({
+        id: nanoid(8),
         email,
         username,
         firstName,
@@ -48,6 +50,7 @@ export class AuthService {
       const savedUser = await manager.getRepository(User).save(newUser);
 
       const newAccount = manager.getRepository(Account).create({
+        id: nanoid(8),
         accountId: savedUser.email,
         providerId: 'local',
         userId: savedUser.id,
