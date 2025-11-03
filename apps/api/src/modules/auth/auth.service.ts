@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/common/entities/user.entity';
@@ -16,8 +16,21 @@ export class AuthService {
     private readonly accountRepository: Repository<Account>,
   ) {}
 
-  async findUserById(id: number) {
-    return await this.userRepository.findOne({ where: { id } });
+  async findUserById(userId: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  async validateUser(email: string, password: string) {
+    const account = await this.accountRepository.findOne({
+      where: { providerId: 'local', accountId: email },
+      relations: ['user'],
+    });
+    if (!account) return null;
+    const isPasswordValid = await bcrypt.compare(password, account.password);
+    if (!isPasswordValid) return null;
+    return { user: account.user };
   }
 
   async register(dto: RegisterDto) {

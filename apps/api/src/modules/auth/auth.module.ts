@@ -5,10 +5,11 @@ import { User } from '../../common/entities/user.entity';
 import { Account } from '../../common/entities/account.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SessionSerializer } from './serializer.provider';
+import { LocalStrategy } from './strategies/local.strategy';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Account])],
   controllers: [AuthController],
-  providers: [AuthService, SessionSerializer],
+  providers: [AuthService, SessionSerializer, LocalStrategy],
 })
 export class AuthModule {}
