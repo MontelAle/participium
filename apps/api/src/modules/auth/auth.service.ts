@@ -21,25 +21,27 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = this.userRepository.create({
-      email,
-      username,
-      firstName,
-      lastName,
+    return await this.userRepository.manager.transaction(async (manager) => {
+      const newUser = manager.getRepository(User).create({
+        email,
+        username,
+        firstName,
+        lastName,
+      });
+      const savedUser = await manager.getRepository(User).save(newUser);
+
+      const newAccount = manager.getRepository(Account).create({
+        accountId: savedUser.email,
+        providerId: 'local',
+        userId: savedUser.id,
+        password: hashedPassword,
+        user: savedUser,
+      });
+      await manager.getRepository(Account).save(newAccount);
+
+      return {
+        user: savedUser,
+      };
     });
-
-    const savedUser = await this.userRepository.save(newUser);
-
-    const newAccount = this.accountRepository.create({
-      accountId: savedUser.email,
-      providerId: 'local',
-      userId: savedUser.id,
-      password: hashedPassword,
-      user: savedUser,
-    });
-
-    await this.accountRepository.save(newAccount);
-
-    return savedUser;
   }
 }
