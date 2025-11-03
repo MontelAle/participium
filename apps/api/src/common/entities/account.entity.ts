@@ -1,10 +1,38 @@
-import { Entity, PrimaryGeneratedColumn, Column} from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { User } from './user.entity';
 
-@Entity('accounts')
-export class Account{
+@Entity('account')
+export class Account {
   @PrimaryGeneratedColumn()
-  id: number;  
+  id: number;
 
-  @Column({ nullable: false })
-  password: string;
+  @Column('text')
+  accountId: string;
+
+  @Column('text')
+  providerId: string;
+
+  @Column('text')
+  userId: string;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @Column('text', { nullable: true })
+  password?: string;
+
+  @CreateDateColumn({ type: 'date' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'date' })
+  updatedAt: Date;
 }
