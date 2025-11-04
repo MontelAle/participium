@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, Account, RegisterDto } from '@repo/api';
+import { User, Account, RegisterDto, Session } from '@repo/api';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -13,13 +14,12 @@ export class AuthService {
 
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
-  ) {}
 
-  async findUserById(userId: string) {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
-    return user;
-  }
+    @InjectRepository(Session)
+    private readonly sessionRepository: Repository<Session>,
+
+    private readonly configService: ConfigService,
+  ) {}
 
   async validateUser(email: string, password: string) {
     const account = await this.accountRepository.findOne({
@@ -61,5 +61,33 @@ export class AuthService {
         user: savedUser,
       };
     });
+  }
+
+  async login(user: User, ipAddress: string, userAgent: string) {
+    const cookie = {
+      httpOnly: this.configService.get<boolean>('cookie.httpOnly'),
+      sameSite: this.configService.get('cookie.sameSite'),
+      secure: this.configService.get<boolean>('cookie.secure'),
+      maxAge: this.configService.get<number>('session.expires'),
+    };
+
+    const session = this.sessionRepository.create({
+      id: nanoid(8),
+      userId: user.id,
+      token: nanoid(16),
+      expiresAt: new Date(
+        Date.now() + this.configService.get<number>('session.expires'),
+      ),
+      ipAddress,
+      userAgent,
+    });
+
+    await this.sessionRepository.save(session);
+
+    return {
+      session,
+      user,
+      cookie,
+    };
   }
 }

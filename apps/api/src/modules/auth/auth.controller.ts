@@ -1,8 +1,16 @@
-import { Post, Body, Controller, Request, UseGuards } from '@nestjs/common';
+import {
+  Post,
+  Body,
+  Controller,
+  Request,
+  UseGuards,
+  Res,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from '@repo/api';
-import { promisify } from 'util';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -10,24 +18,39 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@Request() req) {
-    await promisify(req.login).call(req, req.user);
+  async login(
+    @Request() req: RequestWithUserSession,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    console.log('Login attempt for user:', req.user.email);
 
-    const user = req.user;
-    req.session.ipAddress = req.ip;
-    req.session.userAgent = req.headers['user-agent'];
-    return { user, session: req.session };
+    const { user, session, cookie } = await this.authService.login(
+      req.user,
+      req.ip,
+      req.headers['user-agent'],
+    );
+
+    res.cookie('session_cookie', session.token, cookie);
+
+    return { user, session };
   }
 
   @Post('register')
-  async create(@Body() registerDto: RegisterDto, @Request() req) {
+  async create(
+    @Body() registerDto: RegisterDto,
+    @Request() req: RequestWithUserSession,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const { user } = await this.authService.register(registerDto);
 
-    await promisify(req.login).call(req, user);
+    const { session, cookie } = await this.authService.login(
+      user,
+      req.ip,
+      req.headers['user-agent'],
+    );
 
-    req.session.ipAddress = req.ip;
-    req.session.userAgent = req.headers['user-agent'];
+    res.cookie('session_cookie', session.token, cookie);
 
-    return { user, session: req.session };
+    return { user, session };
   }
 }
