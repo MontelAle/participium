@@ -7,7 +7,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RegisterDto } from '@repo/api';
+import { RegisterDto, LoginDto } from '@repo/api';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
 import { Response } from 'express';
@@ -19,11 +19,10 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   async login(
+    @Body() loginDto: LoginDto,
     @Request() req: RequestWithUserSession,
     @Res({ passthrough: true }) res: Response,
   ) {
-    console.log('Login attempt for user:', req.user.email);
-
     const { user, session, cookie } = await this.authService.login(
       req.user,
       req.ip,
