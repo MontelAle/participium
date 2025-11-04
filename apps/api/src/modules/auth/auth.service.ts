@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, Account, RegisterDto } from '@repo/api';
+import { User, Account, RegisterDto, Role } from '@repo/api';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 
@@ -13,6 +13,9 @@ export class AuthService {
 
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
+
+    @InjectRepository(Role)
+    private readonly roleRepository: Repository<Role>,
   ) {}
 
   async findUserById(userId: string) {
@@ -47,6 +50,18 @@ export class AuthService {
       });
       const savedUser = await manager.getRepository(User).save(newUser);
 
+      // Recupera o crea il role di default "user"
+      let defaultRole = await manager.getRepository(Role).findOne({
+        where: { name: 'user' },
+      });
+
+      if (!defaultRole) {
+        defaultRole = await manager.getRepository(Role).save({
+          roleId: nanoid(8),
+          name: 'user',
+        });
+      }
+
       const newAccount = manager.getRepository(Account).create({
         id: nanoid(8),
         accountId: savedUser.email,
@@ -54,6 +69,7 @@ export class AuthService {
         userId: savedUser.id,
         password: hashedPassword,
         user: savedUser,
+        role: defaultRole,
       });
       await manager.getRepository(Account).save(newAccount);
 

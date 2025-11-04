@@ -6,8 +6,10 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToOne,
 } from 'typeorm';
 import { User } from './user.entity';
+import { Role } from './role.entity';
 
 @Entity('account')
 export class Account {
@@ -27,6 +29,10 @@ export class Account {
   @JoinColumn({ name: 'userId' })
   user: User;
 
+  @OneToOne(() => Role)
+  @JoinColumn({ name: 'roleId' })
+  role: Role;
+
   @Column('text', { nullable: true })
   password?: string;
 
@@ -35,4 +41,6 @@ export class Account {
 
   @UpdateDateColumn({ type: 'date' })
   updatedAt: Date;
+
+  
 }

@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../../../app.module';
 import { DataSource } from 'typeorm';
-import { User, Account } from '@repo/api';
+import { User, Account, Role } from '@repo/api';
 import { nanoid } from 'nanoid';
 import bcrypt from 'bcrypt';
 import { faker, fi } from '@faker-js/faker';
@@ -25,6 +25,18 @@ async function runSeed() {
     email,
   });
 
+  // Crea o recupera il role di default
+  let userRole = await dataSource.getRepository(Role).findOne({
+    where: { name: 'user' },
+  });
+
+  if (!userRole) {
+    userRole = await dataSource.getRepository(Role).save({
+      roleId: nanoid(32),
+      name: 'user',
+    });
+  }
+
   // Seed account
   await dataSource.getRepository(Account).save({
     id: nanoid(32),
@@ -32,6 +44,7 @@ async function runSeed() {
     providerId: 'local',
     accountId: user.email,
     password: await bcrypt.hash(password, 10),
+    role: userRole,
   });
 
   console.log(`✅ Seeded user: ${email} / password: ${password}`);
