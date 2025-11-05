@@ -20,8 +20,13 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: false, //better for swagger
+    }),
+  );
   app.enableCors({
+    origin: process.env.CORS_ORIGIN?.split(',') || 'http://localhost:5173',
     credentials: true,
   });
   app.use(cookieParser());
