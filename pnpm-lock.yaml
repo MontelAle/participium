@@ -114,9 +114,6 @@ importers:
       '@types/bcrypt':
         specifier: ^6.0.0
         version: 6.0.0
-      '@types/connect-sqlite3':
-        specifier: ^0.9.6
-        version: 0.9.6
       '@types/cookie-parser':
         specifier: ^1.4.10
         version: 1.4.10(@types/express@4.17.25)
@@ -2116,12 +2113,6 @@ packages:
     dependencies:
       '@types/connect': 3.4.38
       '@types/node': 22.19.0
-    dev: true
-
-  /@types/connect-sqlite3@0.9.6:
-    resolution: {integrity: sha512-XTzIvdMu71UPtc2J38KAi02VB0wGk6mBwMDGQg1JxRhqr47Sau4sV7P+i2RbcDSP01K699QfXisR7gfRO9pH1Q==}
-    dependencies:
-      '@types/express': 4.17.25
     dev: true
 
   /@types/connect@3.4.38:
