@@ -14,7 +14,7 @@ export class Session {
   @PrimaryColumn('text')
   id: string;
 
-  @Column('date')
+  @Column('timestamp')
   expiresAt: Date;
 
   @Column('text', { unique: true })
