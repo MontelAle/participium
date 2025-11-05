@@ -1,9 +1,16 @@
 {
-  "extends": "@repo/typescript-config/vite.json",
+  "extends": "@repo/typescript-config/react-library.json",
   "include": ["src"],
+  "exclude": ["node_modules"],
   "compilerOptions": {
     "jsx": "react-jsx",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true
   }
 }

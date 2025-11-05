@@ -1,6 +1,6 @@
-import { createRoot } from 'react-dom/client';
-import './style.css';
+import { createRoot } from "react-dom/client";
 
-const App = () => <div>porcaccio dio</div>;
+import "./style.css";
+import App from "./App";
 
-createRoot(document.getElementById('app')!).render(<App />);
+createRoot(document.getElementById("app")!).render(<App />);
