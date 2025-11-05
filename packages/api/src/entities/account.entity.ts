@@ -35,4 +35,6 @@ export class Account {
 
   @UpdateDateColumn({ type: 'date' })
   updatedAt: Date;
+
+  
 }
