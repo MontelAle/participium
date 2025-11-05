@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../../../app.module';
 import { DataSource } from 'typeorm';
-import { User, Account } from '@repo/api';
+import { User, Account, Role } from '@repo/api';
 import { nanoid } from 'nanoid';
 import bcrypt from 'bcrypt';
 import { faker, fi } from '@faker-js/faker';
@@ -9,6 +9,15 @@ import { faker, fi } from '@faker-js/faker';
 async function runSeed() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const dataSource = app.get(DataSource);
+
+  // Seed role
+  const role = await dataSource.getRepository(Role).save({
+    roleId: '1',
+    name: 'user',
+    description: 'Standard user role',
+  });
+
+  console.log(`✅ Seeded role: ${role.name}`);
 
   // Seed user
   const firstName = faker.person.firstName();
@@ -23,7 +32,7 @@ async function runSeed() {
     lastName,
     username,
     email,
-    role: { roleId: '1' },
+    role: role,
   });
 
   // Seed account

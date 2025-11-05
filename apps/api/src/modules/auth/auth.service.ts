@@ -44,7 +44,7 @@ export class AuthService {
         username,
         firstName,
         lastName,
-        role: { roleId: '01' },
+        role: { roleId: '1' },
       });
       const savedUser = await manager.getRepository(User).save(newUser);
 
