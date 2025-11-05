@@ -1,6 +1,8 @@
 {
   "$schema": "https://turborepo.com/schema.json",
-  "globalDependencies": ["**/.env.*local"],
+  "globalDependencies": [
+    "**/.env.*local"
+  ],
   "globalEnv": [
     "DB_URL",
     "FRONTEND_URL",
@@ -18,8 +20,16 @@
       "persistent": true
     },
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
     "lint": {},
     "test": {},
