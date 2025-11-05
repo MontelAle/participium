@@ -14,16 +14,16 @@ export class Session {
   @PrimaryColumn('text')
   id: string;
 
-  @Column('timestamp')
+  @Column('datetime')
   expiresAt: Date;
 
   @Column('text', { unique: true })
   token: string;
 
-  @CreateDateColumn({ type: 'date' })
+  @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'date' })
+  @UpdateDateColumn({ type: 'datetime' })
   updatedAt: Date;
 
   @Column('text', { nullable: true })

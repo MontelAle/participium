@@ -23,7 +23,7 @@ async function runSeed() {
     lastName,
     username,
     email,
-    role: { roleId: '01' },
+    role: { roleId: '1' },
   });
 
   // Seed account
