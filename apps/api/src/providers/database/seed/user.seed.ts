@@ -17,14 +17,6 @@ async function runSeed() {
   const email = `${firstName.toLowerCase()}@example.com`;
   const password = 'password';
 
-  const user = await dataSource.getRepository(User).save({
-    id: nanoid(32),
-    firstName,
-    lastName,
-    username,
-    email,
-  });
-
   // Crea o recupera il role di default
   let userRole = await dataSource.getRepository(Role).findOne({
     where: { name: 'user' },
@@ -37,6 +29,15 @@ async function runSeed() {
     });
   }
 
+  const user = await dataSource.getRepository(User).save({
+    id: nanoid(32),
+    firstName,
+    lastName,
+    username,
+    email,
+    role: userRole,
+  });
+
   // Seed account
   await dataSource.getRepository(Account).save({
     id: nanoid(32),
@@ -44,7 +45,6 @@ async function runSeed() {
     providerId: 'local',
     accountId: user.email,
     password: await bcrypt.hash(password, 10),
-    role: userRole,
   });
 
   console.log(`✅ Seeded user: ${email} / password: ${password}`);

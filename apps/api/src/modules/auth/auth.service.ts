@@ -41,15 +41,6 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return await this.userRepository.manager.transaction(async (manager) => {
-      const newUser = manager.getRepository(User).create({
-        id: nanoid(8),
-        email,
-        username,
-        firstName,
-        lastName,
-      });
-      const savedUser = await manager.getRepository(User).save(newUser);
-
       // Recupera o crea il role di default "user"
       let defaultRole = await manager.getRepository(Role).findOne({
         where: { name: 'user' },
@@ -62,6 +53,16 @@ export class AuthService {
         });
       }
 
+      const newUser = manager.getRepository(User).create({
+        id: nanoid(8),
+        email,
+        username,
+        firstName,
+        lastName,
+        role: defaultRole,
+      });
+      const savedUser = await manager.getRepository(User).save(newUser);
+
       const newAccount = manager.getRepository(Account).create({
         id: nanoid(8),
         accountId: savedUser.email,
@@ -69,7 +70,6 @@ export class AuthService {
         userId: savedUser.id,
         password: hashedPassword,
         user: savedUser,
-        role: defaultRole,
       });
       await manager.getRepository(Account).save(newAccount);
 
