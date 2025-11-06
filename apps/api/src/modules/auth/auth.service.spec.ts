@@ -190,7 +190,7 @@ describe('AuthService', () => {
         where: { token: sessionToken },
       });
       expect(sessionRepository.remove).toHaveBeenCalledWith(session);
-      expect(result).toEqual({ message: 'Logout successful' });
+      expect(result).toBeUndefined();
     });
 
     it('should not fail if session does not exist', async () => {
@@ -204,7 +204,7 @@ describe('AuthService', () => {
         where: { token: sessionToken },
       });
       expect(sessionRepository.remove).not.toHaveBeenCalled();
-      expect(result).toEqual({ message: 'Logout successful' });
+      expect(result).toBeUndefined();
     });
   });
 });

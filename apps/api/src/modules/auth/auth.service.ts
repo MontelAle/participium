@@ -134,7 +134,5 @@ export class AuthService {
     if (session) {
       await this.sessionRepository.remove(session);
     }
-
-    return { message: 'Logout successful' };
   }
 }

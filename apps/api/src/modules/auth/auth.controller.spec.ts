@@ -31,7 +31,7 @@ describe('AuthController', () => {
           useValue: {
             login: jest.fn().mockResolvedValue(mockLoginResult),
             register: jest.fn().mockResolvedValue({ user: mockUser }),
-            logout: jest.fn().mockResolvedValue({ message: 'Logout successful' }),
+            logout: jest.fn().mockResolvedValue(undefined),
           },
         },
         {
@@ -132,7 +132,7 @@ describe('AuthController', () => {
 
       expect(authService.logout).toHaveBeenCalledWith('session-token');
       expect(res.clearCookie).toHaveBeenCalledWith('session_token');
-      expect(result).toEqual({ message: 'Logout successful' });
+      expect(result).toBeUndefined();
     });
 
     it('should clear cookie even if no session token is present', async () => {
@@ -143,9 +143,9 @@ describe('AuthController', () => {
 
       const result = await controller.logout(req, res);
 
-      expect(authService.logout).not.toHaveBeenCalled();
+      expect(authService.logout).toHaveBeenCalledWith(undefined);
       expect(res.clearCookie).toHaveBeenCalledWith('session_token');
-      expect(result).toEqual({ message: 'Logout successful' });
+      expect(result).toBeUndefined();
     });
   });
 });

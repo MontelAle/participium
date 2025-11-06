@@ -63,12 +63,8 @@ export class AuthController {
   ) {
     const sessionToken = req.cookies?.session_token;
 
-    if (sessionToken) {
-      await this.authService.logout(sessionToken);
-    }
+    await this.authService.logout(sessionToken);
 
     res.clearCookie('session_token');
-
-    return { message: 'Logout successful' };
   }
 }
