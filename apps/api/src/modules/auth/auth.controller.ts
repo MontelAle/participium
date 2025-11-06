@@ -61,7 +61,7 @@ export class AuthController {
     @Req() req: RequestWithUserSession,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const sessionToken = req.cookies?.session_cookie;
+    const sessionToken = req.cookies?.session_token;
 
     if (sessionToken) {
       await this.authService.logout(sessionToken);

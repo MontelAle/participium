@@ -78,7 +78,7 @@ describe('AuthController', () => {
         req.headers['user-agent'],
       );
       expect(res.cookie).toHaveBeenCalledWith(
-        'session_cookie',
+        'session_token',
         mockSession.token,
         mockCookie,
       );
@@ -113,7 +113,7 @@ describe('AuthController', () => {
         req.headers['user-agent'],
       );
       expect(res.cookie).toHaveBeenCalledWith(
-        'session_cookie',
+        'session_token',
         mockSession.token,
         mockCookie,
       );
@@ -124,14 +124,14 @@ describe('AuthController', () => {
   describe('logout', () => {
     it('should call authService.logout and clear cookie', async () => {
       const req: any = {
-        cookies: { session_cookie: 'session-token' },
+        cookies: { session_token: 'session-token' },
       };
       const res: any = { clearCookie: jest.fn() };
 
       const result = await controller.logout(req, res);
 
       expect(authService.logout).toHaveBeenCalledWith('session-token');
-      expect(res.clearCookie).toHaveBeenCalledWith('session_cookie');
+      expect(res.clearCookie).toHaveBeenCalledWith('session_token');
       expect(result).toEqual({ message: 'Logout successful' });
     });
 
@@ -144,7 +144,7 @@ describe('AuthController', () => {
       const result = await controller.logout(req, res);
 
       expect(authService.logout).not.toHaveBeenCalled();
-      expect(res.clearCookie).toHaveBeenCalledWith('session_cookie');
+      expect(res.clearCookie).toHaveBeenCalledWith('session_token');
       expect(result).toEqual({ message: 'Logout successful' });
     });
   });

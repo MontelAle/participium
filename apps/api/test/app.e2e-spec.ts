@@ -158,7 +158,7 @@ describe('AppController (e2e)', () => {
     const cookies = Array.isArray(setCookie)
       ? setCookie.join(';')
       : String(setCookie || '');
-    expect(cookies).toContain('session_cookie=mock_token_123');
+    expect(cookies).toContain('session_token=mock_token_123');
     expect(cookies.toLowerCase()).toContain('httponly');
   });
 
@@ -178,6 +178,6 @@ describe('AppController (e2e)', () => {
     const cookies = Array.isArray(setCookie2)
       ? setCookie2.join(';')
       : String(setCookie2 || '');
-    expect(cookies).toContain('session_cookie=mock_token_123');
+    expect(cookies).toContain('session_token=mock_token_123');
   });
 });
