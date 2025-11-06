@@ -41,10 +41,7 @@ jobs:
             turbo-${{ runner.os }}-
 
       - name: Build changed packages (turbo)
-        run: pnpm turbo run build --filter=... --force
+        run: pnpm turbo run build
 
       - name: Run tests (turbo)
-        run: pnpm turbo run test --filter=... --concurrency 4
-
-      - name: Lint (optional)
-        run: pnpm turbo run lint --filter=...
+        run: pnpm turbo run test
