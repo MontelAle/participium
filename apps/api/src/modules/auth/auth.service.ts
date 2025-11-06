@@ -125,4 +125,14 @@ export class AuthService {
       cookie,
     };
   }
+
+  async logout(sessionToken: string) {
+    const session = await this.sessionRepository.findOne({
+      where: { token: sessionToken },
+    });
+
+    if (session) {
+      await this.sessionRepository.remove(session);
+    }
+  }
 }
