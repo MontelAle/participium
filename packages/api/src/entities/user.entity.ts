@@ -8,7 +8,7 @@ import {
   OneToOne,
 } from 'typeorm';
 
-import { Role } from './roles.entity';
+import { Role } from './role.entity';
 
 @Entity('user')
 export class User {
@@ -26,6 +26,9 @@ export class User {
 
   @Column({ nullable: false })
   lastName: string;
+
+  @Column({ nullable: false })
+  roleId: string;
 
   @OneToOne(() => Role, { nullable: false })
   @JoinColumn({ name: 'roleId' })
