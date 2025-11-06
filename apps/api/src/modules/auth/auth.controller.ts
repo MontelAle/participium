@@ -31,7 +31,7 @@ export class AuthController {
       req.headers['user-agent'],
     );
 
-    res.cookie('session_cookie', session.token, cookie);
+    res.cookie('session_token', session.token, cookie);
 
     return { user, session };
   }
@@ -50,7 +50,7 @@ export class AuthController {
       req.headers['user-agent'],
     );
 
-    res.cookie('session_cookie', session.token, cookie);
+    res.cookie('session_token', session.token, cookie);
 
     return { user, session };
   }
@@ -67,7 +67,7 @@ export class AuthController {
       await this.authService.logout(sessionToken);
     }
 
-    res.clearCookie('session_cookie');
+    res.clearCookie('session_token');
 
     return { message: 'Logout successful' };
   }
