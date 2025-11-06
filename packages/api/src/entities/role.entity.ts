@@ -2,16 +2,12 @@ import {
   Entity,
   PrimaryColumn,
   Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('roles')
+@Entity('role')
 export class Role {
   @PrimaryColumn('text')
-  roleId: string;
+  id: string;
 
   @Column('text')
   name: string;

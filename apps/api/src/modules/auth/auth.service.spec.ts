@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { User, Account, RegisterDto, Session } from '@repo/api';
+import { User, Account, RegisterDto, Session, Role } from '@repo/api';
 import { ConfigService } from '@nestjs/config';
 import bcrypt from 'bcrypt';
+import { create } from 'domain';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
@@ -20,6 +21,7 @@ describe('AuthService', () => {
   let accountRepository: any;
   let sessionRepository: any;
   let configService: any;
+  let roleRepository: any;
 
   beforeEach(async () => {
     userRepository = {
@@ -29,6 +31,7 @@ describe('AuthService', () => {
       create: jest.fn(),
       save: jest.fn(),
       getRepository: jest.fn().mockReturnThis(),
+      findOne: jest.fn(),
     };
     accountRepository = {
       findOne: jest.fn(),
@@ -37,6 +40,11 @@ describe('AuthService', () => {
       getRepository: jest.fn().mockReturnThis(),
     };
     sessionRepository = {
+      create: jest.fn(),
+      save: jest.fn(),
+    };
+    roleRepository = {
+      findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
     };
@@ -58,6 +66,7 @@ describe('AuthService', () => {
         { provide: getRepositoryToken(User), useValue: userRepository },
         { provide: getRepositoryToken(Account), useValue: accountRepository },
         { provide: getRepositoryToken(Session), useValue: sessionRepository },
+        { provide: getRepositoryToken(Role), useValue: roleRepository },
         { provide: ConfigService, useValue: configService },
       ],
     }).compile();
@@ -122,6 +131,7 @@ describe('AuthService', () => {
           getRepository: () => ({
             create: userRepository.create,
             save: userRepository.save,
+            findOne: roleRepository.findOne,
           }),
         });
       });

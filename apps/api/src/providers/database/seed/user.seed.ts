@@ -11,11 +11,11 @@ async function runSeed() {
   const dataSource = app.get(DataSource);
 
   // Seed role
-  const role = await dataSource.getRepository(Role).save({
-    roleId: '1',
-    name: 'user',
-    description: 'Standard user role',
-  });
+  let role = await dataSource.getRepository(Role).findOne({ where: { name: 'user' } });
+  if (!role) {
+    role = dataSource.getRepository(Role).create({ id: nanoid(8), name: 'user' });
+    role = await dataSource.getRepository(Role).save(role);
+  }
 
   console.log(`✅ Seeded role: ${role.name}`);
 
@@ -32,7 +32,7 @@ async function runSeed() {
     lastName,
     username,
     email,
-    role: role,
+    role,
   });
 
   // Seed account

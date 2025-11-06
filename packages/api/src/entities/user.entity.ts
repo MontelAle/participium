@@ -4,11 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  JoinColumn,
-  OneToOne,
+  JoinColumn,  
+  ManyToOne,
 } from 'typeorm';
 
-import { Role } from './roles.entity';
+import { Role } from './role.entity';
 
 @Entity('user')
 export class User {
@@ -27,7 +27,10 @@ export class User {
   @Column({ nullable: false })
   lastName: string;
 
-  @OneToOne(() => Role, { nullable: false })
+  @Column({ nullable: false })
+  roleId: string;
+
+  @ManyToOne(() => Role, { nullable: false })
   @JoinColumn({ name: 'roleId' })
   role: Role;
 
