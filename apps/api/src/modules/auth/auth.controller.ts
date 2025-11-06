@@ -5,12 +5,14 @@ import {
   Request,
   UseGuards,
   Res,
+  Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from '@repo/api';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+import { SessionGuard } from './guards/session-auth.guard';
 import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
-import { Response } from 'express';
+import type { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -51,5 +53,22 @@ export class AuthController {
     res.cookie('session_cookie', session.token, cookie);
 
     return { user, session };
+  }
+
+  @UseGuards(SessionGuard)
+  @Post('logout')
+  async logout(
+    @Req() req: RequestWithUserSession,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const sessionToken = req.cookies?.session_cookie;
+
+    if (sessionToken) {
+      await this.authService.logout(sessionToken);
+    }
+
+    res.clearCookie('session_cookie');
+
+    return { message: 'Logout successful' };
   }
 }
