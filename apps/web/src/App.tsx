@@ -1,3 +1,9 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { DashboardLayout } from "@/layouts/dashboard-layout";
+import { HomePage } from "@/pages/home";
+import { UsersPage } from "@/pages/users";
+import { MapPage } from "@/pages/map";
+import { AuthProvider } from "@/contexts/auth-context";
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
@@ -5,14 +11,20 @@ import RegistrationPage from './pages/RegistrationPage';
 
 const App = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegistrationPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
-  )
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<DashboardLayout />}>
+            <Route index element={<HomePage />} />
+            <Route path="users" element={<UsersPage />} />
+            <Route path="map" element={<MapPage />} />
+             <Route path="/login" element={<LoginPage />} />
+             <Route path="/register" element={<RegistrationPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
 };
 
 export default App;
