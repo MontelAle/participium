@@ -12,7 +12,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { Link } from "react-router-dom"
 import { MailIcon, LockIcon } from "lucide-react"
 import { useAuth } from "@/fetch"
-import participiumLogo from "@/components/images/participium-logo.svg"
+//import participiumLogo from "@/components/images/"
 
 export function LoginForm({
   className,
@@ -119,7 +119,7 @@ export function LoginForm({
           </form>
           <div className="bg-muted relative hidden md:flex items-center justify-center overflow-hidden">
             <img
-              src={participiumLogo}
+              src="https://www.scribblemaps.com/api/maps/images/80q9s3QkOk_thumb_1200x630.jpg"
               alt="Participium Logo"
               className="absolute inset-0 w-full h-full object-cover"
             />

@@ -1,7 +1,7 @@
 // Base API client configuration
 // In development, use proxy (requests go through Vite dev server)
 // In production, use the full API URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = process.env.VITE_API_URL || '/api';
 
 export interface ApiResponse<T> {
   data?: T;
