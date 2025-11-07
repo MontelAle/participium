@@ -32,7 +32,7 @@ export class AuthService {
     if (!account) return null;
     const isPasswordValid = await bcrypt.compare(password, account.password);
     if (!isPasswordValid) return null;
-    return account.user;
+    return { user: account.user };
   }
 
   async register(dto: RegisterDto) {

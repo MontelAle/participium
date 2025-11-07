@@ -102,7 +102,7 @@ describe('AuthService', () => {
       accountRepository.findOne.mockResolvedValue({ password: 'hashed', user });
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       const result = await service.validateUser('test@example.com', 'password');
-      expect(result).toEqual( user );
+      expect(result).toEqual({ user });
     });
   });
 
