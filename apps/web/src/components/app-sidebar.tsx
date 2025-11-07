@@ -15,7 +15,6 @@ import { ReportsList } from "@/components/reports-list";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { SidebarProps } from "@/types/ui";
-import { toast } from "sonner";
 
 export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   const location = useLocation();
@@ -29,11 +28,6 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
     const firstInitial = user.firstName?.charAt(0) || "";
     const lastInitial = user.lastName?.charAt(0) || "";
     return (firstInitial + lastInitial).toUpperCase() || user.username?.charAt(0).toUpperCase() || "U";
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    toast.success("Logged out successfully!");
   };
 
   const adminMenuItems = [
@@ -53,8 +47,8 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
         <div className="flex h-16 items-center justify-between border-b px-4">
           {isOpen && (
             <Link to="/" className="flex items-center gap-2 font-semibold">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                P
+              <div className="flex size-12 items-center justify-center rounded-lg bg-primary overflow-hidden">
+                <img src="/logo.png" alt="Participium Logo" className="size-full object-cover" />
               </div>
               <span>Participium</span>
             </Link>
@@ -149,7 +143,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
+                <DropdownMenuItem onClick={() => logout()}>
                   <LogOut className="mr-2 size-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
