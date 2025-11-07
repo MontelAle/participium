@@ -41,7 +41,7 @@ export class AuthController {
 
     res.cookie('session_token', session.token, cookie);
 
-    return { user, session };
+    return { success: true, data: { user, session } };
   }
 
   @Post('register')
@@ -60,7 +60,7 @@ export class AuthController {
 
     res.cookie('session_token', session.token, cookie);
 
-    return { user, session };
+    return { success: true, data: { user, session } };
   }
 
   @UseGuards(SessionGuard)

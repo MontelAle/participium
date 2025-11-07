@@ -115,33 +115,53 @@ describe('AuthService', () => {
         lastName: 'User',
         password: 'password',
       };
-      const savedUser = { id: 'mocked-id', ...dto };
+      
+      const mockRole = { id: 'mocked-id', name: 'user' };
+      const savedUser = { id: 'mocked-id', ...dto, role: mockRole };
       const savedAccount = {
         id: 'mocked-id',
         accountId: dto.email,
+        providerId: 'local',
+        userId: savedUser.id,
+        password: 'hashed',
         user: savedUser,
       };
 
       (jest.spyOn(bcrypt, 'hash') as jest.Mock).mockResolvedValue('hashed');
-      userRepository.create.mockReturnValue(savedUser);
-      userRepository.save.mockResolvedValue(savedUser);
-      accountRepository.create.mockReturnValue(savedAccount);
-      accountRepository.save.mockResolvedValue(savedAccount);
+
+      const mockManager = {
+        getRepository: jest.fn((entity) => {
+          if (entity === Role) {
+            return {
+              findOne: jest.fn().mockResolvedValue(mockRole),
+              create: jest.fn().mockReturnValue(mockRole),
+              save: jest.fn().mockResolvedValue(mockRole),
+            };
+          }
+          if (entity === User) {
+            return {
+              findOne: jest.fn().mockResolvedValue(null),
+              create: jest.fn().mockReturnValue(savedUser),
+              save: jest.fn().mockResolvedValue(savedUser),
+            };
+          }
+          if (entity === Account) {
+            return {
+              findOne: jest.fn().mockResolvedValue(null),
+              create: jest.fn().mockReturnValue(savedAccount),
+              save: jest.fn().mockResolvedValue(savedAccount),
+            };
+          }
+        }),
+      };
 
       userRepository.manager.transaction.mockImplementation(async (cb: any) => {
-        return cb({
-          getRepository: () => ({
-            create: userRepository.create,
-            save: userRepository.save,
-            findOne: roleRepository.findOne,
-          }),
-        });
+        return cb(mockManager);
       });
 
       const result = await service.register(dto);
       expect(result).toEqual({ user: savedUser });
-      expect(userRepository.create).toHaveBeenCalled();
-      expect(userRepository.save).toHaveBeenCalled();
+      expect(bcrypt.hash).toHaveBeenCalledWith(dto.password, 10);
     });
   });
 

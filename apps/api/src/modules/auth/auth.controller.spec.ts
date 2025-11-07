@@ -82,7 +82,7 @@ describe('AuthController', () => {
         mockSession.token,
         mockCookie,
       );
-      expect(result).toEqual({ user: mockUser, session: mockSession });
+      expect(result).toEqual({ success: true, data: { user: mockUser, session: mockSession } });
     });
   });
 
@@ -117,7 +117,7 @@ describe('AuthController', () => {
         mockSession.token,
         mockCookie,
       );
-      expect(result).toEqual({ user: mockUser, session: mockSession });
+      expect(result).toEqual({ success: true, data: { user: mockUser, session: mockSession } });
     });
   });
 
@@ -132,7 +132,7 @@ describe('AuthController', () => {
 
       expect(authService.logout).toHaveBeenCalledWith('session-token');
       expect(res.clearCookie).toHaveBeenCalledWith('session_token');
-      expect(result).toBeUndefined();
+      expect(result).toEqual({ success: true });
     });
 
     it('should clear cookie even if no session token is present', async () => {
@@ -145,7 +145,7 @@ describe('AuthController', () => {
 
       expect(authService.logout).toHaveBeenCalledWith(undefined);
       expect(res.clearCookie).toHaveBeenCalledWith('session_token');
-      expect(result).toBeUndefined();
+      expect(result).toEqual({ success: true });
     });
   });
 });

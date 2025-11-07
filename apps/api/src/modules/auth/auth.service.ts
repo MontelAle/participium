@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, Account, RegisterDto, Session, Role } from '@repo/api';
@@ -60,7 +60,7 @@ export class AuthService {
         });
 
         if (account) {
-          throw new Error('User with this email already exists');
+          throw new ConflictException('User with this email already exists');
         }
 
         const newAccount = manager.getRepository(Account).create({
@@ -84,10 +84,6 @@ export class AuthService {
         });
 
         user = await manager.getRepository(User).save(newUser);
-        user = await manager.getRepository(User).findOne({
-          where: { id: user.id },
-          relations: ['role'],
-        });
 
         const newAccount = manager.getRepository(Account).create({
           id: nanoid(8),
