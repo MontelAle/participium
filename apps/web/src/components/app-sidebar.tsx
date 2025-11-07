@@ -18,11 +18,17 @@ import { SidebarProps } from "@/types/ui";
 
 export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   const location = useLocation();
-  const { user } = useAuth();
-
+  const { user, logout } = useAuth();
   const isAdminUser = user && user.role.name !== "user";
   const isRegularUser = user && user.role.name === "user";
   const isGuest = !user;
+
+  const getUserInitials = () => {
+    if (!user) return "?";
+    const firstInitial = user.firstName?.charAt(0) || "";
+    const lastInitial = user.lastName?.charAt(0) || "";
+    return (firstInitial + lastInitial).toUpperCase() || user.username?.charAt(0).toUpperCase() || "U";
+  };
 
   const adminMenuItems = [
     { title: "Dashboard", href: "/", icon: Home },
@@ -101,19 +107,19 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                   )}
                 >
                   <Avatar className="size-8">
-                    <AvatarImage src="https://github.com/shadcn.png" />
+                    <AvatarImage />
                     <AvatarFallback>
-                      {user.firstName[0]}{user.lastName[0]}
+                      {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
                   {isOpen && (
                     <>
                       <div className="flex flex-1 flex-col items-start text-left text-sm">
-                        <span className="font-medium">
+                      <span className="font-medium">
                           {user.firstName} {user.lastName}
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          {user.role.name}
+                        <span className="text-xs text-muted-foreground capitalize">
+                          {user.role.name}                
                         </span>
                       </div>
                       <ChevronsUpDown className="ml-auto size-4" />
@@ -128,7 +134,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                       {user.firstName} {user.lastName}
                     </p>
                     <p className="text-xs text-muted-foreground">{user.email}</p>
-                    <p className="text-xs text-muted-foreground">{user.role.name}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{user.role.name}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -137,7 +143,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => logout()}>
                   <LogOut className="mr-2 size-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>

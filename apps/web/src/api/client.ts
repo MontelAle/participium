@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = "http://localhost:5000/api";
 
 export async function apiFetch<T>(
   endpoint: string,
@@ -12,7 +12,6 @@ export async function apiFetch<T>(
     },
     credentials: "include",
   });
-
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
     throw new Error(error.message || `Request failed: ${res.status}`);

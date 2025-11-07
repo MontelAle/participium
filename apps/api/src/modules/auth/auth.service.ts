@@ -27,7 +27,7 @@ export class AuthService {
   async validateUser(email: string, password: string) {
     const account = await this.accountRepository.findOne({
       where: { providerId: 'local', accountId: email },
-      relations: ['user'],
+      relations: ['user', 'user.role'],
     });
     if (!account) return null;
     const isPasswordValid = await bcrypt.compare(password, account.password);
@@ -49,7 +49,10 @@ export class AuthService {
       }
 
       // User check/create
-      let user = await manager.getRepository(User).findOne({ where: { email } });
+      let user = await manager.getRepository(User).findOne({ 
+        where: { email },
+        relations: ['role'],
+      });
 
       if (user) {
         const account = await manager.getRepository(Account).findOne({
@@ -81,6 +84,10 @@ export class AuthService {
         });
 
         user = await manager.getRepository(User).save(newUser);
+        user = await manager.getRepository(User).findOne({
+          where: { id: user.id },
+          relations: ['role'],
+        });
 
         const newAccount = manager.getRepository(Account).create({
           id: nanoid(8),
@@ -94,7 +101,7 @@ export class AuthService {
         await manager.getRepository(Account).save(newAccount);
       }
 
-      return {user};
+      return { user };
     });
   }
 

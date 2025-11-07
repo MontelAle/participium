@@ -5,25 +5,24 @@ import { UsersPage } from "@/pages/users";
 import { MapPage } from "@/pages/map";
 import { AuthProvider } from "@/contexts/auth-context";
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegistrationPage from './pages/RegistrationPage';
 
 const App = () => {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <Routes>
           <Route element={<DashboardLayout />}>
             <Route index element={<HomePage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="map" element={<MapPage />} />
-             <Route path="/login" element={<LoginPage />} />
-             <Route path="/register" element={<RegistrationPage />} />
           </Route>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegistrationPage />} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 };
 
