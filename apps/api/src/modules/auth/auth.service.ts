@@ -27,12 +27,12 @@ export class AuthService {
   async validateUser(email: string, password: string) {
     const account = await this.accountRepository.findOne({
       where: { providerId: 'local', accountId: email },
-      relations: ['user'],
+      relations: ['user', 'user.role'],
     });
     if (!account) return null;
     const isPasswordValid = await bcrypt.compare(password, account.password);
     if (!isPasswordValid) return null;
-    return { user: account.user };
+    return account.user;
   }
 
   async register(dto: RegisterDto) {
