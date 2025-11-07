@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, Account, RegisterDto, Session, Role } from '@repo/api';
@@ -32,7 +32,7 @@ export class AuthService {
     if (!account) return null;
     const isPasswordValid = await bcrypt.compare(password, account.password);
     if (!isPasswordValid) return null;
-    return account.user;
+    return { user: account.user };
   }
 
   async register(dto: RegisterDto) {
@@ -49,7 +49,10 @@ export class AuthService {
       }
 
       // User check/create
-      let user = await manager.getRepository(User).findOne({ where: { email } });
+      let user = await manager.getRepository(User).findOne({ 
+        where: { email },
+        relations: ['role'],
+      });
 
       if (user) {
         const account = await manager.getRepository(Account).findOne({
@@ -57,7 +60,7 @@ export class AuthService {
         });
 
         if (account) {
-          throw new Error('User with this email already exists');
+          throw new ConflictException('User with this email already exists');
         }
 
         const newAccount = manager.getRepository(Account).create({
@@ -94,7 +97,7 @@ export class AuthService {
         await manager.getRepository(Account).save(newAccount);
       }
 
-      return {user};
+      return { user };
     });
   }
 

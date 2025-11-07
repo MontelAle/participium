@@ -24,7 +24,7 @@ export class SessionGuard implements CanActivate {
 
     const session = await this.sessionRepository.findOne({
       where: { token },
-      relations: ['user', 'user.role'],
+      relations: ['user'],
     });
 
     if (!session || session.expiresAt < new Date()) {
