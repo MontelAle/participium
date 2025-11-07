@@ -33,19 +33,26 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
       });
 
       if (result.success) {
-        toast.success("Login successful!");
+        toast.success("Login successful! Welcome back!");
         navigate("/");
       } else {
         toast.error(result.error || "Invalid credentials. Please try again.");
       }
     } else {
-      await register({
+      const result = await register({
         email: formData.get('email') as string,
         username: formData.get('username') as string,
         firstName: formData.get('firstname') as string,
         lastName: formData.get('lastname') as string,
         password: formData.get('password') as string,
       });
+
+      if (result.success) {
+        toast.success("Registration successful! Welcome!");
+        navigate("/");
+      } else {
+        toast.error(result.error || "Registration failed. Please try again.");
+      }
     }
   };
 

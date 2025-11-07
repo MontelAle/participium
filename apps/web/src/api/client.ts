@@ -15,7 +15,9 @@ export async function apiFetch<T>(
   
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: "Network error" }));
-    const errorMessage = error.message || `Request failed with status ${res.status}`;
+    const errorMessage = Array.isArray(error.message) 
+      ? error.message[0] 
+      : error.message || `Request failed with status ${res.status}`;
     throw new Error(errorMessage);
   }
 

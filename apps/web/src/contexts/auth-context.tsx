@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await authApi.login(credentials);
-      const userData = response.user;
+      const userData = response.data.user;
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
       
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await authApi.register(data);
-      const userData = response.user || response;
+      const userData = response.data.user;
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
       

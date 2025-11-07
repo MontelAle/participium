@@ -1,5 +1,4 @@
-import { Session, User } from '@repo/api';
-import { LoginDto, RegisterDto  } from '@repo/api';
+import { Session, User, LoginDto, RegisterDto } from '@repo/api';
 
 export type AuthContextType = {
   user: User | null;
@@ -11,7 +10,10 @@ export type AuthContextType = {
   logout: () => Promise<void>;
 };
 
-export type LoginResponse = {
-  user: User;
-  session: Session;
-}
+export type AuthResponse = {
+  success: boolean;
+  data: {
+    user: User;
+    session: Session;
+  };
+};
