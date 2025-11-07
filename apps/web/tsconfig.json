@@ -7,7 +7,12 @@
     "baseUrl": ".",
     "outDir": "./dist",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@web/types": ["types"],
+      "@web/components/*": ["components/*"],
+      "@web/hooks/*": ["hooks/*"],
+      "@web/contexts/*": ["contexts/*"],
+      "@web/lib/*": ["lib/*"]
     },
     "moduleResolution": "bundler",
     "module": "ESNext",
