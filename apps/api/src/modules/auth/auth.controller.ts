@@ -6,6 +6,9 @@ import {
   UseGuards,
   Res,
   Req,
+  HttpCode,
+  HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from '@repo/api';
@@ -20,11 +23,16 @@ export class AuthController {
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   async login(
     @Body() loginDto: LoginDto,
     @Request() req: RequestWithUserSession,
     @Res({ passthrough: true }) res: Response,
   ) {
+    if (!req.user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
     const { user, session, cookie } = await this.authService.login(
       req.user,
       req.ip,
@@ -66,5 +74,7 @@ export class AuthController {
     await this.authService.logout(sessionToken);
 
     res.clearCookie('session_token');
+    
+    return { success: true };
   }
 }

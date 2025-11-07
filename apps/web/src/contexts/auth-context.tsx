@@ -3,7 +3,6 @@ import type { User } from "@repo/api";
 import * as authApi from "@/api/endpoints/auth";
 import { AuthContextType } from "@/types/auth";
 import { LoginDto, RegisterDto } from "@repo/api";
-import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -14,7 +13,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   const isAuthenticated = user !== null;
 
@@ -27,8 +25,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = response.user;
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
-      
-      navigate("/");
       
       return { success: true, data: userData };
     } catch (err) {
@@ -50,8 +46,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
       
-      navigate("/");
-      
       return { success: true, data: userData };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Registration failed";
@@ -68,14 +62,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       await authApi.logout();
+    } catch (err) {
+      console.error("Logout API error:", err);
+    } finally {
       setUser(null);
       localStorage.removeItem("user");
-      
-      navigate("/login");
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Logout failed";
-      setError(errorMessage);
-    } finally {
       setIsLoading(false);
     }
   };

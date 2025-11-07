@@ -4,6 +4,7 @@ import { HomePage } from "@/pages/home";
 import { UsersPage } from "@/pages/users";
 import { MapPage } from "@/pages/map";
 import { AuthProvider } from "@/contexts/auth-context";
+import { Toaster } from "sonner";
 
 import LoginPage from './pages/LoginPage';
 import RegistrationPage from './pages/RegistrationPage';
@@ -12,6 +13,7 @@ const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <Toaster position="top-center" richColors />
         <Routes>
           <Route element={<DashboardLayout />}>
             <Route index element={<HomePage />} />

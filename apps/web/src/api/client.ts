@@ -12,9 +12,11 @@ export async function apiFetch<T>(
     },
     credentials: "include",
   });
+  
   if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || `Request failed: ${res.status}`);
+    const error = await res.json().catch(() => ({ message: "Network error" }));
+    const errorMessage = error.message || `Request failed with status ${res.status}`;
+    throw new Error(errorMessage);
   }
 
   return res.json() as Promise<T>;

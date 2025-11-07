@@ -15,6 +15,7 @@ import { ReportsList } from "@/components/reports-list";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { SidebarProps } from "@/types/ui";
+import { toast } from "sonner";
 
 export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   const location = useLocation();
@@ -28,6 +29,11 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
     const firstInitial = user.firstName?.charAt(0) || "";
     const lastInitial = user.lastName?.charAt(0) || "";
     return (firstInitial + lastInitial).toUpperCase() || user.username?.charAt(0).toUpperCase() || "U";
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    toast.success("Logged out successfully!");
   };
 
   const adminMenuItems = [
@@ -143,7 +149,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => logout()}>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 size-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
