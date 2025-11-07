@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto } from '@repo/api';
-import { Request } from 'express';
+import { RegisterDto, LoginDto, Session } from '@repo/api';
+import { SessionGuard } from './guards/session-auth.guard';
+import { getRepositoryToken } from '@nestjs/typeorm';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
@@ -30,6 +31,19 @@ describe('AuthController', () => {
           useValue: {
             login: jest.fn().mockResolvedValue(mockLoginResult),
             register: jest.fn().mockResolvedValue({ user: mockUser }),
+            logout: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: SessionGuard,
+          useValue: {
+            canActivate: jest.fn().mockReturnValue(true),
+          },
+        },
+        {
+          provide: getRepositoryToken(Session),
+          useValue: {
+            findOne: jest.fn(),
           },
         },
       ],
@@ -64,7 +78,7 @@ describe('AuthController', () => {
         req.headers['user-agent'],
       );
       expect(res.cookie).toHaveBeenCalledWith(
-        'session_cookie',
+        'session_token',
         mockSession.token,
         mockCookie,
       );
@@ -99,11 +113,39 @@ describe('AuthController', () => {
         req.headers['user-agent'],
       );
       expect(res.cookie).toHaveBeenCalledWith(
-        'session_cookie',
+        'session_token',
         mockSession.token,
         mockCookie,
       );
       expect(result).toEqual({ user: mockUser, session: mockSession });
+    });
+  });
+
+  describe('logout', () => {
+    it('should call authService.logout and clear cookie', async () => {
+      const req: any = {
+        cookies: { session_token: 'session-token' },
+      };
+      const res: any = { clearCookie: jest.fn() };
+
+      const result = await controller.logout(req, res);
+
+      expect(authService.logout).toHaveBeenCalledWith('session-token');
+      expect(res.clearCookie).toHaveBeenCalledWith('session_token');
+      expect(result).toBeUndefined();
+    });
+
+    it('should clear cookie even if no session token is present', async () => {
+      const req: any = {
+        cookies: {},
+      };
+      const res: any = { clearCookie: jest.fn() };
+
+      const result = await controller.logout(req, res);
+
+      expect(authService.logout).toHaveBeenCalledWith(undefined);
+      expect(res.clearCookie).toHaveBeenCalledWith('session_token');
+      expect(result).toBeUndefined();
     });
   });
 });

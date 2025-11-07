@@ -42,6 +42,8 @@ describe('AuthService', () => {
     sessionRepository = {
       create: jest.fn(),
       save: jest.fn(),
+      findOne: jest.fn(),
+      remove: jest.fn(),
     };
     roleRepository = {
       findOne: jest.fn(),
@@ -167,6 +169,42 @@ describe('AuthService', () => {
         secure: true,
         maxAge: 1000 * 60 * 60,
       });
+    });
+  });
+
+  describe('logout', () => {
+    it('should find and remove session from database', async () => {
+      const sessionToken = 'test-token';
+      const session = {
+        id: 'session-id',
+        token: sessionToken,
+        userId: 'user-id',
+      };
+
+      sessionRepository.findOne.mockResolvedValue(session);
+      sessionRepository.remove.mockResolvedValue(session);
+
+      const result = await service.logout(sessionToken);
+
+      expect(sessionRepository.findOne).toHaveBeenCalledWith({
+        where: { token: sessionToken },
+      });
+      expect(sessionRepository.remove).toHaveBeenCalledWith(session);
+      expect(result).toBeUndefined();
+    });
+
+    it('should not fail if session does not exist', async () => {
+      const sessionToken = 'non-existent-token';
+
+      sessionRepository.findOne.mockResolvedValue(null);
+
+      const result = await service.logout(sessionToken);
+
+      expect(sessionRepository.findOne).toHaveBeenCalledWith({
+        where: { token: sessionToken },
+      });
+      expect(sessionRepository.remove).not.toHaveBeenCalled();
+      expect(result).toBeUndefined();
     });
   });
 });

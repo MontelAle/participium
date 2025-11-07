@@ -8,7 +8,7 @@ export default () => ({
     expires: process.env.SESSION_EXPIRES || 1000 * 60 * 60 * 24 * 7,
   },
   cookie: {
-    httpOnly: process.env.COOKIE_HTTP_ONLY || true,
+    httpOnly: process.env.COOKIE_HTTP_ONLY || false,
     secure: process.env.COOKIE_SECURE || false,
     sameSite: process.env.COOKIE_SAME_SITE || 'lax',
   },
