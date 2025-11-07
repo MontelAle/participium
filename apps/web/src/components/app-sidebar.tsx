@@ -1,4 +1,4 @@
-import { ChevronRight, Home, Settings, Users, LogOut, ChevronsUpDown, Map } from "lucide-react";
+import { ChevronRight, Home, Settings, Users, LogOut, ChevronsUpDown, Map, Plus } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -40,24 +40,24 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
     <aside
       className={cn(
         "fixed left-0 top-0 z-40 h-screen border-r bg-sidebar transition-all duration-300",
-        isOpen ? "w-64" : "w-16"
+        isOpen ? "w-72" : "w-20"
       )}
     >
       <div className="flex h-full flex-col">
         <div className="flex h-16 items-center justify-between border-b px-4">
-          {isOpen && (
+          {isOpen ? (
             <Link to="/" className="flex items-center gap-2 font-semibold">
               <div className="flex size-12 items-center justify-center rounded-lg bg-primary overflow-hidden">
                 <img src="/logo.png" alt="Participium Logo" className="size-full object-cover" />
               </div>
               <span>Participium</span>
             </Link>
-          )}
+          ) : <></>}
           <Button
             variant="ghost"
             size="icon-sm"
             onClick={onToggle}
-            className={cn(!isOpen && "mx-auto")}
+            className={cn(!isOpen && "absolute right-2")}
           >
             <ChevronRight
               className={cn("size-4 transition-transform", isOpen && "rotate-180")}
@@ -66,7 +66,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
         </div>
 
         <div className="flex-1 overflow-hidden p-2">
-          {isAdminUser && isOpen && (
+          {isAdminUser && (
             <nav className="space-y-1">
               {adminMenuItems.map((item) => {
                 const Icon = item.icon;
@@ -75,10 +75,13 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                   <Link key={item.href} to={item.href}>
                     <Button
                       variant={isActive ? "secondary" : "ghost"}
-                      className="w-full justify-start gap-3"
+                      className={cn(
+                        "w-full gap-3",
+                        isOpen ? "justify-start" : "justify-center px-0"
+                      )}
                     >
-                      <Icon className="size-4 shrink-0" />
-                      <span>{item.title}</span>
+                      <Icon className="size-5 shrink-0" />
+                      {isOpen && <span className="text-base">{item.title}</span>}
                     </Button>
                   </Link>
                 );
@@ -86,11 +89,23 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
             </nav>
           )}
           
-          {(isGuest || isRegularUser) && isOpen && (
-            <ReportsList
-              canAddReport={isRegularUser}
-              onAddReport={() => console.log("Add report")}
-            />
+          {(isGuest || isRegularUser) && (
+            <>
+              {isRegularUser && (
+                <Button
+                  size="icon"
+                  onClick={() => console.log("Add report")}
+                  className={cn(
+                    "mb-3",
+                    isOpen ? "w-full" : "w-12 h-12 mx-auto"
+                  )}
+                >
+                  <Plus className="size-5" />
+                  {isOpen && <span className="ml-2">Add Report</span>}
+                </Button>
+              )}
+              {isOpen && <ReportsList />}
+            </>
           )}
         </div>
 
@@ -102,23 +117,23 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                 <Button
                   variant="ghost"
                   className={cn(
-                    "w-full justify-start gap-3",
-                    !isOpen && "justify-center px-2"
+                    "w-full gap-3",
+                    isOpen ? "justify-start" : "justify-center px-2"
                   )}
                 >
-                  <Avatar className="size-8">
+                  <Avatar className="size-9">
                     <AvatarImage />
-                    <AvatarFallback>
+                    <AvatarFallback className="text-base">
                       {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
                   {isOpen && (
                     <>
-                      <div className="flex flex-1 flex-col items-start text-left text-sm">
-                      <span className="font-medium">
+                      <div className="flex flex-1 flex-col items-start text-left">
+                        <span className="font-medium text-base">
                           {user.firstName} {user.lastName}
                         </span>
-                        <span className="text-xs text-muted-foreground capitalize">
+                        <span className="text-sm text-muted-foreground capitalize">
                           {user.role.name}                
                         </span>
                       </div>

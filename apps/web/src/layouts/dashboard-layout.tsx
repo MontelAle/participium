@@ -15,7 +15,7 @@ export function DashboardLayout() {
       <main
         className={cn(
           "transition-all duration-300",
-          sidebarOpen ? "ml-64" : "ml-16"
+          sidebarOpen ? "ml-72" : "ml-20"
         )}
       >
         <div className="container mx-auto p-6">

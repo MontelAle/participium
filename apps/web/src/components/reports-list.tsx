@@ -1,10 +1,9 @@
-import { Search, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Report, ReportsListProps } from "@/types/reports";
+import { Report } from "@/types/reports";
 
-export function ReportsList({ canAddReport = false, onAddReport }: ReportsListProps) {
+export function ReportsList() {
   const [search, setSearch] = useState("");
   
   //TODO: replace with API call
@@ -20,21 +19,14 @@ export function ReportsList({ canAddReport = false, onAddReport }: ReportsListPr
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search reports..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-        {canAddReport && (
-          <Button size="icon" onClick={onAddReport}>
-            <Plus className="size-4" />
-          </Button>
-        )}
+      <div className="relative">
+        <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+        <Input
+          placeholder="Search reports..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-8"
+        />
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto">
         {filtered.map((report) => (
