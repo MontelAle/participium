@@ -6,7 +6,7 @@ import {
 } from '@/hooks/use-municipality-users';
 import { useRoles } from '@/hooks/use-roles';
 
-const AdministratorPage = () => {
+const UsersMunicipalityPage = () => {
   const {
     data: municipalityUsers = [],
     isLoading,
@@ -31,4 +31,4 @@ const AdministratorPage = () => {
   );
 };
 
-export default AdministratorPage;
+export default UsersMunicipalityPage;
