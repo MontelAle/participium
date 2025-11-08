@@ -1,13 +1,12 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { DashboardLayout } from "@/layouts/dashboard-layout";
-import { HomePage } from "@/pages/home";
-import { UsersPage } from "@/pages/users";
-import { MapPage } from "@/pages/map";
-import { AuthProvider } from "@/contexts/auth-context";
-import { Toaster } from "sonner";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { DashboardLayout } from '@/layouts/dashboard-layout';
+import { AuthProvider } from '@/contexts/auth-context';
+import { Toaster } from 'sonner';
 
-import LoginPage from './pages/LoginPage';
-import RegistrationPage from './pages/RegistrationPage';
+import LoginPage from './pages/auth/login/page';
+import RegistrationPage from './pages/auth/registration/page';
+import HomePage from './pages/home/page';
+import MapPage from './pages/map/page';
 
 const App = () => {
   return (
@@ -17,8 +16,7 @@ const App = () => {
         <Routes>
           <Route element={<DashboardLayout />}>
             <Route index element={<HomePage />} />
-            <Route path="users" element={<UsersPage />} />
-            <Route path="map" element={<MapPage />} />
+            <Route path="map" element={<MapPage />} />            
           </Route>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegistrationPage />} />

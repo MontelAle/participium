@@ -5,5 +5,15 @@ import { Account } from './entities/account.entity';
 import { Session } from './entities/session.entity';
 import { Role } from './entities/role.entity';
 import { Category } from './entities/category.entity';
+import { CreateMunicipalityUserDto } from './dto/create-municipality-user.dto';
 
-export { RegisterDto, User, Account, Session, LoginDto, Role, Category };
+export {
+  RegisterDto,
+  User,
+  Account,
+  Session,
+  LoginDto,
+  Role,
+  Category,
+  CreateMunicipalityUserDto,
+};
