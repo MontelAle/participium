@@ -1,125 +1,168 @@
-# Turborepo starter
+# 🐘 Guide: Interacting with the PostgreSQL Database (Docker + PostGIS)
 
-This is a community-maintained example. If you experience a problem, please submit a pull request with a fix. GitHub Issues will be closed.
+## 🧩 1. Start the Database
 
-## Using this example
-
-Run the following command:
+Run the following command from your terminal in position apps/api:(remember to open docker desktop if you are on macOS or Windows before run)
 
 ```bash
-npx create-turbo@latest -e with-nestjs
+docker compose up -d
 ```
 
-## What's inside?
-
-This Turborepo includes the following packages & apps:
-
-### Apps and Packages
-
-```shell
-.
-├── apps
-│   ├── api                       # NestJS app (https://nestjs.com).
-│   └── web                       # Next.js app (https://nextjs.org).
-└── packages
-    ├── @repo/api                 # Shared `NestJS` resources.
-    ├── @repo/eslint-config       # `eslint` configurations (includes `prettier`)
-    ├── @repo/jest-config         # `jest` configurations
-    ├── @repo/typescript-config   # `tsconfig.json`s used throughout the monorepo
-    └── @repo/ui                  # Shareable stub React component library.
-```
-
-Each package and application are mostly written in [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This `Turborepo` has some additional tools already set for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type-safety
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-- [Jest](https://prettier.io) & [Playwright](https://playwright.dev/) for testing
-
-### Commands
-
-This `Turborepo` already configured useful commands for all your apps and packages.
-
-#### Build
+Check if the container is running:
 
 ```bash
-# Will build all the app & packages with the supported `build` script.
-pnpm run build
-
-# ℹ️ If you plan to only build apps individually,
-# Please make sure you've built the packages first.
+docker ps
 ```
 
-#### Develop
+You should see something like:
+
+```
+participium-postgres   postgis/postgis:18-3.6   Up   0.0.0.0:5432->5432/tcp
+```
+
+---
+
+## 💻 2. Connecting to PostgreSQL
+
+### 🪟 **Windows**
+
+#### Option 1 – PowerShell (with `psql` installed)
 
 ```bash
-# Will run the development server for all the app & packages with the supported `dev` script.
-pnpm run dev
+psql -h localhost -p 5432 -U admin -d participium
 ```
 
-#### test
+Then enter the password (`password`).
+
+> If `psql` is not recognized, install it from:
+> [https://www.postgresql.org/download/windows/](https://www.postgresql.org/download/windows/)
+>
+> During installation, make sure to select **Command Line Tools**.
+
+#### Option 2 – From inside the container
 
 ```bash
-# Will launch a test suites for all the app & packages with the supported `test` script.
-pnpm run test
-
-# You can launch e2e testes with `test:e2e`
-pnpm run test:e2e
-
-# See `@repo/jest-config` to customize the behavior.
+docker exec -it participium-postgres psql -U admin -d participium
 ```
 
-#### Lint
+---
+
+### 🍏 **macOS**
+
+#### Option 1 – From terminal (if `psql` is installed)
 
 ```bash
-# Will lint all the app & packages with the supported `lint` script.
-# See `@repo/eslint-config` to customize the behavior.
-pnpm run lint
+psql -h localhost -p 5432 -U admin -d participium
 ```
 
-#### Format
+If you don’t have `psql`, install it using Homebrew:
 
 ```bash
-# Will format all the supported `.ts,.js,json,.tsx,.jsx` files.
-# See `@repo/eslint-config/prettier-base.js` to customize the behavior.
-pnpm format
+brew install libpq
+brew link --force libpq
 ```
 
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+#### Option 2 – From inside the container
 
 ```bash
-npx turbo login
+docker exec -it participium-postgres psql -U admin -d participium
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+---
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+### 🐧 **Linux**
+
+#### Option 1 – From the host (if `psql` is installed)
 
 ```bash
-npx turbo link
+psql -h localhost -p 5432 -U admin -d participium
 ```
 
-## Useful Links
+If not installed:
 
-This example take some inspiration the [with-nextjs](https://github.com/vercel/turborepo/tree/main/examples/with-nextjs) `Turbo` example and [01-cats-app](https://github.com/nestjs/nest/tree/master/sample/01-cats-app) `NestJs` sample.
+```bash
+sudo apt install postgresql-client
+```
 
-Learn more about the power of Turborepo:
+#### Option 2 – From inside the container
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+```bash
+docker exec -it participium-postgres psql -U admin -d participium
+```
 
+---
+
+## 🧠 3. Useful `psql` Commands
+
+| Action                           | Command                     |
+| -------------------------------- | --------------------------- |
+| List databases                   | `\l`                        |
+| Connect to a database            | `\c participium`            |
+| List tables                      | `\dt`                       |
+| List tables in a specific schema | `\dt public.*`              |
+| Describe a table                 | `\d table_name`             |
+| Run an SQL query                 | `SELECT * FROM table_name;` |
+| Exit `psql`                      | `\q`                        |
+
+---
+
+## 🧰 4. Example Queries
+
+### Insert a new role
+
+```sql
+INSERT INTO role (id, name)
+VALUES ('admin', 'admin');
+```
+
+### View all roles
+
+```sql
+SELECT * FROM role;
+```
+
+### Assign a role to a user
+
+```sql
+UPDATE "user" SET "roleId" = 'admin' WHERE email = 'name@domain.com';
+```
+
+---
+
+## 🧭 5. Access via GUI (Optional)
+
+You can also connect using a graphical interface:
+
+| Tool          | Platform              | Link                                                 |
+| ------------- | --------------------- | ---------------------------------------------------- |
+| **pgAdmin 4** | All                   | [https://www.pgadmin.org/](https://www.pgadmin.org/) |
+| **TablePlus** | macOS, Windows, Linux | [https://tableplus.com/](https://tableplus.com/)     |
+| **DBeaver**   | All                   | [https://dbeaver.io/](https://dbeaver.io/)           |
+
+---
+
+## 🧼 6. Stop / Clean Up
+
+Stop the database:
+
+```bash
+docker compose down
+```
+
+Remove volumes as well (⚠️ this deletes all data):
+
+```bash
+docker compose down -v
+```
+
+---
+
+## ✅ Quick Reference
+
+| Action          | Command                                                             |
+| --------------- | ------------------------------------------------------------------- |
+| Start DB        | `docker compose up -d`                                              |
+| Enter DB shell  | `docker exec -it participium-postgres psql -U admin -d participium` |
+| List tables     | `\dt`                                                               |
+| View table data | `SELECT * FROM table_name;`                                         |
+| Stop DB         | `docker compose down`                                               |
