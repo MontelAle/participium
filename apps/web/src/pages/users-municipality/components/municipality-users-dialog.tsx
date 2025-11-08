@@ -5,11 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
 import type { User, Role } from '@repo/api';
 import type { CreateMunicipalityUserDto } from '@repo/api';
-
-interface AddUserDialogProps {
-  onCreate: (data: CreateMunicipalityUserDto) => Promise<User>;
-  roles: Role[];
-}
+import { AddUserDialogProps } from '@/types/ui';
 
 export function MunicipalityUsersDialog({
   onCreate,

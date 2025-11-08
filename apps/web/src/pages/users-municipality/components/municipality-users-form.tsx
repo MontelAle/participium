@@ -16,12 +16,7 @@ import { MailIcon, UserIcon, LockIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import type { CreateMunicipalityUserDto, Role, User } from '@repo/api';
-
-interface CreateMunicipalityUserFormProps {
-  onSubmit: (data: CreateMunicipalityUserDto) => Promise<User>;
-  onCancel?: () => void;
-  roles: Role[];
-}
+import { CreateMunicipalityUserFormProps } from '@/types/ui';
 
 export function MunicipalityUserForm({
   onSubmit,
