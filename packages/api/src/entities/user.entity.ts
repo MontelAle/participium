@@ -12,7 +12,7 @@ import { Role } from './role.entity';
 
 @Entity('user')
 export class User {
-  @PrimaryColumn('text')
+  @PrimaryColumn('varchar')
   id: string;
 
   @Column({ unique: true, nullable: false })
@@ -34,9 +34,9 @@ export class User {
   @JoinColumn({ name: 'roleId' })
   role: Role;
 
-  @CreateDateColumn({ type: 'date' })
+  @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'date' })
+  @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
 }
