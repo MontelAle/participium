@@ -142,6 +142,7 @@ export interface TableColumnHeaderProps<TData, TValue>
   title: string;
 }
 
+/*
 export function TableColumnHeader<TData, TValue>({
   column,
   title,
@@ -193,6 +194,62 @@ export function TableColumnHeader<TData, TValue>({
     </div>
   );
 }
+*/
+
+export function TableColumnHeader<TData, TValue>({
+  column,
+  title,
+  className,
+}: TableColumnHeaderProps<TData, TValue>) {
+  const handleSortAsc = useCallback(() => {
+    column.toggleSorting(false);
+  }, [column]);
+
+  const handleSortDesc = useCallback(() => {
+    column.toggleSorting(true);
+  }, [column]);
+
+  // Usa TableHeadRaw invece di div
+  return (
+    <TableHeadRaw className={className}>
+      {!column.getCanSort() ? (
+        title
+      ) : (
+        <div className="flex items-center space-x-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className="-ml-3 h-8 data-[state=open]:bg-accent"
+                size="sm"
+                variant="ghost"
+              >
+                <span>{title}</span>
+                {column.getIsSorted() === 'desc' ? (
+                  <ArrowDownIcon className="ml-2 h-4 w-4" />
+                ) : column.getIsSorted() === 'asc' ? (
+                  <ArrowUpIcon className="ml-2 h-4 w-4" />
+                ) : (
+                  <ChevronsUpDownIcon className="ml-2 h-4 w-4" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={handleSortAsc}>
+                <ArrowUpIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+                Asc
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSortDesc}>
+                <ArrowDownIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+                Desc
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+    </TableHeadRaw>
+  );
+}
+
 
 export type TableCellProps = {
   cell: Cell<unknown, unknown>;
