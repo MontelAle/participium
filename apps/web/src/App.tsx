@@ -20,10 +20,11 @@ const App = () => {
             <Route index element={<HomePage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="map" element={<MapPage />} />
+            <Route path="/administrator" element={<AdministratorPage />} />
           </Route>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegistrationPage />} />
-          <Route path="/administrator" element={<AdministratorPage />} />
+          
         </Routes>
       </AuthProvider>
     </BrowserRouter>
