@@ -8,6 +8,7 @@ import { Toaster } from "sonner";
 
 import LoginPage from './pages/LoginPage';
 import RegistrationPage from './pages/RegistrationPage';
+import AdministratorPage from "./pages/AdministratorPage";
 
 const App = () => {
   return (
@@ -22,6 +23,7 @@ const App = () => {
           </Route>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegistrationPage />} />
+          <Route path="/administrator" element={<AdministratorPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
