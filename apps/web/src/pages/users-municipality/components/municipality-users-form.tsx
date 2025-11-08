@@ -50,10 +50,8 @@ export function MunicipalityUserForm({
     e.preventDefault();
     setIsLoading(true);
 
-    const result = await onSubmit(form);
-    setIsLoading(false);
-
-    if (result) {
+    try {
+      await onSubmit(form);
       toast.success('Municipality user created successfully!');
       setForm({
         username: '',
@@ -63,8 +61,13 @@ export function MunicipalityUserForm({
         role: '',
         password: '',
       });
-    } else {
-      toast.error(result || 'Failed to create user.');
+      onCancel?.();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to create user';
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -137,11 +140,15 @@ export function MunicipalityUserForm({
             <SelectValue placeholder="Select role" />
           </SelectTrigger>
           <SelectContent>
-            {roles.map((role) => (
-              <SelectItem key={role.id} value={role.id}>
-                {role.name}
-              </SelectItem>
-            ))}
+            {roles
+              .filter(
+                (role) => role.name === 'admin' || role.name === 'moderator',
+              )
+              .map((role) => (
+                <SelectItem key={role.id} value={role.id}>
+                  {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </Field>

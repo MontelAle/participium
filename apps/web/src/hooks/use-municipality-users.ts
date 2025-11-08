@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getMunicipalityUsers,
   createMunicipalityUser,
-} from '../api/endpoints/users-municipality';
+} from '../api/endpoints/municipality-users';
 import type { User } from '@repo/api';
 
 export function useMunicipalityUsers() {

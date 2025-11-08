@@ -18,12 +18,13 @@ export function MunicipalityUsersDialog({
   const [open, setOpen] = useState(false);
 
   const handleSubmit = async (data: CreateMunicipalityUserDto) => {
-    const result = await onCreate(data);
-    if (result) {
+    try {
+      const result = await onCreate(data);
       setOpen(false);
+      return result;
+    } catch (error) {
+      throw error;
     }
-
-    return result;
   };
 
   return (
