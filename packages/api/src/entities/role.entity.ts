@@ -6,9 +6,9 @@ import {
 
 @Entity('role')
 export class Role {
-  @PrimaryColumn('text')
+  @PrimaryColumn('varchar')
   id: string;
 
-  @Column('text')
+  @Column('varchar')
   name: string;
 }
