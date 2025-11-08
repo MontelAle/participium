@@ -1,5 +1,5 @@
-import { MunicipalityUsersTable } from '@/components/municipality-users-table';
-import { MunicipalityUsersDialog } from '@/components/municipality-users-dialog';
+import { MunicipalityUsersTable } from './components/municipality-users-table';
+import { MunicipalityUsersDialog } from './components/municipality-users-dialog';
 import {
   useMunicipalityUsers,
   useCreateMunicipalityUser,

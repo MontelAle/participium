@@ -1,11 +1,11 @@
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/auth-context";
-import { MapPage } from "./map";
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/auth-context';
+import { MapPage } from '../map/page';
 
 export function HomePage() {
   const { user } = useAuth();
 
-  const isAdminUser = user && user.role.name !== "user";
+  const isAdminUser = user && user.role.name !== 'user';
 
   if (!isAdminUser) {
     return <MapPage />;

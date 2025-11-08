@@ -1,8 +1,17 @@
-import { ChevronRight, Home, Settings, Users, LogOut, ChevronsUpDown, Map, Plus } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import {
+  ChevronRight,
+  Home,
+  Settings,
+  Users,
+  LogOut,
+  ChevronsUpDown,
+  Map,
+  Plus,
+} from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,37 +19,41 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ReportsList } from "@/components/reports-list";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/auth-context";
-import { SidebarProps } from "@/types/ui";
+} from '@/components/ui/dropdown-menu';
+import { ReportsList } from '@/components/reports-list';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
+import { SidebarProps } from '@/types/ui';
 
 export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   const location = useLocation();
   const { user, logout } = useAuth();
-  const isAdminUser = user && user.role.name !== "user";
-  const isRegularUser = user && user.role.name === "user";
+  const isAdminUser = user && user.role.name !== 'user';
+  const isRegularUser = user && user.role.name === 'user';
   const isGuest = !user;
 
   const getUserInitials = () => {
-    if (!user) return "?";
-    const firstInitial = user.firstName?.charAt(0) || "";
-    const lastInitial = user.lastName?.charAt(0) || "";
-    return (firstInitial + lastInitial).toUpperCase() || user.username?.charAt(0).toUpperCase() || "U";
+    if (!user) return '?';
+    const firstInitial = user.firstName?.charAt(0) || '';
+    const lastInitial = user.lastName?.charAt(0) || '';
+    return (
+      (firstInitial + lastInitial).toUpperCase() ||
+      user.username?.charAt(0).toUpperCase() ||
+      'U'
+    );
   };
 
   const adminMenuItems = [
-    { title: "Dashboard", href: "/", icon: Home },
-    { title: "Users", href: "/users", icon: Users },
-    { title: "Map", href: "/map", icon: Map },
+    { title: 'Dashboard', href: '/', icon: Home },
+    { title: 'Map', href: '/map', icon: Map },
+    { title: 'Administrator', href: '/administrator', icon: Users },
   ];
 
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen border-r bg-sidebar transition-all duration-300",
-        isOpen ? "w-72" : "w-20"
+        'fixed left-0 top-0 z-40 h-screen border-r bg-sidebar transition-all duration-300',
+        isOpen ? 'w-72' : 'w-20',
       )}
     >
       <div className="flex h-full flex-col">
@@ -48,19 +61,28 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
           {isOpen ? (
             <Link to="/" className="flex items-center gap-2 font-semibold">
               <div className="flex size-12 items-center justify-center rounded-lg bg-primary overflow-hidden">
-                <img src="/logo.png" alt="Participium Logo" className="size-full object-cover" />
+                <img
+                  src="/logo.png"
+                  alt="Participium Logo"
+                  className="size-full object-cover"
+                />
               </div>
               <span>Participium</span>
             </Link>
-          ) : <></>}
+          ) : (
+            <></>
+          )}
           <Button
             variant="ghost"
             size="icon-sm"
             onClick={onToggle}
-            className={cn(!isOpen && "absolute right-2")}
+            className={cn(!isOpen && 'absolute right-2')}
           >
             <ChevronRight
-              className={cn("size-4 transition-transform", isOpen && "rotate-180")}
+              className={cn(
+                'size-4 transition-transform',
+                isOpen && 'rotate-180',
+              )}
             />
           </Button>
         </div>
@@ -74,30 +96,32 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                 return (
                   <Link key={item.href} to={item.href}>
                     <Button
-                      variant={isActive ? "secondary" : "ghost"}
+                      variant={isActive ? 'secondary' : 'ghost'}
                       className={cn(
-                        "w-full gap-3",
-                        isOpen ? "justify-start" : "justify-center px-0"
+                        'w-full gap-3',
+                        isOpen ? 'justify-start' : 'justify-center px-0',
                       )}
                     >
                       <Icon className="size-5 shrink-0" />
-                      {isOpen && <span className="text-base">{item.title}</span>}
+                      {isOpen && (
+                        <span className="text-base">{item.title}</span>
+                      )}
                     </Button>
                   </Link>
                 );
               })}
             </nav>
           )}
-          
+
           {(isGuest || isRegularUser) && (
             <>
               {isRegularUser && (
                 <Button
                   size="icon"
-                  onClick={() => console.log("Add report")}
+                  onClick={() => console.log('Add report')}
                   className={cn(
-                    "mb-3",
-                    isOpen ? "w-full" : "w-12 h-12 mx-auto"
+                    'mb-3',
+                    isOpen ? 'w-full' : 'w-12 h-12 mx-auto',
                   )}
                 >
                   <Plus className="size-5" />
@@ -117,8 +141,8 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                 <Button
                   variant="ghost"
                   className={cn(
-                    "w-full gap-3",
-                    isOpen ? "justify-start" : "justify-center px-2"
+                    'w-full gap-3',
+                    isOpen ? 'justify-start' : 'justify-center px-2',
                   )}
                 >
                   <Avatar className="size-9">
@@ -134,7 +158,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                           {user.firstName} {user.lastName}
                         </span>
                         <span className="text-sm text-muted-foreground capitalize">
-                          {user.role.name}                
+                          {user.role.name}
                         </span>
                       </div>
                       <ChevronsUpDown className="ml-auto size-4" />
@@ -148,8 +172,12 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                     <p className="text-sm font-medium">
                       {user.firstName} {user.lastName}
                     </p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{user.role.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.email}
+                    </p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {user.role.name}
+                    </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
