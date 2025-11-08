@@ -1,9 +1,9 @@
-import { apiFetch } from "../client";
-import { MunicipalityUser } from "../../types/users";
+import { apiFetch } from '../client';
+import type { User } from '@repo/api';
 
-export async function getMunicipalityUsers(): Promise<MunicipalityUser[]> {
-  return apiFetch<MunicipalityUser[]>("/administrator/municipalityUsers", {
-    method: "GET",
+export async function getMunicipalityUsers(): Promise<User[]> {
+  return apiFetch<User[]>('/users/municipality', {
+    method: 'GET',
   });
 }
 

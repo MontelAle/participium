@@ -1,42 +1,44 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { TableProvider, TableHeader, TableHeaderGroup, TableRow, TableCell, TableColumnHeader, TableBody } from "@/components/ui/shadcn-io/table";
-import { MunicipalityUser } from "@/types/users";
+import * as React from 'react';
+import {
+  TableProvider,
+  TableHeader,
+  TableHeaderGroup,
+  TableRow,
+  TableCell,
+  TableColumnHeader,
+  TableBody,
+} from '@/components/ui/shadcn-io/table';
+import type { User } from '@repo/api';
 
-
-
-interface MunicipalityUsersTableProps {
-  users: MunicipalityUser[];
-}
-
-export function MunicipalityUsersTable({ users }: MunicipalityUsersTableProps) {
+export function MunicipalityUsersTable({ users }: { users: User[] }) {
   const columns = React.useMemo(
     () => [
       {
-        accessorKey: "username",
-        header: "Username",
+        accessorKey: 'username',
+        header: 'Username',
       },
       {
-        accessorKey: "email",
-        header: "Email",
+        accessorKey: 'email',
+        header: 'Email',
       },
       {
-        accessorKey: "firstName",
-        header: "First Name",
+        accessorKey: 'firstName',
+        header: 'First Name',
       },
       {
-        accessorKey: "lastName",
-        header: "Last Name",
+        accessorKey: 'lastName',
+        header: 'Last Name',
       },
       {
-        accessorKey: "role",
-        header: "Role",
+        accessorKey: 'role',
+        header: 'Role',
         cell: ({ getValue }: any) =>
-          typeof getValue() === "object" ? getValue().name : getValue(),
+          typeof getValue() === 'object' ? getValue().name : getValue(),
       },
     ],
-    []
+    [],
   );
 
   return (
