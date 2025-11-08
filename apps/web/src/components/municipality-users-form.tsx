@@ -15,48 +15,56 @@ import {
 import { MailIcon, UserIcon, LockIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import type { CreateMunicipalityUserDto, Role, User } from '@repo/api';
 
 interface CreateMunicipalityUserFormProps {
-  onSubmit: (data: {
-    username: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    password: string;
-  }) => Promise<{ success: boolean; error?: string }>;
+  onSubmit: (data: CreateMunicipalityUserDto) => Promise<User>;
   onCancel?: () => void;
+  roles: Role[];
 }
 
 export function MunicipalityUserForm({
   onSubmit,
   onCancel,
+  roles,
 }: CreateMunicipalityUserFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [role, setRole] = useState('');
+  const [form, setForm] = useState<CreateMunicipalityUserDto>({
+    username: '',
+    email: '',
+    firstName: '',
+    lastName: '',
+    role: '',
+    password: '',
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleRoleChange = (value: string) => {
+    setForm({ ...form, role: value });
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-    const payload = {
-      username: formData.get('username') as string,
-      email: formData.get('email') as string,
-      firstName: formData.get('firstName') as string,
-      lastName: formData.get('lastName') as string,
-      role,
-      password: formData.get('password') as string,
-    };
-
-    const result = await onSubmit(payload);
+    const result = await onSubmit(form);
     setIsLoading(false);
 
-    if (result.success) {
+    if (result) {
       toast.success('Municipality user created successfully!');
-      e.currentTarget.reset();
+      setForm({
+        username: '',
+        email: '',
+        firstName: '',
+        lastName: '',
+        role: '',
+        password: '',
+      });
     } else {
-      toast.error(result.error || 'Failed to create user.');
+      toast.error(result || 'Failed to create user.');
     }
   };
 
@@ -64,7 +72,13 @@ export function MunicipalityUserForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <Field>
         <InputGroup>
-          <InputGroupInput name="username" placeholder="Username" required />
+          <InputGroupInput
+            name="username"
+            placeholder="Username"
+            required
+            value={form.username}
+            onChange={handleChange}
+          />
           <InputGroupAddon>
             <UserIcon />
           </InputGroupAddon>
@@ -78,6 +92,8 @@ export function MunicipalityUserForm({
             name="email"
             placeholder="Email"
             required
+            value={form.email}
+            onChange={handleChange}
           />
           <InputGroupAddon>
             <MailIcon />
@@ -87,7 +103,13 @@ export function MunicipalityUserForm({
 
       <Field>
         <InputGroup>
-          <InputGroupInput name="firstName" placeholder="First Name" required />
+          <InputGroupInput
+            name="firstName"
+            placeholder="First Name"
+            required
+            value={form.firstName}
+            onChange={handleChange}
+          />
           <InputGroupAddon>
             <UserIcon />
           </InputGroupAddon>
@@ -96,7 +118,13 @@ export function MunicipalityUserForm({
 
       <Field>
         <InputGroup>
-          <InputGroupInput name="lastName" placeholder="Last Name" required />
+          <InputGroupInput
+            name="lastName"
+            placeholder="Last Name"
+            required
+            value={form.lastName}
+            onChange={handleChange}
+          />
           <InputGroupAddon>
             <UserIcon />
           </InputGroupAddon>
@@ -104,14 +132,16 @@ export function MunicipalityUserForm({
       </Field>
 
       <Field>
-        <Select value={role} onValueChange={setRole} required>
+        <Select value={form.role} onValueChange={handleRoleChange} required>
           <SelectTrigger className="InputGroupInput">
             <SelectValue placeholder="Select role" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="user">User</SelectItem>
-            {/* Replace with roles from db as needed */}
+            {roles.map((role) => (
+              <SelectItem key={role.id} value={role.id}>
+                {role.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </Field>
@@ -123,6 +153,8 @@ export function MunicipalityUserForm({
             name="password"
             placeholder="Password"
             required
+            value={form.password}
+            onChange={handleChange}
           />
           <InputGroupAddon>
             <LockIcon />

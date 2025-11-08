@@ -1,5 +1,6 @@
 import { apiFetch } from '../client';
 import type { User } from '@repo/api';
+import { CreateMunicipalityUserDto } from '@repo/api';
 
 export async function getMunicipalityUsers(): Promise<User[]> {
   return apiFetch<User[]>('/users/municipality', {
@@ -7,20 +8,11 @@ export async function getMunicipalityUsers(): Promise<User[]> {
   });
 }
 
-/*
-export async function createMunicipalityUser(data: CreateMunicipalityUserDto): Promise<MunicipalityUser> {
-  return apiFetch<MunicipalityUser>("/administrator/municipalityUsers", {
-    method: "POST",
+export async function createMunicipalityUser(
+  data: CreateMunicipalityUserDto,
+): Promise<User> {
+  return apiFetch<User>('/users/municipality', {
+    method: 'POST',
     body: JSON.stringify(data),
   });
 }
-
-export type CreateMunicipalityUserDto = {
-  username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  password: string; 
-};
-*/

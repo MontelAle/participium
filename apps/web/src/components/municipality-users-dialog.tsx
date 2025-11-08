@@ -3,40 +3,27 @@ import { useState } from 'react';
 import { MunicipalityUserForm } from './municipality-users-form';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
-import type { User } from '@repo/api';
+import type { User, Role } from '@repo/api';
+import type { CreateMunicipalityUserDto } from '@repo/api';
 
 interface AddUserDialogProps {
-  onCreate: (user: User) => void;
+  onCreate: (data: CreateMunicipalityUserDto) => Promise<User>;
+  roles: Role[];
 }
 
-export function MunicipalityUsersDialog({ onCreate }: AddUserDialogProps) {
+export function MunicipalityUsersDialog({
+  onCreate,
+  roles,
+}: AddUserDialogProps) {
   const [open, setOpen] = useState(false);
 
-  const handleSubmit = async (data: {
-    username: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    password: string;
-  }) => {
-    const newUser: User = {
-      id: Date.now().toString(),
-      username: data.username,
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      role: {
-        id: data.role,
-        name: data.role,
-      },
-      roleId: data.role,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    onCreate(newUser);
-    setOpen(false);
-    return { success: true };
+  const handleSubmit = async (data: CreateMunicipalityUserDto) => {
+    const result = await onCreate(data);
+    if (result) {
+      setOpen(false);
+    }
+
+    return result;
   };
 
   return (
@@ -54,6 +41,7 @@ export function MunicipalityUsersDialog({ onCreate }: AddUserDialogProps) {
 
           <MunicipalityUserForm
             onSubmit={handleSubmit}
+            roles={roles}
             onCancel={() => {
               setOpen(false);
             }}
