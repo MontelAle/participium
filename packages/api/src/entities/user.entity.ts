@@ -4,7 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  JoinColumn,  
+  JoinColumn,
   ManyToOne,
 } from 'typeorm';
 
@@ -34,9 +34,9 @@ export class User {
   @JoinColumn({ name: 'roleId' })
   role: Role;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }
