@@ -5,6 +5,7 @@ import { RegisterDto, LoginDto, Session } from '@repo/api';
 import { SessionGuard } from './guards/session-auth.guard';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
+import { ref } from 'process';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
@@ -40,6 +41,9 @@ describe('AuthController', () => {
             register: jest.fn().mockResolvedValue({ user: mockUser }),
             logout: jest.fn().mockResolvedValue(undefined),
             getCookieOptions: jest.fn().mockReturnValue(mockCookie),
+            refreshSession: jest
+              .fn()
+              .mockResolvedValue({ session: mockSession }),
           },
         },
         {
@@ -167,6 +171,47 @@ describe('AuthController', () => {
       expect(authService.logout).toHaveBeenCalledWith(undefined);
       expect(res.clearCookie).toHaveBeenCalledWith('session_token');
       expect(result).toEqual({ success: true });
+    });
+  });
+
+  describe('refresh', () => {
+    it('should update session, set cookie, and return user/session', async () => {
+      const mockSession = {
+        id: 'session-id',
+        updatedAt: new Date(),
+        expiresAt: new Date(),
+      };
+      const mockUser = { id: 1, username: 'testuser' };
+      const mockCookie = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 1000,
+      };
+      const req: any = {
+        user: mockUser,
+        session: mockSession,
+        cookies: { session_token: 'session-id.secret' },
+      };
+      const res: any = { cookie: jest.fn() };
+
+      (authService.refreshSession as jest.Mock).mockResolvedValueOnce({
+        session: mockSession,
+      });
+
+      const result = await controller.refresh(req, res);
+
+      expect(authService.refreshSession).toHaveBeenCalledWith(mockSession);
+      expect(authService.getCookieOptions).toHaveBeenCalled();
+      expect(res.cookie).toHaveBeenCalledWith(
+        'session_token',
+        req.cookies.session_token,
+        mockCookie,
+      );
+      expect(result).toEqual({
+        success: true,
+        data: { user: mockUser, session: mockSession },
+      });
     });
   });
 });

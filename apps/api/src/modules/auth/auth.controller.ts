@@ -81,4 +81,21 @@ export class AuthController {
 
     return { success: true };
   }
+
+  @UseGuards(SessionGuard)
+  @Post('refresh')
+  async refresh(
+    @Req() req: RequestWithUserSession,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { user } = req;
+
+    const { session } = await this.authService.refreshSession(req.session);
+
+    const cookieOptions = this.authService.getCookieOptions();
+    const token = req.cookies.session_token;
+    res.cookie('session_token', token, cookieOptions);
+
+    return { success: true, data: { user, session } };
+  }
 }

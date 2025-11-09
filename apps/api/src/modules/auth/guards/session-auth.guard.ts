@@ -58,6 +58,7 @@ export class SessionGuard implements CanActivate {
     }
 
     req.user = session.user;
+    session.user = undefined;
     req.session = session;
     return true;
   }

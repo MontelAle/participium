@@ -155,4 +155,13 @@ export class AuthService {
       await this.sessionRepository.remove(session);
     }
   }
+
+  async refreshSession(session: Session) {
+    session.expiresAt = new Date(
+      Date.now() +
+        this.configService.get<number>('session.expiresInSeconds') * 1000,
+    );
+    await this.sessionRepository.save(session);
+    return { session: instanceToPlain(session) };
+  }
 }

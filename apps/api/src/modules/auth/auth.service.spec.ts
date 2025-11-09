@@ -236,5 +236,20 @@ describe('AuthService', () => {
       expect(sessionRepository.remove).not.toHaveBeenCalled();
       expect(result).toBeUndefined();
     });
+
+    describe('refreshSession', () => {
+      it('should update expiresAt and save the session', async () => {
+        const oldDate = new Date('2025-01-01T10:00:00Z');
+        const session: any = { id: 'session-id', expiresAt: oldDate };
+
+        sessionRepository.save.mockResolvedValue(session);
+
+        const result = await service.refreshSession(session);
+
+        expect(session.expiresAt.getTime()).toBeGreaterThan(oldDate.getTime());
+        expect(sessionRepository.save).toHaveBeenCalledWith(session);
+        expect(result).toEqual({ session: expect.any(Object) });
+      });
+    });
   });
 });
