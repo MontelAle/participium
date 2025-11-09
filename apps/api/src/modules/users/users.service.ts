@@ -1,6 +1,6 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { User, Account, Role, CreateMunicipalityUserDto } from '@repo/api';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
@@ -21,10 +21,11 @@ export class UsersService {
   async findMunicipalityUsers(): Promise<User[]> {
     return this.userRepository.find({
       relations: ['role'],
-      where: [
-        { role: { name: 'admin' } },
-        { role: { name: 'moderator' } },
-      ],
+      where: {
+        role: {
+          name: Not('user'),
+        },
+      },
     });
   }
 
@@ -49,7 +50,7 @@ export class UsersService {
       }
 
       const newUser = manager.getRepository(User).create({
-        id: nanoid(8),
+        id: nanoid(),
         email,
         username,
         firstName,
@@ -60,7 +61,7 @@ export class UsersService {
       const user = await manager.getRepository(User).save(newUser);
 
       const newAccount = manager.getRepository(Account).create({
-        id: nanoid(8),
+        id: nanoid(),
         accountId: email,
         providerId: 'local',
         userId: user.id,
