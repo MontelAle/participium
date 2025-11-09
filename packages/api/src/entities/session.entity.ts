@@ -8,22 +8,24 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity('session')
 export class Session {
   @PrimaryColumn('varchar')
   id: string;
 
-  @Column('timestamp')
+  @Column('timestamptz')
   expiresAt: Date;
 
-  @Column('varchar', { unique: true })
-  token: string;
+  @Column('varchar')
+  @Exclude()
+  hashedSecret: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 
   @Column('varchar', { nullable: true })

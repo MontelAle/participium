@@ -106,13 +106,15 @@ export class AuthController {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const { user, session, cookie } = await this.authService.login(
+    const { user, session, token } = await this.authService.login(
       req.user,
       req.ip,
       req.headers['user-agent'],
     );
 
-    res.cookie('session_token', session.token, cookie);
+    const cookieOptions = this.authService.getCookieOptions();
+
+    res.cookie('session_token', token, cookieOptions);
 
     return { success: true, data: { user, session } };
   }
@@ -195,13 +197,15 @@ export class AuthController {
   ) {
     const { user } = await this.authService.register(registerDto);
 
-    const { session, cookie } = await this.authService.login(
+    const { session, token } = await this.authService.login(
       user,
       req.ip,
       req.headers['user-agent'],
     );
 
-    res.cookie('session_token', session.token, cookie);
+    const cookieOptions = this.authService.getCookieOptions();
+
+    res.cookie('session_token', token, cookieOptions);
 
     return { success: true, data: { user, session } };
   }
@@ -244,7 +248,24 @@ export class AuthController {
     await this.authService.logout(sessionToken);
 
     res.clearCookie('session_token');
-    
+
     return { success: true };
+  }
+
+  @UseGuards(SessionGuard)
+  @Post('refresh')
+  async refresh(
+    @Req() req: RequestWithUserSession,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { user } = req;
+
+    const { session } = await this.authService.refreshSession(req.session);
+
+    const cookieOptions = this.authService.getCookieOptions();
+    const token = req.cookies.session_token;
+    res.cookie('session_token', token, cookieOptions);
+
+    return { success: true, data: { user, session } };
   }
 }
