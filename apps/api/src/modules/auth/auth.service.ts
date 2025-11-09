@@ -42,14 +42,18 @@ export class AuthService {
 
     return this.userRepository.manager.transaction(async (manager) => {
       // Role check/create
-      let userRole = await manager.getRepository(Role).findOne({ where: { name: 'user' } });
+      let userRole = await manager
+        .getRepository(Role)
+        .findOne({ where: { name: 'user' } });
       if (!userRole) {
-        userRole = manager.getRepository(Role).create({ id: nanoid(8), name: 'user' });
+        userRole = manager
+          .getRepository(Role)
+          .create({ id: nanoid(), name: 'user' });
         await manager.getRepository(Role).save(userRole);
       }
 
       // User check/create
-      let user = await manager.getRepository(User).findOne({ 
+      let user = await manager.getRepository(User).findOne({
         where: { email },
         relations: ['role'],
       });
@@ -64,7 +68,7 @@ export class AuthService {
         }
 
         const newAccount = manager.getRepository(Account).create({
-          id: nanoid(8),
+          id: nanoid(),
           accountId: email,
           providerId: 'local',
           userId: user.id,
@@ -72,10 +76,10 @@ export class AuthService {
           user: user,
         });
 
-        await manager.getRepository(Account).save(newAccount);        
+        await manager.getRepository(Account).save(newAccount);
       } else {
         const newUser = manager.getRepository(User).create({
-          id: nanoid(8),
+          id: nanoid(),
           email,
           username,
           firstName,
@@ -86,7 +90,7 @@ export class AuthService {
         user = await manager.getRepository(User).save(newUser);
 
         const newAccount = manager.getRepository(Account).create({
-          id: nanoid(8),
+          id: nanoid(),
           accountId: email,
           providerId: 'local',
           userId: user.id,
@@ -110,9 +114,9 @@ export class AuthService {
     };
 
     const session = this.sessionRepository.create({
-      id: nanoid(8),
+      id: nanoid(),
       userId: user.id,
-      token: nanoid(16),
+      token: nanoid(),
       expiresAt: new Date(
         Date.now() + this.configService.get<number>('session.expires'),
       ),
