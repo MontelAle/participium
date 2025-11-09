@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity('session')
 export class Session {
@@ -17,8 +18,9 @@ export class Session {
   @Column('timestamp')
   expiresAt: Date;
 
-  @Column('varchar', { unique: true })
-  token: string;
+  @Column('varchar')
+  @Exclude()
+  hashedSecret: string;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

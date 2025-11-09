@@ -33,13 +33,15 @@ export class AuthController {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const { user, session, cookie } = await this.authService.login(
+    const { user, session, token } = await this.authService.login(
       req.user,
       req.ip,
       req.headers['user-agent'],
     );
 
-    res.cookie('session_token', session.token, cookie);
+    const cookieOptions = this.authService.getCookieOptions();
+
+    res.cookie('session_token', token, cookieOptions);
 
     return { success: true, data: { user, session } };
   }
@@ -52,13 +54,15 @@ export class AuthController {
   ) {
     const { user } = await this.authService.register(registerDto);
 
-    const { session, cookie } = await this.authService.login(
+    const { session, token } = await this.authService.login(
       user,
       req.ip,
       req.headers['user-agent'],
     );
 
-    res.cookie('session_token', session.token, cookie);
+    const cookieOptions = this.authService.getCookieOptions();
+
+    res.cookie('session_token', token, cookieOptions);
 
     return { success: true, data: { user, session } };
   }
@@ -74,7 +78,7 @@ export class AuthController {
     await this.authService.logout(sessionToken);
 
     res.clearCookie('session_token');
-    
+
     return { success: true };
   }
 }

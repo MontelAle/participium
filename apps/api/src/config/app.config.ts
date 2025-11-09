@@ -5,7 +5,10 @@ export default () => ({
     backendUrl: process.env.BACKEND_URL || 'http://localhost:5000/api',
   },
   session: {
-    expires: parseInt(process.env.SESSION_EXPIRES || '3600000', 10),
+    expiresInSeconds: parseInt(
+      process.env.SESSION_EXPIRES_IN_SECONDS || '86400',
+      10,
+    ),
   },
   cookie: {
     httpOnly: process.env.COOKIE_HTTP_ONLY || false,

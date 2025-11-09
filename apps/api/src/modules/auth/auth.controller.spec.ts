@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, Session } from '@repo/api';
 import { SessionGuard } from './guards/session-auth.guard';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
@@ -14,12 +15,18 @@ describe('AuthController', () => {
   let authService: AuthService;
 
   const mockUser = { id: 1, username: 'testuser' };
-  const mockSession = { token: 'session-token' };
-  const mockCookie = { httpOnly: true };
+  const mockSession = { id: 123, userId: 1 };
+  const mockToken = 'session-token';
+  const mockCookie = {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 1000,
+  };
   const mockLoginResult = {
     user: mockUser,
     session: mockSession,
-    cookie: mockCookie,
+    token: mockToken,
   };
 
   beforeEach(async () => {
@@ -32,6 +39,7 @@ describe('AuthController', () => {
             login: jest.fn().mockResolvedValue(mockLoginResult),
             register: jest.fn().mockResolvedValue({ user: mockUser }),
             logout: jest.fn().mockResolvedValue(undefined),
+            getCookieOptions: jest.fn().mockReturnValue(mockCookie),
           },
         },
         {
@@ -46,6 +54,12 @@ describe('AuthController', () => {
             findOne: jest.fn(),
           },
         },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -58,7 +72,7 @@ describe('AuthController', () => {
   });
 
   describe('login', () => {
-    it('should call authService.login and set cookie', async () => {
+    it('should call authService.login, getCookieOptions, and set cookie', async () => {
       const loginDto: LoginDto = {
         email: 'testuser@example.com',
         password: 'password',
@@ -77,17 +91,21 @@ describe('AuthController', () => {
         req.ip,
         req.headers['user-agent'],
       );
+      expect(authService.getCookieOptions).toHaveBeenCalled();
       expect(res.cookie).toHaveBeenCalledWith(
         'session_token',
-        mockSession.token,
+        mockToken,
         mockCookie,
       );
-      expect(result).toEqual({ success: true, data: { user: mockUser, session: mockSession } });
+      expect(result).toEqual({
+        success: true,
+        data: { user: mockUser, session: mockSession },
+      });
     });
   });
 
   describe('create (register)', () => {
-    it('should call authService.register and login, then set cookie', async () => {
+    it('should call authService.register, login, getCookieOptions, then set cookie', async () => {
       const registerDto: RegisterDto = {
         email: 'alice@example.com',
         username: 'alice',
@@ -101,7 +119,6 @@ describe('AuthController', () => {
       };
       const res: any = { cookie: jest.fn() };
 
-      // Mock login to return session/cookie for the new user
       (authService.login as jest.Mock).mockResolvedValueOnce(mockLoginResult);
 
       const result = await controller.create(registerDto, req, res);
@@ -112,12 +129,16 @@ describe('AuthController', () => {
         req.ip,
         req.headers['user-agent'],
       );
+      expect(authService.getCookieOptions).toHaveBeenCalled();
       expect(res.cookie).toHaveBeenCalledWith(
         'session_token',
-        mockSession.token,
+        mockToken,
         mockCookie,
       );
-      expect(result).toEqual({ success: true, data: { user: mockUser, session: mockSession } });
+      expect(result).toEqual({
+        success: true,
+        data: { user: mockUser, session: mockSession },
+      });
     });
   });
 

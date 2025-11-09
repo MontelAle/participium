@@ -5,6 +5,8 @@ import { User, Account, RegisterDto, Session, Role } from '@repo/api';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { ConfigService } from '@nestjs/config';
+import { createHash } from 'crypto';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class AuthService {
@@ -105,20 +107,26 @@ export class AuthService {
     });
   }
 
-  async login(user: User, ipAddress: string, userAgent: string) {
-    const cookie = {
+  getCookieOptions() {
+    return {
       httpOnly: this.configService.get<boolean>('cookie.httpOnly'),
       sameSite: this.configService.get('cookie.sameSite'),
       secure: this.configService.get<boolean>('cookie.secure'),
-      maxAge: this.configService.get<number>('session.expires'),
+      maxAge: this.configService.get<number>('session.expiresInSeconds') * 1000,
     };
+  }
+
+  async login(user: User, ipAddress: string, userAgent: string) {
+    const secret = nanoid();
+    const hashedSecret = createHash('sha256').update(secret).digest('hex');
 
     const session = this.sessionRepository.create({
       id: nanoid(),
       userId: user.id,
-      token: nanoid(),
+      hashedSecret,
       expiresAt: new Date(
-        Date.now() + this.configService.get<number>('session.expires'),
+        Date.now() +
+          this.configService.get<number>('session.expiresInSeconds') * 1000,
       ),
       ipAddress,
       userAgent,
@@ -126,16 +134,21 @@ export class AuthService {
 
     await this.sessionRepository.save(session);
 
+    const token = `${session.id}.${secret}`;
+
     return {
-      session,
+      session: instanceToPlain(session),
       user,
-      cookie,
+      token,
     };
   }
 
   async logout(sessionToken: string) {
+    const tokenParts = sessionToken.split('.');
+    const sessionId = tokenParts[0];
+
     const session = await this.sessionRepository.findOne({
-      where: { token: sessionToken },
+      where: { id: sessionId },
     });
 
     if (session) {
