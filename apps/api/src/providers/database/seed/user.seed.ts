@@ -33,7 +33,7 @@ async function runSeed() {
   const adminPassword = 'admin123';
 
   const adminUser = await dataSource.getRepository(User).save({
-    id: nanoid(32),
+    id: nanoid(),
     firstName: adminFirstName,
     lastName: adminLastName,
     username: adminUsername,
@@ -42,7 +42,7 @@ async function runSeed() {
   });
 
   await dataSource.getRepository(Account).save({
-    id: nanoid(32),
+    id: nanoid(),
     user: adminUser,
     providerId: 'local',
     accountId: adminUser.email,
@@ -59,7 +59,7 @@ async function runSeed() {
   const password = 'password';
 
   const user = await dataSource.getRepository(User).save({
-    id: nanoid(32),
+    id: nanoid(),
     firstName,
     lastName,
     username,
@@ -69,7 +69,7 @@ async function runSeed() {
 
   // Seed account
   await dataSource.getRepository(Account).save({
-    id: nanoid(32),
+    id: nanoid(),
     user,
     providerId: 'local',
     accountId: user.email,

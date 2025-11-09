@@ -64,7 +64,7 @@ export class AuthService {
         }
 
         const newAccount = manager.getRepository(Account).create({
-          id: nanoid(8),
+          id: nanoid(),
           accountId: email,
           providerId: 'local',
           userId: user.id,
@@ -75,7 +75,7 @@ export class AuthService {
         await manager.getRepository(Account).save(newAccount);        
       } else {
         const newUser = manager.getRepository(User).create({
-          id: nanoid(8),
+          id: nanoid(),
           email,
           username,
           firstName,
@@ -86,7 +86,7 @@ export class AuthService {
         user = await manager.getRepository(User).save(newUser);
 
         const newAccount = manager.getRepository(Account).create({
-          id: nanoid(8),
+          id: nanoid(),
           accountId: email,
           providerId: 'local',
           userId: user.id,
@@ -110,9 +110,9 @@ export class AuthService {
     };
 
     const session = this.sessionRepository.create({
-      id: nanoid(8),
+      id: nanoid(),
       userId: user.id,
-      token: nanoid(16),
+      token: nanoid(),
       expiresAt: new Date(
         Date.now() + this.configService.get<number>('session.expires'),
       ),

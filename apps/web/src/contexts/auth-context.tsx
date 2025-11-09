@@ -1,78 +1,75 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import type { User } from "@repo/api";
-import * as authApi from "@/api/endpoints/auth";
-import { AuthContextType } from "@/types/auth";
-import { LoginDto, RegisterDto } from "@repo/api";
+import { createContext, useContext, useState, ReactNode } from 'react';
+import type { User, LoginDto, RegisterDto } from '@repo/api';
+import { AuthContextType } from '@/types/auth';
+import { useLogin, useRegister, useLogout } from '@/hooks/use-auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = localStorage.getItem('user');
     return storedUser ? JSON.parse(storedUser) : null;
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const loginMutation = useLogin();
+  const registerMutation = useRegister();
+  const logoutMutation = useLogout();
 
   const isAuthenticated = user !== null;
+  const isLoading =
+    loginMutation.isPending ||
+    registerMutation.isPending ||
+    logoutMutation.isPending;
+  const error =
+    loginMutation.error?.message || registerMutation.error?.message || null;
 
   const login = async (credentials: LoginDto) => {
-    setIsLoading(true);
-    setError(null);
-
     try {
-      const response = await authApi.login(credentials);
+      const response = await loginMutation.mutateAsync(credentials);
       const userData = response.data.user;
       setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
-      
       return { success: true, data: userData };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Login failed";
-      setError(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
       return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const register = async (data: RegisterDto) => {
-    setIsLoading(true);
-    setError(null);
-
     try {
-      const response = await authApi.register(data);
+      const response = await registerMutation.mutateAsync(data);
       const userData = response.data.user;
       setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
-      
       return { success: true, data: userData };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Registration failed";
-      setError(errorMessage);
+      const errorMessage =
+        err instanceof Error ? err.message : 'Registration failed';
       return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const logout = async () => {
-    setIsLoading(true);
-    setError(null);
-
     try {
-      await authApi.logout();
-    } catch (err) {
-      console.error("Logout API error:", err);
-    } finally {
+      await logoutMutation.mutateAsync();
       setUser(null);
-      localStorage.removeItem("user");
-      setIsLoading(false);
+    } catch (err) {
+      console.error('Logout error:', err);
+      setUser(null);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, error, isAuthenticated, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        error,
+        isAuthenticated,
+        login,
+        register,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -81,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }
