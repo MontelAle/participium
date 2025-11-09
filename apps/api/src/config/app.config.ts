@@ -11,7 +11,7 @@ export default () => ({
     ),
   },
   cookie: {
-    httpOnly: process.env.COOKIE_HTTP_ONLY || false,
+    httpOnly: process.env.COOKIE_HTTP_ONLY || true,
     secure: process.env.COOKIE_SECURE || false,
     sameSite: process.env.COOKIE_SAME_SITE || 'lax',
   },
