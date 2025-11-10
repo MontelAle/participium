@@ -29,11 +29,21 @@ export class UsersService {
     });
   }
 
-  async findMunicipalityUserById(id: string): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { id },
+  async findMunicipalityUserById(id: string): Promise<User> {
+    const user = await this.userRepository.findOne({
       relations: ['role'],
+      where: { id,
+        role: {
+          name: Not('user'),
+        },
+      },
     });
+
+    if (!user) {
+      throw new NotFoundException('Municipality user not found');
+    }
+
+    return user;
   }
 
   async createMunicipalityUser(dto: CreateMunicipalityUserDto): Promise<User> {
@@ -83,6 +93,20 @@ export class UsersService {
   }
 
   async deleteMunicipalityUserById(id: string): Promise<void> {
+    const user = await this.userRepository.findOne({
+      relations: ['role'],
+      where: { 
+        id,
+        role: {
+          name: Not('user'),
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Municipality user not found');
+    }
+
     await this.userRepository.manager.transaction(async (manager) => {
       await manager.getRepository(Account).delete({ userId: id });
       await manager.getRepository(User).delete({ id });
@@ -95,7 +119,7 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Municipality user not found');
     }
 
     // Verifies email if already in use
