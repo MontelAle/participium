@@ -136,9 +136,7 @@ export function MunicipalityUserForm({
           </SelectTrigger>
           <SelectContent>
             {roles
-              .filter(
-                (role) => role.name === 'admin' || role.name === 'moderator',
-              )
+              .filter((role) => role.name !== 'user')
               .map((role) => (
                 <SelectItem key={role.id} value={role.id}>
                   {role.name.charAt(0).toUpperCase() + role.name.slice(1)}

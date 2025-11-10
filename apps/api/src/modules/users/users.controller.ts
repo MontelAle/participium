@@ -134,7 +134,7 @@ export class UsersController {
         statusCode: 400,
         message: [
           'Invalid email format',
-          'Role must be admin or moderator',
+          'Role must be admin',
           'Password must be at least 6 characters',
         ],
         error: 'Bad Request',
