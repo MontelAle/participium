@@ -93,6 +93,17 @@ export class UsersController {
       },
     },
   })
+  @ApiResponse({
+    status: 404,
+    description: 'Not Found - Municipality user with specified ID does not exist',
+    schema: {
+      example: {
+        statusCode: 404,
+        message: 'Municipality user not found',
+        error: 'Not Found',
+      },
+    },
+  })
   async getMunicipalityUserById(@Param('id') id: string) {
     const users = await this.usersService.findMunicipalityUserById(id);
     return { success: true, data: users };
@@ -196,7 +207,6 @@ export class UsersController {
     schema: {
       example: {
         success: true,
-        message: 'User deleted successfully',
         data: {
           id: '123',
         },
@@ -227,18 +237,18 @@ export class UsersController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Not Found - User with specified ID does not exist',
+    description: 'Not Found - Municipality user with specified ID does not exist',
     schema: {
       example: {
         statusCode: 404,
-        message: 'User not found',
+        message: 'Municipality user not found',
         error: 'Not Found',
       },
     },
   })
   async deleteMunicipalityUserById(@Param('id') id: string) {
     await this.usersService.deleteMunicipalityUserById(id);
-    return { success: true, message: 'User deleted successfully', data: { id } };
+    return { success: true, data: { id } };
   }
 
   @Post('municipality/user/:id')
