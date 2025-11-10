@@ -2,7 +2,7 @@ import { apiFetch } from '../client';
 import type { User } from '@repo/api';
 import { CreateMunicipalityUserDto } from '@repo/api';
 import type { MunicipalityUserResponse } from '@/types/municipality-users';
-//import { UpdateUserDto } from '@repo/api';
+import { UpdateUserDto } from '@repo/api';
 
 // GET all municiaplity users
 export async function getMunicipalityUsers(): Promise<User[]> {
@@ -32,7 +32,7 @@ export async function createMunicipalityUser(
   return response.data;
 }
 
-/*
+
 // UPDATE municiaplity user
 export async function updateMunicipalityUser(
   userId: string,
@@ -47,7 +47,7 @@ export async function updateMunicipalityUser(
   );
   return response.data;
 }
-  */
+  
 
 // DELETE municiaplity user
 export async function deleteMunicipalityUser(userId: string): Promise<void> {
