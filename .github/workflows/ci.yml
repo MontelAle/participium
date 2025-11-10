@@ -47,5 +47,7 @@ jobs:
       - name: Build changed packages (turbo)
         run: pnpm turbo run build
 
-      - name: Run tests (turbo)
+      - name: Run tests unit tests(turbo)
         run: pnpm turbo run test
+      - name: Run e2e tests (turbo)
+        run: pnpm turbo run test:e2e
