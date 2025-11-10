@@ -4,7 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { User, Account, RegisterDto, Session, Role } from '@repo/api';
 import { ConfigService } from '@nestjs/config';
 import bcrypt from 'bcrypt';
-import { create } from 'domain';
+import { createHash } from 'crypto';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
@@ -56,7 +56,7 @@ describe('AuthService', () => {
           'cookie.httpOnly': true,
           'cookie.sameSite': 'lax',
           'cookie.secure': true,
-          'session.expires': 1000 * 60 * 60,
+          'session.expiresInSeconds': 60 * 60,
         };
         return config[key];
       }),
@@ -115,7 +115,7 @@ describe('AuthService', () => {
         lastName: 'User',
         password: 'password',
       };
-      
+
       const mockRole = { id: 'mocked-id', name: 'user' };
       const savedUser = { id: 'mocked-id', ...dto, role: mockRole };
       const savedAccount = {
@@ -174,7 +174,9 @@ describe('AuthService', () => {
         firstName: 'First',
         lastName: 'Last',
       };
-      const session = { id: 'mocked-id', userId: user.id, token: 'mocked-id' };
+      const secret = 'mocked-id'; // nanoid is mocked
+      const hashedSecret = createHash('sha256').update(secret).digest('hex');
+      const session = { id: 'mocked-id', userId: user.id, hashedSecret };
       sessionRepository.create.mockReturnValue(session);
       sessionRepository.save.mockResolvedValue(session);
 
@@ -182,22 +184,30 @@ describe('AuthService', () => {
       expect(sessionRepository.create).toHaveBeenCalled();
       expect(sessionRepository.save).toHaveBeenCalledWith(session);
       expect(result).toHaveProperty('user', user);
-      expect(result).toHaveProperty('session', session);
-      expect(result.cookie).toMatchObject({
+      expect(result).toHaveProperty('session');
+      expect(result).toHaveProperty('token', `${session.id}.${secret}`);
+    });
+  });
+
+  describe('getCookieOptions', () => {
+    it('should return cookie settings based on config', () => {
+      const options = service.getCookieOptions();
+      expect(options).toEqual({
         httpOnly: true,
         sameSite: 'lax',
         secure: true,
-        maxAge: 1000 * 60 * 60,
+        maxAge: 60 * 60 * 1000,
       });
     });
   });
 
   describe('logout', () => {
     it('should find and remove session from database', async () => {
-      const sessionToken = 'test-token';
+      const secret = 'mocked-id';
+      const sessionToken = `session-id.${secret}`;
       const session = {
         id: 'session-id',
-        token: sessionToken,
+        hashedSecret: createHash('sha256').update(secret).digest('hex'),
         userId: 'user-id',
       };
 
@@ -207,24 +217,39 @@ describe('AuthService', () => {
       const result = await service.logout(sessionToken);
 
       expect(sessionRepository.findOne).toHaveBeenCalledWith({
-        where: { token: sessionToken },
+        where: { id: 'session-id' },
       });
       expect(sessionRepository.remove).toHaveBeenCalledWith(session);
       expect(result).toBeUndefined();
     });
 
     it('should not fail if session does not exist', async () => {
-      const sessionToken = 'non-existent-token';
+      const sessionToken = 'non-existent-id.mocked-id';
 
       sessionRepository.findOne.mockResolvedValue(null);
 
       const result = await service.logout(sessionToken);
 
       expect(sessionRepository.findOne).toHaveBeenCalledWith({
-        where: { token: sessionToken },
+        where: { id: 'non-existent-id' },
       });
       expect(sessionRepository.remove).not.toHaveBeenCalled();
       expect(result).toBeUndefined();
+    });
+
+    describe('refreshSession', () => {
+      it('should update expiresAt and save the session', async () => {
+        const oldDate = new Date('2025-01-01T10:00:00Z');
+        const session: any = { id: 'session-id', expiresAt: oldDate };
+
+        sessionRepository.save.mockResolvedValue(session);
+
+        const result = await service.refreshSession(session);
+
+        expect(session.expiresAt.getTime()).toBeGreaterThan(oldDate.getTime());
+        expect(sessionRepository.save).toHaveBeenCalledWith(session);
+        expect(result).toEqual({ session: expect.any(Object) });
+      });
     });
   });
 });

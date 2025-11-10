@@ -5,6 +5,8 @@ import { User, Account, RegisterDto, Session, Role } from '@repo/api';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { ConfigService } from '@nestjs/config';
+import { createHash } from 'crypto';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class AuthService {
@@ -42,14 +44,18 @@ export class AuthService {
 
     return this.userRepository.manager.transaction(async (manager) => {
       // Role check/create
-      let userRole = await manager.getRepository(Role).findOne({ where: { name: 'user' } });
+      let userRole = await manager
+        .getRepository(Role)
+        .findOne({ where: { name: 'user' } });
       if (!userRole) {
-        userRole = manager.getRepository(Role).create({ id: nanoid(8), name: 'user' });
+        userRole = manager
+          .getRepository(Role)
+          .create({ id: nanoid(), name: 'user' });
         await manager.getRepository(Role).save(userRole);
       }
 
       // User check/create
-      let user = await manager.getRepository(User).findOne({ 
+      let user = await manager.getRepository(User).findOne({
         where: { email },
         relations: ['role'],
       });
@@ -72,7 +78,7 @@ export class AuthService {
           user: user,
         });
 
-        await manager.getRepository(Account).save(newAccount);        
+        await manager.getRepository(Account).save(newAccount);
       } else {
         const newUser = manager.getRepository(User).create({
           id: nanoid(),
@@ -101,20 +107,26 @@ export class AuthService {
     });
   }
 
-  async login(user: User, ipAddress: string, userAgent: string) {
-    const cookie = {
+  getCookieOptions() {
+    return {
       httpOnly: this.configService.get<boolean>('cookie.httpOnly'),
       sameSite: this.configService.get('cookie.sameSite'),
       secure: this.configService.get<boolean>('cookie.secure'),
-      maxAge: this.configService.get<number>('session.expires'),
+      maxAge: this.configService.get<number>('session.expiresInSeconds') * 1000,
     };
+  }
+
+  async login(user: User, ipAddress: string, userAgent: string) {
+    const secret = nanoid();
+    const hashedSecret = createHash('sha256').update(secret).digest('hex');
 
     const session = this.sessionRepository.create({
       id: nanoid(),
       userId: user.id,
-      token: nanoid(),
+      hashedSecret,
       expiresAt: new Date(
-        Date.now() + this.configService.get<number>('session.expires'),
+        Date.now() +
+          this.configService.get<number>('session.expiresInSeconds') * 1000,
       ),
       ipAddress,
       userAgent,
@@ -122,20 +134,34 @@ export class AuthService {
 
     await this.sessionRepository.save(session);
 
+    const token = `${session.id}.${secret}`;
+
     return {
-      session,
+      session: instanceToPlain(session),
       user,
-      cookie,
+      token,
     };
   }
 
   async logout(sessionToken: string) {
+    const tokenParts = sessionToken.split('.');
+    const sessionId = tokenParts[0];
+
     const session = await this.sessionRepository.findOne({
-      where: { token: sessionToken },
+      where: { id: sessionId },
     });
 
     if (session) {
       await this.sessionRepository.remove(session);
     }
+  }
+
+  async refreshSession(session: Session) {
+    session.expiresAt = new Date(
+      Date.now() +
+        this.configService.get<number>('session.expiresInSeconds') * 1000,
+    );
+    await this.sessionRepository.save(session);
+    return { session: instanceToPlain(session) };
   }
 }
