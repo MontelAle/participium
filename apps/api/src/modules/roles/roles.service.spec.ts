@@ -32,20 +32,25 @@ describe('RolesService', () => {
   });
 
   describe('findAll', () => {
-    it('should return an array of roles', async () => {
+    it('should return an array of roles excluding "user" role', async () => {
       const mockRoles: Role[] = [
         { id: '1', name: 'admin' } as Role,
-        { id: '2', name: 'user' } as Role,
+        { id: '2', name: 'moderator' } as Role,
       ];
       roleRepository.find.mockResolvedValue(mockRoles);
 
       const result = await service.findAll();
 
       expect(result).toEqual(mockRoles);
+      expect(roleRepository.find).toHaveBeenCalledWith({
+        where: {
+          name: expect.any(Object),
+        },
+      });
       expect(roleRepository.find).toHaveBeenCalledTimes(1);
     });
 
-    it('should return an empty array if no roles exist', async () => {
+    it('should return an empty array if no roles exist (excluding "user")', async () => {
       roleRepository.find.mockResolvedValue([]);
 
       const result = await service.findAll();
