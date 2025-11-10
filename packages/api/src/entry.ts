@@ -6,6 +6,7 @@ import { Session } from './entities/session.entity';
 import { Role } from './entities/role.entity';
 import { Category } from './entities/category.entity';
 import { CreateMunicipalityUserDto } from './dto/create-municipality-user.dto';
+import { UpdateMunicipalityUserDto } from './dto/update-municipality-user.dto';
 
 export {
   RegisterDto,
@@ -16,4 +17,5 @@ export {
   Role,
   Category,
   CreateMunicipalityUserDto,
+  UpdateMunicipalityUserDto,
 };
