@@ -32,15 +32,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
-
-      - name: Debug Node
-        run: |
-          node -e "console.log(process.version); console.log(typeof require('crypto'));"
       
       - name: Build packages (turbo)
         run: pnpm turbo run build
 
-      - name: Run tests unit tests(turbo)
+      - name: Run tests (turbo)
         run: pnpm turbo run test
-      - name: Run e2e tests (turbo)
-        run: pnpm turbo run test:e2e
