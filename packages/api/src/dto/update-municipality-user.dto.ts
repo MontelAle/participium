@@ -35,10 +35,9 @@ export class UpdateMunicipalityUserDto {
   lastName?: string;
 
   @ApiPropertyOptional({
-    description: 'User role',
+    description: 'Municipality user role',
     example: 'admin',
     enum: [
-      'user',
       'admin',
       'municipal_pr_officer',
       'municipal_administrator',
