@@ -45,7 +45,7 @@ describe('RolesGuard', () => {
   });
 
   it('should allow access if user role is allowed', () => {
-    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['admin', 'moderator']);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['admin']);
     const requestMock = { user: { role: { name: 'admin' } } };
     (context.switchToHttp().getRequest as jest.Mock).mockReturnValue(requestMock);
 

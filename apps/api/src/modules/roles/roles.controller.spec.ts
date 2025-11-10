@@ -37,7 +37,7 @@ describe('RolesController', () => {
     it('should return a list of roles wrapped in success object', async () => {
       const mockRoles = [
         { id: '1', name: 'admin' },
-        { id: '2', name: 'moderator' },
+        { id: '2', name: 'admin' },
       ];
       rolesService.findAll.mockResolvedValue(mockRoles);
 

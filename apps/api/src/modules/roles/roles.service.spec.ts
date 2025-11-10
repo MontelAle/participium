@@ -35,7 +35,7 @@ describe('RolesService', () => {
     it('should return an array of roles excluding "user" role', async () => {
       const mockRoles: Role[] = [
         { id: '1', name: 'admin' } as Role,
-        { id: '2', name: 'moderator' } as Role,
+        { id: '2', name: 'admin' } as Role,
       ];
       roleRepository.find.mockResolvedValue(mockRoles);
 
