@@ -286,6 +286,79 @@ describe('AuthService', () => {
       expect(roleSaveSpy).toHaveBeenCalledWith(createdRole);
       expect(bcrypt.hash).toHaveBeenCalledWith(dto.password, 10);
     });
+    it('should create local account for existing user without local account', async () => {
+      const dto: RegisterDto = {
+        email: 'existing@example.com',
+        username: 'existinguser',
+        firstName: 'Existing',
+        lastName: 'User',
+        password: 'password',
+      };
+    
+      const mockRole = { id: 'role-id', name: 'user' };
+      const existingUser = {
+        id: 'existing-user-id',
+        email: dto.email,
+        username: 'existingusername',
+        firstName: 'Existing',
+        lastName: 'User',
+        role: mockRole,
+      };
+    
+      const newAccount = {
+        id: 'mocked-id',
+        accountId: dto.email,
+        providerId: 'local',
+        userId: existingUser.id,
+        password: 'hashed',
+        user: existingUser,
+      };
+    
+      (jest.spyOn(bcrypt, 'hash') as jest.Mock).mockResolvedValue('hashed');
+    
+      const accountCreateSpy = jest.fn().mockReturnValue(newAccount);
+      const accountSaveSpy = jest.fn().mockResolvedValue(newAccount);
+    
+      const mockManager = {
+        getRepository: jest.fn((entity) => {
+          if (entity === Role) {
+            return {
+              findOne: jest.fn().mockResolvedValue(mockRole),
+            };
+          }
+          if (entity === User) {
+            return {
+              findOne: jest.fn().mockResolvedValue(existingUser), // User exists
+            };
+          }
+          if (entity === Account) {
+            return {
+              findOne: jest.fn().mockResolvedValue(null), // But no local account
+              create: accountCreateSpy,
+              save: accountSaveSpy,
+            };
+          }
+        }),
+      };
+    
+      userRepository.manager.transaction.mockImplementation(async (cb: any) => {
+        return cb(mockManager);
+      });
+    
+      const result = await service.register(dto);
+    
+      expect(result).toEqual({ user: existingUser });
+      expect(accountCreateSpy).toHaveBeenCalledWith({
+        id: 'mocked-id',
+        accountId: dto.email,
+        providerId: 'local',
+        userId: existingUser.id,
+        password: 'hashed',
+        user: existingUser,
+      });
+      expect(accountSaveSpy).toHaveBeenCalledWith(newAccount);
+      expect(bcrypt.hash).toHaveBeenCalledWith(dto.password, 10);
+    });
   });
 
   describe('login', () => {
