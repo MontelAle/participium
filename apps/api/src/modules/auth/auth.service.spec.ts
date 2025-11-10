@@ -163,6 +163,129 @@ describe('AuthService', () => {
       expect(result).toEqual({ user: savedUser });
       expect(bcrypt.hash).toHaveBeenCalledWith(dto.password, 10);
     });
+
+    it('should throw ConflictException when user exists with same email and local account', async () => {
+      const dto: RegisterDto = {
+        email: 'existing@example.com',
+        username: 'existinguser',
+        firstName: 'Existing',
+        lastName: 'User',
+        password: 'password',
+      };
+
+      const mockRole = { id: 'role-id', name: 'user' };
+      const existingUser = {
+        id: 'existing-user-id',
+        email: dto.email,
+        username: 'oldusername',
+        firstName: 'Old',
+        lastName: 'Name',
+        role: mockRole,
+      };
+      const existingAccount = {
+        id: 'existing-account-id',
+        accountId: dto.email,
+        providerId: 'local',
+        userId: existingUser.id,
+        password: 'oldhashed',
+      };
+
+      (jest.spyOn(bcrypt, 'hash') as jest.Mock).mockResolvedValue('hashed');
+
+      const mockManager = {
+        getRepository: jest.fn((entity) => {
+          if (entity === Role) {
+            return {
+              findOne: jest.fn().mockResolvedValue(mockRole),
+            };
+          }
+          if (entity === User) {
+            return {
+              findOne: jest.fn().mockResolvedValue(existingUser),
+            };
+          }
+          if (entity === Account) {
+            return {
+              findOne: jest.fn().mockResolvedValue(existingAccount),
+            };
+          }
+        }),
+      };
+
+      userRepository.manager.transaction.mockImplementation(async (cb: any) => {
+        return cb(mockManager);
+      });
+
+      await expect(service.register(dto)).rejects.toThrow(
+        'User with this email already exists',
+      );
+    });
+
+    it('should create user role automatically if it does not exist', async () => {
+      const dto: RegisterDto = {
+        email: 'test@example.com',
+        username: 'testuser',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'password',
+      };
+
+      const createdRole = { id: 'mocked-id', name: 'user' };
+      const savedUser = { id: 'mocked-id', ...dto, role: createdRole };
+      const savedAccount = {
+        id: 'mocked-id',
+        accountId: dto.email,
+        providerId: 'local',
+        userId: savedUser.id,
+        password: 'hashed',
+        user: savedUser,
+      };
+
+      (jest.spyOn(bcrypt, 'hash') as jest.Mock).mockResolvedValue('hashed');
+
+      const roleCreateSpy = jest.fn().mockReturnValue(createdRole);
+      const roleSaveSpy = jest.fn().mockResolvedValue(createdRole);
+
+      const mockManager = {
+        getRepository: jest.fn((entity) => {
+          if (entity === Role) {
+            return {
+              findOne: jest.fn().mockResolvedValue(null), // Role doesn't exist
+              create: roleCreateSpy,
+              save: roleSaveSpy,
+            };
+          }
+          if (entity === User) {
+            return {
+              findOne: jest.fn().mockResolvedValue(null),
+              create: jest.fn().mockReturnValue(savedUser),
+              save: jest.fn().mockResolvedValue(savedUser),
+            };
+          }
+          if (entity === Account) {
+            return {
+              findOne: jest.fn().mockResolvedValue(null),
+              create: jest.fn().mockReturnValue(savedAccount),
+              save: jest.fn().mockResolvedValue(savedAccount),
+            };
+          }
+        }),
+      };
+
+      userRepository.manager.transaction.mockImplementation(async (cb: any) => {
+        return cb(mockManager);
+      });
+
+      const result = await service.register(dto);
+
+      expect(result).toEqual({ user: savedUser });
+      expect(roleCreateSpy).toHaveBeenCalledWith({
+        id: 'mocked-id',
+        name: 'user',
+      });
+      expect(roleSaveSpy).toHaveBeenCalledWith(createdRole);
+      expect(bcrypt.hash).toHaveBeenCalledWith(dto.password, 10);
+    });
   });
 
   describe('login', () => {

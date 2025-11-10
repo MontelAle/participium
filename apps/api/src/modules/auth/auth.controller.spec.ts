@@ -106,6 +106,26 @@ describe('AuthController', () => {
         data: { user: mockUser, session: mockSession },
       });
     });
+
+    it('should throw UnauthorizedException when req.user is not present', async () => {
+      const loginDto: LoginDto = {
+        email: 'testuser@example.com',
+        password: 'password',
+      };
+      const req: any = {
+        user: null, // No user attached by guard
+        ip: '127.0.0.1',
+        headers: { 'user-agent': 'jest' },
+      };
+      const res: any = { cookie: jest.fn() };
+
+      await expect(controller.login(loginDto, req, res)).rejects.toThrow(
+        'Invalid credentials',
+      );
+
+      expect(authService.login).not.toHaveBeenCalled();
+      expect(res.cookie).not.toHaveBeenCalled();
+    });
   });
 
   describe('create (register)', () => {
