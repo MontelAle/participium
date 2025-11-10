@@ -34,18 +34,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Cache Turborepo files
-        uses: actions/cache@v4
-        with:
-          path: |
-            .turbo
-            node_modules/.cache
-          key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}
-          restore-keys: |
-            turbo-${{ runner.os }}-
-
-      - name: Build changed packages (turbo)
+      - name: Build packages (turbo)
         run: pnpm turbo run build
 
-      - name: Run tests (turbo)
+      - name: Run tests unit tests(turbo)
         run: pnpm turbo run test
+      - name: Run e2e tests (turbo)
+        run: pnpm turbo run test:e2e
