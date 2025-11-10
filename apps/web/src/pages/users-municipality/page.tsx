@@ -5,6 +5,7 @@ import {
   useCreateMunicipalityUser,
 } from '@/hooks/use-municipality-users';
 import { useRoles } from '@/hooks/use-roles';
+import { EditUserForm } from './components/edit-municiapality-user-form';
 
 const UsersMunicipalityPage = () => {
   const {
@@ -26,7 +27,11 @@ const UsersMunicipalityPage = () => {
         />
       </div>
 
-      <MunicipalityUsersTable users={municipalityUsers} />
+       <MunicipalityUsersTable
+        users={municipalityUsers}
+        roles={roles}
+        refetch={refetch} 
+      />
     </div>
   );
 };

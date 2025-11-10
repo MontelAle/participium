@@ -1,8 +1,11 @@
+'use client';
+
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Trash2 } from 'lucide-react';
 import type { User } from '@repo/api';
+import { toast } from 'sonner'; 
 
 export function DeleteUserDialog({
   user,
@@ -12,10 +15,31 @@ export function DeleteUserDialog({
   onConfirm: (id: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
 
-  const handleConfirm = () => {
-    onConfirm(user.id);
-    setOpen(false);
+  const handleConfirm = async () => {
+    setLoading(true);
+
+    try {
+      
+      const response = await fetch(`/api/municipality/users/${user.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast.success(`User "${user.username}" deleted successfully!`);
+      onConfirm(user.id);
+      setOpen(false);
+    } catch (err: any) {
+      console.error('Error deleting user:', err);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      toast.error(message); 
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -30,17 +54,18 @@ export function DeleteUserDialog({
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
         <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg shadow-lg z-50 w-full max-w-sm">
           <Dialog.Title className="text-lg font-bold mb-2">
-            Conferma Eliminazione
+            Confirm Deletion
           </Dialog.Title>
           <p className="mb-4">
-            Sei sicuro di voler eliminare l’utente <strong>{user.username}</strong>?
+            Are you sure you want to delete user <strong>{user.username}</strong>?
           </p>
+
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleConfirm}>
-              Delete
+            <Button variant="destructive" onClick={handleConfirm} disabled={loading}>
+              {loading ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         </Dialog.Content>
