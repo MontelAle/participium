@@ -40,4 +40,4 @@ jobs:
         run: pnpm turbo run test
       
       - name: Run e2e tests
-        run: pnpm e2e
+        run: pnpm turbo run test:e2e
