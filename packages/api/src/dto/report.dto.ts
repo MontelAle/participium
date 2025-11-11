@@ -12,21 +12,21 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ReportStatus } from '../entities/report.entity';
 
 export class CreateReportDto {
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Title of the report',
     example: 'Broken streetlight on Main Street',
   })
   @IsString()
-  @IsNotEmpty()
-  title: string;
+  @IsOptional() // TODO: Rendere obbligatorio in futuro
+  title?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Detailed description of the report',
     example: 'The streetlight in front of building number 42 has been broken for 3 days',
   })
   @IsString()
-  @IsNotEmpty()
-  description: string;
+  @IsOptional() // TODO: Rendere obbligatorio in futuro
+  description?: string;
 
   @ApiProperty({
     description: 'Longitude coordinate (WGS84)',
@@ -68,13 +68,13 @@ export class CreateReportDto {
   @IsOptional()
   images?: string[];
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Category ID for the report',
     example: 'cat_streetlight',
   })
   @IsString()
-  @IsNotEmpty()
-  categoryId: string;
+  @IsOptional() // TODO: Rendere obbligatorio in futuro
+  categoryId?: string;
 }
 
 export class UpdateReportDto {
