@@ -32,41 +32,7 @@ export async function createMunicipalityUser(
   return response.data;
 }
 
-
-// UPDATE municiaplity user
-/*
-export async function updateMunicipalityUser(
-  userId: string,
-  data: UpdateMunicipalityUserDto,
-): Promise<User> {
-  const response = await apiFetch<MunicipalityUserResponse<User>>(
-    `/users/municipality/user/${userId}`,
-    {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }
-  );
-  return response.data;
-}
-*/
-// UPDATE municipality user
-/*
-export async function updateMunicipalityUser(
-  userId: string,
-  data: UpdateMunicipalityUserDto,
-): Promise<{ id: string }> {  
-  const response = await apiFetch<MunicipalityUserResponse<{ id: string }>>(
-    `/users/municipality/user/${userId}`,
-    {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }
-  );
-  return response.data;
-}
-*/
-
-// Aggiorna un utente del municipio
+//UPDATE municipality user
 export async function updateMunicipalityUser(
   userId: string,
   data: UpdateMunicipalityUserDto,

@@ -43,18 +43,6 @@ export function MunicipalityUsersTable({
         cell: ({ row }: any) => {
           const user = row.original as User;
 
-          /*
-          const handleConfirmDelete = async () => {
-            try {
-              await deleteMunicipalityUser(user.id); 
-              console.log('Deleted user', user.id);
-              refetch(); 
-            } catch (err) {
-              console.error('Error deleting user:', err);
-            }
-          };
-          */
-
           return (
             <div className="flex items-center gap-2">
               <EditUserDialog user={user} roles={roles} onSuccess={refetch} />

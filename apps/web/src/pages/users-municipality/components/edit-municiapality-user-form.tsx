@@ -18,7 +18,6 @@ import {
 import { MailIcon, UserIcon, LockIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Role, User } from '@repo/api';
-// import { updateMunicipalityUser } from '@/api/endpoints/municipality-users';
 import type { UpdateMunicipalityUserDto } from '@repo/api';
 import { useUpdateMunicipalityUser } from '@/hooks/use-municipality-users';
 
@@ -164,7 +163,7 @@ export function EditUserForm({
           </InputGroupAddon>
         </InputGroup>
       </Field>
-*/}
+    */}
       <div className="flex justify-end gap-2">
         <Button type="submit" disabled={isLoading}>
           {isLoading ? 'Updating...' : 'Confirm'}
