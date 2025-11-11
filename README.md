@@ -187,3 +187,7 @@ docker compose down -v
 | id    | string | Primary key      | No       |            |
 | name  | string | Category name    | No       |            |
 
+| Field | Type   | Description   | Nullable | Notes      |
+| ----- | ------ | ------------- | -------- | ---------- |
+| id    | string | Primary key   | No       |            |
+| name  | string | Role name     | No       |            |
