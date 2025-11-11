@@ -4,9 +4,17 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateMunicipalityUserDto extends RegisterDto {
   @ApiProperty({
-    description: 'Municipality role (admin or moderator)',
+    description: 'Municipality user role',
     example: 'admin',
-    enum: ['admin', 'moderator'],
+    enum: [
+      'admin',
+      'municipal_pr_officer',
+      'municipal_administrator',
+      'technical_officer',
+      'transport_officer',
+      'special_projects_officer',
+      'environmental_officer',
+    ],
   })
   @IsNotEmpty()
   role: string;

@@ -10,6 +10,7 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
+    "test:all": "pnpm run test && pnpm run test:e2e",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },

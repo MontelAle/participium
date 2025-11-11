@@ -31,7 +31,71 @@ async function runSeed() {
     adminRole = await dataSource.getRepository(Role).save(adminRole);
   }
 
-  console.log(`✅ Seeded roles: ${userRole.name}, ${adminRole.name}`);
+  let municipalPRole = await dataSource
+    .getRepository(Role)
+    .findOne({ where: { name: 'municipal_pr_officer' } });
+  if (!municipalPRole) {
+    municipalPRole = dataSource
+      .getRepository(Role)
+      .create({ id: nanoid(), name: 'municipal_pr_officer' });
+    municipalPRole = await dataSource.getRepository(Role).save(municipalPRole);
+  }
+
+  let municipalAdminRole = await dataSource
+    .getRepository(Role)
+    .findOne({ where: { name: 'municipal_administrator' } });
+  if (!municipalAdminRole) {
+    municipalAdminRole = dataSource
+      .getRepository(Role)
+      .create({ id: nanoid(), name: 'municipal_administrator' });
+    municipalAdminRole = await dataSource.getRepository(Role).save(municipalAdminRole);
+  }
+
+  let technicalOfficerRole = await dataSource
+    .getRepository(Role)
+    .findOne({ where: { name: 'technical_officer' } });
+  if (!technicalOfficerRole) {
+    technicalOfficerRole = dataSource
+      .getRepository(Role)
+      .create({ id: nanoid(), name: 'technical_officer' });
+    technicalOfficerRole = await dataSource.getRepository(Role).save(technicalOfficerRole);
+  }
+
+  let transportOfficerRole = await dataSource
+    .getRepository(Role)
+    .findOne({ where: { name: 'transport_officer' } });
+  if (!transportOfficerRole) {
+    transportOfficerRole = dataSource
+      .getRepository(Role)
+      .create({ id: nanoid(), name: 'transport_officer' });
+    transportOfficerRole = await dataSource.getRepository(Role).save(transportOfficerRole);
+  }
+
+  let SpecialProjectsRole = await dataSource
+    .getRepository(Role)
+    .findOne({ where: { name: 'special_projects_officer' } });
+  if (!SpecialProjectsRole) {
+    SpecialProjectsRole = dataSource
+      .getRepository(Role)
+      .create({ id: nanoid(), name: 'special_projects_officer' });
+    SpecialProjectsRole = await dataSource.getRepository(Role).save(SpecialProjectsRole);
+  }
+
+  let environmentalOfficerRole = await dataSource
+    .getRepository(Role)
+    .findOne({ where: { name: 'environmental_officer' } });
+  if (!environmentalOfficerRole) {
+    environmentalOfficerRole = dataSource
+      .getRepository(Role)
+      .create({ id: nanoid(), name: 'environmental_officer' });
+    environmentalOfficerRole = await dataSource.getRepository(Role).save(environmentalOfficerRole);
+  }
+
+  console.log(`✅ Seeded roles: 
+    ${userRole.name}, ${adminRole.name}, 
+    ${municipalPRole.name}, ${municipalAdminRole.name}, 
+    ${technicalOfficerRole.name}, ${transportOfficerRole.name}, 
+    ${SpecialProjectsRole.name}, ${environmentalOfficerRole.name}`);
 
   // Seed admin user
   const adminFirstName = 'Admin';

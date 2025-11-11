@@ -2,35 +2,38 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AuthService } from './../src/modules/auth/auth.service';
 import { LocalAuthGuard } from './../src/modules/auth/guards/local-auth.guard';
+import { SessionGuard } from './../src/modules/auth/guards/session-auth.guard';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Session, User, Role, Account, Category } from '@repo/api';
 import request = require('supertest');
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
 }));
 
-// Stub TypeORM to avoid real DataSource/repositories during e2e
-jest.mock('@nestjs/typeorm', () => ({
-  TypeOrmModule: {
-    forRoot: () => ({
-      module: class MockTypeOrmRoot {},
-      providers: [],
-      exports: [],
-    }),
-    forFeature: () => ({
-      module: class MockTypeOrmFeature {},
-      providers: [],
-      exports: [],
-    }),
-  },
-  InjectRepository: () => () => undefined,
-}));
-
-// mock modules to avoid database or auth initialization
-jest.mock('./../src/providers/database/database.module', () => ({
-  DatabaseModule: class DatabaseModule {},
-}));
-
 // Note: keep AuthModule real so routes exist; providers/guards are overridden below
+
+/**
+ * Creates a mock TypeORM repository with common methods.
+ * Allows tests to run without a real database connection.
+ */
+const createMockRepository = () => ({
+  find: jest.fn().mockResolvedValue([]),
+  findOne: jest.fn().mockResolvedValue(null),
+  findOneBy: jest.fn().mockResolvedValue(null),
+  save: jest.fn((entity) => Promise.resolve(entity)),
+  create: jest.fn((dto) => dto),
+  remove: jest.fn((entity) => Promise.resolve(entity)),
+  delete: jest.fn().mockResolvedValue({ affected: 1 }),
+  update: jest.fn().mockResolvedValue({ affected: 1 }),
+  createQueryBuilder: jest.fn(() => ({
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
+    getOne: jest.fn().mockResolvedValue(null),
+    getMany: jest.fn().mockResolvedValue([]),
+  })),
+});
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
@@ -41,9 +44,29 @@ describe('AppController (e2e)', () => {
     const importedModule = await import('./../src/app.module');
     AppModule = importedModule.AppModule;
 
+    const { DatabaseModule } = await import(
+      './../src/providers/database/database.module'
+    );
+
     const testingModuleBuilder = Test.createTestingModule({
       imports: [AppModule],
     });
+
+    testingModuleBuilder.overrideModule(DatabaseModule).useModule(
+      class MockDatabaseModule {},
+    );
+
+    testingModuleBuilder
+      .overrideProvider(getRepositoryToken(Session))
+      .useValue(createMockRepository())
+      .overrideProvider(getRepositoryToken(User))
+      .useValue(createMockRepository())
+      .overrideProvider(getRepositoryToken(Role))
+      .useValue(createMockRepository())
+      .overrideProvider(getRepositoryToken(Account))
+      .useValue(createMockRepository())
+      .overrideProvider(getRepositoryToken(Category))
+      .useValue(createMockRepository());
 
     const mockUser = {
       id: 'user_1',
@@ -64,21 +87,34 @@ describe('AppController (e2e)', () => {
       secure: false,
       maxAge: 3600_000,
     };
+    const mockToken = 'mock_token_123';
 
     testingModuleBuilder.overrideProvider(AuthService).useValue({
       register: jest.fn(async () => ({ user: mockUser })),
       login: jest.fn(async () => ({
         user: mockUser,
         session: mockSession,
-        cookie: mockCookie,
+        token: mockToken,
       })),
       validateUser: jest.fn(async () => ({ user: mockUser })),
+      logout: jest.fn(async () => undefined),
+      getCookieOptions: jest.fn(() => mockCookie),
     });
 
     testingModuleBuilder.overrideGuard(LocalAuthGuard).useValue({
       canActivate: (context: any) => {
         const req = context.switchToHttp().getRequest();
         req.user = mockUser;
+        return true;
+      },
+    });
+
+    // Override SessionGuard to bypass session validation and inject mock session
+    testingModuleBuilder.overrideGuard(SessionGuard).useValue({
+      canActivate: (context: any) => {
+        const req = context.switchToHttp().getRequest();
+        req.user = mockUser;
+        req.session = mockSession;
         return true;
       },
     });
@@ -143,14 +179,17 @@ describe('AppController (e2e)', () => {
       })
       .expect(201);
 
-    // Body
+    // Body - response is wrapped in { success: true, data: { user, session } }
     expect(res.body).toEqual(
       expect.objectContaining({
-        user: expect.objectContaining({
-          email: 'john@example.com',
-          username: 'john',
+        success: true,
+        data: expect.objectContaining({
+          user: expect.objectContaining({
+            email: 'john@example.com',
+            username: 'john',
+          }),
+          session: expect.objectContaining({ token: 'mock_token_123' }),
         }),
-        session: expect.objectContaining({ token: 'mock_token_123' }),
       }),
     );
     // Cookie
@@ -166,12 +205,15 @@ describe('AppController (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/auth/login')
       .send({ email: 'john@example.com', password: 'StrongP@ssw0rd' })
-      .expect(201);
+      .expect(200); // Login returns 200, not 201
 
     expect(res.body).toEqual(
       expect.objectContaining({
-        user: expect.objectContaining({ email: 'john@example.com' }),
-        session: expect.objectContaining({ token: 'mock_token_123' }),
+        success: true,
+        data: expect.objectContaining({
+          user: expect.objectContaining({ email: 'john@example.com' }),
+          session: expect.objectContaining({ token: 'mock_token_123' }),
+        }),
       }),
     );
     const setCookie2 = res.headers['set-cookie'];
