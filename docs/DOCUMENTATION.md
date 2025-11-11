@@ -1,69 +1,69 @@
-# Participium - Documentazione Progetto
+# Participium - Project Documentation
 
-## Indice
+## Table of Contents
 
-1. [Panoramica](#panoramica)
-2. [Architettura](#architettura)
-3. [Stack Tecnologico](#stack-tecnologico)
-4. [Struttura del Progetto](#struttura-del-progetto)
+1. [Overview](#overview)
+2. [Architecture](#architecture)
+3. [Technology Stack](#technology-stack)
+4. [Project Structure](#project-structure)
 5. [Backend API](#backend-api)
 6. [Frontend Web](#frontend-web)
 7. [Database](#database)
-8. [Packages Condivisi](#packages-condivisi)
-9. [Setup e Configurazione](#setup-e-configurazione)
-10. [Comandi Disponibili](#comandi-disponibili)
+8. [Shared Packages](#shared-packages)
+9. [Setup and Configuration](#setup-and-configuration)
+10. [Available Commands](#available-commands)
 
 ---
 
-## Panoramica
+## Overview
 
-**Participium** è una piattaforma web per la gestione della partecipazione civica. Il progetto utilizza un'architettura monorepo basata su Turborepo, con backend NestJS e frontend React/Vite.
+**Participium** is a web platform for managing civic participation. The project uses a monorepo architecture based on Turborepo, with a NestJS backend and React/Vite frontend.
 
-### Caratteristiche Principali
-- Autenticazione e gestione sessioni basata su cookie
-- Sistema di ruoli e permessi
-- Gestione utenti municipali
-- Interfaccia dashboard moderna con componenti UI riutilizzabili
-- API RESTful con documentazione Swagger
+### Main Features
+- Cookie-based authentication and session management
+- Role and permission system
+- Municipal user management
+- Modern dashboard interface with reusable UI components
+- RESTful API with Swagger documentation
 
 ---
 
-## Architettura
+## Architecture
 
 ### Monorepo Structure
-Il progetto utilizza **Turborepo** per gestire un workspace monorepo con:
-- **2 applicazioni** (`apps/`): API backend e Web frontend
-- **3 packages condivisi** (`packages/`): entità comuni, configurazioni ESLint e Jest
+The project uses **Turborepo** to manage a monorepo workspace with:
+- **2 applications** (`apps/`): Backend API and Web frontend
+- **3 shared packages** (`packages/`): Common entities, ESLint and Jest configurations
 
-### Pattern Architetturali
-- **Backend**: NestJS con pattern modulare (controllers, services, modules)
-- **Frontend**: React con routing, context API, hooks personalizzati
-- **Database**: PostgreSQL con TypeORM e PostGIS
-- **Autenticazione**: Session-based con Passport.js (Local Strategy)
+### Architectural Patterns
+- **Backend**: NestJS with modular pattern (controllers, services, modules)
+- **Frontend**: React with routing, context API, custom hooks
+- **Database**: PostgreSQL with TypeORM and PostGIS
+- **Authentication**: Session-based with Passport.js (Local Strategy)
 
 ---
 
-## Stack Tecnologico
+## Technology Stack
 
 ### Backend
-| Tecnologia | Versione | Scopo |
-|------------|----------|-------|
-| NestJS | ^11.0.0 | Framework principale |
-| TypeORM | ^0.3.27 | ORM per database |
-| PostgreSQL | 18 | Database relazionale |
-| PostGIS | 3.6 | Estensione geografica |
-| Passport | ^0.7.0 | Autenticazione |
-| Swagger | ^11.2.1 | Documentazione API |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| NestJS | ^11.0.0 | Main framework |
+| TypeORM | ^0.3.27 | Database ORM |
+| PostgreSQL | 18 | Relational database |
+| PostGIS | 3.6 | Geographic extension |
+| Passport | ^0.7.0 | Authentication |
+| Swagger | ^11.2.1 | API documentation |
 | Jest | ^29.7.0 | Testing |
 
 ### Frontend
-| Tecnologia | Versione | Scopo |
-|------------|----------|-------|
-| React | ^18.2.0 | Framework UI |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| React | ^18.2.0 | UI framework |
 | Vite | ^5.1.4 | Build tool |
 | React Router | ^7.1.3 | Routing |
 | Tailwind CSS | ^4.1.16 | Styling |
-| Radix UI | varie | Componenti UI accessibili |
+| Radix UI | various | Accessible UI components |
 | TanStack Query | ^5.90.7 | Data fetching |
 | Jotai | ^2.15.1 | State management |
 
@@ -75,46 +75,46 @@ Il progetto utilizza **Turborepo** per gestire un workspace monorepo con:
 
 ---
 
-## Struttura del Progetto
+## Project Structure
 
 ```
 participium/
 ├── apps/
-│   ├── api/                    # Backend NestJS
+│   ├── api/                    # NestJS Backend
 │   │   ├── src/
-│   │   │   ├── modules/        # Moduli funzionali
-│   │   │   │   ├── auth/       # Autenticazione
-│   │   │   │   ├── roles/      # Gestione ruoli
-│   │   │   │   └── users/      # Gestione utenti
+│   │   │   ├── modules/        # Functional modules
+│   │   │   │   ├── auth/       # Authentication
+│   │   │   │   ├── roles/      # Role management
+│   │   │   │   └── users/      # User management
 │   │   │   ├── providers/
-│   │   │   │   └── database/   # Configurazione DB
-│   │   │   ├── config/         # Configurazioni app
-│   │   │   └── common/         # Types e utilities
-│   │   ├── test/               # Test E2E
+│   │   │   │   └── database/   # DB configuration
+│   │   │   ├── config/         # App configurations
+│   │   │   └── common/         # Types and utilities
+│   │   ├── test/               # E2E tests
 │   │   └── compose.yml         # Docker PostgreSQL
 │   │
-│   └── web/                    # Frontend React
+│   └── web/                    # React Frontend
 │       ├── src/
 │       │   ├── pages/          # Route pages
-│       │   │   ├── auth/       # Login/Registrazione
+│       │   │   ├── auth/       # Login/Registration
 │       │   │   ├── home/       # Homepage
-│       │   │   ├── map/        # Mappa
-│       │   │   └── users-municipality/ # Gestione utenti
-│       │   ├── components/     # Componenti React
+│       │   │   ├── map/        # Map
+│       │   │   └── users-municipality/ # User management
+│       │   ├── components/     # React components
 │       │   ├── contexts/       # Context providers
 │       │   ├── hooks/          # Custom hooks
 │       │   ├── layouts/        # Layout templates
-│       │   └── api/            # Client API
-│       └── public/             # Asset statici
+│       │   └── api/            # API client
+│       └── public/             # Static assets
 │
 ├── packages/
-│   ├── api/                    # Entità e DTO condivisi
+│   ├── api/                    # Shared entities and DTOs
 │   │   └── src/
 │   │       ├── entities/       # TypeORM entities
 │   │       └── dto/            # Data Transfer Objects
-│   ├── eslint-config/          # Configurazioni ESLint
-│   ├── jest-config/            # Configurazioni Jest
-│   └── typescript-config/      # Configurazioni TypeScript
+│   ├── eslint-config/          # ESLint configurations
+│   ├── jest-config/            # Jest configurations
+│   └── typescript-config/      # TypeScript configurations
 │
 ├── package.json                # Root workspace config
 ├── turbo.json                  # Turborepo config
@@ -125,52 +125,52 @@ participium/
 
 ## Backend API
 
-### Porte e URL
-- **Porta**: 5000 (default)
+### Ports and URLs
+- **Port**: 5000 (default)
 - **Base URL**: http://localhost:5000/api
-- **Swagger UI**: http://localhost:5000/api (documentazione interattiva)
+- **Swagger UI**: http://localhost:5000/api (interactive documentation)
 
-### Moduli Principali
+### Main Modules
 
 #### Auth Module
 **Endpoint**: `/auth`
 
-| Metodo | Route | Descrizione |
+| Method | Route | Description |
 |--------|-------|-------------|
-| POST | `/login` | Login utente con email/password |
-| POST | `/register` | Registrazione nuovo utente |
-| POST | `/logout` | Logout e invalidazione sessione |
-| POST | `/refresh` | Refresh sessione |
+| POST | `/login` | User login with email/password |
+| POST | `/register` | New user registration |
+| POST | `/logout` | Logout and session invalidation |
+| POST | `/refresh` | Session refresh |
 
 **Features**:
-- Autenticazione con Passport Local Strategy
-- Session management con cookie HTTP-only
+- Authentication with Passport Local Strategy
+- Session management with HTTP-only cookies
 - Guards: `LocalAuthGuard`, `SessionGuard`, `RolesGuard`
 
 #### Users Module
 **Endpoint**: `/users`
 
-| Metodo | Route | Descrizione |
+| Method | Route | Description |
 |--------|-------|-------------|
-| GET | `/municipality` | Lista utenti municipali |
-| GET | `/municipality/user/:id` | Dettaglio utente |
-| POST | `/municipality` | Crea utente municipale |
-| POST | `/municipality/user/:id` | Aggiorna utente |
-| DELETE | `/municipality/user/:id` | Elimina utente |
+| GET | `/municipality` | List municipal users |
+| GET | `/municipality/user/:id` | User details |
+| POST | `/municipality` | Create municipal user |
+| POST | `/municipality/user/:id` | Update user |
+| DELETE | `/municipality/user/:id` | Delete user |
 
-**Funzionalità**:
-- Gestione completa utenti municipali
-- Validazione con class-validator
-- Relazioni con ruoli e account
+**Functionality**:
+- Complete municipal user management
+- Validation with class-validator
+- Relations with roles and accounts
 
 #### Roles Module
 **Endpoint**: `/roles`
 
-| Metodo | Route | Descrizione |
+| Method | Route | Description |
 |--------|-------|-------------|
-| GET | `/` | Recupera tutti i ruoli disponibili |
+| GET | `/` | Retrieve all available roles |
 
-### Configurazione App
+### App Configuration
 File: `src/config/app.config.ts`
 
 ```typescript
@@ -182,11 +182,11 @@ File: `src/config/app.config.ts`
     env: 'development'
   },
   session: {
-    expiresInSeconds: 86400  // 24 ore
+    expiresInSeconds: 86400  // 24 hours
   },
   cookie: {
     httpOnly: true,
-    secure: false,           // true in produzione
+    secure: false,           // true in production
     sameSite: 'lax'
   },
   db: {
@@ -200,19 +200,19 @@ File: `src/config/app.config.ts`
 }
 ```
 
-### Guards e Security
-- **SessionGuard**: Verifica sessione attiva
-- **RolesGuard**: Controllo permessi basato su ruoli
-- **LocalAuthGuard**: Autenticazione credenziali
-- Helmet per security headers
-- Cookie parser per gestione sessioni
+### Guards and Security
+- **SessionGuard**: Verify active session
+- **RolesGuard**: Role-based permission control
+- **LocalAuthGuard**: Credential authentication
+- Helmet for security headers
+- Cookie parser for session management
 
 ---
 
 ## Frontend Web
 
-### Porte e URL
-- **Porta**: 5173 (dev)
+### Ports and URLs
+- **Port**: 5173 (dev)
 - **URL**: http://localhost:5173
 
 ### Routing
@@ -221,53 +221,53 @@ File: `src/config/app.config.ts`
 /map                   → MapPage
 /login                 → LoginPage
 /register              → RegistrationPage
-/users-municipality    → (configurabile)
+/users-municipality    → (configurable)
 ```
 
-### Struttura Componenti
+### Component Structure
 
 #### Pages
-- **auth/**: Login e registrazione
-- **home/**: Dashboard principale
-- **map/**: Visualizzazione mappa
-- **users-municipality/**: Gestione utenti municipali
+- **auth/**: Login and registration
+- **home/**: Main dashboard
+- **map/**: Map visualization
+- **users-municipality/**: Municipal user management
 
 #### Components
-- **ui/**: Componenti Radix UI stilizzati (button, dialog, form, table, etc.)
-- **app-sidebar.tsx**: Sidebar navigazione
-- **auth-form.tsx**: Form autenticazione
-- **reports-list.tsx**: Lista segnalazioni
+- **ui/**: Styled Radix UI components (button, dialog, form, table, etc.)
+- **app-sidebar.tsx**: Navigation sidebar
+- **auth-form.tsx**: Authentication form
+- **reports-list.tsx**: Reports list
 
 #### Contexts
-- **AuthContext**: Gestione stato autenticazione globale
+- **AuthContext**: Global authentication state management
 
 #### Custom Hooks
-- `useAuth`: Hook per autenticazione
-- `useMobile`: Rilevamento dispositivo mobile
-- `useMunicipalityUsers`: Gestione utenti municipali
-- `useRoles`: Gestione ruoli
+- `useAuth`: Authentication hook
+- `useMobile`: Mobile device detection
+- `useMunicipalityUsers`: Municipal user management
+- `useRoles`: Role management
 
 #### API Client
-File: `src/api/client.ts` e `src/api/endpoints/`
-- Client configurato per comunicazione con backend
-- Gestione automatica errori e autenticazione
+Files: `src/api/client.ts` and `src/api/endpoints/`
+- Client configured for backend communication
+- Automatic error and authentication handling
 
 ### Styling
 - **Tailwind CSS 4.x**: Utility-first CSS
-- **Radix UI**: Componenti accessibili headless
-- **Lucide React**: Iconografia
-- **class-variance-authority**: Varianti componenti
+- **Radix UI**: Headless accessible components
+- **Lucide React**: Iconography
+- **class-variance-authority**: Component variants
 
 ---
 
 ## Database
 
-### Tecnologia
-- **PostgreSQL 18** con estensione **PostGIS 3.6**
-- Container Docker: `participium-postgres`
-- Porta: 5432
+### Technology
+- **PostgreSQL 18** with **PostGIS 3.6** extension
+- Docker Container: `participium-postgres`
+- Port: 5432
 
-### Entità (TypeORM)
+### Entities (TypeORM)
 
 #### User
 ```typescript
@@ -327,20 +327,20 @@ File: `src/api/client.ts` e `src/api/endpoints/`
 }
 ```
 
-### Relazioni
+### Relations
 - User ⟷ Role (ManyToOne)
 - User ⟷ Account (OneToMany)
 - User ⟷ Session (OneToMany)
 
 ---
 
-## Packages Condivisi
+## Shared Packages
 
 ### @repo/api
-**Scopo**: Entità e DTO condivisi tra backend e frontend
+**Purpose**: Shared entities and DTOs between backend and frontend
 
-**Contenuto**:
-- `entities/`: Definizioni TypeORM (User, Role, Account, Session, Category)
+**Content**:
+- `entities/`: TypeORM definitions (User, Role, Account, Session, Category)
 - `dto/`: Data Transfer Objects
   - `login.dto.ts`
   - `register.dto.ts`
@@ -348,64 +348,64 @@ File: `src/api/client.ts` e `src/api/endpoints/`
   - `update-municipality-user.dto.ts`
 
 ### @repo/eslint-config
-**Scopo**: Configurazioni ESLint standardizzate
+**Purpose**: Standardized ESLint configurations
 
 **Files**:
-- `base.js`: Config base
-- `nest.js`: Config per NestJS
-- `react.js`: Config per React
-- `library.js`: Config per librerie
-- `prettier-base.js`: Integrazione Prettier
+- `base.js`: Base config
+- `nest.js`: NestJS config
+- `react.js`: React config
+- `library.js`: Library config
+- `prettier-base.js`: Prettier integration
 
 ### @repo/jest-config
-**Scopo**: Configurazioni Jest riutilizzabili
+**Purpose**: Reusable Jest configurations
 
 **Exports**:
-- `base.ts`: Configurazione base
-- `nest.ts`: Config per NestJS
-- `next.ts`: Config per Next.js (future-proof)
+- `base.ts`: Base configuration
+- `nest.ts`: NestJS config
+- `next.ts`: Next.js config (future-proof)
 
 ### @repo/typescript-config
-**Scopo**: Configurazioni TypeScript condivise
+**Purpose**: Shared TypeScript configurations
 
 **Files**:
 - `base.json`: Base config
-- `nestjs.json`: Config backend
-- `react.json`: Config React
-- `react-library.json`: Config librerie React
-- `vite.json`: Config Vite
+- `nestjs.json`: Backend config
+- `react.json`: React config
+- `react-library.json`: React library config
+- `vite.json`: Vite config
 
 ---
 
-## Setup e Configurazione
+## Setup and Configuration
 
-### Prerequisiti
+### Prerequisites
 - Node.js >= 18
 - pnpm >= 8.15.5
-- Docker Desktop (per database)
+- Docker Desktop (for database)
 
-### Installazione
+### Installation
 
-1. **Clone e installazione dipendenze**
+1. **Clone and install dependencies**
 ```bash
 cd participium
 pnpm install
 ```
 
-2. **Avvio database PostgreSQL**
+2. **Start PostgreSQL database**
 ```bash
 cd apps/api
 docker compose up -d
 ```
 
-Verifica container attivo:
+Verify active container:
 ```bash
 docker ps
 ```
 
-3. **Configurazione variabili ambiente**
+3. **Environment variables configuration**
 
-Creare file `.env` in `apps/api/`:
+Create `.env` file in `apps/api/`:
 ```env
 # App
 PORT=5000
@@ -430,31 +430,31 @@ COOKIE_SECURE=false
 COOKIE_SAME_SITE=lax
 ```
 
-4. **Seed database (opzionale)**
+4. **Seed database (optional)**
 ```bash
 cd apps/api
 pnpm run seed:user
 ```
 
-### Avvio Applicazioni
+### Starting Applications
 
-#### Modalità Development (tutte le app)
+#### Development Mode (all apps)
 ```bash
 pnpm dev
 ```
 
-#### Singole applicazioni
+#### Individual applications
 ```bash
-# Solo backend
+# Backend only
 cd apps/api
 pnpm dev
 
-# Solo frontend
+# Frontend only
 cd apps/web
 pnpm dev
 ```
 
-### Accesso Applicazioni
+### Application Access
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:5000/api
 - **Swagger Docs**: http://localhost:5000/api
@@ -462,83 +462,83 @@ pnpm dev
 
 ---
 
-## Comandi Disponibili
+## Available Commands
 
 ### Root Workspace
 ```bash
-pnpm dev           # Avvia tutte le app in modalità dev
-pnpm build         # Build di tutte le app
-pnpm test          # Esegue tutti i test unitari
-pnpm test:e2e      # Esegue test end-to-end
-pnpm test:all      # Esegue tutti i test (unit + e2e)
-pnpm lint          # Linting di tutto il workspace
-pnpm format        # Formattazione codice con Prettier
+pnpm dev           # Start all apps in dev mode
+pnpm build         # Build all apps
+pnpm test          # Run all unit tests
+pnpm test:e2e      # Run end-to-end tests
+pnpm test:all      # Run all tests (unit + e2e)
+pnpm lint          # Lint entire workspace
+pnpm format        # Format code with Prettier
 ```
 
 ### Backend (apps/api)
 ```bash
-pnpm dev           # Avvio dev con hot-reload
-pnpm build         # Build produzione
-pnpm start         # Avvio produzione
-pnpm start:debug   # Avvio debug mode
-pnpm test          # Test unitari
-pnpm test:watch    # Test in watch mode
-pnpm test:e2e      # Test end-to-end
+pnpm dev           # Start dev with hot-reload
+pnpm build         # Production build
+pnpm start         # Start production
+pnpm start:debug   # Start debug mode
+pnpm test          # Unit tests
+pnpm test:watch    # Tests in watch mode
+pnpm test:e2e      # End-to-end tests
 pnpm lint          # Linting
-pnpm seed:user     # Seed utenti di test
+pnpm seed:user     # Seed test users
 ```
 
 ### Frontend (apps/web)
 ```bash
-pnpm dev           # Dev server Vite
-pnpm build         # Build produzione
-pnpm preview       # Preview build produzione
+pnpm dev           # Vite dev server
+pnpm build         # Production build
+pnpm preview       # Preview production build
 pnpm lint          # Linting
 ```
 
 ### Docker Database
 ```bash
-# Da apps/api/
-docker compose up -d      # Avvia database
-docker compose down       # Ferma database
-docker compose logs       # Visualizza logs
-docker exec -it participium-postgres psql -U admin -d participium  # Connessione psql
+# From apps/api/
+docker compose up -d      # Start database
+docker compose down       # Stop database
+docker compose logs       # View logs
+docker exec -it participium-postgres psql -U admin -d participium  # psql connection
 ```
 
 ---
 
-## Note Aggiuntive
+## Additional Notes
 
 ### Testing
-- **Coverage disponibile**: `apps/api/coverage/`
-- Report coverage in formato: HTML, LCOV, Clover, JSON
-- Test E2E configurati per l'API
+- **Coverage available**: `apps/api/coverage/`
+- Coverage reports in formats: HTML, LCOV, Clover, JSON
+- E2E tests configured for the API
 
 ### PostGIS
-Il database utilizza l'estensione PostGIS per funzionalità geografiche avanzate, utile per gestione mappe e coordinate geografiche.
+The database uses the PostGIS extension for advanced geographic features, useful for map management and geographic coordinates.
 
 ### Turbo Cache
-Turborepo ottimizza i build e test attraverso caching intelligente:
-- Task `dev` non viene cachato (persistent mode)
-- Task `build` cachato con invalidazione su modifiche
-- Task `test` non cachato per garantire risultati aggiornati
+Turborepo optimizes builds and tests through intelligent caching:
+- `dev` task is not cached (persistent mode)
+- `build` task cached with invalidation on changes
+- `test` task not cached to ensure updated results
 
-### Sicurezza
-- Password hashate con bcrypt
-- Sessioni con secret hasciati
-- Cookie HTTP-only per CSRF protection
-- Helmet per security headers
-- Class-validator per validazione input
+### Security
+- Passwords hashed with bcrypt
+- Sessions with hashed secrets
+- HTTP-only cookies for CSRF protection
+- Helmet for security headers
+- Class-validator for input validation
 
-### Estensibilità
-Il progetto è strutturato per future evoluzioni:
-- Moduli NestJS facilmente estendibili
-- Componenti React riutilizzabili
-- Configurazioni centralizzate nei packages
-- Database schema gestito con TypeORM migrations (configurabile)
+### Extensibility
+The project is structured for future evolutions:
+- Easily extensible NestJS modules
+- Reusable React components
+- Centralized configurations in packages
+- Database schema managed with TypeORM migrations (configurable)
 
 ---
 
-**Versione Documento**: 1.0  
-**Ultimo Aggiornamento**: Novembre 2025  
-**Stato Progetto**: In Sviluppo
+**Document Version**: 1.0  
+**Last Update**: November 2025  
+**Project Status**: In Development
