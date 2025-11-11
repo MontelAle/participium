@@ -186,7 +186,7 @@ Communication between the frontend and backend happens over HTTPS using JSON. Th
 
 ### Frontend
 
-- **Technology**: React, TypeScript, Vite
+**Technology**: react
 - **Responsibilities**:
   - Render the user interface for citizens and administrators
   - Handle form validation before sending data to the API
@@ -217,7 +217,6 @@ Communication between the frontend and backend happens over HTTPS using JSON. Th
   - `User`: email, username, role, password hash
   - `Report`: title, description, location, status, category, author
   - `Photo`: path, report_id
-
 
 ### Technology Choices & Rationale
 

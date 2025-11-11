@@ -11,12 +11,6 @@ jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
 }));
 
-// Note: keep AuthModule real so routes exist; providers/guards are overridden below
-
-/**
- * Creates a mock TypeORM repository with common methods.
- * Allows tests to run without a real database connection.
- */
 const createMockRepository = () => ({
   find: jest.fn().mockResolvedValue([]),
   findOne: jest.fn().mockResolvedValue(null),
@@ -109,7 +103,6 @@ describe('AppController (e2e)', () => {
       },
     });
 
-    // Override SessionGuard to bypass session validation and inject mock session
     testingModuleBuilder.overrideGuard(SessionGuard).useValue({
       canActivate: (context: any) => {
         const req = context.switchToHttp().getRequest();
@@ -129,6 +122,7 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
+  // --- Error and 404 tests ---
   it('GET /nonexistent returns JSON error with statusCode and error', async () => {
     const res = await request(app.getHttpServer())
       .get('/nonexistent')
@@ -166,7 +160,7 @@ describe('AppController (e2e)', () => {
     }
   });
 
-  // Happy-path tests using overridden AuthService and bypassed LocalAuthGuard
+  // --- Auth Controller ---
   it('POST /auth/register returns user and sets session cookie', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/register')
@@ -179,7 +173,6 @@ describe('AppController (e2e)', () => {
       })
       .expect(201);
 
-    // Body - response is wrapped in { success: true, data: { user, session } }
     expect(res.body).toEqual(
       expect.objectContaining({
         success: true,
@@ -192,7 +185,6 @@ describe('AppController (e2e)', () => {
         }),
       }),
     );
-    // Cookie
     const setCookie = res.headers['set-cookie'];
     const cookies = Array.isArray(setCookie)
       ? setCookie.join(';')
@@ -205,7 +197,7 @@ describe('AppController (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/auth/login')
       .send({ email: 'john@example.com', password: 'StrongP@ssw0rd' })
-      .expect(200); // Login returns 200, not 201
+      .expect(200);
 
     expect(res.body).toEqual(
       expect.objectContaining({
@@ -221,5 +213,150 @@ describe('AppController (e2e)', () => {
       ? setCookie2.join(';')
       : String(setCookie2 || '');
     expect(cookies).toContain('session_token=mock_token_123');
+  });
+
+  it('POST /auth/logout returns success', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/logout')
+      .set('Cookie', 'session_token=mock_token_123')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+  });
+
+  // --- Roles Controller ---
+  it('GET /roles returns all roles', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/roles')
+      .set('Cookie', 'session_token=mock_token_123')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  // --- Users Controller ---
+  it('POST /users/municipality creates a municipality user', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/users/municipality')
+      .set('Cookie', 'session_token=mock_token_123')
+      .send({
+        email: 'admin@municipality.gov',
+        username: 'admin_user',
+        firstName: 'Admin',
+        lastName: 'User',
+        password: 'SecureAdminPass123',
+        role: 'admin',
+      })
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeDefined();
+  });
+
+  it('GET /users/municipality returns all municipality users', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/users/municipality')
+      .set('Cookie', 'session_token=mock_token_123')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('GET /users/municipality/user/:id returns a municipality user by ID', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/users/municipality/user/user_1')
+      .set('Cookie', 'session_token=mock_token_123')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeDefined();
+  });
+
+  it('POST /users/municipality/user/:id updates a municipality user by ID', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/users/municipality/user/user_1')
+      .set('Cookie', 'session_token=mock_token_123')
+      .send({
+        email: 'updated@municipality.gov',
+        username: 'updated_user',
+        firstName: 'Updated',
+        lastName: 'Name',
+        role: 'municipal_administrator',
+      })
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.id).toBe('user_1');
+  });
+
+  it('DELETE /users/municipality/user/:id deletes a municipality user by ID', async () => {
+    const res = await request(app.getHttpServer())
+      .delete('/users/municipality/user/user_1')
+      .set('Cookie', 'session_token=mock_token_123')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.id).toBe('user_1');
+  });
+
+  // --- Reports Controller ---
+  it('POST /reports creates a report', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=mock_token_123')
+      .send({
+        title: 'Broken streetlight',
+        description: 'The streetlight on Main St is broken.',
+        longitude: 12.34,
+        latitude: 56.78,
+        categoryId: 'cat1',
+      })
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeDefined();
+  });
+
+  it('GET /reports returns all reports', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports')
+      .set('Cookie', 'session_token=mock_token_123')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('GET /reports/:id returns a report by ID', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/report_1')
+      .set('Cookie', 'session_token=mock_token_123')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeDefined();
+  });
+
+  it('PATCH /reports/:id updates a report', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/reports/report_1')
+      .set('Cookie', 'session_token=mock_token_123')
+      .send({
+        status: 'resolved',
+        description: 'Fixed by city crew.',
+      })
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeDefined();
+  });
+
+  it('DELETE /reports/:id deletes a report', async () => {
+    await request(app.getHttpServer())
+      .delete('/reports/report_1')
+      .set('Cookie', 'session_token=mock_token_123')
+      .expect(204);
   });
 });
