@@ -180,3 +180,10 @@ docker compose down -v
 | password    | string  | Account password       | Yes      | Optional                    |
 | createdAt   | Date    | Creation timestamp     | No       | Auto-generated              |
 | updatedAt   | Date    | Last update timestamp  | No       | Auto-generated              |
+
+
+| Field | Type   | Description      | Nullable | Notes      |
+| ----- | ------ | ---------------- | -------- | ---------- |
+| id    | string | Primary key      | No       |            |
+| name  | string | Category name    | No       |            |
+
