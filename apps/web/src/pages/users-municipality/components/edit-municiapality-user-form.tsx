@@ -148,22 +148,6 @@ export function EditUserForm({
         </Select>
       </Field>
 
-      {/*
-      <Field>
-        <InputGroup>
-          <InputGroupInput
-            type="password"
-            name="password"
-            placeholder="New Password (optional)"
-            value={form.password ?? ''}
-            onChange={handleChange}
-          />
-          <InputGroupAddon>
-            <LockIcon />
-          </InputGroupAddon>
-        </InputGroup>
-      </Field>
-    */}
       <div className="flex justify-end gap-2">
         <Button type="submit" disabled={isLoading}>
           {isLoading ? 'Updating...' : 'Confirm'}
