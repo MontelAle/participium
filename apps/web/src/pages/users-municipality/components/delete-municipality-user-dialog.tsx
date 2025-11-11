@@ -5,38 +5,26 @@ import { Button } from '@/components/ui/button';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Trash2 } from 'lucide-react';
 import type { User } from '@repo/api';
-import { toast } from 'sonner'; 
+import { toast } from 'sonner';
+import { useDeleteMunicipalityUser } from '@/hooks/use-municipality-users';
 
-export function DeleteUserDialog({
-  user,
-  onConfirm,
-}: {
-  user: User;
-  onConfirm: (id: string) => void;
-}) {
+export function DeleteUserDialog({ user }: { user: User }) {
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const { mutateAsync: deleteMunicipalityUser } = useDeleteMunicipalityUser();
 
   const handleConfirm = async () => {
     setLoading(true);
 
     try {
-      
-      const response = await fetch(`/api/users/municipality/user/${user.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const response = await deleteMunicipalityUser(user.id);
 
       toast.success(`User "${user.username}" deleted successfully!`);
-      onConfirm(user.id);
       setOpen(false);
     } catch (err: any) {
       console.error('Error deleting user:', err);
       const message = err instanceof Error ? err.message : 'Unknown error';
-      toast.error(message); 
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -57,14 +45,23 @@ export function DeleteUserDialog({
             Confirm Deletion
           </Dialog.Title>
           <p className="mb-4">
-            Are you sure you want to delete user <strong>{user.username}</strong>?
+            Are you sure you want to delete user{' '}
+            <strong>{user.username}</strong>?
           </p>
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+            <Button
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={loading}
+            >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleConfirm} disabled={loading}>
+            <Button
+              variant="destructive"
+              onClick={handleConfirm}
+              disabled={loading}
+            >
               {loading ? 'Deleting...' : 'Delete'}
             </Button>
           </div>

@@ -18,8 +18,9 @@ import {
 import { MailIcon, UserIcon, LockIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Role, User } from '@repo/api';
-import { updateMunicipalityUser } from '@/api/endpoints/municipality-users';
+// import { updateMunicipalityUser } from '@/api/endpoints/municipality-users';
 import type { UpdateMunicipalityUserDto } from '@repo/api';
+import { useUpdateMunicipalityUser } from '@/hooks/use-municipality-users';
 
 interface EditUserFormProps {
   user: User;
@@ -28,7 +29,13 @@ interface EditUserFormProps {
   onCancel?: () => void;
 }
 
-export function EditUserForm({ user, roles, onSuccess, onCancel }: EditUserFormProps) {
+export function EditUserForm({
+  user,
+  roles,
+  onSuccess,
+  onCancel,
+}: EditUserFormProps) {
+  const { mutateAsync: updateMunicipalityUser } = useUpdateMunicipalityUser();
   const [isLoading, setIsLoading] = useState(false);
 
   const [form, setForm] = useState<UpdateMunicipalityUserDto>({
@@ -36,8 +43,7 @@ export function EditUserForm({ user, roles, onSuccess, onCancel }: EditUserFormP
     email: user.email ?? '',
     firstName: user.firstName ?? '',
     lastName: user.lastName ?? '',
-    
-    role: typeof user.role === 'object' ? user.role.id : (user.role as string),
+    role: user.role.name ?? '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +59,7 @@ export function EditUserForm({ user, roles, onSuccess, onCancel }: EditUserFormP
     setIsLoading(true);
 
     try {
-      await updateMunicipalityUser(user.id, form);
+      await updateMunicipalityUser({ userId: user.id, data: form });
       toast.success(`User "${form.username}" updated successfully!`);
       onSuccess?.();
     } catch (error) {
@@ -135,15 +141,15 @@ export function EditUserForm({ user, roles, onSuccess, onCancel }: EditUserFormP
           </SelectTrigger>
           <SelectContent>
             {roles.map((role) => (
-              <SelectItem key={role.id} value={role.id}>
-                {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
+              <SelectItem key={role.id} value={role.name}>
+                {role.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </Field>
 
-{/*
+      {/*
       <Field>
         <InputGroup>
           <InputGroupInput

@@ -20,7 +20,11 @@ interface MunicipalityUsersTableProps {
   refetch: () => void;
 }
 
-export function MunicipalityUsersTable({ users, roles, refetch }: MunicipalityUsersTableProps) {
+export function MunicipalityUsersTable({
+  users,
+  roles,
+  refetch,
+}: MunicipalityUsersTableProps) {
   const columns = React.useMemo(
     () => [
       { accessorKey: 'username', header: 'Username' },
@@ -39,7 +43,7 @@ export function MunicipalityUsersTable({ users, roles, refetch }: MunicipalityUs
         cell: ({ row }: any) => {
           const user = row.original as User;
 
-          
+          /*
           const handleConfirmDelete = async () => {
             try {
               await deleteMunicipalityUser(user.id); 
@@ -49,13 +53,13 @@ export function MunicipalityUsersTable({ users, roles, refetch }: MunicipalityUs
               console.error('Error deleting user:', err);
             }
           };
+          */
 
           return (
             <div className="flex items-center gap-2">
-              
               <EditUserDialog user={user} roles={roles} onSuccess={refetch} />
 
-              <DeleteUserDialog user={user} onConfirm={handleConfirmDelete} />
+              <DeleteUserDialog user={user} />
             </div>
           );
         },
@@ -89,5 +93,3 @@ export function MunicipalityUsersTable({ users, roles, refetch }: MunicipalityUs
     </TableProvider>
   );
 }
-
-
