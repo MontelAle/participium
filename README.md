@@ -209,3 +209,15 @@ docker compose down -v
 | userId         | string    | Linked user ID             | No       | Foreign key to User entity  |
 | user           | User      | User entity relation       | No       | Many-to-one, cascade delete |
 | impersonatedBy | string    | Impersonator user ID       | Yes      | Optional                    |
+
+| Field     | Type   | Description           | Nullable | Notes                        |
+| --------- | ------ | ---------------------| -------- | ---------------------------- |
+| id        | string | Primary key          | No       |                              |
+| email     | string | User email           | No       | Unique                       |
+| username  | string | Username             | No       | Unique                       |
+| firstName | string | First name           | No       |                              |
+| lastName  | string | Last name            | No       |                              |
+| roleId    | string | Linked role ID       | No       | Foreign key to Role entity   |
+| role      | Role   | Role entity relation | No       | Many-to-one, not nullable    |
+| createdAt | Date   | Creation timestamp   | No       | Auto-generated               |
+| updatedAt | Date   | Last update timestamp| No       | Auto-generated               |
