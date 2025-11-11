@@ -196,3 +196,16 @@ docker compose down -v
 | ----- | ------ | ------------- | -------- | ---------- |
 | id    | string | Primary key   | No       |            |
 | name  | string | Role name     | No       |            |
+
+| Field          | Type      | Description                | Nullable | Notes                       |
+| -------------- | --------- | -------------------------- | -------- | --------------------------- |
+| id             | string    | Primary key                | No       |                             |
+| expiresAt      | Date      | Session expiry timestamp   | No       |                             |
+| hashedSecret   | string    | Hashed session secret      | No       | Excluded from serialization |
+| createdAt      | Date      | Creation timestamp         | No       | Auto-generated              |
+| updatedAt      | Date      | Last update timestamp      | No       | Auto-generated              |
+| ipAddress      | string    | IP address                 | Yes      | Optional                    |
+| userAgent      | string    | User agent string          | Yes      | Optional                    |
+| userId         | string    | Linked user ID             | No       | Foreign key to User entity  |
+| user           | User      | User entity relation       | No       | Many-to-one, cascade delete |
+| impersonatedBy | string    | Impersonator user ID       | Yes      | Optional                    |
