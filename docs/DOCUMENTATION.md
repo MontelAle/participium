@@ -170,6 +170,30 @@ participium/
 |--------|-------|-------------|
 | GET | `/` | Retrieve all available roles |
 
+#### Reports Module
+**Endpoint**: `/reports`
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| POST | `/` | Create a new report with geolocation |
+| GET | `/` | Get all reports with optional filters |
+| GET | `/nearby` | Find nearby reports ordered by distance |
+| GET | `/:id` | Get a specific report by ID |
+| PATCH | `/:id` | Update a report (Admin/Operator only) |
+| DELETE | `/:id` | Delete a report (Admin only) |
+
+**Features**:
+- Geospatial queries with PostGIS
+- Location-based filtering (bounding box, radius search)
+- Distance calculations with nearby reports
+- Support for OpenStreetMap coordinates (SRID 4326)
+
+**Query Parameters**:
+- Standard filters: `status`, `categoryId`, `userId`
+- Bounding box: `minLongitude`, `maxLongitude`, `minLatitude`, `maxLatitude`
+- Radius search: `searchLongitude`, `searchLatitude`, `radiusMeters`
+- Nearby: `longitude`, `latitude`, `radius` (default: 5000m)
+
 ### App Configuration
 File: `src/config/app.config.ts`
 
@@ -327,10 +351,66 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 }
 ```
 
+#### Report
+```typescript
+{
+  id: string (PK)
+  title: string
+  description: string
+  status: enum (pending, in_progress, resolved, rejected)
+  location: geometry(Point, 4326)  // PostGIS column
+  address: string (nullable)
+  images: string[] (nullable)
+  userId: string (FK → User)
+  categoryId: string (FK → Category)
+  createdAt: timestamptz
+  updatedAt: timestamptz
+}
+```
+
+**PostGIS Integration**:
+- `location` column uses PostGIS geometry type with Point feature
+- SRID 4326 (WGS84) for GPS/OpenStreetMap compatibility
+- Stored in WKT format: `POINT(longitude latitude)`
+- Automatic spatial index (GIST) for optimized geospatial queries
+
 ### Relations
 - User ⟷ Role (ManyToOne)
 - User ⟷ Account (OneToMany)
 - User ⟷ Session (OneToMany)
+- Report ⟷ User (ManyToOne)
+- Report ⟷ Category (ManyToOne)
+
+### PostGIS Geospatial Features
+
+#### Supported Query Types
+
+**Bounding Box**: Find reports within a rectangular area
+```typescript
+// Example: Reports in Turin city center
+minLongitude=7.65, maxLongitude=7.72
+minLatitude=45.03, maxLatitude=45.10
+```
+
+**Radius Search**: Find reports within a circular area
+```typescript
+// Example: Reports within 5km from Piazza Castello
+searchLongitude=7.686864, searchLatitude=45.070312
+radiusMeters=5000
+```
+
+**Nearby with Distances**: Reports ordered by distance from a point
+```typescript
+// Returns reports with calculated distance in meters
+longitude=7.686864, latitude=45.070312, radius=5000
+```
+
+#### PostGIS Functions Used
+- `ST_Contains`: Check if point is within bounding box
+- `ST_DWithin`: Find points within radius (meters)
+- `ST_Distance`: Calculate distance between points
+- `ST_MakePoint`: Create point geometry from coordinates
+- Geography cast (`::geography`) for accurate metric calculations
 
 ---
 
@@ -340,12 +420,15 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 **Purpose**: Shared entities and DTOs between backend and frontend
 
 **Content**:
-- `entities/`: TypeORM definitions (User, Role, Account, Session, Category)
+- `entities/`: TypeORM definitions (User, Role, Account, Session, Category, Report)
 - `dto/`: Data Transfer Objects
   - `login.dto.ts`
   - `register.dto.ts`
   - `create-municipality-user.dto.ts`
   - `update-municipality-user.dto.ts`
+  - `create-report.dto.ts`
+  - `update-report.dto.ts`
+  - `filter-reports.dto.ts`
 
 ### @repo/eslint-config
 **Purpose**: Standardized ESLint configurations
@@ -398,6 +481,8 @@ cd apps/api
 docker compose up -d
 ```
 
+The database uses the `postgis/postgis:18-3.6` Docker image, which has **PostGIS already enabled** by default. No manual extension setup is required.
+
 Verify active container:
 ```bash
 docker ps
@@ -433,7 +518,8 @@ COOKIE_SAME_SITE=lax
 4. **Seed database (optional)**
 ```bash
 cd apps/api
-pnpm run seed:user
+pnpm run seed:user     # Seed users and roles
+pnpm run seed:reports  # Seed reports with Turin locations
 ```
 
 ### Starting Applications
@@ -486,6 +572,7 @@ pnpm test:watch    # Tests in watch mode
 pnpm test:e2e      # End-to-end tests
 pnpm lint          # Linting
 pnpm seed:user     # Seed test users
+pnpm seed:reports  # Seed geospatial reports data
 ```
 
 ### Frontend (apps/web)
@@ -513,9 +600,16 @@ docker exec -it participium-postgres psql -U admin -d participium  # psql connec
 - **Coverage available**: `apps/api/coverage/`
 - Coverage reports in formats: HTML, LCOV, Clover, JSON
 - E2E tests configured for the API
+- Unit tests for all modules including geospatial queries
 
-### PostGIS
-The database uses the PostGIS extension for advanced geographic features, useful for map management and geographic coordinates.
+### PostGIS & Geospatial Features
+The database uses the **PostGIS 3.6** extension for advanced geographic features:
+- Geographic coordinate storage (longitude, latitude)
+- Spatial indexing with GIST for performance
+- Distance calculations in meters
+- Bounding box and radius queries
+- SRID 4326 (WGS84) standard for GPS/OpenStreetMap compatibility
+- TypeORM native support without additional packages
 
 ### Turbo Cache
 Turborepo optimizes builds and tests through intelligent caching:
