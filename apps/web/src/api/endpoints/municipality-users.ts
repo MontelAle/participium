@@ -15,7 +15,7 @@ export async function getMunicipalityUsers(): Promise<User[]> {
 // GET municiaplity user by ID
 export async function getMunicipalityUser(userId: string): Promise<User> {
   const response = await apiFetch<MunicipalityUserResponse<User>>(
-    `/users/municipality/${userId}`,
+    `/users/municipality/user/${userId}`,
     { method: 'GET' }
   );
   return response.data;
@@ -39,7 +39,7 @@ export async function updateMunicipalityUser(
   data: UpdateUserDto,
 ): Promise<User> {
   const response = await apiFetch<MunicipalityUserResponse<User>>(
-    `/users/municipality/${userId}`,
+    `/users/municipality/user/${userId}`,
     {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -52,7 +52,7 @@ export async function updateMunicipalityUser(
 // DELETE municiaplity user
 export async function deleteMunicipalityUser(userId: string): Promise<void> {
   const response = await apiFetch<MunicipalityUserResponse<null>>(
-    `/users/municipality/${userId}`,
+    `/users/municipality/user/${userId}`,
     {
       method: 'DELETE',
     }
