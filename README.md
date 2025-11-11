@@ -174,6 +174,40 @@ How entities relate (foreign keys, many-to-one relations)
 Special features (auto-generated timestamps, excluded fields, optional fields)
 
 It helps developers understand the database schema, making it easier to work with the backend, write queries, and maintain the system. The tables in your README serve as a quick reference for anyone interacting with or extending your application’s data layer.
+### High-level Architecture
+
+The application follows a classic three-tier architecture:
+
+- **Frontend**: A React single-page application that handles user interaction and communicates with the backend via REST APIs.
+- **Backend**: A Node.js/NestJS service exposing authenticated REST endpoints for managing users, reports, and admin operations.
+- **Database**: A PostgreSQL relational database used to persist users, reports, and system configuration.
+
+Communication between the frontend and backend happens over HTTPS using JSON. The backend uses an ORM layer to interact with the database and applies domain validation and authorization before any write operation.
+
+### Frontend
+
+- **Technology**: React, TypeScript, Vite
+- **Responsibilities**:
+  - Render the user interface for citizens and administrators
+  - Handle form validation before sending data to the API
+  - Manage client-side routing and basic state (logged-in user, filters, etc.)
+- **Interaction with backend**:
+  - Calls `/api/auth/*` for authentication
+  - Calls `/api/reports/*` for creating and viewing reports
+
+### Backend
+
+- **Technology**: Node.js, NestJS
+- **Responsibilities**:
+  - Expose REST endpoints for authentication, user management, and report management
+  - Apply business rules (role-based access control, validation)
+  - Handle file uploads (photos attached to reports)
+- **Internal structure**:
+  - `modules/auth`: login, registration, session management
+  - `modules/reports`: CRUD operations on reports
+  - `modules/users`: admin management of users
+
+
 
 | Field       | Type    | Description            | Nullable | Notes                       |
 | ----------- | ------- | ---------------------- | -------- | --------------------------- |
