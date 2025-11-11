@@ -166,3 +166,14 @@ docker compose down -v
 | List tables     | `\dt`                                                               |
 | View table data | `SELECT * FROM table_name;`                                         |
 | Stop DB         | `docker compose down`                                               |
+
+## Architectural Technology
+| Field        | Type   |  Description      |    Nullable   |    Notes  | 
+|id            |string	|Primary key	    |No	            |
+|accountId	   |string	|Account identifier |No	            |
+|providerId	   |string	|Provider identifier|No	            |
+|userId	       |string  |Linked user ID	    |No	            |Foreign key to User entity
+|user	       |User	|User entity relation|No	        |Many-to-one, cascade delete
+|password      |string	|Account password	 |Yes	        |Optional|
+|createdAt     |Date	|Creation timestamp	 |No	        |Auto-generated|
+|updatedAt     |Date	    |Last update timestamp	 |No	            |Auto-generated|
