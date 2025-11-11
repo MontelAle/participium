@@ -19,7 +19,7 @@ import { MailIcon, UserIcon, LockIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Role, User } from '@repo/api';
 import { updateMunicipalityUser } from '@/api/endpoints/municipality-users';
-import type { UpdateUserDto } from '@repo/api';
+import type { UpdateMunicipalityUserDto } from '@repo/api';
 
 interface EditUserFormProps {
   user: User;
@@ -31,12 +31,12 @@ interface EditUserFormProps {
 export function EditUserForm({ user, roles, onSuccess, onCancel }: EditUserFormProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const [form, setForm] = useState<UpdateUserDto>({
+  const [form, setForm] = useState<UpdateMunicipalityUserDto>({
     username: user.username ?? '',
     email: user.email ?? '',
     firstName: user.firstName ?? '',
     lastName: user.lastName ?? '',
-    password: '',
+    
     role: typeof user.role === 'object' ? user.role.id : (user.role as string),
   });
 
@@ -143,6 +143,7 @@ export function EditUserForm({ user, roles, onSuccess, onCancel }: EditUserFormP
         </Select>
       </Field>
 
+{/*
       <Field>
         <InputGroup>
           <InputGroupInput
@@ -157,7 +158,7 @@ export function EditUserForm({ user, roles, onSuccess, onCancel }: EditUserFormP
           </InputGroupAddon>
         </InputGroup>
       </Field>
-
+*/}
       <div className="flex justify-end gap-2">
         <Button type="submit" disabled={isLoading}>
           {isLoading ? 'Updating...' : 'Confirm'}

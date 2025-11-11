@@ -7,7 +7,7 @@ import {
   getMunicipalityUser
 } from '../api/endpoints/municipality-users';
 import type { User } from '@repo/api';
-import { UpdateUserDto } from '@repo/api';
+import { UpdateMunicipalityUserDto } from '@repo/api';
 
 
 export function useMunicipalityUsers() {
@@ -43,7 +43,7 @@ export function useUpdateMunicipalityUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ userId, data }: { userId: string; data: UpdateUserDto }) =>
+    mutationFn: ({ userId, data }: { userId: string; data: UpdateMunicipalityUserDto }) =>
       updateMunicipalityUser(userId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['municipality-users'] });

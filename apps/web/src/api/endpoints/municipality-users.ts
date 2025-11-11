@@ -2,7 +2,7 @@ import { apiFetch } from '../client';
 import type { User } from '@repo/api';
 import { CreateMunicipalityUserDto } from '@repo/api';
 import type { MunicipalityUserResponse } from '@/types/municipality-users';
-import { UpdateUserDto } from '@repo/api';
+import { UpdateMunicipalityUserDto } from '@repo/api';
 
 // GET all municiaplity users
 export async function getMunicipalityUsers(): Promise<User[]> {
@@ -34,9 +34,10 @@ export async function createMunicipalityUser(
 
 
 // UPDATE municiaplity user
+/*
 export async function updateMunicipalityUser(
   userId: string,
-  data: UpdateUserDto,
+  data: UpdateMunicipalityUserDto,
 ): Promise<User> {
   const response = await apiFetch<MunicipalityUserResponse<User>>(
     `/users/municipality/user/${userId}`,
@@ -47,11 +48,47 @@ export async function updateMunicipalityUser(
   );
   return response.data;
 }
-  
+*/
+// UPDATE municipality user
+/*
+export async function updateMunicipalityUser(
+  userId: string,
+  data: UpdateMunicipalityUserDto,
+): Promise<{ id: string }> {  
+  const response = await apiFetch<MunicipalityUserResponse<{ id: string }>>(
+    `/users/municipality/user/${userId}`,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+  );
+  return response.data;
+}
+*/
 
-// DELETE municiaplity user
-export async function deleteMunicipalityUser(userId: string): Promise<void> {
-  const response = await apiFetch<MunicipalityUserResponse<null>>(
+// Aggiorna un utente del municipio
+export async function updateMunicipalityUser(
+  userId: string,
+  data: UpdateMunicipalityUserDto,
+): Promise<MunicipalityUserResponse<{ id: string }>> {
+  const response = await apiFetch<MunicipalityUserResponse<{ id: string }>>(
+    `/users/municipality/user/${userId}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json', 
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  return response; 
+}
+
+
+// DELETE municipality user
+export async function deleteMunicipalityUser(userId: string): Promise<{ id: string }> {
+  const response = await apiFetch<MunicipalityUserResponse<{ id: string }>>(
     `/users/municipality/user/${userId}`,
     {
       method: 'DELETE',
@@ -59,6 +96,8 @@ export async function deleteMunicipalityUser(userId: string): Promise<void> {
   );
 
   if (!response.success) {
-    throw new Error('Errore durante l\'eliminazione dell\'utente');
+    throw new Error('An error occurred while deleting the user');
   }
+
+  return response.data; 
 }

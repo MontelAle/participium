@@ -22,7 +22,7 @@ export function DeleteUserDialog({
 
     try {
       
-      const response = await fetch(`/api/municipality/users/${user.id}`, {
+      const response = await fetch(`/api/users/municipality/user/${user.id}`, {
         method: 'DELETE',
       });
 
