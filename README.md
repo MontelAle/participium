@@ -207,6 +207,12 @@ Communication between the frontend and backend happens over HTTPS using JSON. Th
   - `modules/reports`: CRUD operations on reports
   - `modules/users`: admin management of users
 
+### Technology Choices & Rationale
+
+- **NestJS** was chosen because it provides a structured, opinionated framework with built-in support for modules, dependency injection, and decorators, which keeps the codebase maintainable as the project grows.
+- **TypeORM** allows us to keep a single source of truth for the data model in TypeScript and automatically generate SQL queries, reducing boilerplate.
+- **PostgreSQL** was selected as a robust open-source relational database with strong support for GIS extensions, which fits well a map-based reporting system.
+- **React** on the frontend enables building a responsive, interactive user interface with reusable components.
 
 
 | Field       | Type    | Description            | Nullable | Notes                       |
