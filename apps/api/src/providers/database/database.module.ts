@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Session, User, Role, Category, Account } from '@repo/api';
+import { Session, User, Role, Category, Account, Report } from '@repo/api';
 
 @Module({
   imports: [
@@ -15,7 +15,7 @@ import { Session, User, Role, Category, Account } from '@repo/api';
         username: configService.get<string>('db.username'),
         password: configService.get<string>('db.password'),
         database: configService.get<string>('db.database'),
-        entities: [User, Session, Role, Category, Account],
+        entities: [User, Session, Role, Category, Account, Report],
         synchronize: configService.get<string>('app.env') !== 'production',
         logging: configService.get<string>('app.env') === 'development',
       }),
