@@ -207,6 +207,18 @@ Communication between the frontend and backend happens over HTTPS using JSON. Th
   - `modules/reports`: CRUD operations on reports
   - `modules/users`: admin management of users
 
+  ### Database
+
+- **Technology**: PostgreSQL + TypeORM
+- **Responsibilities**:
+  - Persist users, reports, and categories
+  - Enforce constraints (unique email, foreign keys between users and reports)
+- **Main entities**:
+  - `User`: email, username, role, password hash
+  - `Report`: title, description, location, status, category, author
+  - `Photo`: path, report_id
+
+
 ### Technology Choices & Rationale
 
 - **NestJS** was chosen because it provides a structured, opinionated framework with built-in support for modules, dependency injection, and decorators, which keeps the codebase maintainable as the project grows.
