@@ -168,7 +168,12 @@ docker compose down -v
 | Stop DB         | `docker compose down`                                               |
 
 ## Architectural Technology
+This section provides a clear overview of:
+What data is stored (fields and types)
+How entities relate (foreign keys, many-to-one relations)
+Special features (auto-generated timestamps, excluded fields, optional fields)
 
+It helps developers understand the database schema, making it easier to work with the backend, write queries, and maintain the system. The tables in your README serve as a quick reference for anyone interacting with or extending your application’s data layer.
 
 | Field       | Type    | Description            | Nullable | Notes                       |
 | ----------- | ------- | ---------------------- | -------- | --------------------------- |
