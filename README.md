@@ -226,7 +226,7 @@ Communication between the frontend and backend happens over HTTPS using JSON. Th
 - **PostgreSQL** was selected as a robust open-source relational database with strong support for GIS extensions, which fits well a map-based reporting system.
 - **React** on the frontend enables building a responsive, interactive user interface with reusable components.
 
-
+ ## account
 | Field       | Type    | Description            | Nullable | Notes                       |
 | ----------- | ------- | ---------------------- | -------- | --------------------------- |
 | id          | string  | Primary key            | No       |                             |
@@ -238,22 +238,18 @@ Communication between the frontend and backend happens over HTTPS using JSON. Th
 | createdAt   | Date    | Creation timestamp     | No       | Auto-generated              |
 | updatedAt   | Date    | Last update timestamp  | No       | Auto-generated              |
 
-
+## category
 | Field | Type   | Description      | Nullable | Notes      |
 | ----- | ------ | ---------------- | -------- | ---------- |
 | id    | string | Primary key      | No       |            |
 | name  | string | Category name    | No       |            |
-
+ ## role
 | Field | Type   | Description   | Nullable | Notes      |
 | ----- | ------ | ------------- | -------- | ---------- |
 | id    | string | Primary key   | No       |            |
 | name  | string | Role name     | No       |            |
 
-| Field | Type   | Description   | Nullable | Notes      |
-| ----- | ------ | ------------- | -------- | ---------- |
-| id    | string | Primary key   | No       |            |
-| name  | string | Role name     | No       |            |
-
+## session
 | Field          | Type      | Description                | Nullable | Notes                       |
 | -------------- | --------- | -------------------------- | -------- | --------------------------- |
 | id             | string    | Primary key                | No       |                             |
@@ -267,6 +263,7 @@ Communication between the frontend and backend happens over HTTPS using JSON. Th
 | user           | User      | User entity relation       | No       | Many-to-one, cascade delete |
 | impersonatedBy | string    | Impersonator user ID       | Yes      | Optional                    |
 
+## user
 | Field     | Type   | Description           | Nullable | Notes                        |
 | --------- | ------ | ---------------------| -------- | ---------------------------- |
 | id        | string | Primary key          | No       |                              |
