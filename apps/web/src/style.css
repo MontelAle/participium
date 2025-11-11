@@ -110,6 +110,20 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}
+
+.leaflet-popup-pane {
+  z-index: 1000 !important;
+}
+
+.leaflet-popup {
+  z-index: 1001 !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
