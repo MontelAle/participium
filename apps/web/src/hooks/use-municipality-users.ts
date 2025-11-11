@@ -3,8 +3,7 @@ import {
   getMunicipalityUsers,
   createMunicipalityUser,
   deleteMunicipalityUser,
-  updateMunicipalityUser,
-  getMunicipalityUser
+  updateMunicipalityUser
 } from '../api/endpoints/municipality-users';
 import type { User } from '@repo/api';
 import { UpdateMunicipalityUserDto } from '@repo/api';

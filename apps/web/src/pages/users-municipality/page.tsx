@@ -5,7 +5,6 @@ import {
   useCreateMunicipalityUser,
 } from '@/hooks/use-municipality-users';
 import { useRoles } from '@/hooks/use-roles';
-import { EditUserForm } from './components/edit-municiapality-user-form';
 
 const UsersMunicipalityPage = () => {
   const {
