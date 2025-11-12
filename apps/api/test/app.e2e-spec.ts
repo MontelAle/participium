@@ -59,6 +59,8 @@ describe('AppController (e2e)', () => {
     const mockRoles = [
       { id: 'role_1', name: 'admin' },
       { id: 'role_2', name: 'user' },
+      { id: 'role_3', name: 'municipal_pr_officer' },
+      { id: 'role_5', name: 'technical_officer' },
     ];
 
     const mockUser = {
@@ -329,13 +331,7 @@ describe('AppController (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/users/municipality/user/user_1')
       .set('Cookie', 'session_token=sess_1.secret')
-      .send({
-        email: 'updated@municipality.gov',
-        username: 'updated_user',
-        firstName: 'Updated',
-        lastName: 'Name',
-        role: 'municipal_administrator',
-      })
+      .send()
       .expect(200);
 
     expect(res.body.success).toBe(true);

@@ -52,32 +52,32 @@ export class UsersService {
   }
 
   async createMunicipalityUser(dto: CreateMunicipalityUserDto): Promise<User> {
-    const {
-      email,
-      username,
-      firstName,
-      lastName,
-      password,
-      role: roleId,
-    } = dto;
+    const { email, username, firstName, lastName, password, role } = dto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return this.userRepository.manager.transaction(async (manager) => {
-      const role = await manager
-        .getRepository(Role)
-        .findOne({ where: { id: roleId.id } });
+      const roleRepo = manager.getRepository(Role);
+      const dbRole = await roleRepo.findOne({
+        where: { id: dto.role.id },
+      });
 
-      if (!role) {
+      if (!dbRole) {
         throw new NotFoundException(`Role not found`);
       }
 
       const existingUser = await manager.getRepository(User).findOne({
         where: { username },
       });
-
       if (existingUser) {
         throw new ConflictException('User with this username already exists');
+      }
+
+      const existingEmail = await manager.getRepository(User).findOne({
+        where: { email },
+      });
+      if (existingEmail) {
+        throw new ConflictException('User with this email already exists');
       }
 
       const newUser = manager.getRepository(User).create({
@@ -86,7 +86,7 @@ export class UsersService {
         username,
         firstName,
         lastName,
-        role,
+        role: dbRole,
       });
 
       const user = await manager.getRepository(User).save(newUser);
