@@ -208,7 +208,15 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                           {user.firstName} {user.lastName}
                         </span>
                         <span className="text-sm text-muted-foreground capitalize">
-                          {user.role.name}
+                          {user.role.name
+                            .replace(/_/g, ' ')
+                            .split(' ')
+                            .map(
+                              (w) =>
+                                w.charAt(0).toUpperCase() +
+                                w.slice(1).toLowerCase(),
+                            )
+                            .join(' ')}{' '}
                         </span>
                       </div>
                       <ChevronsUpDown className="ml-auto size-4" />
@@ -226,7 +234,15 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                       {user.email}
                     </p>
                     <p className="text-xs text-muted-foreground capitalize">
-                      {user.role.name}
+                      {user.role.name
+                        .replace(/_/g, ' ')
+                        .split(' ')
+                        .map(
+                          (w) =>
+                            w.charAt(0).toUpperCase() +
+                            w.slice(1).toLowerCase(),
+                        )
+                        .join(' ')}{' '}
                     </p>
                   </div>
                 </DropdownMenuLabel>
