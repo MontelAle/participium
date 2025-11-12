@@ -55,16 +55,18 @@ describe('UsersService', () => {
   describe('findMunicipalityUsers', () => {
     it('should return users whose role is not "user"', async () => {
       const mockUsers = [
-        { id: '1', role: { name: 'municipal_pr_officer' } },
+        { id: '1', role: { name: 'municipal_pr_officer', isMunicipal: true } },
       ] as User[];
       userRepository.find.mockResolvedValue(mockUsers);
 
       const result = await service.findMunicipalityUsers();
 
-      expect(userRepository.find).toHaveBeenCalledWith({
-        relations: ['role'],
-        where: { role: { name: expect.anything() } }, // Not('user') è ignorato nel mock
-      });
+      expect(userRepository.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          relations: ['role'],
+          where: { role: { isMunicipal: true } },
+        }),
+      );
       expect(result).toEqual(mockUsers);
     });
   });
@@ -74,17 +76,39 @@ describe('UsersService', () => {
       const mockUser = {
         id: '1',
         username: 'officier1',
-        role: { id: 'role-id', name: 'municipal_pr_officer' } as Role,
+        role: {
+          id: 'role-id',
+          name: 'municipal_pr_officer',
+          isMunicipal: true,
+        } as Role,
       } as User;
+
       userRepository.findOne.mockResolvedValue(mockUser);
 
       const result = await service.findMunicipalityUserById('1');
 
-      expect(userRepository.findOne).toHaveBeenCalledWith({
-        relations: ['role'],
-        where: { id: '1', role: { name: expect.anything() } },
-      });
+      expect(userRepository.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          relations: ['role'],
+          where: { id: '1', role: { isMunicipal: true } },
+        }),
+      );
       expect(result).toEqual(mockUser);
+    });
+
+    it('should throw NotFoundException if user is not found', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.findMunicipalityUserById('missing')).rejects.toThrow(
+        'Municipality user not found',
+      );
+
+      expect(userRepository.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          relations: ['role'],
+          where: { id: 'missing', role: { isMunicipal: true } },
+        }),
+      );
     });
 
     it('should throw NotFoundException if user is not found', async () => {
@@ -211,25 +235,36 @@ describe('UsersService', () => {
     it('should delete a municipality user and their account', async () => {
       const mockUser = {
         id: '1',
-        role: { id: 'role-id', name: 'municipal_pr_officer' },
+        role: {
+          id: 'role-id',
+          name: 'municipal_pr_officer',
+          isMunicipal: true,
+        } as Role,
       } as User;
+
       userRepository.findOne.mockResolvedValue(mockUser);
 
+      const mockDelete = jest.fn().mockResolvedValue({ affected: 1 });
       (userRepository.manager.transaction as jest.Mock).mockImplementation(
-        async (fn) =>
+        async (fn: any) =>
           fn({
-            getRepository: () => ({
-              delete: jest.fn().mockResolvedValue({ affected: 1 }),
+            getRepository: (entity: any) => ({
+              delete: mockDelete,
             }),
           }),
       );
 
       await service.deleteMunicipalityUserById('1');
 
-      expect(userRepository.findOne).toHaveBeenCalledWith({
-        relations: ['role'],
-        where: { id: '1', role: { name: expect.anything() } },
-      });
+      expect(userRepository.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          relations: ['role'],
+          where: { id: '1', role: { isMunicipal: true } },
+        }),
+      );
+
+      expect(mockDelete).toHaveBeenCalledWith({ userId: '1' });
+      expect(mockDelete).toHaveBeenCalledWith({ id: '1' });
     });
 
     it('should throw NotFoundException if user is not found', async () => {
