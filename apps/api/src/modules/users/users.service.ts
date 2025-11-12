@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { User, Account, Role, CreateMunicipalityUserDto } from '@repo/api';
@@ -32,7 +36,8 @@ export class UsersService {
   async findMunicipalityUserById(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       relations: ['role'],
-      where: { id,
+      where: {
+        id,
         role: {
           name: Not('user'),
         },
@@ -47,18 +52,27 @@ export class UsersService {
   }
 
   async createMunicipalityUser(dto: CreateMunicipalityUserDto): Promise<User> {
-    const { email, username, firstName, lastName, password, role: roledto } = dto;
+    const {
+      email,
+      username,
+      firstName,
+      lastName,
+      password,
+      role: roleId,
+    } = dto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return this.userRepository.manager.transaction(async (manager) => {
-      const role = await manager.getRepository(Role).findOne({ where: { id: roledto.id } });
-      
+      const role = await manager
+        .getRepository(Role)
+        .findOne({ where: { id: roleId.id } });
+
       if (!role) {
         throw new NotFoundException(`Role not found`);
       }
 
-      const existingUser = await manager.getRepository(User).findOne({ 
+      const existingUser = await manager.getRepository(User).findOne({
         where: { username },
       });
 
@@ -95,7 +109,7 @@ export class UsersService {
   async deleteMunicipalityUserById(id: string): Promise<void> {
     const user = await this.userRepository.findOne({
       relations: ['role'],
-      where: { 
+      where: {
         id,
         role: {
           name: Not('user'),
@@ -113,7 +127,10 @@ export class UsersService {
     });
   }
 
-  async updateMunicipalityUserById(id: string, dto: Partial<CreateMunicipalityUserDto>): Promise<void> {
+  async updateMunicipalityUserById(
+    id: string,
+    dto: Partial<CreateMunicipalityUserDto>,
+  ): Promise<void> {
     const user = await this.userRepository.findOne({
       where: { id },
     });
