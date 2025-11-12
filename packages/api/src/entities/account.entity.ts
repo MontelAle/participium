@@ -11,28 +11,28 @@ import { User } from './user.entity';
 
 @Entity('account')
 export class Account {
-  @PrimaryColumn('text')
+  @PrimaryColumn('varchar')
   id: string;
 
-  @Column('text')
+  @Column('varchar')
   accountId: string;
 
-  @Column('text')
+  @Column('varchar')
   providerId: string;
 
-  @Column('text')
+  @Column('varchar')
   userId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column('text', { nullable: true })
+  @Column('varchar', { nullable: true })
   password?: string;
 
-  @CreateDateColumn({ type: 'date' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'date' })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }

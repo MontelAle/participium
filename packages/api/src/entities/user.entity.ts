@@ -5,14 +5,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
-  OneToOne,
+  ManyToOne,
 } from 'typeorm';
 
-import { Role } from './roles.entity';
+import { Role } from './role.entity';
 
 @Entity('user')
 export class User {
-  @PrimaryColumn('text')
+  @PrimaryColumn('varchar')
   id: string;
 
   @Column({ unique: true, nullable: false })
@@ -27,13 +27,16 @@ export class User {
   @Column({ nullable: false })
   lastName: string;
 
-  @OneToOne(() => Role, { nullable: false })
+  @Column({ nullable: false })
+  roleId: string;
+
+  @ManyToOne(() => Role, { nullable: false })
   @JoinColumn({ name: 'roleId' })
   role: Role;
 
-  @CreateDateColumn({ type: 'date' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'date' })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }

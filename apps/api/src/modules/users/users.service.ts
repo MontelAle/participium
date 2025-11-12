@@ -1,0 +1,197 @@
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User, Account, Role, CreateMunicipalityUserDto } from '@repo/api';
+import bcrypt from 'bcrypt';
+import { nanoid } from 'nanoid';
+
+@Injectable()
+export class UsersService {
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+
+    @InjectRepository(Account)
+    private readonly accountRepository: Repository<Account>,
+
+    @InjectRepository(Role)
+    private readonly roleRepository: Repository<Role>,
+  ) {}
+
+  async findMunicipalityUsers(): Promise<User[]> {
+    return this.userRepository.find({
+      relations: ['role'],
+      where: {
+        role: {
+          isMunicipal: true,
+        },
+      },
+    });
+  }
+
+  async findMunicipalityUserById(id: string): Promise<User> {
+    const user = await this.userRepository.findOne({
+      relations: ['role'],
+      where: {
+        id,
+        role: {
+          isMunicipal: true,
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Municipality user not found');
+    }
+
+    return user;
+  }
+
+  async createMunicipalityUser(dto: CreateMunicipalityUserDto): Promise<User> {
+    const { email, username, firstName, lastName, password, roleId } = dto;
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    return this.userRepository.manager.transaction(async (manager) => {
+      const roleRepo = manager.getRepository(Role);
+      const dbRole = await roleRepo.findOne({
+        where: { id: roleId },
+      });
+
+      if (!dbRole) {
+        throw new NotFoundException(`Role not found`);
+      }
+
+      const existingUser = await manager.getRepository(User).findOne({
+        where: { username },
+      });
+      if (existingUser) {
+        throw new ConflictException('User with this username already exists');
+      }
+
+      const existingEmail = await manager.getRepository(User).findOne({
+        where: { email },
+      });
+      if (existingEmail) {
+        throw new ConflictException('User with this email already exists');
+      }
+
+      const newUser = manager.getRepository(User).create({
+        id: nanoid(),
+        email,
+        username,
+        firstName,
+        lastName,
+        role: dbRole,
+      });
+
+      const user = await manager.getRepository(User).save(newUser);
+
+      const newAccount = manager.getRepository(Account).create({
+        id: nanoid(),
+        accountId: username,
+        providerId: 'local',
+        userId: user.id,
+        password: hashedPassword,
+        user,
+      });
+
+      await manager.getRepository(Account).save(newAccount);
+
+      return user;
+    });
+  }
+
+  async deleteMunicipalityUserById(id: string): Promise<void> {
+    const user = await this.userRepository.findOne({
+      relations: ['role'],
+      where: {
+        id,
+        role: {
+          isMunicipal: true,
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Municipality user not found');
+    }
+
+    await this.userRepository.manager.transaction(async (manager) => {
+      await manager.getRepository(Account).delete({ userId: id });
+      await manager.getRepository(User).delete({ id });
+    });
+  }
+
+  async updateMunicipalityUserById(
+    id: string,
+    dto: Partial<CreateMunicipalityUserDto>,
+  ): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Municipality user not found');
+    }
+
+    if (dto.username && dto.username !== user.username) {
+      const existingUser = await this.userRepository.findOne({
+        where: { username: dto.username },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('Username already in use');
+      }
+    }
+
+    if (dto.email && dto.email !== user.email) {
+      const existingUserWithEmail = await this.userRepository.findOne({
+        where: { email: dto.email },
+      });
+
+      if (existingUserWithEmail) {
+        throw new ConflictException('Email already in use');
+      }
+    }
+
+    await this.userRepository.manager.transaction(async (manager) => {
+      // Update user fields
+      if (dto.email) user.email = dto.email;
+      if (dto.username) user.username = dto.username;
+      if (dto.firstName) user.firstName = dto.firstName;
+      if (dto.lastName) user.lastName = dto.lastName;
+
+      // we can get rid of this if the admin can select only from a list
+      if (dto.roleId) {
+        const role = await this.roleRepository.findOne({
+          where: { id: dto.roleId },
+        });
+
+        if (!role) {
+          throw new NotFoundException('Role not found');
+        }
+
+        user.roleId = role.id;
+      }
+
+      await manager.getRepository(User).save(user);
+
+      // Update associated account if username is changed
+      if (dto.username) {
+        const account = await manager.getRepository(Account).findOne({
+          where: { userId: id, providerId: 'local' },
+        });
+
+        if (account) {
+          account.accountId = dto.username;
+          await manager.getRepository(Account).save(account);
+        }
+      }
+    });
+  }
+}

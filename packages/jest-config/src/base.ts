@@ -5,5 +5,5 @@ export const config = {
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',
   moduleFileExtensions: ['js', 'ts', 'json'],
-  testEnvironment: 'jsdom',
+  testEnvironment: 'node',
 } as const satisfies Config;

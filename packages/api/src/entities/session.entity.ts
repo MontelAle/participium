@@ -8,37 +8,39 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity('session')
 export class Session {
-  @PrimaryColumn('text')
+  @PrimaryColumn('varchar')
   id: string;
 
-  @Column('datetime')
+  @Column('timestamptz')
   expiresAt: Date;
 
-  @Column('text', { unique: true })
-  token: string;
+  @Column('varchar')
+  @Exclude()
+  hashedSecret: string;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'datetime' })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 
-  @Column('text', { nullable: true })
+  @Column('varchar', { nullable: true })
   ipAddress?: string;
 
-  @Column('text', { nullable: true })
+  @Column('varchar', { nullable: true })
   userAgent?: string;
 
-  @Column('text')
+  @Column('varchar')
   userId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column('text', { nullable: true })
+  @Column('varchar', { nullable: true })
   impersonatedBy?: string;
 }

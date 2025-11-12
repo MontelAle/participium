@@ -1,6 +1,14 @@
-import { createRoot } from "react-dom/client";
+import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import "./style.css";
-import App from "./App";
+import 'leaflet/dist/leaflet.css';
+import './style.css';
+import App from './App';
 
-createRoot(document.getElementById("app")!).render(<App />);
+const queryClient = new QueryClient();
+
+createRoot(document.getElementById('app')!).render(
+  <QueryClientProvider client={queryClient}>
+    <App />
+  </QueryClientProvider>,
+);

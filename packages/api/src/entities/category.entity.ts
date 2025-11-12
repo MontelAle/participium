@@ -2,17 +2,13 @@ import {
   Entity,
   PrimaryColumn,
   Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('category')
 export class Category {
-  @PrimaryColumn('text')
-  categoryId: string;
+  @PrimaryColumn('varchar')
+  id: string;
 
-  @Column('text')
+  @Column('varchar')
   name: string;
 }

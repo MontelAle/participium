@@ -1,0 +1,43 @@
+name: CI - Build & Test
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Build packages (turbo)
+        run: pnpm turbo run build
+
+      - name: Run tests (turbo)
+        run: pnpm turbo run test
+      
+      - name: Run e2e tests
+        run: pnpm turbo run test:e2e
