@@ -36,7 +36,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   const isRegularUser = user && user.role.name === 'user';
   const isGuest = !user;
 
-  const { coordinates } = useActiveReportStore();
+  const { locationData } = useActiveReportStore();
   const { mutateAsync: createReport } = useCreateReport();
 
   const getUserInitials = () => {
@@ -60,14 +60,15 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   ];
 
   const handleAddReport = async () => {
-    if (!coordinates) {
+    if (!locationData) {
       // Optionally show a toast or error
       return;
     }
     try {
       await createReport({
-        latitude: coordinates.latitude,
-        longitude: coordinates.longitude,
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+        address: locationData.address,
         // Add other required fields for your report DTO here
       });
       // Optionally show a success toast or reset coordinates

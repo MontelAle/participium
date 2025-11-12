@@ -1,13 +1,12 @@
 import { create } from 'zustand';
+import { LocationData } from '@/types/location';
 
 interface ActiveReportStore {
-  coordinates?: { latitude: number; longitude: number };
-  setCoordinates: (
-    coordinates: { latitude: number; longitude: number } | undefined,
-  ) => void;
+  locationData?: LocationData;
+  setLocation: (location: LocationData | undefined) => void;
 }
 
 export const useActiveReportStore = create<ActiveReportStore>((set) => ({
-  coordinates: undefined,
-  setCoordinates: (coordinates) => set({ coordinates }),
+  location: undefined,
+  setLocation: (locationData) => set({ locationData }),
 }));

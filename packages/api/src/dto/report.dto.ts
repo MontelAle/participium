@@ -1,6 +1,5 @@
 import {
   IsString,
-  IsNotEmpty,
   IsOptional,
   IsEnum,
   IsNumber,
@@ -22,7 +21,8 @@ export class CreateReportDto {
 
   @ApiPropertyOptional({
     description: 'Detailed description of the report',
-    example: 'The streetlight in front of building number 42 has been broken for 3 days',
+    example:
+      'The streetlight in front of building number 42 has been broken for 3 days',
   })
   @IsString()
   @IsOptional() // TODO: Rendere obbligatorio in futuro
@@ -61,7 +61,10 @@ export class CreateReportDto {
   @ApiPropertyOptional({
     description: 'Array of image URLs',
     type: [String],
-    example: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
+    example: [
+      'https://example.com/image1.jpg',
+      'https://example.com/image2.jpg',
+    ],
   })
   @IsArray()
   @IsString({ each: true })
