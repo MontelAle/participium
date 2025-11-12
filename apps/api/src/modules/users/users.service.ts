@@ -167,9 +167,9 @@ export class UsersService {
       if (dto.lastName) user.lastName = dto.lastName;
 
       // we can get rid of this if the admin can select only from a list
-      if (dto.role) {
+      if (dto.roleId) {
         const role = await this.roleRepository.findOne({
-          where: { id: dto.role.id },
+          where: { id: dto.roleId },
         });
 
         if (!role) {
