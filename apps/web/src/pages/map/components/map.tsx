@@ -16,6 +16,7 @@ L.Icon.Default.mergeOptions({
 export default function Map() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
   const setCoordinates = useActiveReportStore((state) => state.setCoordinates);
   const coordinates = useActiveReportStore((state) => state.coordinates);
 
@@ -30,7 +31,6 @@ export default function Map() {
     }).addTo(map);
 
     map.on('click', (e: L.LeafletMouseEvent) => {
-      L.marker(e.latlng).addTo(map);
       setCoordinates({
         latitude: e.latlng.lat,
         longitude: e.latlng.lng,
@@ -44,12 +44,29 @@ export default function Map() {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
     };
   }, [setCoordinates]);
 
-  // Pan to coordinates when they change
+  // Show only one marker at the coordinates in the store
   useEffect(() => {
-    if (mapInstanceRef.current && coordinates) {
+    if (!mapInstanceRef.current) return;
+
+    // Remove previous marker
+    if (markerRef.current) {
+      markerRef.current.remove();
+      markerRef.current = null;
+    }
+
+    // Add new marker if coordinates exist
+    if (coordinates) {
+      markerRef.current = L.marker([
+        coordinates.latitude,
+        coordinates.longitude,
+      ]).addTo(mapInstanceRef.current);
       mapInstanceRef.current.setView(
         [coordinates.latitude, coordinates.longitude],
         mapInstanceRef.current.getZoom(),

@@ -5,9 +5,14 @@ export type AuthContextType = {
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  login: (loginCredentials: LoginDto) => Promise<{ success: boolean; data?: User; error?: string }>;
-  register: (data: RegisterDto) => Promise<{ success: boolean; data?: User; error?: string }>;
+  login: (
+    loginCredentials: LoginDto,
+  ) => Promise<{ success: boolean; data?: User; error?: string }>;
+  register: (
+    data: RegisterDto,
+  ) => Promise<{ success: boolean; data?: User; error?: string }>;
   logout: () => Promise<void>;
+  isMunicipalityUser: boolean;
 };
 
 export type AuthResponse = {

@@ -26,8 +26,10 @@ import { useAuth } from '@/contexts/auth-context';
 import { SidebarProps } from '@/types/ui';
 import { useActiveReportStore } from '@/store/activeReportStore';
 import { useCreateReport } from '@/hooks/use-reports';
+import { useNavigate } from 'react-router-dom';
 
 export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
+  const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
   const isAdminUser = user && user.role.name !== 'user';
@@ -72,6 +74,11 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
     } catch (err) {
       // Optionally show an error toast
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
   return (
@@ -211,7 +218,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => logout()}>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 size-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>

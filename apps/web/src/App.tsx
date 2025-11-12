@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardLayout } from '@/layouts/dashboard-layout';
 import { AuthProvider } from '@/contexts/auth-context';
 import { Toaster } from 'sonner';
+import { RequireAuth } from '@/components/require-auth';
 
 import LoginPage from './pages/auth/login/page';
 import RegistrationPage from './pages/auth/registration/page';
@@ -18,10 +19,21 @@ const App = () => {
           <Route element={<DashboardLayout />}>
             <Route index element={<Navigate to="/map" replace />} />
             <Route path="/map" element={<MapPage />} />
-            <Route path="/app/dashboard" element={<DashboardPage />} />
+            <Route
+              path="/app/dashboard"
+              element={
+                <RequireAuth>
+                  <DashboardPage />
+                </RequireAuth>
+              }
+            />
             <Route
               path="/app/municipality-users"
-              element={<MunicipalityUsersPage />}
+              element={
+                <RequireAuth>
+                  <MunicipalityUsersPage />
+                </RequireAuth>
+              }
             />
           </Route>
           <Route path="/auth/login" element={<LoginPage />} />
