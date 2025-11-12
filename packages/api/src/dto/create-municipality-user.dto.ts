@@ -1,7 +1,7 @@
 import { RegisterDto } from './register.dto';
-import { IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Role } from 'entry';
+import { Role } from '../entities/role.entity';
+import { IsNotEmpty } from 'class-validator';
 
 export class CreateMunicipalityUserDto extends RegisterDto {
   @ApiProperty({
@@ -17,6 +17,7 @@ export class CreateMunicipalityUserDto extends RegisterDto {
       'environmental_officer',
     ],
   })
-  @IsNotEmpty()
+  
+  @IsNotEmpty({ message: 'role is required' })
   role: Role;
 }

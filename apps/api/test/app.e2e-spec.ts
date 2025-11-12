@@ -52,9 +52,9 @@ describe('AppController (e2e)', () => {
       imports: [AppModule],
     });
 
-    testingModuleBuilder.overrideModule(DatabaseModule).useModule(
-      class MockDatabaseModule {},
-    );
+    testingModuleBuilder
+      .overrideModule(DatabaseModule)
+      .useModule(class MockDatabaseModule {});
 
     testingModuleBuilder
       .overrideProvider(getRepositoryToken(Session))
@@ -206,14 +206,14 @@ describe('AppController (e2e)', () => {
   it('POST /auth/login returns user and session when guard passes', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email: 'john@example.com', password: 'StrongP@ssw0rd' })
-      .expect(200); // Login returns 200, not 201
+      .send({ username: 'john', password: 'StrongP@ssw0rd' })
+      .expect(200);
 
     expect(res.body).toEqual(
       expect.objectContaining({
         success: true,
         data: expect.objectContaining({
-          user: expect.objectContaining({ email: 'john@example.com' }),
+          user: expect.objectContaining({ username: 'john' }),
           session: expect.objectContaining({ token: 'mock_token_123' }),
         }),
       }),

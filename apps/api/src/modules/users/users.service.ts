@@ -47,23 +47,23 @@ export class UsersService {
   }
 
   async createMunicipalityUser(dto: CreateMunicipalityUserDto): Promise<User> {
-    const { email, username, firstName, lastName, password, role: roleId } = dto;
+    const { email, username, firstName, lastName, password, role: roledto } = dto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return this.userRepository.manager.transaction(async (manager) => {
-      const role = await manager.getRepository(Role).findOne({ where: { id: roleId } });
+      const role = await manager.getRepository(Role).findOne({ where: { id: roledto.id } });
       
       if (!role) {
         throw new NotFoundException(`Role not found`);
       }
 
       const existingUser = await manager.getRepository(User).findOne({ 
-        where: { email },
+        where: { username },
       });
 
       if (existingUser) {
-        throw new ConflictException('User with this email already exists');
+        throw new ConflictException('User with this username already exists');
       }
 
       const newUser = manager.getRepository(User).create({
@@ -79,7 +79,7 @@ export class UsersService {
 
       const newAccount = manager.getRepository(Account).create({
         id: nanoid(),
-        accountId: email,
+        accountId: username,
         providerId: 'local',
         userId: user.id,
         password: hashedPassword,
@@ -122,14 +122,13 @@ export class UsersService {
       throw new NotFoundException('Municipality user not found');
     }
 
-    // Verifies email if already in use
-    if (dto.email && dto.email !== user.email) {
+    if (dto.username && dto.username !== user.username) {
       const existingUser = await this.userRepository.findOne({
-        where: { email: dto.email },
+        where: { username: dto.username },
       });
 
       if (existingUser) {
-        throw new ConflictException('Email already in use');
+        throw new ConflictException('Username already in use');
       }
     }
 
@@ -141,7 +140,7 @@ export class UsersService {
     // we can get rid of this if the admin can select only from a list
     if (dto.role) {
       const role = await this.roleRepository.findOne({
-        where: { name: dto.role },
+        where: { name: dto.role.name },
       });
 
       if (!role) {

@@ -180,11 +180,11 @@ export class UsersController {
   })
   @ApiResponse({
     status: 409,
-    description: 'Conflict - User with this email already exists',
+    description: 'Conflict - User with this username already exists',
     schema: {
       example: {
         statusCode: 409,
-        message: 'User with this email already exists',
+        message: 'User with this username already exists',
         error: 'Conflict',
       },
     },
@@ -335,11 +335,11 @@ export class UsersController {
   })
   @ApiResponse({
     status: 409,
-    description: 'Conflict - Email already in use by another user',
+    description: 'Conflict - username already in use by another user',
     schema: {
       example: {
         statusCode: 409,
-        message: 'Email already in use',
+        message: 'Username already in use',
         error: 'Conflict',
       },
     },
