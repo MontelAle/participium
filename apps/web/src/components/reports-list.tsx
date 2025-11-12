@@ -11,6 +11,7 @@ export function ReportsList() {
       latitude: report.location.coordinates[1] ?? 0,
       longitude: report.location.coordinates[0] ?? 0,
       address: report.address,
+      city: 'Unavailable Zone',
     });
   };
 
