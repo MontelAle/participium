@@ -20,11 +20,8 @@ const modernDivIcon = (label?: string) =>
               <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="rgba(0,0,0,0.35)"/>
             </filter>
           </defs>
-          <!-- puntina -->
           <path d="M32 4c11 0 20 9 20 20 0 15-20 36-20 36S12 39 12 24C12 13 21 4 32 4z" fill="url(#gpG)" filter="url(#gpShadow)"/>
-          <!-- highlight -->
           <circle cx="26" cy="18" r="6" fill="rgba(255,255,255,.55)"/>
-          <!-- bordo sottile -->
           <path d="M32 4c11 0 20 9 20 20 0 15-20 36-20 36S12 39 12 24C12 13 21 4 32 4z" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1"/>
         </svg>
         <div class="gp-pulse" aria-hidden="true"></div>
@@ -269,6 +266,7 @@ export default function Map() {
       animate: true,
     });
   }, [location]);
+
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;

@@ -3,12 +3,12 @@ import { LocationData } from '@/types/location';
 
 interface ActiveReportStore {
   locationData?: LocationData;
-  setLocation: (location: LocationData | undefined) => void;
+  setLocation: (locationData: LocationData | undefined) => void;
   clearLocation: () => void;
 }
 
 export const useActiveReportStore = create<ActiveReportStore>((set) => ({
-  location: undefined,
+  locationData: undefined,
   setLocation: (locationData) => set({ locationData }),
-  clearLocation: () => set({ locationData: null }),
+  clearLocation: () => set({ locationData: undefined }),
 }));

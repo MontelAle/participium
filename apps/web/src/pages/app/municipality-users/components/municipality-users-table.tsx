@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import {
   TableProvider,
@@ -13,10 +11,12 @@ import {
 import type { User } from '@repo/api';
 import { EditMunicipalityUserDialog } from './edit-municipality-user-dialog';
 import { DeleteMunicipalityUserDialog } from './delete-municipality-user-dialog';
-import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
 
-export function MunicipalityUsersTable() {
-  const { data: municipalUsers = [] } = useMunicipalityUsers();
+export type MunicipalityUsersTableProps = {
+  data: User[];
+};
+
+export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
   const prettifyRole = (name: string) =>
     name
       .replace(/_/g, ' ')
@@ -49,31 +49,26 @@ export function MunicipalityUsersTable() {
         header: 'Operations',
         cell: ({ row }: any) => {
           const user = row.original as User;
-
           return (
             <div className="flex items-center gap-2">
               <EditMunicipalityUserDialog user={user} />
-
               <DeleteMunicipalityUserDialog user={user} />
             </div>
           );
         },
       },
     ],
-    [municipalUsers],
+    [],
   );
 
   return (
-    <TableProvider
-      columns={columns}
-      data={municipalUsers.filter((user) => user.role.name !== 'admin')}
-    >
+    <TableProvider columns={columns as any} data={data}>
       <TableHeader>
         {({ headerGroup }) => (
           <TableHeaderGroup headerGroup={headerGroup}>
             {({ header }) => (
               <TableColumnHeader
-                column={header.column}
+                column={header.column as any}
                 title={header.column.columnDef.header as string}
               />
             )}

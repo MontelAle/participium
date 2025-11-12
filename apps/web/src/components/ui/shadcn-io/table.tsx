@@ -33,7 +33,6 @@ import {
   Table as TableRaw,
   TableRow as TableRowRaw,
 } from '@/components/ui/table';
-import { cn } from '@/lib/utils';
 
 export type { ColumnDef } from '@tanstack/react-table';
 
@@ -239,7 +238,7 @@ export const TableBody = ({ children, className }: TableBodyProps) => {
       ) : (
         <TableRowRaw>
           <TableCellRaw className="h-24 text-center" colSpan={columns.length}>
-            No results.
+            No Users found.
           </TableCellRaw>
         </TableRowRaw>
       )}
