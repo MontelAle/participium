@@ -26,9 +26,9 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async validateUser(email: string, password: string) {
+  async validateUser(username: string, password: string) {
     const account = await this.accountRepository.findOne({
-      where: { providerId: 'local', accountId: email },
+      where: { providerId: 'local', accountId: username },
       relations: ['user', 'user.role'],
     });
     if (!account) return null;
@@ -56,22 +56,22 @@ export class AuthService {
 
       // User check/create
       let user = await manager.getRepository(User).findOne({
-        where: { email },
+        where: { username },
         relations: ['role'],
       });
 
       if (user) {
         const account = await manager.getRepository(Account).findOne({
-          where: { providerId: 'local', accountId: email },
+          where: { providerId: 'local', accountId: username },
         });
 
         if (account) {
-          throw new ConflictException('User with this email already exists');
+          throw new ConflictException('User with this username already exists');
         }
 
         const newAccount = manager.getRepository(Account).create({
           id: nanoid(),
-          accountId: email,
+          accountId: username,
           providerId: 'local',
           userId: user.id,
           password: hashedPassword,
@@ -93,7 +93,7 @@ export class AuthService {
 
         const newAccount = manager.getRepository(Account).create({
           id: nanoid(),
-          accountId: email,
+          accountId: username,
           providerId: 'local',
           userId: user.id,
           password: hashedPassword,

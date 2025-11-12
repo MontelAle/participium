@@ -124,7 +124,7 @@ SELECT * FROM role;
 ### Assign a role to a user
 
 ```sql
-UPDATE "user" SET "roleId" = 'admin' WHERE email = 'name@domain.com';
+UPDATE "user" SET "roleId" = 'admin' WHERE username = 'user';
 ```
 
 ---
@@ -167,13 +167,17 @@ docker compose down -v
 | View table data | `SELECT * FROM table_name;`                                         |
 | Stop DB         | `docker compose down`                                               |
 
+TODO: ELIMINA THIS
+
 ## Architectural Technology
+
 This section provides a clear overview of:
 What data is stored (fields and types)
 How entities relate (foreign keys, many-to-one relations)
 Special features (auto-generated timestamps, excluded fields, optional fields)
 
 It helps developers understand the database schema, making it easier to work with the backend, write queries, and maintain the system. The tables in your README serve as a quick reference for anyone interacting with or extending your application’s data layer.
+
 ### High-level Architecture
 
 The application follows a classic three-tier architecture:
@@ -212,7 +216,7 @@ Communication between the frontend and backend happens over HTTPS using JSON. Th
 - **Technology**: PostgreSQL + TypeORM
 - **Responsibilities**:
   - Persist users, reports, and categories
-  - Enforce constraints (unique email, foreign keys between users and reports)
+  - Enforce constraints (unique email and username, foreign keys between users and reports)
 - **Main entities**:
   - `User`: email, username, role, password hash
   - `Report`: title, description, location, status, category, author
@@ -225,52 +229,58 @@ Communication between the frontend and backend happens over HTTPS using JSON. Th
 - **PostgreSQL** was selected as a robust open-source relational database with strong support for GIS extensions, which fits well a map-based reporting system.
 - **React** on the frontend enables building a responsive, interactive user interface with reusable components.
 
- ## account
-| Field       | Type    | Description            | Nullable | Notes                       |
-| ----------- | ------- | ---------------------- | -------- | --------------------------- |
-| id          | string  | Primary key            | No       |                             |
-| accountId   | string  | Account identifier     | No       |                             |
-| providerId  | string  | Provider identifier    | No       |                             |
-| userId      | string  | Linked user ID         | No       | Foreign key to User entity  |
-| user        | User    | User entity relation   | No       | Many-to-one, cascade delete |
-| password    | string  | Account password       | Yes      | Optional                    |
-| createdAt   | Date    | Creation timestamp     | No       | Auto-generated              |
-| updatedAt   | Date    | Last update timestamp  | No       | Auto-generated              |
+## account
+
+| Field      | Type   | Description           | Nullable | Notes                       |
+| ---------- | ------ | --------------------- | -------- | --------------------------- |
+| id         | string | Primary key           | No       |                             |
+| accountId  | string | Account identifier    | No       |                             |
+| providerId | string | Provider identifier   | No       |                             |
+| userId     | string | Linked user ID        | No       | Foreign key to User entity  |
+| user       | User   | User entity relation  | No       | Many-to-one, cascade delete |
+| password   | string | Account password      | Yes      | Optional                    |
+| createdAt  | Date   | Creation timestamp    | No       | Auto-generated              |
+| updatedAt  | Date   | Last update timestamp | No       | Auto-generated              |
 
 ## category
-| Field | Type   | Description      | Nullable | Notes      |
-| ----- | ------ | ---------------- | -------- | ---------- |
-| id    | string | Primary key      | No       |            |
-| name  | string | Category name    | No       |            |
- ## role
-| Field | Type   | Description   | Nullable | Notes      |
-| ----- | ------ | ------------- | -------- | ---------- |
-| id    | string | Primary key   | No       |            |
-| name  | string | Role name     | No       |            |
+
+| Field | Type   | Description   | Nullable | Notes |
+| ----- | ------ | ------------- | -------- | ----- |
+| id    | string | Primary key   | No       |       |
+| name  | string | Category name | No       |       |
+
+## role
+
+| Field | Type   | Description | Nullable | Notes |
+| ----- | ------ | ----------- | -------- | ----- |
+| id    | string | Primary key | No       |       |
+| name  | string | Role name   | No       |       |
 
 ## session
-| Field          | Type      | Description                | Nullable | Notes                       |
-| -------------- | --------- | -------------------------- | -------- | --------------------------- |
-| id             | string    | Primary key                | No       |                             |
-| expiresAt      | Date      | Session expiry timestamp   | No       |                             |
-| hashedSecret   | string    | Hashed session secret      | No       | Excluded from serialization |
-| createdAt      | Date      | Creation timestamp         | No       | Auto-generated              |
-| updatedAt      | Date      | Last update timestamp      | No       | Auto-generated              |
-| ipAddress      | string    | IP address                 | Yes      | Optional                    |
-| userAgent      | string    | User agent string          | Yes      | Optional                    |
-| userId         | string    | Linked user ID             | No       | Foreign key to User entity  |
-| user           | User      | User entity relation       | No       | Many-to-one, cascade delete |
-| impersonatedBy | string    | Impersonator user ID       | Yes      | Optional                    |
+
+| Field          | Type   | Description              | Nullable | Notes                       |
+| -------------- | ------ | ------------------------ | -------- | --------------------------- |
+| id             | string | Primary key              | No       |                             |
+| expiresAt      | Date   | Session expiry timestamp | No       |                             |
+| hashedSecret   | string | Hashed session secret    | No       | Excluded from serialization |
+| createdAt      | Date   | Creation timestamp       | No       | Auto-generated              |
+| updatedAt      | Date   | Last update timestamp    | No       | Auto-generated              |
+| ipAddress      | string | IP address               | Yes      | Optional                    |
+| userAgent      | string | User agent string        | Yes      | Optional                    |
+| userId         | string | Linked user ID           | No       | Foreign key to User entity  |
+| user           | User   | User entity relation     | No       | Many-to-one, cascade delete |
+| impersonatedBy | string | Impersonator user ID     | Yes      | Optional                    |
 
 ## user
-| Field     | Type   | Description           | Nullable | Notes                        |
-| --------- | ------ | ---------------------| -------- | ---------------------------- |
-| id        | string | Primary key          | No       |                              |
-| email     | string | User email           | No       | Unique                       |
-| username  | string | Username             | No       | Unique                       |
-| firstName | string | First name           | No       |                              |
-| lastName  | string | Last name            | No       |                              |
-| roleId    | string | Linked role ID       | No       | Foreign key to Role entity   |
-| role      | Role   | Role entity relation | No       | Many-to-one, not nullable    |
-| createdAt | Date   | Creation timestamp   | No       | Auto-generated               |
-| updatedAt | Date   | Last update timestamp| No       | Auto-generated               |
+
+| Field     | Type   | Description           | Nullable | Notes                      |
+| --------- | ------ | --------------------- | -------- | -------------------------- |
+| id        | string | Primary key           | No       |                            |
+| email     | string | User email            | No       | Unique                     |
+| username  | string | Username              | No       | Unique                     |
+| firstName | string | First name            | No       |                            |
+| lastName  | string | Last name             | No       |                            |
+| roleId    | string | Linked role ID        | No       | Foreign key to Role entity |
+| role      | Role   | Role entity relation  | No       | Many-to-one, not nullable  |
+| createdAt | Date   | Creation timestamp    | No       | Auto-generated             |
+| updatedAt | Date   | Last update timestamp | No       | Auto-generated             |

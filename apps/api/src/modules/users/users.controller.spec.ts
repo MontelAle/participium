@@ -1,7 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
-import { CreateMunicipalityUserDto, UpdateMunicipalityUserDto, User } from '@repo/api';
+import {
+  CreateMunicipalityUserDto,
+  Role,
+  UpdateMunicipalityUserDto,
+  User,
+} from '@repo/api';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 
 // Mock "nanoid" per evitare problemi ESM
@@ -40,8 +45,8 @@ describe('UsersController', () => {
   describe('getMunicipalityUsers', () => {
     it('should return a list of municipality users', async () => {
       const mockUsers: Partial<User>[] = [
-        { id: '1', email: 'admin1@city.gov' },
-        { id: '2', email: 'admin2@city.gov' },
+        { id: '1', username: 'officier1' },
+        { id: '2', username: 'officier2' },
       ];
 
       usersService.findMunicipalityUsers.mockResolvedValue(mockUsers as User[]);
@@ -57,8 +62,8 @@ describe('UsersController', () => {
     it('should return a municipality user by id', async () => {
       const mockUser: Partial<User> = {
         id: '1',
-        email: 'admin@city.gov',
-        role: { id: 'role-id', name: 'admin' } as any,
+        username: 'officier1',
+        role: { id: 'role-id', name: 'municipal_pr_officer' },
       };
 
       usersService.findMunicipalityUserById.mockResolvedValue(mockUser as User);
@@ -74,7 +79,9 @@ describe('UsersController', () => {
         new NotFoundException('Municipality user not found'),
       );
 
-      await expect(controller.getMunicipalityUserById('999')).rejects.toThrow(NotFoundException);
+      await expect(controller.getMunicipalityUserById('999')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -86,7 +93,7 @@ describe('UsersController', () => {
         firstName: 'New',
         lastName: 'User',
         password: 'SecurePass123',
-        role: 'admin',
+        role: { id: 'role-id', name: 'municipal_pr_officer' },
       };
 
       const mockUser: Partial<User> = {
@@ -110,14 +117,16 @@ describe('UsersController', () => {
         firstName: 'Dup',
         lastName: 'User',
         password: 'SecurePass123',
-        role: 'admin',
+        role: { id: 'role-id', name: 'municipal_pr_officer' },
       };
 
       usersService.createMunicipalityUser.mockRejectedValue(
-        new ConflictException('User with this email already exists'),
+        new ConflictException('User with this username already exists'),
       );
 
-      await expect(controller.createMunicipalityUser(dto)).rejects.toThrow(ConflictException);
+      await expect(controller.createMunicipalityUser(dto)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 
@@ -136,7 +145,9 @@ describe('UsersController', () => {
         new NotFoundException('Municipality user not found'),
       );
 
-      await expect(controller.deleteMunicipalityUserById('999')).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.deleteMunicipalityUserById('999'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -151,32 +162,40 @@ describe('UsersController', () => {
 
       const result = await controller.updateMunicipalityUserById('1', dto);
 
-      expect(usersService.updateMunicipalityUserById).toHaveBeenCalledWith('1', dto);
+      expect(usersService.updateMunicipalityUserById).toHaveBeenCalledWith(
+        '1',
+        dto,
+      );
       expect(result).toEqual({ success: true, data: { id: '1' } });
     });
 
     it('should throw if UsersService.updateMunicipalityUserById throws NotFoundException', async () => {
       const dto: UpdateMunicipalityUserDto = {
         email: 'updated@municipality.gov',
+        username: 'updated_user',
       };
 
       usersService.updateMunicipalityUserById.mockRejectedValue(
         new NotFoundException('Municipality user not found'),
       );
 
-      await expect(controller.updateMunicipalityUserById('999', dto)).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.updateMunicipalityUserById('999', dto),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw if UsersService.updateMunicipalityUserById throws ConflictException', async () => {
       const dto: UpdateMunicipalityUserDto = {
-        email: 'duplicate@municipality.gov',
+        username: 'duplicate_user',
       };
 
       usersService.updateMunicipalityUserById.mockRejectedValue(
-        new ConflictException('Email already in use'),
+        new ConflictException('Username already in use'),
       );
 
-      await expect(controller.updateMunicipalityUserById('1', dto)).rejects.toThrow(ConflictException);
+      await expect(
+        controller.updateMunicipalityUserById('1', dto),
+      ).rejects.toThrow(ConflictException);
     });
   });
 });

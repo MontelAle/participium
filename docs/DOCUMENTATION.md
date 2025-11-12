@@ -20,6 +20,7 @@
 **Participium** is a web platform for managing civic participation. The project uses a monorepo architecture based on Turborepo, with a NestJS backend and React/Vite frontend.
 
 ### Main Features
+
 - Cookie-based authentication and session management
 - Role and permission system
 - Municipal user management
@@ -31,11 +32,14 @@
 ## Architecture
 
 ### Monorepo Structure
+
 The project uses **Turborepo** to manage a monorepo workspace with:
+
 - **2 applications** (`apps/`): Backend API and Web frontend
 - **3 shared packages** (`packages/`): Common entities, ESLint and Jest configurations
 
 ### Architectural Patterns
+
 - **Backend**: NestJS with modular pattern (controllers, services, modules)
 - **Frontend**: React with routing, context API, custom hooks
 - **Database**: PostgreSQL with TypeORM and PostGIS
@@ -46,28 +50,31 @@ The project uses **Turborepo** to manage a monorepo workspace with:
 ## Technology Stack
 
 ### Backend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| NestJS | ^11.0.0 | Main framework |
-| TypeORM | ^0.3.27 | Database ORM |
-| PostgreSQL | 18 | Relational database |
-| PostGIS | 3.6 | Geographic extension |
-| Passport | ^0.7.0 | Authentication |
-| Swagger | ^11.2.1 | API documentation |
-| Jest | ^29.7.0 | Testing |
+
+| Technology | Version | Purpose              |
+| ---------- | ------- | -------------------- |
+| NestJS     | ^11.0.0 | Main framework       |
+| TypeORM    | ^0.3.27 | Database ORM         |
+| PostgreSQL | 18      | Relational database  |
+| PostGIS    | 3.6     | Geographic extension |
+| Passport   | ^0.7.0  | Authentication       |
+| Swagger    | ^11.2.1 | API documentation    |
+| Jest       | ^29.7.0 | Testing              |
 
 ### Frontend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| React | ^18.2.0 | UI framework |
-| Vite | ^5.1.4 | Build tool |
-| React Router | ^7.1.3 | Routing |
-| Tailwind CSS | ^4.1.16 | Styling |
-| Radix UI | various | Accessible UI components |
-| TanStack Query | ^5.90.7 | Data fetching |
-| Jotai | ^2.15.1 | State management |
+
+| Technology     | Version | Purpose                  |
+| -------------- | ------- | ------------------------ |
+| React          | ^18.2.0 | UI framework             |
+| Vite           | ^5.1.4  | Build tool               |
+| React Router   | ^7.1.3  | Routing                  |
+| Tailwind CSS   | ^4.1.16 | Styling                  |
+| Radix UI       | various | Accessible UI components |
+| TanStack Query | ^5.90.7 | Data fetching            |
+| Jotai          | ^2.15.1 | State management         |
 
 ### DevOps & Tools
+
 - **Package Manager**: pnpm ^8.15.5
 - **Build System**: Turborepo ^2.6.0
 - **Container**: Docker & Docker Compose
@@ -126,6 +133,7 @@ participium/
 ## Backend API
 
 ### Ports and URLs
+
 - **Port**: 5000 (default)
 - **Base URL**: http://localhost:5000/api
 - **Swagger UI**: http://localhost:5000/api (interactive documentation)
@@ -133,68 +141,77 @@ participium/
 ### Main Modules
 
 #### Auth Module
+
 **Endpoint**: `/auth`
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/login` | User login with email/password |
-| POST | `/register` | New user registration |
-| POST | `/logout` | Logout and session invalidation |
-| POST | `/refresh` | Session refresh |
+| Method | Route       | Description                           |
+| ------ | ----------- | ------------------------------------- |
+| POST   | `/login`    | User login with username and password |
+| POST   | `/register` | New user registration                 |
+| POST   | `/logout`   | Logout and session invalidation       |
+| POST   | `/refresh`  | Session refresh                       |
 
 **Features**:
+
 - Authentication with Passport Local Strategy
 - Session management with HTTP-only cookies
 - Guards: `LocalAuthGuard`, `SessionGuard`, `RolesGuard`
 
 #### Users Module
+
 **Endpoint**: `/users`
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/municipality` | List municipal users |
-| GET | `/municipality/user/:id` | User details |
-| POST | `/municipality` | Create municipal user |
-| POST | `/municipality/user/:id` | Update user |
-| DELETE | `/municipality/user/:id` | Delete user |
+| Method | Route                    | Description           |
+| ------ | ------------------------ | --------------------- |
+| GET    | `/municipality`          | List municipal users  |
+| GET    | `/municipality/user/:id` | User details          |
+| POST   | `/municipality`          | Create municipal user |
+| POST   | `/municipality/user/:id` | Update user           |
+| DELETE | `/municipality/user/:id` | Delete user           |
 
 **Functionality**:
+
 - Complete municipal user management
 - Validation with class-validator
 - Relations with roles and accounts
 
 #### Roles Module
+
 **Endpoint**: `/roles`
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| GET | `/` | Retrieve all available roles |
+| Method | Route | Description                  |
+| ------ | ----- | ---------------------------- |
+| GET    | `/`   | Retrieve all available roles |
 
 #### Reports Module
+
 **Endpoint**: `/reports`
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/` | Create a new report with geolocation |
-| GET | `/` | Get all reports with optional filters |
-| GET | `/nearby` | Find nearby reports ordered by distance |
-| GET | `/:id` | Get a specific report by ID |
-| PATCH | `/:id` | Update a report (Admin/Operator only) |
-| DELETE | `/:id` | Delete a report (Admin only) |
+| Method | Route     | Description                             |
+| ------ | --------- | --------------------------------------- |
+| POST   | `/`       | Create a new report with geolocation    |
+| GET    | `/`       | Get all reports with optional filters   |
+| GET    | `/nearby` | Find nearby reports ordered by distance |
+| GET    | `/:id`    | Get a specific report by ID             |
+| PATCH  | `/:id`    | Update a report (Admin/Operator only)   |
+| DELETE | `/:id`    | Delete a report (Admin only)            |
 
 **Features**:
+
 - Geospatial queries with PostGIS
 - Location-based filtering (bounding box, radius search)
 - Distance calculations with nearby reports
 - Support for OpenStreetMap coordinates (SRID 4326)
 
 **Query Parameters**:
+
 - Standard filters: `status`, `categoryId`, `userId`
 - Bounding box: `minLongitude`, `maxLongitude`, `minLatitude`, `maxLatitude`
 - Radius search: `searchLongitude`, `searchLatitude`, `radiusMeters`
 - Nearby: `longitude`, `latitude`, `radius` (default: 5000m)
 
 ### App Configuration
+
 File: `src/config/app.config.ts`
 
 ```typescript
@@ -225,6 +242,7 @@ File: `src/config/app.config.ts`
 ```
 
 ### Guards and Security
+
 - **SessionGuard**: Verify active session
 - **RolesGuard**: Role-based permission control
 - **LocalAuthGuard**: Credential authentication
@@ -236,10 +254,12 @@ File: `src/config/app.config.ts`
 ## Frontend Web
 
 ### Ports and URLs
+
 - **Port**: 5173 (dev)
 - **URL**: http://localhost:5173
 
 ### Routing
+
 ```typescript
 /                      → HomePage
 /map                   → MapPage
@@ -251,32 +271,39 @@ File: `src/config/app.config.ts`
 ### Component Structure
 
 #### Pages
+
 - **auth/**: Login and registration
 - **home/**: Main dashboard
 - **map/**: Map visualization
 - **users-municipality/**: Municipal user management
 
 #### Components
+
 - **ui/**: Styled Radix UI components (button, dialog, form, table, etc.)
 - **app-sidebar.tsx**: Navigation sidebar
 - **auth-form.tsx**: Authentication form
 - **reports-list.tsx**: Reports list
 
 #### Contexts
+
 - **AuthContext**: Global authentication state management
 
 #### Custom Hooks
+
 - `useAuth`: Authentication hook
 - `useMobile`: Mobile device detection
 - `useMunicipalityUsers`: Municipal user management
 - `useRoles`: Role management
 
 #### API Client
+
 Files: `src/api/client.ts` and `src/api/endpoints/`
+
 - Client configured for backend communication
 - Automatic error and authentication handling
 
 ### Styling
+
 - **Tailwind CSS 4.x**: Utility-first CSS
 - **Radix UI**: Headless accessible components
 - **Lucide React**: Iconography
@@ -287,6 +314,7 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 ## Database
 
 ### Technology
+
 - **PostgreSQL 18** with **PostGIS 3.6** extension
 - Docker Container: `participium-postgres`
 - Port: 5432
@@ -294,6 +322,7 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 ### Entities (TypeORM)
 
 #### User
+
 ```typescript
 {
   id: string (PK)
@@ -308,14 +337,16 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 ```
 
 #### Role
+
 ```typescript
 {
-  id: string (PK)
-  name: string
+  id: string(PK);
+  name: string;
 }
 ```
 
 #### Account
+
 ```typescript
 {
   id: string (PK)
@@ -329,6 +360,7 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 ```
 
 #### Session
+
 ```typescript
 {
   id: string (PK)
@@ -344,14 +376,16 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 ```
 
 #### Category
+
 ```typescript
 {
-  id: string (PK)
-  name: string
+  id: string(PK);
+  name: string;
 }
 ```
 
 #### Report
+
 ```typescript
 {
   id: string (PK)
@@ -369,12 +403,14 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 ```
 
 **PostGIS Integration**:
+
 - `location` column uses PostGIS geometry type with Point feature
 - SRID 4326 (WGS84) for GPS/OpenStreetMap compatibility
 - Stored in WKT format: `POINT(longitude latitude)`
 - Automatic spatial index (GIST) for optimized geospatial queries
 
 ### Relations
+
 - User ⟷ Role (ManyToOne)
 - User ⟷ Account (OneToMany)
 - User ⟷ Session (OneToMany)
@@ -386,26 +422,30 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 #### Supported Query Types
 
 **Bounding Box**: Find reports within a rectangular area
+
 ```typescript
 // Example: Reports in Turin city center
-minLongitude=7.65, maxLongitude=7.72
-minLatitude=45.03, maxLatitude=45.10
+((minLongitude = 7.65), (maxLongitude = 7.72));
+((minLatitude = 45.03), (maxLatitude = 45.1));
 ```
 
 **Radius Search**: Find reports within a circular area
+
 ```typescript
 // Example: Reports within 5km from Piazza Castello
-searchLongitude=7.686864, searchLatitude=45.070312
-radiusMeters=5000
+((searchLongitude = 7.686864), (searchLatitude = 45.070312));
+radiusMeters = 5000;
 ```
 
 **Nearby with Distances**: Reports ordered by distance from a point
+
 ```typescript
 // Returns reports with calculated distance in meters
-longitude=7.686864, latitude=45.070312, radius=5000
+((longitude = 7.686864), (latitude = 45.070312), (radius = 5000));
 ```
 
 #### PostGIS Functions Used
+
 - `ST_Contains`: Check if point is within bounding box
 - `ST_DWithin`: Find points within radius (meters)
 - `ST_Distance`: Calculate distance between points
@@ -417,9 +457,11 @@ longitude=7.686864, latitude=45.070312, radius=5000
 ## Shared Packages
 
 ### @repo/api
+
 **Purpose**: Shared entities and DTOs between backend and frontend
 
 **Content**:
+
 - `entities/`: TypeORM definitions (User, Role, Account, Session, Category, Report)
 - `dto/`: Data Transfer Objects
   - `login.dto.ts`
@@ -431,9 +473,11 @@ longitude=7.686864, latitude=45.070312, radius=5000
   - `filter-reports.dto.ts`
 
 ### @repo/eslint-config
+
 **Purpose**: Standardized ESLint configurations
 
 **Files**:
+
 - `base.js`: Base config
 - `nest.js`: NestJS config
 - `react.js`: React config
@@ -441,17 +485,21 @@ longitude=7.686864, latitude=45.070312, radius=5000
 - `prettier-base.js`: Prettier integration
 
 ### @repo/jest-config
+
 **Purpose**: Reusable Jest configurations
 
 **Exports**:
+
 - `base.ts`: Base configuration
 - `nest.ts`: NestJS config
 - `next.ts`: Next.js config (future-proof)
 
 ### @repo/typescript-config
+
 **Purpose**: Shared TypeScript configurations
 
 **Files**:
+
 - `base.json`: Base config
 - `nestjs.json`: Backend config
 - `react.json`: React config
@@ -463,6 +511,7 @@ longitude=7.686864, latitude=45.070312, radius=5000
 ## Setup and Configuration
 
 ### Prerequisites
+
 - Node.js >= 18
 - pnpm >= 8.15.5
 - Docker Desktop (for database)
@@ -470,12 +519,14 @@ longitude=7.686864, latitude=45.070312, radius=5000
 ### Installation
 
 1. **Clone and install dependencies**
+
 ```bash
 cd participium
 pnpm install
 ```
 
 2. **Start PostgreSQL database**
+
 ```bash
 cd apps/api
 docker compose up -d
@@ -484,6 +535,7 @@ docker compose up -d
 The database uses the `postgis/postgis:18-3.6` Docker image, which has **PostGIS already enabled** by default. No manual extension setup is required.
 
 Verify active container:
+
 ```bash
 docker ps
 ```
@@ -491,6 +543,7 @@ docker ps
 3. **Environment variables configuration**
 
 Create `.env` file in `apps/api/`:
+
 ```env
 # App
 PORT=5000
@@ -516,6 +569,7 @@ COOKIE_SAME_SITE=lax
 ```
 
 4. **Seed database (optional)**
+
 ```bash
 cd apps/api
 pnpm run seed:user     # Seed users and roles
@@ -525,11 +579,13 @@ pnpm run seed:reports  # Seed reports with Turin locations
 ### Starting Applications
 
 #### Development Mode (all apps)
+
 ```bash
 pnpm dev
 ```
 
 #### Individual applications
+
 ```bash
 # Backend only
 cd apps/api
@@ -541,6 +597,7 @@ pnpm dev
 ```
 
 ### Application Access
+
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:5000/api
 - **Swagger Docs**: http://localhost:5000/api
@@ -551,6 +608,7 @@ pnpm dev
 ## Available Commands
 
 ### Root Workspace
+
 ```bash
 pnpm dev           # Start all apps in dev mode
 pnpm build         # Build all apps
@@ -562,6 +620,7 @@ pnpm format        # Format code with Prettier
 ```
 
 ### Backend (apps/api)
+
 ```bash
 pnpm dev           # Start dev with hot-reload
 pnpm build         # Production build
@@ -576,6 +635,7 @@ pnpm seed:reports  # Seed geospatial reports data
 ```
 
 ### Frontend (apps/web)
+
 ```bash
 pnpm dev           # Vite dev server
 pnpm build         # Production build
@@ -584,6 +644,7 @@ pnpm lint          # Linting
 ```
 
 ### Docker Database
+
 ```bash
 # From apps/api/
 docker compose up -d      # Start database
@@ -597,13 +658,16 @@ docker exec -it participium-postgres psql -U admin -d participium  # psql connec
 ## Additional Notes
 
 ### Testing
+
 - **Coverage available**: `apps/api/coverage/`
 - Coverage reports in formats: HTML, LCOV, Clover, JSON
 - E2E tests configured for the API
 - Unit tests for all modules including geospatial queries
 
 ### PostGIS & Geospatial Features
+
 The database uses the **PostGIS 3.6** extension for advanced geographic features:
+
 - Geographic coordinate storage (longitude, latitude)
 - Spatial indexing with GIST for performance
 - Distance calculations in meters
@@ -612,12 +676,15 @@ The database uses the **PostGIS 3.6** extension for advanced geographic features
 - TypeORM native support without additional packages
 
 ### Turbo Cache
+
 Turborepo optimizes builds and tests through intelligent caching:
+
 - `dev` task is not cached (persistent mode)
 - `build` task cached with invalidation on changes
 - `test` task not cached to ensure updated results
 
 ### Security
+
 - Passwords hashed with bcrypt
 - Sessions with hashed secrets
 - HTTP-only cookies for CSRF protection
@@ -625,7 +692,9 @@ Turborepo optimizes builds and tests through intelligent caching:
 - Class-validator for input validation
 
 ### Extensibility
+
 The project is structured for future evolutions:
+
 - Easily extensible NestJS modules
 - Reusable React components
 - Centralized configurations in packages

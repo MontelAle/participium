@@ -48,7 +48,6 @@ export class UpdateMunicipalityUserDto {
       'environmental_officer',
     ],
   })
-
   @IsOptional()
-  role: Role | null;
+  role?: Role;
 }
