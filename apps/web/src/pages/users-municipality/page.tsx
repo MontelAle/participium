@@ -26,7 +26,11 @@ const UsersMunicipalityPage = () => {
         />
       </div>
 
-      <MunicipalityUsersTable users={municipalityUsers} />
+       <MunicipalityUsersTable
+        users={municipalityUsers}
+        roles={roles}
+        refetch={refetch} 
+      />
     </div>
   );
 };

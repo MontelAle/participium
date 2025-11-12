@@ -10,35 +10,50 @@ import {
   TableColumnHeader,
   TableBody,
 } from '@/components/ui/shadcn-io/table';
-import type { User } from '@repo/api';
+import type { User, Role } from '@repo/api';
+import { EditUserDialog } from './edit-municipality-user-dialog';
+import { DeleteUserDialog } from './delete-municipality-user-dialog';
+import { deleteMunicipalityUser } from '@/api/endpoints/municipality-users';
+interface MunicipalityUsersTableProps {
+  users: User[];
+  roles: Role[];
+  refetch: () => void;
+}
 
-export function MunicipalityUsersTable({ users }: { users: User[] }) {
+export function MunicipalityUsersTable({
+  users,
+  roles,
+  refetch,
+}: MunicipalityUsersTableProps) {
   const columns = React.useMemo(
     () => [
-      {
-        accessorKey: 'username',
-        header: 'Username',
-      },
-      {
-        accessorKey: 'email',
-        header: 'Email',
-      },
-      {
-        accessorKey: 'firstName',
-        header: 'First Name',
-      },
-      {
-        accessorKey: 'lastName',
-        header: 'Last Name',
-      },
+      { accessorKey: 'username', header: 'Username' },
+      { accessorKey: 'email', header: 'Email' },
+      { accessorKey: 'firstName', header: 'First Name' },
+      { accessorKey: 'lastName', header: 'Last Name' },
       {
         accessorKey: 'role',
         header: 'Role',
         cell: ({ getValue }: any) =>
           typeof getValue() === 'object' ? getValue().name : getValue(),
       },
+      {
+        id: 'operations',
+        header: 'Operations',
+        cell: ({ row }: any) => {
+          const user = row.original as User;
+
+          return (
+            <div className="flex items-center gap-2">
+              <EditUserDialog user={user} roles={roles} onSuccess={refetch} />
+
+              <DeleteUserDialog user={user} />
+            </div>
+          );
+        },
+      },
     ],
-    [],
+    [roles, refetch],
   );
 
   return (

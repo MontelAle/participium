@@ -168,8 +168,65 @@ docker compose down -v
 | Stop DB         | `docker compose down`                                               |
 
 ## Architectural Technology
+This section provides a clear overview of:
+What data is stored (fields and types)
+How entities relate (foreign keys, many-to-one relations)
+Special features (auto-generated timestamps, excluded fields, optional fields)
+
+It helps developers understand the database schema, making it easier to work with the backend, write queries, and maintain the system. The tables in your README serve as a quick reference for anyone interacting with or extending your application’s data layer.
+### High-level Architecture
+
+The application follows a classic three-tier architecture:
+
+- **Frontend**: A React single-page application that handles user interaction and communicates with the backend via REST APIs.
+- **Backend**: A Node.js/NestJS service exposing authenticated REST endpoints for managing users, reports, and admin operations.
+- **Database**: A PostgreSQL relational database used to persist users, reports, and system configuration.
+
+Communication between the frontend and backend happens over HTTPS using JSON. The backend uses an ORM layer to interact with the database and applies domain validation and authorization before any write operation.
+
+### Frontend
+
+- **Technology**: React, TypeScript, Vite
+- **Responsibilities**:
+  - Render the user interface for citizens and administrators
+  - Handle form validation before sending data to the API
+  - Manage client-side routing and basic state (logged-in user, filters, etc.)
+- **Interaction with backend**:
+  - Calls `/api/auth/*` for authentication
+  - Calls `/api/reports/*` for creating and viewing reports
+
+### Backend
+
+- **Technology**: Node.js, NestJS
+- **Responsibilities**:
+  - Expose REST endpoints for authentication, user management, and report management
+  - Apply business rules (role-based access control, validation)
+  - Handle file uploads (photos attached to reports)
+- **Internal structure**:
+  - `modules/auth`: login, registration, session management
+  - `modules/reports`: CRUD operations on reports
+  - `modules/users`: admin management of users
+
+  ### Database
+
+- **Technology**: PostgreSQL + TypeORM
+- **Responsibilities**:
+  - Persist users, reports, and categories
+  - Enforce constraints (unique email, foreign keys between users and reports)
+- **Main entities**:
+  - `User`: email, username, role, password hash
+  - `Report`: title, description, location, status, category, author
+  - `Photo`: path, report_id
 
 
+### Technology Choices & Rationale
+
+- **NestJS** was chosen because it provides a structured, opinionated framework with built-in support for modules, dependency injection, and decorators, which keeps the codebase maintainable as the project grows.
+- **TypeORM** allows us to keep a single source of truth for the data model in TypeScript and automatically generate SQL queries, reducing boilerplate.
+- **PostgreSQL** was selected as a robust open-source relational database with strong support for GIS extensions, which fits well a map-based reporting system.
+- **React** on the frontend enables building a responsive, interactive user interface with reusable components.
+
+ ## account
 | Field       | Type    | Description            | Nullable | Notes                       |
 | ----------- | ------- | ---------------------- | -------- | --------------------------- |
 | id          | string  | Primary key            | No       |                             |
@@ -181,22 +238,18 @@ docker compose down -v
 | createdAt   | Date    | Creation timestamp     | No       | Auto-generated              |
 | updatedAt   | Date    | Last update timestamp  | No       | Auto-generated              |
 
-
+## category
 | Field | Type   | Description      | Nullable | Notes      |
 | ----- | ------ | ---------------- | -------- | ---------- |
 | id    | string | Primary key      | No       |            |
 | name  | string | Category name    | No       |            |
-
+ ## role
 | Field | Type   | Description   | Nullable | Notes      |
 | ----- | ------ | ------------- | -------- | ---------- |
 | id    | string | Primary key   | No       |            |
 | name  | string | Role name     | No       |            |
 
-| Field | Type   | Description   | Nullable | Notes      |
-| ----- | ------ | ------------- | -------- | ---------- |
-| id    | string | Primary key   | No       |            |
-| name  | string | Role name     | No       |            |
-
+## session
 | Field          | Type      | Description                | Nullable | Notes                       |
 | -------------- | --------- | -------------------------- | -------- | --------------------------- |
 | id             | string    | Primary key                | No       |                             |
@@ -210,6 +263,7 @@ docker compose down -v
 | user           | User      | User entity relation       | No       | Many-to-one, cascade delete |
 | impersonatedBy | string    | Impersonator user ID       | Yes      | Optional                    |
 
+## user
 | Field     | Type   | Description           | Nullable | Notes                        |
 | --------- | ------ | ---------------------| -------- | ---------------------------- |
 | id        | string | Primary key          | No       |                              |
