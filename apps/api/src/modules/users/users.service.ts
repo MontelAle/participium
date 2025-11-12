@@ -52,7 +52,7 @@ export class UsersService {
   }
 
   async createMunicipalityUser(dto: CreateMunicipalityUserDto): Promise<User> {
-    const { email, username, firstName, lastName, password, role } = dto;
+    const { email, username, firstName, lastName, password } = dto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -149,24 +149,49 @@ export class UsersService {
       }
     }
 
-    if (dto.email) user.email = dto.email;
-    if (dto.username) user.username = dto.username;
-    if (dto.firstName) user.firstName = dto.firstName;
-    if (dto.lastName) user.lastName = dto.lastName;
-
-    // we can get rid of this if the admin can select only from a list
-    if (dto.role) {
-      const role = await this.roleRepository.findOne({
-        where: { name: dto.role.name },
+    if (dto.email && dto.email !== user.email) {
+      const existingUserWithEmail = await this.userRepository.findOne({
+        where: { email: dto.email },
       });
 
-      if (!role) {
-        throw new NotFoundException('Role not found');
+      if (existingUserWithEmail) {
+        throw new ConflictException('Email already in use');
       }
-
-      user.roleId = role.id;
     }
 
-    await this.userRepository.save(user);
+    await this.userRepository.manager.transaction(async (manager) => {
+      // Update user fields
+      if (dto.email) user.email = dto.email;
+      if (dto.username) user.username = dto.username;
+      if (dto.firstName) user.firstName = dto.firstName;
+      if (dto.lastName) user.lastName = dto.lastName;
+
+      // we can get rid of this if the admin can select only from a list
+      if (dto.role) {
+        const role = await this.roleRepository.findOne({
+          where: { id: dto.role.id },
+        });
+
+        if (!role) {
+          throw new NotFoundException('Role not found');
+        }
+
+        user.roleId = role.id;
+      }
+
+      await manager.getRepository(User).save(user);
+
+      // Update associated account if username is changed
+      if (dto.username) {
+        const account = await manager.getRepository(Account).findOne({
+          where: { userId: id, providerId: 'local' },
+        });
+
+        if (account) {
+          account.accountId = dto.username;
+          await manager.getRepository(Account).save(account);
+        }
+      }
+    });
   }
 }
