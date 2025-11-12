@@ -11,10 +11,20 @@ jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
 }));
 
-const createMockRepository = () => ({
-  find: jest.fn().mockResolvedValue([]),
-  findOne: jest.fn().mockResolvedValue(null),
-  findOneBy: jest.fn().mockResolvedValue(null),
+const createMockRepository = (data: any[] = []) => ({
+  find: jest.fn().mockResolvedValue(data),
+  findOne: jest.fn(({ where }) =>
+    Promise.resolve(
+      data.find((e) => Object.entries(where).every(([k, v]) => e[k] === v)) ||
+        null,
+    ),
+  ),
+  findOneBy: jest.fn((where) =>
+    Promise.resolve(
+      data.find((e) => Object.entries(where).every(([k, v]) => e[k] === v)) ||
+        null,
+    ),
+  ),
   save: jest.fn((entity) => Promise.resolve(entity)),
   create: jest.fn((dto) => dto),
   remove: jest.fn((entity) => Promise.resolve(entity)),
@@ -38,6 +48,34 @@ describe('AppController (e2e)', () => {
     const importedModule = await import('./../src/app.module');
     AppModule = importedModule.AppModule;
 
+    const mockRoles = [
+      { id: 'role_1', name: 'admin' },
+      { id: 'role_2', name: 'user' },
+    ];
+
+    const mockUser = {
+      id: 'user_1',
+      email: 'john@example.com',
+      username: 'john',
+      firstName: 'John',
+      lastName: 'Doe',
+      role: { id: 'role_1', name: 'admin' },
+    };
+
+    const mockSession = {
+      id: 'sess_1',
+      userId: 'user_1',
+      hashedSecret: 'hashed_secret',
+    };
+
+    const mockCookie = {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      maxAge: 3600_000,
+    };
+    const mockToken = 'sess_1.secret';
+
     const { DatabaseModule } = await import(
       './../src/providers/database/database.module'
     );
@@ -46,9 +84,9 @@ describe('AppController (e2e)', () => {
       imports: [AppModule],
     });
 
-    testingModuleBuilder.overrideModule(DatabaseModule).useModule(
-      class MockDatabaseModule {},
-    );
+    testingModuleBuilder
+      .overrideModule(DatabaseModule)
+      .useModule(class MockDatabaseModule {});
 
     testingModuleBuilder
       .overrideProvider(getRepositoryToken(Session))
@@ -56,34 +94,13 @@ describe('AppController (e2e)', () => {
       .overrideProvider(getRepositoryToken(User))
       .useValue(createMockRepository())
       .overrideProvider(getRepositoryToken(Role))
-      .useValue(createMockRepository())
+      .useValue(createMockRepository(mockRoles))
       .overrideProvider(getRepositoryToken(Account))
       .useValue(createMockRepository())
       .overrideProvider(getRepositoryToken(Category))
       .useValue(createMockRepository())
       .overrideProvider(getRepositoryToken(Report))
       .useValue(createMockRepository());
-
-    const mockUser = {
-      id: 'user_1',
-      email: 'john@example.com',
-      username: 'john',
-      firstName: 'John',
-      lastName: 'Doe',
-    } as any;
-    const mockSession = {
-      id: 'sess_1',
-      userId: 'user_1',
-      token: 'mock_token_123',
-      expiresAt: new Date(Date.now() + 3600_000).toISOString(),
-    } as any;
-    const mockCookie = {
-      httpOnly: true,
-      sameSite: 'lax' as const,
-      secure: false,
-      maxAge: 3600_000,
-    };
-    const mockToken = 'mock_token_123';
 
     testingModuleBuilder.overrideProvider(AuthService).useValue({
       register: jest.fn(async () => ({ user: mockUser })),
@@ -183,7 +200,7 @@ describe('AppController (e2e)', () => {
             email: 'john@example.com',
             username: 'john',
           }),
-          session: expect.objectContaining({ token: 'mock_token_123' }),
+          session: expect.objectContaining({ hashedSecret: 'hashed_secret' }),
         }),
       }),
     );
@@ -191,7 +208,7 @@ describe('AppController (e2e)', () => {
     const cookies = Array.isArray(setCookie)
       ? setCookie.join(';')
       : String(setCookie || '');
-    expect(cookies).toContain('session_token=mock_token_123');
+    expect(cookies).toContain('session_token=sess_1.secret');
     expect(cookies.toLowerCase()).toContain('httponly');
   });
 
@@ -206,7 +223,7 @@ describe('AppController (e2e)', () => {
         success: true,
         data: expect.objectContaining({
           user: expect.objectContaining({ email: 'john@example.com' }),
-          session: expect.objectContaining({ token: 'mock_token_123' }),
+          session: expect.objectContaining({ hashedSecret: 'hashed_secret' }),
         }),
       }),
     );
@@ -214,13 +231,13 @@ describe('AppController (e2e)', () => {
     const cookies = Array.isArray(setCookie2)
       ? setCookie2.join(';')
       : String(setCookie2 || '');
-    expect(cookies).toContain('session_token=mock_token_123');
+    expect(cookies).toContain('session_token=sess_1.secret');
   });
 
   it('POST /auth/logout returns success', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/logout')
-      .set('Cookie', 'session_token=mock_token_123')
+      .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
 
     expect(res.body.success).toBe(true);
@@ -230,7 +247,7 @@ describe('AppController (e2e)', () => {
   it('GET /roles returns all roles', async () => {
     const res = await request(app.getHttpServer())
       .get('/roles')
-      .set('Cookie', 'session_token=mock_token_123')
+      .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
 
     expect(res.body.success).toBe(true);
@@ -241,14 +258,14 @@ describe('AppController (e2e)', () => {
   it('POST /users/municipality creates a municipality user', async () => {
     const res = await request(app.getHttpServer())
       .post('/users/municipality')
-      .set('Cookie', 'session_token=mock_token_123')
+      .set('Cookie', 'session_token=sess_1.secret')
       .send({
         email: 'admin@municipality.gov',
         username: 'admin_user',
         firstName: 'Admin',
         lastName: 'User',
         password: 'SecureAdminPass123',
-        role: 'admin',
+        role: 'role_1',
       })
       .expect(201);
 
@@ -259,7 +276,7 @@ describe('AppController (e2e)', () => {
   it('GET /users/municipality returns all municipality users', async () => {
     const res = await request(app.getHttpServer())
       .get('/users/municipality')
-      .set('Cookie', 'session_token=mock_token_123')
+      .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
 
     expect(res.body.success).toBe(true);
@@ -269,7 +286,7 @@ describe('AppController (e2e)', () => {
   it('GET /users/municipality/user/:id returns a municipality user by ID', async () => {
     const res = await request(app.getHttpServer())
       .get('/users/municipality/user/user_1')
-      .set('Cookie', 'session_token=mock_token_123')
+      .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
 
     expect(res.body.success).toBe(true);
@@ -279,7 +296,7 @@ describe('AppController (e2e)', () => {
   it('POST /users/municipality/user/:id updates a municipality user by ID', async () => {
     const res = await request(app.getHttpServer())
       .post('/users/municipality/user/user_1')
-      .set('Cookie', 'session_token=mock_token_123')
+      .set('Cookie', 'session_token=sess_1.secret')
       .send({
         email: 'updated@municipality.gov',
         username: 'updated_user',
@@ -296,7 +313,7 @@ describe('AppController (e2e)', () => {
   it('DELETE /users/municipality/user/:id deletes a municipality user by ID', async () => {
     const res = await request(app.getHttpServer())
       .delete('/users/municipality/user/user_1')
-      .set('Cookie', 'session_token=mock_token_123')
+      .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
 
     expect(res.body.success).toBe(true);
@@ -307,7 +324,7 @@ describe('AppController (e2e)', () => {
   it('POST /reports creates a report', async () => {
     const res = await request(app.getHttpServer())
       .post('/reports')
-      .set('Cookie', 'session_token=mock_token_123')
+      .set('Cookie', 'session_token=sess_1.secret')
       .send({
         title: 'Broken streetlight',
         description: 'The streetlight on Main St is broken.',
@@ -324,7 +341,7 @@ describe('AppController (e2e)', () => {
   it('GET /reports returns all reports', async () => {
     const res = await request(app.getHttpServer())
       .get('/reports')
-      .set('Cookie', 'session_token=mock_token_123')
+      .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
 
     expect(res.body.success).toBe(true);
@@ -334,7 +351,7 @@ describe('AppController (e2e)', () => {
   it('GET /reports/:id returns a report by ID', async () => {
     const res = await request(app.getHttpServer())
       .get('/reports/report_1')
-      .set('Cookie', 'session_token=mock_token_123')
+      .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
 
     expect(res.body.success).toBe(true);
@@ -344,7 +361,7 @@ describe('AppController (e2e)', () => {
   it('PATCH /reports/:id updates a report', async () => {
     const res = await request(app.getHttpServer())
       .patch('/reports/report_1')
-      .set('Cookie', 'session_token=mock_token_123')
+      .set('Cookie', 'session_token=sess_1.secret')
       .send({
         status: 'resolved',
         description: 'Fixed by city crew.',
@@ -358,7 +375,7 @@ describe('AppController (e2e)', () => {
   it('DELETE /reports/:id deletes a report', async () => {
     await request(app.getHttpServer())
       .delete('/reports/report_1')
-      .set('Cookie', 'session_token=mock_token_123')
+      .set('Cookie', 'session_token=sess_1.secret')
       .expect(204);
   });
 });
