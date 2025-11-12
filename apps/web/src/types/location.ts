@@ -3,4 +3,4 @@ export type LocationData = {
   longitude: number;
   address?: string;
   city?: string;
-};
+} | null;

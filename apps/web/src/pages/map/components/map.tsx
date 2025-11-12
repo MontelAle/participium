@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useActiveReportStore } from '@/store/activeReportStore';
+import { useReports } from '@/hooks/use-reports';
 
 const modernDivIcon = (label?: string) =>
   L.divIcon({
@@ -34,6 +35,36 @@ const modernDivIcon = (label?: string) =>
     iconAnchor: [24, 52],
     popupAnchor: [0, -52],
   });
+
+const smallDivIcon = (opts?: {
+  color?: string;
+  pulse?: boolean;
+  label?: string;
+}) => {
+  const color = opts?.color ?? '#ff0000';
+  const pulse = opts?.pulse ?? false;
+  const label = opts?.label;
+
+  return L.divIcon({
+    className: 'my-pin-mini',
+    html: `
+        <div class="gp-mini-wrap">
+          <svg class="gp-mini-pin" viewBox="0 0 48 56" aria-hidden="true">
+            <path d="M24 3c8 0 15 7 15 15 0 11-15 27-15 27S9 29 9 18C9 10 16 3 24 3z"
+                  fill="${color}" />
+            <circle cx="19" cy="15" r="4" fill="rgba(255,255,255,.6)"/>
+            <path d="M24 3c8 0 15 7 15 15 0 11-15 27-15 27S9 29 9 18C9 10 16 3 24 3z"
+                  fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1"/>
+          </svg>
+          ${pulse ? `<div class="gp-mini-pulse" aria-hidden="true"></div>` : ''}
+          ${label ? `<div class="gp-mini-label">${label}</div>` : ''}
+        </div>
+      `,
+    iconSize: [32, 38],
+    iconAnchor: [16, 35],
+    popupAnchor: [0, -34],
+  });
+};
 
 const injectStylesOnce = (() => {
   let done = false;
@@ -84,6 +115,25 @@ const injectStylesOnce = (() => {
         font: 13px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
         color: #4b5563;
       }
+      
+      .gp-mini-wrap { position: relative; display: grid; place-items: center; }
+      
+      .gp-mini-pin { width: 32px; height: 38px; display: block; }
+
+      .gp-mini-pulse {
+        position: absolute; bottom: 2px;
+        width: 8px; height: 8px; border-radius: 9999px;
+        animation: gpPulse 2s infinite;
+        background: rgba(16,185,129,.35);
+        box-shadow: 0 0 0 0 rgba(16,185,129,.35);
+      }
+      .gp-mini-label {
+        position: absolute; top: 2px;
+        translate: 0 -100%;
+        padding: 2px 6px; border-radius: 9999px;
+        background: #111; color: #fff; font: 600 11px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        white-space: nowrap; box-shadow: 0 6px 16px rgba(0,0,0,.25);
+      }
     `;
     const style = document.createElement('style');
     style.setAttribute('data-gp', '1');
@@ -99,6 +149,9 @@ export default function Map() {
 
   const setLocation = useActiveReportStore((state) => state.setLocation);
   const location = useActiveReportStore((state) => state.locationData);
+  const clearLocation = useActiveReportStore((s) => s.clearLocation);
+  const savedGroupRef = useRef<L.LayerGroup | null>(null);
+  const { data: reports = [] } = useReports();
 
   useEffect(() => {
     injectStylesOnce();
@@ -216,7 +269,59 @@ export default function Map() {
       animate: true,
     });
   }, [location]);
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
 
+    if (!savedGroupRef.current) {
+      savedGroupRef.current = L.layerGroup().addTo(map);
+    }
+
+    const group = savedGroupRef.current;
+    group.clearLayers();
+
+    if (!reports?.length) return;
+
+    const baseColor = '#ff0000';
+
+    reports.forEach((report: any) => {
+      const [lng, lat] = report.location?.coordinates ?? [0, 0];
+      if (typeof lat !== 'number' || typeof lng !== 'number') return;
+
+      const m = L.marker([lat, lng], {
+        icon: smallDivIcon({ color: baseColor, pulse: false }),
+        keyboard: true,
+        title: report.address ?? 'Saved report',
+        alt: report.address ?? 'Saved report',
+        riseOnHover: true,
+      }).addTo(group);
+
+      m.bindTooltip(report.address ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`, {
+        direction: 'top',
+        offset: [0, -18],
+        opacity: 0.9,
+      });
+
+      m.on('click keypress', (ev: any) => {
+        if (
+          ev.type === 'keypress' &&
+          !['Enter', ' '].includes(ev.originalEvent?.key)
+        )
+          return;
+        setLocation({
+          latitude: lat,
+          longitude: lng,
+          address: report.address ?? '',
+          city: 'Unavailable Zone',
+        });
+      });
+    });
+  }, [reports, setLocation]);
+  useEffect(() => {
+    return () => {
+      clearLocation();
+    };
+  }, [clearLocation]);
   return (
     <div
       ref={mapRef}
@@ -270,7 +375,6 @@ function formatShortAddress(addressObj: any, displayName?: string) {
       const isNumLeft = /^\d+[A-Za-z]?$/.test(left);
       return isNumLeft ? `${right}, ${left}` : `${left}, ${right}`;
     }
-    // altrimenti prima coppia "sensata"
     const [first, second] = displayName.split(',').map((s) => s.trim());
     if (first && /^\d+[A-Za-z]?$/.test(first) && second)
       return `${second}, ${first}`;
