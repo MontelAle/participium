@@ -34,7 +34,7 @@ export function EditMunicipalityUserDialog({ user }: { user: User }) {
     email: user.email ?? '',
     firstName: user.firstName ?? '',
     lastName: user.lastName ?? '',
-    role: user.role ?? {},
+    roleId: user.role?.id ?? '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,9 +42,7 @@ export function EditMunicipalityUserDialog({ user }: { user: User }) {
   };
 
   const handleRoleChange = (value: string) => {
-    const role = roles.find((r) => r.id === value);
-
-    setForm({ ...form, role });
+    setForm({ ...form, roleId: value });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -142,7 +140,7 @@ export function EditMunicipalityUserDialog({ user }: { user: User }) {
 
             <Field>
               <Select
-                value={form.role?.name}
+                value={form.roleId}
                 onValueChange={handleRoleChange}
                 required
               >

@@ -18,8 +18,10 @@ import type { CreateMunicipalityUserDto } from '@repo/api';
 import { MailIcon, UserIcon, LockIcon } from 'lucide-react';
 import { useRoles } from '@/hooks/use-roles';
 import { toast } from 'sonner';
+import { useCreateMunicipalityUser } from '@/hooks/use-municipality-users';
 
 export function CreateMunicipalityUserDialog() {
+  const { mutateAsync: createMunicipalityUser } = useCreateMunicipalityUser();
   const { data: roles = [] } = useRoles();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +30,7 @@ export function CreateMunicipalityUserDialog() {
     email: '',
     firstName: '',
     lastName: '',
-    role: { id: '', name: '' },
+    roleId: '',
     password: '',
   });
 
@@ -37,9 +39,7 @@ export function CreateMunicipalityUserDialog() {
   };
 
   const handleRoleChange = (value: string) => {
-    const role = roles.find((r) => r.id === value) || { id: '', name: '' };
-
-    setForm({ ...form, role });
+    setForm({ ...form, roleId: value });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -47,13 +47,14 @@ export function CreateMunicipalityUserDialog() {
     setIsLoading(true);
 
     try {
+      await createMunicipalityUser(form);
       toast.success('Municipality user created successfully!');
       setForm({
         username: '',
         email: '',
         firstName: '',
         lastName: '',
-        role: { id: '', name: '' },
+        roleId: '',
         password: '',
       });
     } catch (error: any) {
@@ -141,7 +142,7 @@ export function CreateMunicipalityUserDialog() {
 
             <Field>
               <Select
-                value={form.role.name}
+                value={form.roleId}
                 onValueChange={handleRoleChange}
                 required
               >

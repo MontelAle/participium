@@ -52,14 +52,14 @@ export class UsersService {
   }
 
   async createMunicipalityUser(dto: CreateMunicipalityUserDto): Promise<User> {
-    const { email, username, firstName, lastName, password, role } = dto;
+    const { email, username, firstName, lastName, password, roleId } = dto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return this.userRepository.manager.transaction(async (manager) => {
       const roleRepo = manager.getRepository(Role);
       const dbRole = await roleRepo.findOne({
-        where: { id: dto.role.id },
+        where: { id: roleId },
       });
 
       if (!dbRole) {
@@ -155,9 +155,9 @@ export class UsersService {
     if (dto.lastName) user.lastName = dto.lastName;
 
     // we can get rid of this if the admin can select only from a list
-    if (dto.role) {
+    if (dto.roleId) {
       const role = await this.roleRepository.findOne({
-        where: { name: dto.role.name },
+        where: { id: dto.roleId },
       });
 
       if (!role) {
