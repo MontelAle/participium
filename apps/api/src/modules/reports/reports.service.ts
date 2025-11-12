@@ -1,7 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Report, CreateReportDto, UpdateReportDto, FilterReportsDto} from '@repo/api';
+import { Point, Repository } from 'typeorm';
+import {
+  Report,
+  CreateReportDto,
+  UpdateReportDto,
+  FilterReportsDto,
+} from '@repo/api';
 import { nanoid } from 'nanoid';
 
 @Injectable()
@@ -11,21 +16,20 @@ export class ReportsService {
     private readonly reportRepository: Repository<Report>,
   ) {}
 
-  /**
-   * Create a Point geometry from longitude and latitude
-   * Returns WKT (Well-Known Text) format: POINT(longitude latitude)
-   */
-  private createPointGeometry(longitude: number, latitude: number): string {
-    return `POINT(${longitude} ${latitude})`;
+  private createPointGeometry(longitude: number, latitude: number): Point {
+    return {
+      type: 'Point',
+      coordinates: [longitude, latitude],
+    };
   }
 
   /**
    * Extract coordinates from a Point geometry
-   * 
+   *
    * NOTE: This method is currently unused but will be useful for future features
    * such as extracting coordinates for display, coordinate-based filtering,
    * or returning coordinate data in specific API responses.
-   * 
+   *
    * @param location - WKT format string: POINT(longitude latitude)
    * @returns Object with longitude and latitude values
    */
@@ -139,10 +143,7 @@ export class ReportsService {
     return report;
   }
 
-  async update(
-    id: string,
-    updateReportDto: UpdateReportDto,
-  ): Promise<Report> {
+  async update(id: string, updateReportDto: UpdateReportDto): Promise<Report> {
     const report = await this.findOne(id);
 
     const { longitude, latitude, ...updateData } = updateReportDto;
