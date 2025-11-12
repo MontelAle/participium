@@ -1,21 +1,17 @@
-import { Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { useState } from 'react';
 import { useReports } from '@/hooks/use-reports';
 import { useActiveReportStore } from '@/store/activeReportStore';
+import type { Report } from '@repo/api';
 
 export function ReportsList() {
   const { data: reports = [] } = useReports();
   const setLocation = useActiveReportStore((state) => state.setLocation);
 
-  const handleReportClick = (report: any) => {
-    if (report.latitude && report.longitude) {
-      setLocation({
-        latitude: report.latitude,
-        longitude: report.longitude,
-        address: report.address,
-      });
-    }
+  const handleReportClick = (report: Report) => {
+    setLocation({
+      latitude: report.location.coordinates[1] ?? 0,
+      longitude: report.location.coordinates[0] ?? 0,
+      address: report.address,
+    });
   };
 
   return (
