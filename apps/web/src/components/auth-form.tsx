@@ -29,7 +29,7 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
 
     if (isLogin) {
       const result = await login({
-        email: formData.get('email') as string,
+        username: formData.get('email') as string,
         password: formData.get('password') as string,
       });
 
@@ -83,10 +83,10 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
                 <Field>
                   <InputGroup>
                     <InputGroupInput
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="Email"
+                      id="username"
+                      name="username"
+                      type="username"
+                      placeholder="Username"
                       required
                     />
                     <InputGroupAddon>
@@ -102,8 +102,8 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
                         <InputGroupInput
                           id="username"
                           name="username"
-                          type="text"
-                          placeholder="Username"
+                          type="string"
+                          placeholder="username"
                           required
                         />
                         <InputGroupAddon>
@@ -170,12 +170,12 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
                     {isLogin ? (
                       <>
                         Don't have an account?{' '}
-                        <Link to="/register">Sign up</Link>
+                        <Link to="/auth/register">Sign up</Link>
                       </>
                     ) : (
                       <>
                         Already have an account?{' '}
-                        <Link to="/login">Sign in</Link>
+                        <Link to="/auth/login">Sign in</Link>
                       </>
                     )}
                   </FieldDescription>
