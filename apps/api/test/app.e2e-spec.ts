@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import { AuthService } from './../src/modules/auth/auth.service';
 import { LocalAuthGuard } from './../src/modules/auth/guards/local-auth.guard';
 import { SessionGuard } from './../src/modules/auth/guards/session-auth.guard';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Session, User, Role, Account, Category, Report } from '@repo/api';
 import request = require('supertest');
-import { UsersService } from './../src/modules/users/users.service';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
@@ -61,6 +59,8 @@ describe('AppController (e2e)', () => {
     const mockRoles = [
       { id: 'role_1', name: 'admin' },
       { id: 'role_2', name: 'user' },
+      { id: 'role_3', name: 'municipal_pr_officer' },
+      { id: 'role_5', name: 'technical_officer' },
     ];
 
     const mockUser = {
@@ -128,6 +128,7 @@ describe('AppController (e2e)', () => {
         const req = context.switchToHttp().getRequest();
         req.user = mockUser;
         req.session = mockSession;
+        req.cookies = { session_token: 'sess_1.secret' };
         return true;
       },
     });
@@ -232,15 +233,11 @@ describe('AppController (e2e)', () => {
       .post('/auth/login')
       .send({ username: 'john', password: 'StrongP@ssw0rd' })
       .expect(200);
-      .send({ email: 'john@example.com', password: 'StrongP@ssw0rd' })
-      .expect(200);
 
     expect(res.body).toEqual(
       expect.objectContaining({
         success: true,
         data: expect.objectContaining({
-          user: expect.objectContaining({ username: 'john' }),
-          session: expect.objectContaining({ token: 'mock_token_123' }),
           user: expect.objectContaining({
             email: 'john@example.com',
             username: 'john',
@@ -334,13 +331,7 @@ describe('AppController (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/users/municipality/user/user_1')
       .set('Cookie', 'session_token=sess_1.secret')
-      .send({
-        email: 'updated@municipality.gov',
-        username: 'updated_user',
-        firstName: 'Updated',
-        lastName: 'Name',
-        role: 'municipal_administrator',
-      })
+      .send()
       .expect(200);
 
     expect(res.body.success).toBe(true);

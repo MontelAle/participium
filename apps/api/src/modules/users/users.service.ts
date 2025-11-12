@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { User, Account, Role, CreateMunicipalityUserDto } from '@repo/api';
@@ -32,7 +36,8 @@ export class UsersService {
   async findMunicipalityUserById(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       relations: ['role'],
-      where: { id,
+      where: {
+        id,
         role: {
           name: Not('user'),
         },
@@ -47,23 +52,32 @@ export class UsersService {
   }
 
   async createMunicipalityUser(dto: CreateMunicipalityUserDto): Promise<User> {
-    const { email, username, firstName, lastName, password, role: roledto } = dto;
+    const { email, username, firstName, lastName, password, role } = dto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return this.userRepository.manager.transaction(async (manager) => {
-      const role = await manager.getRepository(Role).findOne({ where: { id: roledto.id } });
-      
-      if (!role) {
+      const roleRepo = manager.getRepository(Role);
+      const dbRole = await roleRepo.findOne({
+        where: { id: dto.role.id },
+      });
+
+      if (!dbRole) {
         throw new NotFoundException(`Role not found`);
       }
 
-      const existingUser = await manager.getRepository(User).findOne({ 
+      const existingUser = await manager.getRepository(User).findOne({
         where: { username },
       });
-
       if (existingUser) {
         throw new ConflictException('User with this username already exists');
+      }
+
+      const existingEmail = await manager.getRepository(User).findOne({
+        where: { email },
+      });
+      if (existingEmail) {
+        throw new ConflictException('User with this email already exists');
       }
 
       const newUser = manager.getRepository(User).create({
@@ -72,7 +86,7 @@ export class UsersService {
         username,
         firstName,
         lastName,
-        role,
+        role: dbRole,
       });
 
       const user = await manager.getRepository(User).save(newUser);
@@ -95,7 +109,7 @@ export class UsersService {
   async deleteMunicipalityUserById(id: string): Promise<void> {
     const user = await this.userRepository.findOne({
       relations: ['role'],
-      where: { 
+      where: {
         id,
         role: {
           name: Not('user'),
@@ -113,7 +127,10 @@ export class UsersService {
     });
   }
 
-  async updateMunicipalityUserById(id: string, dto: Partial<CreateMunicipalityUserDto>): Promise<void> {
+  async updateMunicipalityUserById(
+    id: string,
+    dto: Partial<CreateMunicipalityUserDto>,
+  ): Promise<void> {
     const user = await this.userRepository.findOne({
       where: { id },
     });

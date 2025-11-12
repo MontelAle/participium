@@ -1,18 +1,28 @@
-import { Controller, Get, Post, Body, UseGuards, HttpCode, HttpStatus, Param, Delete } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiCookieAuth, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Delete,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiCookieAuth,
   ApiBody,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { 
+import {
   CreateMunicipalityUserDto,
-  UpdateMunicipalityUserDto
+  UpdateMunicipalityUserDto,
 } from '@repo/api';
 
 @ApiTags('Users')
@@ -31,7 +41,7 @@ export class UsersController {
   })
   @ApiResponse({
     status: 200,
-    description: 'List of municipality users retrieved successfully'
+    description: 'List of municipality users retrieved successfully',
   })
   @ApiResponse({
     status: 401,
@@ -69,7 +79,7 @@ export class UsersController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Municipality user retrieved successfully'
+    description: 'Municipality user retrieved successfully',
   })
   @ApiResponse({
     status: 401,
@@ -95,7 +105,8 @@ export class UsersController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Not Found - Municipality user with specified ID does not exist',
+    description:
+      'Not Found - Municipality user with specified ID does not exist',
     schema: {
       example: {
         statusCode: 404,
@@ -117,7 +128,7 @@ export class UsersController {
     description: `Creates a new user account with a municipality role
                   **Access:** Requires admin role`,
   })
-  @ApiBody({ 
+  @ApiBody({
     type: CreateMunicipalityUserDto,
     examples: {
       adminUser: {
@@ -130,7 +141,7 @@ export class UsersController {
           password: 'SecureAdminPass123',
           role: 'admin',
         },
-      }
+      },
     },
   })
   @ApiResponse({
@@ -180,11 +191,11 @@ export class UsersController {
   })
   @ApiResponse({
     status: 409,
-    description: 'Conflict - User with this username already exists',
+    description: 'Conflict - User with this username/email already exists',
     schema: {
       example: {
         statusCode: 409,
-        message: 'User with this username already exists',
+        message: 'User with this username/email already exists',
         error: 'Conflict',
       },
     },
@@ -237,7 +248,8 @@ export class UsersController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Not Found - Municipality user with specified ID does not exist',
+    description:
+      'Not Found - Municipality user with specified ID does not exist',
     schema: {
       example: {
         statusCode: 404,
@@ -259,7 +271,7 @@ export class UsersController {
     description: `Updates the municipality user with the specified ID.
       **Access:** Requires admin role.`,
   })
-  @ApiBody({ 
+  @ApiBody({
     type: UpdateMunicipalityUserDto,
     examples: {
       updateUser: {
@@ -271,7 +283,7 @@ export class UsersController {
           lastName: 'Name',
           role: 'municipal_administrator',
         },
-      }
+      },
     },
   })
   @ApiResponse({
@@ -292,10 +304,7 @@ export class UsersController {
     schema: {
       example: {
         statusCode: 400,
-        message: [
-          'Invalid email format',
-          'Role must be a valid role name',
-        ],
+        message: ['Invalid email format', 'Role must be a valid role name'],
         error: 'Bad Request',
       },
     },
@@ -345,7 +354,10 @@ export class UsersController {
     },
   })
   // params and body as requested
-  async updateMunicipalityUserById(@Param('id') id: string, @Body() dto: UpdateMunicipalityUserDto) {
+  async updateMunicipalityUserById(
+    @Param('id') id: string,
+    @Body() dto: UpdateMunicipalityUserDto,
+  ) {
     await this.usersService.updateMunicipalityUserById(id, dto);
     // returns only Id of the updated user
     return { success: true, data: { id } };

@@ -44,7 +44,7 @@ export class AuthController {
       validLogin: {
         summary: 'Valid login credentials',
         value: {
-          username: 'user@example.com',
+          username: 'user',
           password: 'SecurePass123',
         },
       },
@@ -88,11 +88,11 @@ export class AuthController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized - Invalid credentials',
+    description: 'Unauthorized - Invalid username or password',
     schema: {
       example: {
         statusCode: 401,
-        message: 'Invalid credentials',
+        message: 'Invalid username or password',
         error: 'Unauthorized',
       },
     },
@@ -103,7 +103,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     if (!req.user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid username or password');
     }
 
     const { user, session, token } = await this.authService.login(

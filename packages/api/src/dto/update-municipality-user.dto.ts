@@ -1,6 +1,7 @@
-import { IsOptional, IsString, IsEmail, MinLength } from 'class-validator';
+import { IsOptional, IsString, IsEmail, ValidateNested } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Role } from '../entities/role.entity';
+import { Type } from 'class-transformer';
 
 export class UpdateMunicipalityUserDto {
   @ApiPropertyOptional({
@@ -49,5 +50,7 @@ export class UpdateMunicipalityUserDto {
     ],
   })
   @IsOptional()
+  @ValidateNested()
+  @Type(() => Role)
   role?: Role;
 }
