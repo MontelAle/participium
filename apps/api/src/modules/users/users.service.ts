@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { User, Account, Role, CreateMunicipalityUserDto } from '@repo/api';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
@@ -27,7 +27,7 @@ export class UsersService {
       relations: ['role'],
       where: {
         role: {
-          name: Not('user'),
+          isMunicipal: true,
         },
       },
     });
@@ -39,7 +39,7 @@ export class UsersService {
       where: {
         id,
         role: {
-          name: Not('user'),
+          isMunicipal: true,
         },
       },
     });
@@ -112,7 +112,7 @@ export class UsersService {
       where: {
         id,
         role: {
-          name: Not('user'),
+          isMunicipal: true,
         },
       },
     });
