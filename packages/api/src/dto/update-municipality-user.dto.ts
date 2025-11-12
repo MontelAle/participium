@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsEmail, MinLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Role} from '../entities/role.entity';
+import { Role } from '../entities/role.entity';
 
 export class UpdateMunicipalityUserDto {
   @ApiPropertyOptional({
@@ -48,6 +48,7 @@ export class UpdateMunicipalityUserDto {
       'environmental_officer',
     ],
   })
+
   @IsOptional()
-  role: Role;
+  role: Role | null;
 }
