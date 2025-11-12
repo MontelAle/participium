@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  Point,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Category } from './category.entity';
@@ -22,10 +23,10 @@ export class Report {
   @PrimaryColumn('varchar')
   id: string;
 
-  @Column('varchar')
+  @Column('varchar', { nullable: true })
   title: string;
 
-  @Column('text')
+  @Column('text', { nullable: true })
   description: string;
 
   @Column({
@@ -39,9 +40,9 @@ export class Report {
   @Column({
     type: 'geometry',
     spatialFeatureType: 'Point',
-    srid: 4326, // WGS84 coordinate system (standard for GPS/OpenStreetMap)
+    srid: 4326,
   })
-  location: string; // Will be stored as WKT format: POINT(longitude latitude)
+  location: Point;
 
   @Column('varchar', { nullable: true })
   address?: string;
@@ -56,10 +57,10 @@ export class Report {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column('varchar')
+  @Column('varchar', { nullable: true })
   categoryId: string;
 
-  @ManyToOne(() => Category, { nullable: false })
+  @ManyToOne(() => Category, { nullable: true })
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
