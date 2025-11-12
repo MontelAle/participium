@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto, Session } from '@repo/api';
@@ -78,7 +79,7 @@ describe('AuthController', () => {
   describe('login', () => {
     it('should call authService.login, getCookieOptions, and set cookie', async () => {
       const loginDto: LoginDto = {
-        username: 'testuser@example.com',
+        username: 'testuser',
         password: 'password',
       };
       const req: any = {
@@ -109,7 +110,7 @@ describe('AuthController', () => {
 
     it('should throw UnauthorizedException when req.user is not present', async () => {
       const loginDto: LoginDto = {
-        username: 'testuser@example.com',
+        username: 'testuser',
         password: 'password',
       };
       const req: any = {
@@ -120,7 +121,7 @@ describe('AuthController', () => {
       const res: any = { cookie: jest.fn() };
 
       await expect(controller.login(loginDto, req, res)).rejects.toThrow(
-        'Invalid username or password',
+        UnauthorizedException,
       );
 
       expect(authService.login).not.toHaveBeenCalled();
