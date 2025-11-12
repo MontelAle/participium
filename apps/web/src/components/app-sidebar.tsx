@@ -24,13 +24,21 @@ import { ReportsList } from '@/components/reports-list';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 import { SidebarProps } from '@/types/ui';
+import { useActiveReportStore } from '@/store/activeReportStore';
+import { useCreateReport } from '@/hooks/use-reports';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
+  const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
   const isAdminUser = user && user.role.name !== 'user';
   const isRegularUser = user && user.role.name === 'user';
   const isGuest = !user;
+
+  const { locationData } = useActiveReportStore();
+  const { mutateAsync: createReport } = useCreateReport();
 
   const getUserInitials = () => {
     if (!user) return '?';
@@ -44,8 +52,39 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   };
 
   const adminMenuItems = [
-    { title: 'Home', href: '/', icon: Home },  
+    { title: 'Dashboard', href: '/app/dashboard', icon: Home },
+    {
+      title: 'Municipality Users',
+      href: '/app/municipality-users',
+      icon: Users,
+    },
   ];
+
+  const handleAddReport = async () => {
+    if (!locationData) {
+      toast.warning('Select a location on the map before creating a report.');
+      return;
+    }
+
+    try {
+      await createReport({
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+        address: locationData.address,
+      });
+
+      toast.success('Report created successfully!');
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to create report';
+      toast.error(message);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <aside
@@ -116,7 +155,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
               {isRegularUser && (
                 <Button
                   size="icon"
-                  onClick={() => console.log('Add report')}
+                  onClick={handleAddReport}
                   className={cn(
                     'mb-3',
                     isOpen ? 'w-full' : 'w-12 h-12 mx-auto',
@@ -184,7 +223,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => logout()}>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 size-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -192,7 +231,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
             </DropdownMenu>
           ) : (
             isOpen && (
-              <Link to="login">
+              <Link to="/auth/login">
                 <Button className="w-full">Login / Register</Button>
               </Link>
             )

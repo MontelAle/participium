@@ -52,14 +52,14 @@ export class UsersService {
   }
 
   async createMunicipalityUser(dto: CreateMunicipalityUserDto): Promise<User> {
-    const { email, username, firstName, lastName, password } = dto;
+    const { email, username, firstName, lastName, password, roleId } = dto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return this.userRepository.manager.transaction(async (manager) => {
       const roleRepo = manager.getRepository(Role);
       const dbRole = await roleRepo.findOne({
-        where: { id: dto.role.id },
+        where: { id: roleId },
       });
 
       if (!dbRole) {

@@ -29,20 +29,25 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
 
     if (isLogin) {
       const result = await login({
-        email: formData.get('email') as string,
+        username: formData.get('username') as string,
         password: formData.get('password') as string,
       });
 
       if (result.success) {
         toast.success('Login successful! Welcome back!');
-        navigate('/');
+
+        if (result.data?.role.name === 'user') {
+          navigate('/map');
+        } else {
+          navigate('/app/dashboard');
+        }
       } else {
         toast.error(result.error || 'Invalid credentials. Please try again.');
       }
     } else {
       const result = await register({
-        email: formData.get('email') as string,
         username: formData.get('username') as string,
+        email: formData.get('email') as string,
         firstName: formData.get('firstname') as string,
         lastName: formData.get('lastname') as string,
         password: formData.get('password') as string,
@@ -50,7 +55,7 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
 
       if (result.success) {
         toast.success('Registration successful! Welcome!');
-        navigate('/');
+        navigate('/map');
       } else {
         toast.error(result.error || 'Registration failed. Please try again.');
       }
@@ -83,14 +88,14 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
                 <Field>
                   <InputGroup>
                     <InputGroupInput
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="Email"
+                      id="username"
+                      name="username"
+                      type="username"
+                      placeholder="Username"
                       required
                     />
                     <InputGroupAddon>
-                      <MailIcon />
+                      <UserIcon />
                     </InputGroupAddon>
                   </InputGroup>
                 </Field>
@@ -100,14 +105,14 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
                     <Field>
                       <InputGroup>
                         <InputGroupInput
-                          id="username"
-                          name="username"
-                          type="text"
-                          placeholder="Username"
+                          id="email"
+                          name="email"
+                          type="email"
+                          placeholder="Email"
                           required
                         />
                         <InputGroupAddon>
-                          <UserIcon />
+                          <MailIcon />
                         </InputGroupAddon>
                       </InputGroup>
                     </Field>
@@ -170,12 +175,12 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
                     {isLogin ? (
                       <>
                         Don't have an account?{' '}
-                        <Link to="/register">Sign up</Link>
+                        <Link to="/auth/register">Sign up</Link>
                       </>
                     ) : (
                       <>
                         Already have an account?{' '}
-                        <Link to="/login">Sign in</Link>
+                        <Link to="/auth/login">Sign in</Link>
                       </>
                     )}
                   </FieldDescription>

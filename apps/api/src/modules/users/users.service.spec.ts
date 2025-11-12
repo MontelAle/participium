@@ -103,7 +103,7 @@ describe('UsersService', () => {
       firstName: 'Test',
       lastName: 'User',
       password: 'password123',
-      role: { id: 'role-id', name: 'municipal_pr_officer' },
+      roleId: 'role-id',
     };
 
     it('should throw NotFoundException if role does not exist', async () => {
@@ -144,34 +144,36 @@ describe('UsersService', () => {
     });
 
     it('should throw ConflictException if user with email already exists', async () => {
-      const existingUserWithEmail = {
-        id: 'existing-id',
-        email: dto.email,
-        username: 'differentusername',
-      } as User;
-
       (userRepository.manager.transaction as jest.Mock).mockImplementation(
         async (fn) =>
           fn({
             getRepository: (entity) => ({
               findOne: async (options) => {
-                if (entity === Role)
+                if (entity === Role) {
                   return { id: 'role-id', name: 'municipal_pr_officer' };
+                }
                 if (entity === User) {
-                  // First call checks username (returns null), second call checks email (returns existing user)
-                  if (options.where.username) return null;
-                  if (options.where.email) return existingUserWithEmail;
+                  if (options?.where?.username) {
+                    return null;
+                  }
+                  if (options?.where?.email) {
+                    return { id: 'existing-user-id', email: dto.email };
+                  }
+                  return null;
                 }
                 return null;
               },
-              create: (data) => data,
-              save: async (data) => data,
+              create: jest.fn(),
+              save: jest.fn(),
             }),
           }),
       );
 
       await expect(service.createMunicipalityUser(dto)).rejects.toThrow(
         ConflictException,
+      );
+      await expect(service.createMunicipalityUser(dto)).rejects.toThrow(
+        'User with this email already exists',
       );
     });
 
@@ -351,6 +353,7 @@ describe('UsersService', () => {
       const mockUser = {
         id: '1',
         email: 'user@example.com',
+        roleId: 'old-role-id',
         role: { id: 'old-role-id', name: 'municipal_pr_officer' },
       } as User;
       const mockRole = {
@@ -385,7 +388,7 @@ describe('UsersService', () => {
       );
 
       await service.updateMunicipalityUserById('1', {
-        role: { id: 'new-role-id', name: 'technical_officer' },
+        roleId: 'new-role-id',
       });
 
       expect(roleRepository.findOne).toHaveBeenCalledWith({
@@ -425,7 +428,7 @@ describe('UsersService', () => {
 
       await expect(
         service.updateMunicipalityUserById('1', {
-          role: { id: 'invalid-id', name: 'invalid_role' },
+          roleId: 'invalid-role-id',
         }),
       ).rejects.toThrow(NotFoundException);
     });

@@ -16,6 +16,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logoutMutation = useLogout();
 
   const isAuthenticated = user !== null;
+  const isMunicipalityUser = user?.role?.name !== 'user';
   const isLoading =
     loginMutation.isPending ||
     registerMutation.isPending ||
@@ -68,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        isMunicipalityUser,
       }}
     >
       {children}

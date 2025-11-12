@@ -31,6 +31,7 @@ export class AuthService {
       where: { providerId: 'local', accountId: username },
       relations: ['user', 'user.role'],
     });
+
     if (!account) return null;
     const isPasswordValid = await bcrypt.compare(password, account.password);
     if (!isPasswordValid) return null;
