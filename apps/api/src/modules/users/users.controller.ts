@@ -201,7 +201,6 @@ export class UsersController {
     },
   })
   async createMunicipalityUser(@Body() dto: CreateMunicipalityUserDto) {
-    console.log(dto);
     const user = await this.usersService.createMunicipalityUser(dto);
     return { success: true, data: user };
   }

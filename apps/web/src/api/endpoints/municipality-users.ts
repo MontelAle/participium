@@ -28,8 +28,6 @@ export async function getMunicipalityUser(userId: string): Promise<User> {
 export async function createMunicipalityUser(
   data: CreateMunicipalityUserDto,
 ): Promise<User> {
-  console.log(data);
-
   const response = await apiFetch<MunicipalityUserResponse<User>>(
     '/users/municipality',
     {

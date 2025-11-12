@@ -1,4 +1,14 @@
 import { useState } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { MailIcon, UserIcon, LockIcon, XIcon } from 'lucide-react';
+import { Field } from '@/components/ui/field';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '@/components/ui/input-group';
 import {
   Select,
   SelectTrigger,
@@ -6,33 +16,24 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
-import { Field } from '@/components/ui/field';
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from '@/components/ui/input-group';
-import * as Dialog from '@radix-ui/react-dialog';
-import { Button } from '@/components/ui/button';
-import type { CreateMunicipalityUserDto } from '@repo/api';
-import { MailIcon, UserIcon, LockIcon } from 'lucide-react';
 import { useRoles } from '@/hooks/use-roles';
-import { toast } from 'sonner';
 import { useCreateMunicipalityUser } from '@/hooks/use-municipality-users';
+import type { CreateMunicipalityUserDto } from '@repo/api';
 
 export function CreateMunicipalityUserDialog() {
   const { mutateAsync: createMunicipalityUser } = useCreateMunicipalityUser();
   const { data: roles = [] } = useRoles();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [form, setForm] = useState<CreateMunicipalityUserDto>({
+  const emptyForm: CreateMunicipalityUserDto = {
     username: '',
     email: '',
     firstName: '',
     lastName: '',
     roleId: '',
     password: '',
-  });
+  };
+  const [form, setForm] = useState<CreateMunicipalityUserDto>(emptyForm);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -42,23 +43,26 @@ export function CreateMunicipalityUserDialog() {
     setForm({ ...form, roleId: value });
   };
 
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) {
+      setIsLoading(false);
+      setForm(emptyForm);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isLoading) return;
     setIsLoading(true);
 
     try {
       await createMunicipalityUser(form);
       toast.success('Municipality user created successfully!');
-      setForm({
-        username: '',
-        email: '',
-        firstName: '',
-        lastName: '',
-        roleId: '',
-        password: '',
-      });
+      setForm(emptyForm);
+      setOpen(false);
     } catch (error: any) {
-      const errorMessage = error ? error.message : 'Failed to create user';
+      const errorMessage = error?.message ?? 'Failed to create user';
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -66,7 +70,7 @@ export function CreateMunicipalityUserDialog() {
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
+    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Trigger asChild>
         <Button>Add User</Button>
       </Dialog.Trigger>
@@ -74,9 +78,19 @@ export function CreateMunicipalityUserDialog() {
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
         <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg w-full max-w-lg shadow-lg z-50">
-          <Dialog.Title className="text-xl font-bold mb-4">
-            Create Municipality User
-          </Dialog.Title>
+          <div className="flex items-center justify-between mb-4">
+            <Dialog.Title className="text-xl font-bold">
+              Create Municipality User
+            </Dialog.Title>
+            <Dialog.Close asChild>
+              <button
+                aria-label="Close"
+                className="p-1 rounded hover:bg-black/5"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
+            </Dialog.Close>
+          </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <Field>
@@ -141,18 +155,22 @@ export function CreateMunicipalityUserDialog() {
             </Field>
 
             <Field>
-              <Select
-                value={form.roleId}
-                onValueChange={handleRoleChange}
-                required
-              >
+              <Select value={form.roleId} onValueChange={handleRoleChange}>
                 <SelectTrigger className="InputGroupInput">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map((role) => (
                     <SelectItem key={role.id} value={role.id}>
-                      {role.name.charAt(0).toUpperCase() + role.name.slice(1)}
+                      {role.name
+                        .replace(/_/g, ' ')
+                        .split(' ')
+                        .map(
+                          (w) =>
+                            w.charAt(0).toUpperCase() +
+                            w.slice(1).toLowerCase(),
+                        )
+                        .join(' ')}{' '}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -175,13 +193,17 @@ export function CreateMunicipalityUserDialog() {
               </InputGroup>
             </Field>
 
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Creating...' : 'Create User'}
-            </Button>
+            <div className="flex gap-2 justify-end">
+              <Dialog.Close asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </Dialog.Close>
 
-            <Button type="button" variant="outline">
-              Cancel
-            </Button>
+              <Button type="submit" disabled={isLoading || !form.roleId}>
+                {isLoading ? 'Creating...' : 'Create User'}
+              </Button>
+            </div>
           </form>
         </Dialog.Content>
       </Dialog.Portal>
