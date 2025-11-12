@@ -323,84 +323,77 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### User
 
-```typescript
-{
-  id: string (PK)
-  email: string (unique)
-  username: string (unique)
-  firstName: string
-  lastName: string
-  roleId: string (FK → Role)
-  createdAt: timestamptz
-  updatedAt: timestamptz
-}
-```
+| Field     | Type   | Description           | Nullable | Notes                      |
+| --------- | ------ | --------------------- | -------- | -------------------------- |
+| id        | string | Primary key           | No       |                            |
+| email     | string | User email            | No       | Unique                     |
+| username  | string | Username              | No       | Unique                     |
+| firstName | string | First name            | No       |                            |
+| lastName  | string | Last name             | No       |                            |
+| roleId    | string | Linked role ID        | No       | Foreign key to Role entity |
+| role      | Role   | Role entity relation  | No       | Many-to-one, not nullable  |
+| createdAt | Date   | Creation timestamp    | No       | Auto-generated             |
+| updatedAt | Date   | Last update timestamp | No       | Auto-generated             |
 
 #### Role
 
-```typescript
-{
-  id: string(PK);
-  name: string;
-}
-```
+| Field | Type   | Description | Nullable | Notes |
+| ----- | ------ | ----------- | -------- | ----- |
+| id    | string | Primary key | No       |       |
+| name  | string | Role name   | No       |       |
 
 #### Account
 
-```typescript
-{
-  id: string (PK)
-  accountId: string
-  providerId: string
-  userId: string (FK → User)
-  password: string (nullable, hashed)
-  createdAt: timestamptz
-  updatedAt: timestamptz
-}
-```
+| Field      | Type   | Description           | Nullable | Notes                       |
+| ---------- | ------ | --------------------- | -------- | --------------------------- |
+| id         | string | Primary key           | No       |                             |
+| accountId  | string | Account identifier    | No       |                             |
+| providerId | string | Provider identifier   | No       |                             |
+| userId     | string | Linked user ID        | No       | Foreign key to User entity  |
+| user       | User   | User entity relation  | No       | Many-to-one, cascade delete |
+| password   | string | Account password      | Yes      | Optional, hashed            |
+| createdAt  | Date   | Creation timestamp    | No       | Auto-generated              |
+| updatedAt  | Date   | Last update timestamp | No       | Auto-generated              |
 
 #### Session
 
-```typescript
-{
-  id: string (PK)
-  userId: string (FK → User)
-  expiresAt: timestamptz
-  hashedSecret: string
-  ipAddress: string (nullable)
-  userAgent: string (nullable)
-  impersonatedBy: string (nullable)
-  createdAt: timestamptz
-  updatedAt: timestamptz
-}
-```
+| Field          | Type   | Description              | Nullable | Notes                       |
+| -------------- | ------ | ------------------------ | -------- | --------------------------- |
+| id             | string | Primary key              | No       |                             |
+| expiresAt      | Date   | Session expiry timestamp | No       |                             |
+| hashedSecret   | string | Hashed session secret    | No       | Excluded from serialization |
+| createdAt      | Date   | Creation timestamp       | No       | Auto-generated              |
+| updatedAt      | Date   | Last update timestamp    | No       | Auto-generated              |
+| ipAddress      | string | IP address               | Yes      | Optional                    |
+| userAgent      | string | User agent string        | Yes      | Optional                    |
+| userId         | string | Linked user ID           | No       | Foreign key to User entity  |
+| user           | User   | User entity relation     | No       | Many-to-one, cascade delete |
+| impersonatedBy | string | Impersonator user ID     | Yes      | Optional                    |
 
 #### Category
 
-```typescript
-{
-  id: string(PK);
-  name: string;
-}
-```
+| Field | Type   | Description   | Nullable | Notes |
+| ----- | ------ | ------------- | -------- | ----- |
+| id    | string | Primary key   | No       |       |
+| name  | string | Category name | No       |       |
 
 #### Report
 
-```typescript
-{
-  id: string (PK)
-  title: string
-  description: string
-  status: enum (pending, in_progress, resolved, rejected)
-  location: geometry(Point, 4326)  // PostGIS column
-  address: string (nullable)
-  images: string[] (nullable)
-  userId: string (FK → User)
-  categoryId: string (FK → Category)
-  createdAt: timestamptz
-  updatedAt: timestamptz
-}
-```
+| Field       | Type                  | Description               | Nullable | Notes                          |
+| ----------- | --------------------- | ------------------------- | -------- | ------------------------------ |
+| id          | string                | Primary key               | No       |                                |
+| title       | string                | Report title              | No       |                                |
+| description | string                | Report description        | No       | Text type for longer content   |
+| status      | enum                  | Report status             | No       | Values: pending, in_progress, resolved, rejected. Default: pending |
+| location    | string                | Geographic coordinates    | No       | PostGIS geometry(Point, 4326), stored as WKT format |
+| address     | string                | Physical address          | Yes      | Optional                       |
+| images      | string[]              | Array of image paths/URLs | Yes      | Optional                       |
+| userId      | string                | Linked user ID            | No       | Foreign key to User entity     |
+| user        | User                  | User entity relation      | No       | Many-to-one, cascade delete    |
+| categoryId  | string                | Linked category ID        | No       | Foreign key to Category entity |
+| category    | Category              | Category entity relation  | No       | Many-to-one, not nullable      |
+| createdAt   | Date                  | Creation timestamp        | No       | Auto-generated                 |
+| updatedAt   | Date                  | Last update timestamp     | No       | Auto-generated                 |
 
 **PostGIS Integration**:
 

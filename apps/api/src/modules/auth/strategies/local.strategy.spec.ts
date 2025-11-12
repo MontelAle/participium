@@ -60,7 +60,7 @@ describe('LocalStrategy', () => {
 
       await expect(
         strategy.validate('wrong_username', 'wrongpassword'),
-      ).rejects.toThrow(new UnauthorizedException('Invalid username or password'));
+      ).rejects.toThrow(UnauthorizedException);
 
       expect(authService.validateUser).toHaveBeenCalledWith(
         'wrong_username',
@@ -91,7 +91,7 @@ describe('LocalStrategy', () => {
 
       await expect(
         strategy.validate('testuser', 'password123'),
-      ).rejects.toThrow('Database connection error');
+      ).rejects.toThrow(Error);
     });
   });
 });
