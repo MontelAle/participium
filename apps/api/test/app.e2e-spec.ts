@@ -4,7 +4,7 @@ import { AuthService } from './../src/modules/auth/auth.service';
 import { LocalAuthGuard } from './../src/modules/auth/guards/local-auth.guard';
 import { SessionGuard } from './../src/modules/auth/guards/session-auth.guard';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Session, User, Role, Account, Category } from '@repo/api';
+import { Session, User, Role, Account, Category, Report } from '@repo/api';
 import request = require('supertest');
 
 jest.mock('nanoid', () => ({
@@ -60,6 +60,8 @@ describe('AppController (e2e)', () => {
       .overrideProvider(getRepositoryToken(Account))
       .useValue(createMockRepository())
       .overrideProvider(getRepositoryToken(Category))
+      .useValue(createMockRepository())
+      .overrideProvider(getRepositoryToken(Report))
       .useValue(createMockRepository());
 
     const mockUser = {
