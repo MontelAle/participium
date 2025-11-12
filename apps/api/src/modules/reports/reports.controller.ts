@@ -1,5 +1,26 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  UseGuards,
+  Request,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiCookieAuth,
+  ApiBody,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { CreateReportDto, UpdateReportDto, FilterReportsDto } from '@repo/api';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
@@ -8,12 +29,12 @@ import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Reports')
 @Controller('reports')
-@UseGuards(SessionGuard, RolesGuard)
 @ApiCookieAuth('session_token')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
   @Post()
+  @UseGuards(SessionGuard, RolesGuard)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new report',
@@ -31,7 +52,10 @@ export class ReportsController {
     schema: {
       example: {
         statusCode: 400,
-        message: ['longitude must not be less than -180', 'latitude must not be greater than 90'],
+        message: [
+          'longitude must not be less than -180',
+          'latitude must not be greater than 90',
+        ],
         error: 'Bad Request',
       },
     },
@@ -58,10 +82,13 @@ export class ReportsController {
   @Get()
   @ApiOperation({
     summary: 'Get all reports with optional filters',
-    description: `Returns a list of reports. Supports filtering by status, category, user, and geographical area.
-      **Access:** All authenticated users.`,
+    description: `Returns a list of reports. Supports filtering by status, category, user, and geographical area.`,
   })
-  @ApiQuery({ name: 'status', required: false, enum: ['pending', 'in_progress', 'resolved', 'rejected'] })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['pending', 'in_progress', 'resolved', 'rejected'],
+  })
   @ApiQuery({ name: 'categoryId', required: false, type: String })
   @ApiQuery({ name: 'userId', required: false, type: String })
   @ApiQuery({ name: 'minLongitude', required: false, type: Number })
@@ -75,17 +102,6 @@ export class ReportsController {
     status: 200,
     description: 'List of reports retrieved successfully',
   })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing session',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'No session token',
-        error: 'Unauthorized',
-      },
-    },
-  })
   async findAll(@Query() filters: FilterReportsDto) {
     const reports = await this.reportsService.findAll(filters);
     return { success: true, data: reports };
@@ -94,26 +110,19 @@ export class ReportsController {
   @Get('nearby')
   @ApiOperation({
     summary: 'Find nearby reports',
-    description: `Returns reports near a specific location, ordered by distance.
-      **Access:** All authenticated users.`,
+    description: `Returns reports near a specific location, ordered by distance.`,
   })
   @ApiQuery({ name: 'longitude', required: true, type: Number })
   @ApiQuery({ name: 'latitude', required: true, type: Number })
-  @ApiQuery({ name: 'radius', required: false, type: Number, description: 'Search radius in meters (default: 5000)' })
+  @ApiQuery({
+    name: 'radius',
+    required: false,
+    type: Number,
+    description: 'Search radius in meters (default: 5000)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Nearby reports retrieved successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing session',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'No session token',
-        error: 'Unauthorized',
-      },
-    },
   })
   async findNearby(
     @Query('longitude') longitude: string,
@@ -132,24 +141,12 @@ export class ReportsController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get a report by ID',
-    description: `Returns a specific report with its relations.
-      **Access:** All authenticated users.`,
+    description: `Returns a specific report with its relations.`,
   })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiResponse({
     status: 200,
     description: 'Report retrieved successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing session',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'No session token',
-        error: 'Unauthorized',
-      },
-    },
   })
   @ApiResponse({
     status: 404,
@@ -168,11 +165,12 @@ export class ReportsController {
   }
 
   @Patch(':id')
-  @Roles('admin', 'operator')
+  @UseGuards(SessionGuard, RolesGuard)
+  @Roles('officier', 'user')
   @ApiOperation({
-    summary: 'Update a report (Admin/Operator only)',
-    description: `Update report details including status and location.
-      **Access:** Requires admin or operator role.`,
+    summary: 'Update a report (Officier/User only)',
+    description:
+      'Update report details including status and location. **Access:** Requires officier or User role.',
   })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiBody({ type: UpdateReportDto })
@@ -193,7 +191,8 @@ export class ReportsController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - Insufficient permissions (admin or operator role required)',
+    description:
+      'Forbidden - Insufficient permissions (officier or user role required)',
     schema: {
       example: {
         statusCode: 403,
@@ -213,18 +212,21 @@ export class ReportsController {
       },
     },
   })
-  async update(@Param('id') id: string, @Body() updateReportDto: UpdateReportDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateReportDto: UpdateReportDto,
+  ) {
     const report = await this.reportsService.update(id, updateReportDto);
     return { success: true, data: report };
   }
 
   @Delete(':id')
-  @Roles('admin')
+  @Roles('Officier')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Delete a report (Admin only)',
+    summary: 'Delete a report (Officier only)',
     description: `Permanently delete a report.
-      **Access:** Requires admin role.`,
+      **Access:** Requires Officier role.`,
   })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiResponse({
