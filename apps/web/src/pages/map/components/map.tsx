@@ -17,6 +17,7 @@ export default function Map() {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const setCoordinates = useActiveReportStore((state) => state.setCoordinates);
+  const coordinates = useActiveReportStore((state) => state.coordinates);
 
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
@@ -38,7 +39,6 @@ export default function Map() {
 
     mapInstanceRef.current = map;
 
-    // Cleanup
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
@@ -46,6 +46,16 @@ export default function Map() {
       }
     };
   }, [setCoordinates]);
+
+  // Pan to coordinates when they change
+  useEffect(() => {
+    if (mapInstanceRef.current && coordinates) {
+      mapInstanceRef.current.setView(
+        [coordinates.latitude, coordinates.longitude],
+        mapInstanceRef.current.getZoom(),
+      );
+    }
+  }, [coordinates]);
 
   return <div ref={mapRef} style={{ height: '100%', width: '100%' }} />;
 }

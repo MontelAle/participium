@@ -2,14 +2,25 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { useReports } from '@/hooks/use-reports';
+import { useActiveReportStore } from '@/store/activeReportStore';
 
 export function ReportsList() {
   const [search, setSearch] = useState('');
   const { data: reports = [] } = useReports();
+  const setCoordinates = useActiveReportStore((state) => state.setCoordinates);
 
   const filtered = reports.filter((r) =>
     r.title.toLowerCase().includes(search.toLowerCase()),
   );
+
+  const handleReportClick = (report: any) => {
+    if (report.latitude && report.longitude) {
+      setCoordinates({
+        latitude: report.latitude,
+        longitude: report.longitude,
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -27,6 +38,7 @@ export function ReportsList() {
           <button
             key={report.id}
             className="w-full rounded-md border bg-card p-3 text-left hover:bg-accent"
+            onClick={() => handleReportClick(report)}
           >
             <p className="font-medium">{report.title}</p>
             <p className="text-xs text-muted-foreground">{report.status}</p>
