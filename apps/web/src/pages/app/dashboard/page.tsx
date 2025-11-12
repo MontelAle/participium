@@ -17,13 +17,15 @@ const DashboardPage = () => {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border bg-card p-6">
-          <div className="flex flex-col space-y-1.5">
-            <h3 className="font-semibold">Municipality Users</h3>
+        {isAdminUser && (
+          <div className="rounded-lg border bg-card p-6">
+            <div className="flex flex-col space-y-1.5">
+              <h3 className="font-semibold">Municipality Users</h3>
 
-            <p className="text-3xl font-bold">{municipalityUsers.length}</p>
+              <p className="text-3xl font-bold">{municipalityUsers.length}</p>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="rounded-lg border bg-card p-6">
           <div className="flex flex-col space-y-1.5">
