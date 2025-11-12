@@ -120,7 +120,7 @@ describe('AuthController', () => {
       const res: any = { cookie: jest.fn() };
 
       await expect(controller.login(loginDto, req, res)).rejects.toThrow(
-        'Invalid credentials',
+        'Invalid username or password',
       );
 
       expect(authService.login).not.toHaveBeenCalled();

@@ -17,7 +17,10 @@ describe('ReportsService', () => {
     title: 'Test Report',
     description: 'Test Description',
     status: ReportStatus.PENDING,
-    location: 'POINT(7.686864 45.070312)',
+    location: {
+      type: 'Point',
+      coordinates: [7.686864, 45.070312],
+    },
     address: 'Via Roma 1, Torino',
     images: [],
     userId: 'user-123',
@@ -67,7 +70,10 @@ describe('ReportsService', () => {
       const expectedReport = {
         id: 'mocked-id',
         ...createDto,
-        location: 'POINT(7.686864 45.070312)',
+        location: {
+          type: 'Point',
+          coordinates: [7.686864, 45.070312],
+        },
         status: ReportStatus.PENDING,
         userId: 'user-123',
       };
@@ -84,7 +90,10 @@ describe('ReportsService', () => {
         address: createDto.address,
         images: createDto.images,
         categoryId: createDto.categoryId,
-        location: 'POINT(7.686864 45.070312)',
+        location: {
+          type: 'Point',
+          coordinates: [7.686864, 45.070312],
+        },
         userId: 'user-123',
       });
       expect(reportRepository.save).toHaveBeenCalledWith(expectedReport);
@@ -99,19 +108,25 @@ describe('ReportsService', () => {
 
       const expectedReport = {
         id: 'mocked-id',
-        location: 'POINT(7.686864 45.070312)',
+        location: {
+          type: 'Point',
+          coordinates: [7.686864, 45.070312],
+        },
         status: ReportStatus.PENDING,
         userId: 'user-123',
       };
 
-      reportRepository.create.mockReturnValue(expectedReport as Report);
-      reportRepository.save.mockResolvedValue(expectedReport as Report);
+      reportRepository.create.mockReturnValue(expectedReport as unknown as Report);
+      reportRepository.save.mockResolvedValue(expectedReport as unknown as Report);
 
       const result = await service.create(createDto, 'user-123');
 
       expect(reportRepository.create).toHaveBeenCalledWith({
         id: 'mocked-id',
-        location: 'POINT(7.686864 45.070312)',
+        location: {
+          type: 'Point',
+          coordinates: [7.686864, 45.070312],
+        },
         userId: 'user-123',
       });
       expect(result).toEqual(expectedReport);
@@ -432,7 +447,10 @@ describe('ReportsService', () => {
 
       const updatedReport = {
         ...mockReport,
-        location: 'POINT(8 46)',
+        location: {
+          type: 'Point',
+          coordinates: [8.0, 46.0],
+        },
       };
 
       reportRepository.findOne.mockResolvedValue(mockReport as Report);
@@ -442,9 +460,15 @@ describe('ReportsService', () => {
 
       expect(reportRepository.save).toHaveBeenCalledWith({
         ...mockReport,
-        location: 'POINT(8 46)',
+        location: {
+          type: 'Point',
+          coordinates: [8.0, 46.0],
+        },
       });
-      expect(result.location).toBe('POINT(8 46)');
+      expect(result.location).toEqual({
+        type: 'Point',
+        coordinates: [8.0, 46.0],
+      });
     });
 
     it('should throw NotFoundException if report not found', async () => {
