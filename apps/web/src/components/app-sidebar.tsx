@@ -24,13 +24,25 @@ import { ReportsList } from '@/components/reports-list';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 import { SidebarProps } from '@/types/ui';
+import { useActiveReportStore } from '@/store/activeReportStore';
+import { useCreateReport } from '@/hooks/use-reports';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
+  const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
-  const isAdminUser = user && user.role.name !== 'user';
-  const isRegularUser = user && user.role.name === 'user';
-  const isGuest = !user;
+  const {
+    user,
+    logout,
+    isAdminUser,
+    isCitizenUser,
+    isGuestUser,
+    isMunicipalityUser,
+  } = useAuth();
+
+  const { locationData } = useActiveReportStore();
+  const { mutateAsync: createReport } = useCreateReport();
 
   const getUserInitials = () => {
     if (!user) return '?';
@@ -43,9 +55,49 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
     );
   };
 
-  const adminMenuItems = [
-    { title: 'Home', href: '/', icon: Home },  
+  const municipalMenuItems = [
+    { title: 'Dashboard', href: '/app/dashboard', icon: Home },
   ];
+
+  const adminMenuItems = [
+    {
+      title: 'Municipality Users',
+      href: '/app/municipality-users',
+      icon: Users,
+    },
+  ];
+
+  const menuItems = municipalMenuItems;
+
+  if (isAdminUser) {
+    menuItems.push(...adminMenuItems);
+  }
+
+  const handleAddReport = async () => {
+    if (!locationData) {
+      toast.warning('Select a location on the map before creating a report.');
+      return;
+    }
+
+    try {
+      await createReport({
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+        address: locationData.address,
+      });
+
+      toast.success('Report created successfully!');
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to create report';
+      toast.error(message);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <aside
@@ -86,9 +138,9 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
         </div>
 
         <div className="flex-1 overflow-hidden p-2">
-          {isAdminUser && (
+          {isMunicipalityUser && (
             <nav className="space-y-1">
-              {adminMenuItems.map((item) => {
+              {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
                 return (
@@ -111,12 +163,12 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
             </nav>
           )}
 
-          {(isGuest || isRegularUser) && (
+          {(isGuestUser || isCitizenUser) && (
             <>
-              {isRegularUser && (
+              {isCitizenUser && (
                 <Button
                   size="icon"
-                  onClick={() => console.log('Add report')}
+                  onClick={handleAddReport}
                   className={cn(
                     'mb-3',
                     isOpen ? 'w-full' : 'w-12 h-12 mx-auto',
@@ -156,7 +208,15 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                           {user.firstName} {user.lastName}
                         </span>
                         <span className="text-sm text-muted-foreground capitalize">
-                          {user.role.name}
+                          {user.role.name
+                            .replace(/_/g, ' ')
+                            .split(' ')
+                            .map(
+                              (w) =>
+                                w.charAt(0).toUpperCase() +
+                                w.slice(1).toLowerCase(),
+                            )
+                            .join(' ')}{' '}
                         </span>
                       </div>
                       <ChevronsUpDown className="ml-auto size-4" />
@@ -174,17 +234,20 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                       {user.email}
                     </p>
                     <p className="text-xs text-muted-foreground capitalize">
-                      {user.role.name}
+                      {user.role.name
+                        .replace(/_/g, ' ')
+                        .split(' ')
+                        .map(
+                          (w) =>
+                            w.charAt(0).toUpperCase() +
+                            w.slice(1).toLowerCase(),
+                        )
+                        .join(' ')}{' '}
                     </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Settings className="mr-2 size-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => logout()}>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 size-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -192,7 +255,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
             </DropdownMenu>
           ) : (
             isOpen && (
-              <Link to="login">
+              <Link to="/auth/login">
                 <Button className="w-full">Login / Register</Button>
               </Link>
             )

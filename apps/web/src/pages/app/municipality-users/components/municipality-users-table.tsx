@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import {
   TableProvider,
@@ -10,21 +8,22 @@ import {
   TableColumnHeader,
   TableBody,
 } from '@/components/ui/shadcn-io/table';
-import type { User, Role } from '@repo/api';
-import { EditUserDialog } from './edit-municipality-user-dialog';
-import { DeleteUserDialog } from './delete-municipality-user-dialog';
-import { deleteMunicipalityUser } from '@/api/endpoints/municipality-users';
-interface MunicipalityUsersTableProps {
-  users: User[];
-  roles: Role[];
-  refetch: () => void;
-}
+import type { User } from '@repo/api';
+import { EditMunicipalityUserDialog } from './edit-municipality-user-dialog';
+import { DeleteMunicipalityUserDialog } from './delete-municipality-user-dialog';
 
-export function MunicipalityUsersTable({
-  users,
-  roles,
-  refetch,
-}: MunicipalityUsersTableProps) {
+export type MunicipalityUsersTableProps = {
+  data: User[];
+};
+
+export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
+  const prettifyRole = (name: string) =>
+    name
+      .replace(/_/g, ' ')
+      .split(' ')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ');
+
   const columns = React.useMemo(
     () => [
       { accessorKey: 'username', header: 'Username' },
@@ -34,36 +33,42 @@ export function MunicipalityUsersTable({
       {
         accessorKey: 'role',
         header: 'Role',
-        cell: ({ getValue }: any) =>
-          typeof getValue() === 'object' ? getValue().name : getValue(),
+        cell: ({ getValue }: any) => {
+          const v = getValue();
+          const name =
+            typeof v === 'object' ? (v?.name ?? '') : String(v ?? '');
+          return (
+            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+              {prettifyRole(name)}
+            </span>
+          );
+        },
       },
       {
         id: 'operations',
         header: 'Operations',
         cell: ({ row }: any) => {
           const user = row.original as User;
-
           return (
             <div className="flex items-center gap-2">
-              <EditUserDialog user={user} roles={roles} onSuccess={refetch} />
-
-              <DeleteUserDialog user={user} />
+              <EditMunicipalityUserDialog user={user} />
+              <DeleteMunicipalityUserDialog user={user} />
             </div>
           );
         },
       },
     ],
-    [roles, refetch],
+    [],
   );
 
   return (
-    <TableProvider columns={columns} data={users}>
+    <TableProvider columns={columns as any} data={data}>
       <TableHeader>
         {({ headerGroup }) => (
           <TableHeaderGroup headerGroup={headerGroup}>
             {({ header }) => (
               <TableColumnHeader
-                column={header.column}
+                column={header.column as any}
                 title={header.column.columnDef.header as string}
               />
             )}

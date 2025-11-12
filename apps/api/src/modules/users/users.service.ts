@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { User, Account, Role, CreateMunicipalityUserDto } from '@repo/api';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
@@ -27,7 +27,7 @@ export class UsersService {
       relations: ['role'],
       where: {
         role: {
-          name: Not('user'),
+          isMunicipal: true,
         },
       },
     });
@@ -39,7 +39,7 @@ export class UsersService {
       where: {
         id,
         role: {
-          name: Not('user'),
+          isMunicipal: true,
         },
       },
     });
@@ -52,14 +52,14 @@ export class UsersService {
   }
 
   async createMunicipalityUser(dto: CreateMunicipalityUserDto): Promise<User> {
-    const { email, username, firstName, lastName, password, role } = dto;
+    const { email, username, firstName, lastName, password, roleId } = dto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return this.userRepository.manager.transaction(async (manager) => {
       const roleRepo = manager.getRepository(Role);
       const dbRole = await roleRepo.findOne({
-        where: { id: dto.role.id },
+        where: { id: roleId },
       });
 
       if (!dbRole) {
@@ -112,7 +112,7 @@ export class UsersService {
       where: {
         id,
         role: {
-          name: Not('user'),
+          isMunicipal: true,
         },
       },
     });
@@ -149,24 +149,49 @@ export class UsersService {
       }
     }
 
-    if (dto.email) user.email = dto.email;
-    if (dto.username) user.username = dto.username;
-    if (dto.firstName) user.firstName = dto.firstName;
-    if (dto.lastName) user.lastName = dto.lastName;
-
-    // we can get rid of this if the admin can select only from a list
-    if (dto.role) {
-      const role = await this.roleRepository.findOne({
-        where: { name: dto.role.name },
+    if (dto.email && dto.email !== user.email) {
+      const existingUserWithEmail = await this.userRepository.findOne({
+        where: { email: dto.email },
       });
 
-      if (!role) {
-        throw new NotFoundException('Role not found');
+      if (existingUserWithEmail) {
+        throw new ConflictException('Email already in use');
       }
-
-      user.roleId = role.id;
     }
 
-    await this.userRepository.save(user);
+    await this.userRepository.manager.transaction(async (manager) => {
+      // Update user fields
+      if (dto.email) user.email = dto.email;
+      if (dto.username) user.username = dto.username;
+      if (dto.firstName) user.firstName = dto.firstName;
+      if (dto.lastName) user.lastName = dto.lastName;
+
+      // we can get rid of this if the admin can select only from a list
+      if (dto.roleId) {
+        const role = await this.roleRepository.findOne({
+          where: { id: dto.roleId },
+        });
+
+        if (!role) {
+          throw new NotFoundException('Role not found');
+        }
+
+        user.roleId = role.id;
+      }
+
+      await manager.getRepository(User).save(user);
+
+      // Update associated account if username is changed
+      if (dto.username) {
+        const account = await manager.getRepository(Account).findOne({
+          where: { userId: id, providerId: 'local' },
+        });
+
+        if (account) {
+          account.accountId = dto.username;
+          await manager.getRepository(Account).save(account);
+        }
+      }
+    });
   }
 }

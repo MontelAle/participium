@@ -1,32 +1,28 @@
-'use client';
-
-import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Trash2 } from 'lucide-react';
 import type { User } from '@repo/api';
 import { toast } from 'sonner';
 import { useDeleteMunicipalityUser } from '@/hooks/use-municipality-users';
+import { useState } from 'react';
 
-export function DeleteUserDialog({ user }: { user: User }) {
-  const [open, setOpen] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
-  const { mutateAsync: deleteMunicipalityUser } = useDeleteMunicipalityUser();
+export function DeleteMunicipalityUserDialog({ user }: { user: User }) {
+  const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { mutateAsync: deleteMunicipalUser } = useDeleteMunicipalityUser();
 
   const handleConfirm = async () => {
-    setLoading(true);
+    setIsLoading(true);
 
     try {
-      const response = await deleteMunicipalityUser(user.id);
-
+      await deleteMunicipalUser(user.id);
       toast.success(`User "${user.username}" deleted successfully!`);
       setOpen(false);
     } catch (err: any) {
-      console.error('Error deleting user:', err);
       const message = err instanceof Error ? err.message : 'Unknown error';
       toast.error(message);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -53,16 +49,16 @@ export function DeleteUserDialog({ user }: { user: User }) {
             <Button
               variant="outline"
               onClick={() => setOpen(false)}
-              disabled={loading}
+              disabled={isLoading}
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={handleConfirm}
-              disabled={loading}
+              disabled={isLoading}
             >
-              {loading ? 'Deleting...' : 'Delete'}
+              {isLoading ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         </Dialog.Content>

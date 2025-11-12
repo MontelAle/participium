@@ -55,16 +55,18 @@ describe('UsersService', () => {
   describe('findMunicipalityUsers', () => {
     it('should return users whose role is not "user"', async () => {
       const mockUsers = [
-        { id: '1', role: { name: 'municipal_pr_officer' } },
+        { id: '1', role: { name: 'municipal_pr_officer', isMunicipal: true } },
       ] as User[];
       userRepository.find.mockResolvedValue(mockUsers);
 
       const result = await service.findMunicipalityUsers();
 
-      expect(userRepository.find).toHaveBeenCalledWith({
-        relations: ['role'],
-        where: { role: { name: expect.anything() } }, // Not('user') è ignorato nel mock
-      });
+      expect(userRepository.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          relations: ['role'],
+          where: { role: { isMunicipal: true } },
+        }),
+      );
       expect(result).toEqual(mockUsers);
     });
   });
@@ -74,17 +76,39 @@ describe('UsersService', () => {
       const mockUser = {
         id: '1',
         username: 'officier1',
-        role: { id: 'role-id', name: 'municipal_pr_officer' } as Role,
+        role: {
+          id: 'role-id',
+          name: 'municipal_pr_officer',
+          isMunicipal: true,
+        } as Role,
       } as User;
+
       userRepository.findOne.mockResolvedValue(mockUser);
 
       const result = await service.findMunicipalityUserById('1');
 
-      expect(userRepository.findOne).toHaveBeenCalledWith({
-        relations: ['role'],
-        where: { id: '1', role: { name: expect.anything() } },
-      });
+      expect(userRepository.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          relations: ['role'],
+          where: { id: '1', role: { isMunicipal: true } },
+        }),
+      );
       expect(result).toEqual(mockUser);
+    });
+
+    it('should throw NotFoundException if user is not found', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.findMunicipalityUserById('missing')).rejects.toThrow(
+        'Municipality user not found',
+      );
+
+      expect(userRepository.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          relations: ['role'],
+          where: { id: 'missing', role: { isMunicipal: true } },
+        }),
+      );
     });
 
     it('should throw NotFoundException if user is not found', async () => {
@@ -103,7 +127,7 @@ describe('UsersService', () => {
       firstName: 'Test',
       lastName: 'User',
       password: 'password123',
-      role: { id: 'role-id', name: 'municipal_pr_officer' },
+      roleId: 'role-id',
     };
 
     it('should throw NotFoundException if role does not exist', async () => {
@@ -143,6 +167,40 @@ describe('UsersService', () => {
       );
     });
 
+    it('should throw ConflictException if user with email already exists', async () => {
+      (userRepository.manager.transaction as jest.Mock).mockImplementation(
+        async (fn) =>
+          fn({
+            getRepository: (entity) => ({
+              findOne: async (options) => {
+                if (entity === Role) {
+                  return { id: 'role-id', name: 'municipal_pr_officer' };
+                }
+                if (entity === User) {
+                  if (options?.where?.username) {
+                    return null;
+                  }
+                  if (options?.where?.email) {
+                    return { id: 'existing-user-id', email: dto.email };
+                  }
+                  return null;
+                }
+                return null;
+              },
+              create: jest.fn(),
+              save: jest.fn(),
+            }),
+          }),
+      );
+
+      await expect(service.createMunicipalityUser(dto)).rejects.toThrow(
+        ConflictException,
+      );
+      await expect(service.createMunicipalityUser(dto)).rejects.toThrow(
+        'User with this email already exists',
+      );
+    });
+
     it('should create a new user and account successfully', async () => {
       (userRepository.manager.transaction as jest.Mock).mockImplementation(
         async (fn) =>
@@ -177,25 +235,36 @@ describe('UsersService', () => {
     it('should delete a municipality user and their account', async () => {
       const mockUser = {
         id: '1',
-        role: { id: 'role-id', name: 'municipal_pr_officer' },
+        role: {
+          id: 'role-id',
+          name: 'municipal_pr_officer',
+          isMunicipal: true,
+        } as Role,
       } as User;
+
       userRepository.findOne.mockResolvedValue(mockUser);
 
+      const mockDelete = jest.fn().mockResolvedValue({ affected: 1 });
       (userRepository.manager.transaction as jest.Mock).mockImplementation(
-        async (fn) =>
+        async (fn: any) =>
           fn({
-            getRepository: () => ({
-              delete: jest.fn().mockResolvedValue({ affected: 1 }),
+            getRepository: (entity: any) => ({
+              delete: mockDelete,
             }),
           }),
       );
 
       await service.deleteMunicipalityUserById('1');
 
-      expect(userRepository.findOne).toHaveBeenCalledWith({
-        relations: ['role'],
-        where: { id: '1', role: { name: expect.anything() } },
-      });
+      expect(userRepository.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          relations: ['role'],
+          where: { id: '1', role: { isMunicipal: true } },
+        }),
+      );
+
+      expect(mockDelete).toHaveBeenCalledWith({ userId: '1' });
+      expect(mockDelete).toHaveBeenCalledWith({ id: '1' });
     });
 
     it('should throw NotFoundException if user is not found', async () => {
@@ -225,23 +294,48 @@ describe('UsersService', () => {
         role: { id: 'role-id', name: 'municipal_pr_officer' },
       } as User;
 
+      const mockAccount = {
+        id: 'account-id',
+        accountId: 'olduser',
+        userId: '1',
+        providerId: 'local',
+      } as Account;
+
       userRepository.findOne
         .mockResolvedValueOnce(mockUser)
+        .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null);
-      userRepository.save.mockResolvedValue({ ...mockUser, ...updateDto });
+
+      const mockManager = {
+        getRepository: jest.fn((entity) => {
+          if (entity === User) {
+            return {
+              save: jest.fn().mockResolvedValue({ ...mockUser, ...updateDto }),
+            };
+          }
+          if (entity === Account) {
+            return {
+              findOne: jest.fn().mockResolvedValue(mockAccount),
+              save: jest.fn().mockResolvedValue({
+                ...mockAccount,
+                accountId: updateDto.username,
+              }),
+            };
+          }
+        }),
+      };
+
+      (userRepository.manager.transaction as jest.Mock).mockImplementation(
+        async (cb) => cb(mockManager),
+      );
 
       await service.updateMunicipalityUserById('1', updateDto);
 
       expect(userRepository.findOne).toHaveBeenCalledWith({
         where: { id: '1' },
       });
-      expect(userRepository.save).toHaveBeenCalledWith({
-        ...mockUser,
-        email: updateDto.email,
-        username: updateDto.username,
-        firstName: updateDto.firstName,
-        lastName: updateDto.lastName,
-      });
+      expect(mockManager.getRepository).toHaveBeenCalledWith(User);
+      expect(mockManager.getRepository).toHaveBeenCalledWith(Account);
     });
 
     it('should throw NotFoundException if user is not found', async () => {
@@ -267,10 +361,34 @@ describe('UsersService', () => {
       ).rejects.toThrow(ConflictException);
     });
 
+    it('should throw ConflictException if email is already in use', async () => {
+      const mockUser = {
+        id: '1',
+        email: 'old@example.com',
+        username: 'olduser',
+      } as User;
+      const existingUser = {
+        id: '2',
+        email: 'updated@example.com',
+        username: 'existinguser',
+      } as User;
+
+      userRepository.findOne
+        .mockResolvedValueOnce(mockUser)
+        .mockResolvedValueOnce(existingUser);
+
+      await expect(
+        service.updateMunicipalityUserById('1', {
+          email: 'updated@example.com',
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
+
     it('should update user role if role is provided', async () => {
       const mockUser = {
         id: '1',
         email: 'user@example.com',
+        roleId: 'old-role-id',
         role: { id: 'old-role-id', name: 'municipal_pr_officer' },
       } as User;
       const mockRole = {
@@ -280,33 +398,72 @@ describe('UsersService', () => {
 
       userRepository.findOne.mockResolvedValue(mockUser);
       roleRepository.findOne.mockResolvedValue(mockRole);
-      userRepository.save.mockResolvedValue({
-        ...mockUser,
-        roleId: mockRole.id,
-      });
+
+      const mockManager = {
+        getRepository: jest.fn((entity) => {
+          if (entity === User) {
+            return {
+              save: jest.fn().mockResolvedValue({
+                ...mockUser,
+                roleId: mockRole.id,
+              }),
+            };
+          }
+          if (entity === Account) {
+            return {
+              findOne: jest.fn().mockResolvedValue(null),
+              save: jest.fn(),
+            };
+          }
+        }),
+      };
+
+      (userRepository.manager.transaction as jest.Mock).mockImplementation(
+        async (cb) => cb(mockManager),
+      );
 
       await service.updateMunicipalityUserById('1', {
-        role: { id: 'new-role-id', name: 'technical_officer' },
+        roleId: 'new-role-id',
       });
 
       expect(roleRepository.findOne).toHaveBeenCalledWith({
-        where: { name: 'technical_officer' },
-      });
-      expect(userRepository.save).toHaveBeenCalledWith({
-        ...mockUser,
-        roleId: mockRole.id,
+        where: { id: 'new-role-id' },
       });
     });
 
     it('should throw NotFoundException if role is not found', async () => {
-      const mockUser = { id: '1', username: 'user' } as User;
+      const mockUser = {
+        id: '1',
+        username: 'user',
+        email: 'user@example.com',
+      } as User;
 
       userRepository.findOne.mockResolvedValue(mockUser);
       roleRepository.findOne.mockResolvedValue(null);
 
+      const mockManager = {
+        getRepository: jest.fn((entity) => {
+          if (entity === User) {
+            return {
+              save: jest.fn(),
+            };
+          }
+          if (entity === Account) {
+            return {
+              findOne: jest.fn().mockResolvedValue(null),
+              save: jest.fn(),
+            };
+          }
+        }),
+      };
+
+      (userRepository.manager.transaction as jest.Mock).mockImplementation(
+        async (cb) => cb(mockManager),
+      );
+
       await expect(
         service.updateMunicipalityUserById('1', {
-          role: { id: 'invalid-id', name: 'invalid_role' },
+          roleId: 'invalid-role-id',
         }),
       ).rejects.toThrow(NotFoundException);
     });
@@ -314,23 +471,100 @@ describe('UsersService', () => {
     it('should update only provided fields (partial update)', async () => {
       const mockUser = {
         id: '1',
-        email: 'user',
+        email: 'user@example.com',
         username: 'username',
         firstName: 'First',
         lastName: 'Last',
       } as User;
 
       userRepository.findOne.mockResolvedValue(mockUser);
-      userRepository.save.mockResolvedValue({
-        ...mockUser,
-        firstName: 'NewFirst',
-      });
+
+      const mockManager = {
+        getRepository: jest.fn((entity) => {
+          if (entity === User) {
+            return {
+              save: jest.fn().mockResolvedValue({
+                ...mockUser,
+                firstName: 'NewFirst',
+              }),
+            };
+          }
+          if (entity === Account) {
+            return {
+              findOne: jest.fn().mockResolvedValue(null),
+              save: jest.fn(),
+            };
+          }
+        }),
+      };
+
+      (userRepository.manager.transaction as jest.Mock).mockImplementation(
+        async (cb) => cb(mockManager),
+      );
 
       await service.updateMunicipalityUserById('1', { firstName: 'NewFirst' });
 
-      expect(userRepository.save).toHaveBeenCalledWith({
-        ...mockUser,
-        firstName: 'NewFirst',
+      expect(mockManager.getRepository).toHaveBeenCalledWith(User);
+    });
+
+    it('should update account accountId when username is changed', async () => {
+      const mockUser = {
+        id: '1',
+        email: 'user@example.com',
+        username: 'oldusername',
+        firstName: 'First',
+        lastName: 'Last',
+      } as User;
+
+      const mockAccount = {
+        id: 'account-id',
+        accountId: 'oldusername',
+        userId: '1',
+        providerId: 'local',
+      } as Account;
+
+      userRepository.findOne
+        .mockResolvedValueOnce(mockUser)
+        .mockResolvedValueOnce(null);
+
+      const mockAccountRepo = {
+        findOne: jest.fn().mockResolvedValue(mockAccount),
+        save: jest.fn().mockResolvedValue({
+          ...mockAccount,
+          accountId: 'newusername',
+        }),
+      };
+
+      const mockManager = {
+        getRepository: jest.fn((entity) => {
+          if (entity === User) {
+            return {
+              save: jest.fn().mockResolvedValue({
+                ...mockUser,
+                username: 'newusername',
+              }),
+            };
+          }
+          if (entity === Account) {
+            return mockAccountRepo;
+          }
+        }),
+      };
+
+      (userRepository.manager.transaction as jest.Mock).mockImplementation(
+        async (cb) => cb(mockManager),
+      );
+
+      await service.updateMunicipalityUserById('1', {
+        username: 'newusername',
+      });
+
+      expect(mockAccountRepo.findOne).toHaveBeenCalledWith({
+        where: { userId: '1', providerId: 'local' },
+      });
+      expect(mockAccountRepo.save).toHaveBeenCalledWith({
+        ...mockAccount,
+        accountId: 'newusername',
       });
     });
   });

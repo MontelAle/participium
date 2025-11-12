@@ -1,8 +1,4 @@
-import {
-  Entity,
-  PrimaryColumn,
-  Column,
-} from 'typeorm';
+import { Entity, PrimaryColumn, Column } from 'typeorm';
 
 @Entity('role')
 export class Role {
@@ -11,4 +7,7 @@ export class Role {
 
   @Column('varchar')
   name: string;
+
+  @Column('boolean', { default: false })
+  isMunicipal: boolean;
 }
