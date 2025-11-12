@@ -44,7 +44,8 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   };
 
   const adminMenuItems = [
-    { title: 'Home', href: '/', icon: Home },  
+    { title: 'Dashboard', href: '/app/dashboard', icon: Home },
+    { title: 'Municipality Users', href: '/municipality-users', icon: Users },
   ];
 
   return (

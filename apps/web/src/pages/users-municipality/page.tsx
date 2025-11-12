@@ -1,38 +1,17 @@
 import { MunicipalityUsersTable } from './components/municipality-users-table';
-import { MunicipalityUsersDialog } from './components/municipality-users-dialog';
-import {
-  useMunicipalityUsers,
-  useCreateMunicipalityUser,
-} from '@/hooks/use-municipality-users';
-import { useRoles } from '@/hooks/use-roles';
+import { CreateMunicipalityUserDialog } from './components/create-municipality-user-dialog';
 
-const UsersMunicipalityPage = () => {
-  const {
-    data: municipalityUsers = [],
-    isLoading,
-    error,
-    refetch,
-  } = useMunicipalityUsers();
-  const { mutateAsync: createMunicipalityUser } = useCreateMunicipalityUser();
-  const { data: roles = [] } = useRoles();
-
+const MunicipalityUsersPage = () => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Municipality Users</h1>
-        <MunicipalityUsersDialog
-          onCreate={createMunicipalityUser}
-          roles={roles}
-        />
+        <CreateMunicipalityUserDialog />
       </div>
 
-       <MunicipalityUsersTable
-        users={municipalityUsers}
-        roles={roles}
-        refetch={refetch} 
-      />
+      <MunicipalityUsersTable />
     </div>
   );
 };
 
-export default UsersMunicipalityPage;
+export default MunicipalityUsersPage;
