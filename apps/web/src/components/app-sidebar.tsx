@@ -45,7 +45,11 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
 
   const adminMenuItems = [
     { title: 'Dashboard', href: '/app/dashboard', icon: Home },
-    { title: 'Municipality Users', href: '/municipality-users', icon: Users },
+    {
+      title: 'Municipality Users',
+      href: '/app/municipality-users',
+      icon: Users,
+    },
   ];
 
   return (
@@ -193,7 +197,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
             </DropdownMenu>
           ) : (
             isOpen && (
-              <Link to="login">
+              <Link to="/auth/login">
                 <Button className="w-full">Login / Register</Button>
               </Link>
             )

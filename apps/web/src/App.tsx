@@ -6,7 +6,8 @@ import { Toaster } from 'sonner';
 import LoginPage from './pages/auth/login/page';
 import RegistrationPage from './pages/auth/registration/page';
 import MapPage from './pages/map/page';
-import MunicipalityUsersPage from './pages/users-municipality/page';
+import MunicipalityUsersPage from './pages/app/municipality-users/page';
+import DashboardPage from './pages/app/dashboard/page';
 
 const App = () => {
   return (
@@ -16,14 +17,15 @@ const App = () => {
         <Routes>
           <Route element={<DashboardLayout />}>
             <Route index element={<Navigate to="/map" replace />} />
-            <Route path="map" element={<MapPage />} />
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/app/dashboard" element={<DashboardPage />} />
             <Route
-              path="municipality-users"
+              path="/app/municipality-users"
               element={<MunicipalityUsersPage />}
             />
           </Route>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegistrationPage />} />
+          <Route path="/auth/login" element={<LoginPage />} />
+          <Route path="/auth/register" element={<RegistrationPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
