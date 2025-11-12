@@ -71,6 +71,8 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
         address: locationData.address,
         // Add other required fields for your report DTO here
       });
+
+      console.log(locationData);
       // Optionally show a success toast or reset coordinates
     } catch (err) {
       // Optionally show an error toast

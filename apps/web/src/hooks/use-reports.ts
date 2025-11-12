@@ -4,7 +4,7 @@ import { getReports, postReport } from '@/api/endpoints/reports';
 
 export function useReports() {
   return useQuery<Report[]>({
-    queryKey: ['roles'],
+    queryKey: ['reports'],
     queryFn: getReports,
   });
 }
@@ -14,7 +14,7 @@ export function useCreateReport() {
   return useMutation({
     mutationFn: postReport,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['municipality-users'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     },
   });
 }
