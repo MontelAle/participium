@@ -1,6 +1,9 @@
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardPage = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6">
       <div>
@@ -45,11 +48,15 @@ const DashboardPage = () => {
         <h2 className="mb-4 text-xl font-semibold">Quick Actions</h2>
 
         <div className="flex flex-wrap gap-2">
-          <Button>Create new user</Button>
-
-          <Button variant="outline">View Reports</Button>
-
-          <Button variant="outline">Export Report</Button>
+          <Button
+            onClick={() =>
+              navigate('/app/municipality-users', {
+                state: { openCreateDialog: true },
+              })
+            }
+          >
+            Create new user
+          </Button>
         </div>
       </div>
     </div>

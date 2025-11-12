@@ -19,11 +19,21 @@ import {
 import { useRoles } from '@/hooks/use-roles';
 import { useCreateMunicipalityUser } from '@/hooks/use-municipality-users';
 import type { CreateMunicipalityUserDto } from '@repo/api';
+import { useEffect } from 'react';
 
-export function CreateMunicipalityUserDialog() {
+export function CreateMunicipalityUserDialog({
+  openDialog,
+}: {
+  openDialog?: boolean;
+}) {
   const { mutateAsync: createMunicipalityUser } = useCreateMunicipalityUser();
   const { data: roles = [] } = useRoles();
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (openDialog) setOpen(true);
+  }, [openDialog]);
+
   const [isLoading, setIsLoading] = useState(false);
   const emptyForm: CreateMunicipalityUserDto = {
     username: '',
