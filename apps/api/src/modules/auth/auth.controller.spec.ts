@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, Session } from '@repo/api';
+import { LoginDto, RegisterDto, Session } from '@repo/api';
 import { SessionGuard } from './guards/session-auth.guard';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -78,7 +78,7 @@ describe('AuthController', () => {
   describe('login', () => {
     it('should call authService.login, getCookieOptions, and set cookie', async () => {
       const loginDto: LoginDto = {
-        email: 'testuser@example.com',
+        username: 'testuser@example.com',
         password: 'password',
       };
       const req: any = {
@@ -109,7 +109,7 @@ describe('AuthController', () => {
 
     it('should throw UnauthorizedException when req.user is not present', async () => {
       const loginDto: LoginDto = {
-        email: 'testuser@example.com',
+        username: 'testuser@example.com',
         password: 'password',
       };
       const req: any = {

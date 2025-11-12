@@ -117,12 +117,12 @@ async function runSeed() {
     id: nanoid(),
     user: adminUser,
     providerId: 'local',
-    accountId: adminUser.email,
+    accountId: adminUser.username,
     password: await bcrypt.hash(adminPassword, 10),
   });
 
   console.log(
-    `✅ Seeded admin user: ${adminEmail} / password: ${adminPassword}`,
+    `✅ Seeded admin\n username: ${adminUsername} / password: ${adminPassword}`,
   );
 
   // Seed regular user
@@ -146,11 +146,11 @@ async function runSeed() {
     id: nanoid(),
     user,
     providerId: 'local',
-    accountId: user.email,
+    accountId: user.username,
     password: await bcrypt.hash(password, 10),
   });
 
-  console.log(`✅ Seeded user: ${email} / password: ${password}`);
+  console.log(`✅ Seeded user\n username: ${username} / password: ${password}`);
   await app.close();
 }
 

@@ -21,21 +21,28 @@ export class ReportsService {
 
   /**
    * Extract coordinates from a Point geometry
+   * 
+   * NOTE: This method is currently unused but will be useful for future features
+   * such as extracting coordinates for display, coordinate-based filtering,
+   * or returning coordinate data in specific API responses.
+   * 
+   * @param location - WKT format string: POINT(longitude latitude)
+   * @returns Object with longitude and latitude values
    */
-  private extractCoordinates(location: string): {
-    longitude: number;
-    latitude: number;
-  } {
-    // Parse WKT format: POINT(longitude latitude)
-    const match = location.match(/POINT\(([^ ]+) ([^ ]+)\)/);
-    if (match) {
-      return {
-        longitude: parseFloat(match[1]),
-        latitude: parseFloat(match[2]),
-      };
-    }
-    return { longitude: 0, latitude: 0 };
-  }
+  // private extractCoordinates(location: string): {
+  //   longitude: number;
+  //   latitude: number;
+  // } {
+  //   // Parse WKT format: POINT(longitude latitude)
+  //   const match = location.match(/POINT\(([^ ]+) ([^ ]+)\)/);
+  //   if (match) {
+  //     return {
+  //       longitude: parseFloat(match[1]),
+  //       latitude: parseFloat(match[2]),
+  //     };
+  //   }
+  //   return { longitude: 0, latitude: 0 };
+  // }
 
   async create(
     createReportDto: CreateReportDto,

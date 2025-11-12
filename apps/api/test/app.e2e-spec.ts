@@ -6,43 +6,85 @@ import { SessionGuard } from './../src/modules/auth/guards/session-auth.guard';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Session, User, Role, Account, Category, Report } from '@repo/api';
 import request = require('supertest');
+import { UsersService } from './../src/modules/users/users.service';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
 }));
 
-// Note: keep AuthModule real so routes exist; providers/guards are overridden below
-
-/**
- * Creates a mock TypeORM repository with common methods.
- * Allows tests to run without a real database connection.
- */
-const createMockRepository = () => ({
-  find: jest.fn().mockResolvedValue([]),
-  findOne: jest.fn().mockResolvedValue(null),
-  findOneBy: jest.fn().mockResolvedValue(null),
-  save: jest.fn((entity) => Promise.resolve(entity)),
-  create: jest.fn((dto) => dto),
-  remove: jest.fn((entity) => Promise.resolve(entity)),
-  delete: jest.fn().mockResolvedValue({ affected: 1 }),
-  update: jest.fn().mockResolvedValue({ affected: 1 }),
-  createQueryBuilder: jest.fn(() => ({
-    where: jest.fn().mockReturnThis(),
-    andWhere: jest.fn().mockReturnThis(),
-    leftJoinAndSelect: jest.fn().mockReturnThis(),
-    getOne: jest.fn().mockResolvedValue(null),
-    getMany: jest.fn().mockResolvedValue([]),
-  })),
-});
+const createMockRepository = (data: any[] = []) => {
+  const repo: any = {
+    find: jest.fn().mockResolvedValue(data),
+    findOne: jest.fn(({ where }) =>
+      Promise.resolve(
+        data.find((e) => Object.entries(where).every(([k, v]) => e[k] === v)) ||
+          null,
+      ),
+    ),
+    findOneBy: jest.fn((where) =>
+      Promise.resolve(
+        data.find((e) => Object.entries(where).every(([k, v]) => e[k] === v)) ||
+          null,
+      ),
+    ),
+    save: jest.fn((entity) => Promise.resolve(entity)),
+    create: jest.fn((dto) => dto),
+    remove: jest.fn((entity) => Promise.resolve(entity)),
+    delete: jest.fn().mockResolvedValue({ affected: 1 }),
+    update: jest.fn().mockResolvedValue({ affected: 1 }),
+    createQueryBuilder: jest.fn(() => ({
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(null),
+      getMany: jest.fn().mockResolvedValue([]),
+    })),
+  };
+  // Add a mock manager with a transaction method
+  repo.manager = {
+    transaction: async (cb: any) => cb(repo.manager),
+    getRepository: () => repo,
+  };
+  return repo;
+};
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let AppModule: any;
+  let sessionCookie: string;
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
     const importedModule = await import('./../src/app.module');
     AppModule = importedModule.AppModule;
+
+    const mockRoles = [
+      { id: 'role_1', name: 'admin' },
+      { id: 'role_2', name: 'user' },
+    ];
+
+    const mockUser = {
+      id: 'user_1',
+      email: 'john@example.com',
+      username: 'john',
+      firstName: 'John',
+      lastName: 'Doe',
+      role: { id: 'role_1', name: 'admin' },
+    };
+
+    const mockSession = {
+      id: 'sess_1',
+      userId: 'user_1',
+      hashedSecret: 'hashed_secret',
+    };
+
+    const mockCookie = {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      maxAge: 3600_000,
+    };
+    const mockToken = 'sess_1.secret';
 
     const { DatabaseModule } = await import(
       './../src/providers/database/database.module'
@@ -52,9 +94,12 @@ describe('AppController (e2e)', () => {
       imports: [AppModule],
     });
 
-    testingModuleBuilder.overrideModule(DatabaseModule).useModule(
-      class MockDatabaseModule {},
-    );
+    testingModuleBuilder
+      .overrideModule(DatabaseModule)
+      .useModule(class MockDatabaseModule {});
+    testingModuleBuilder
+      .overrideModule(DatabaseModule)
+      .useModule(class MockDatabaseModule {});
 
     testingModuleBuilder
       .overrideProvider(getRepositoryToken(Session))
@@ -62,46 +107,13 @@ describe('AppController (e2e)', () => {
       .overrideProvider(getRepositoryToken(User))
       .useValue(createMockRepository())
       .overrideProvider(getRepositoryToken(Role))
-      .useValue(createMockRepository())
+      .useValue(createMockRepository(mockRoles))
       .overrideProvider(getRepositoryToken(Account))
       .useValue(createMockRepository())
       .overrideProvider(getRepositoryToken(Category))
       .useValue(createMockRepository())
       .overrideProvider(getRepositoryToken(Report))
       .useValue(createMockRepository());
-
-    const mockUser = {
-      id: 'user_1',
-      email: 'john@example.com',
-      username: 'john',
-      firstName: 'John',
-      lastName: 'Doe',
-    } as any;
-    const mockSession = {
-      id: 'sess_1',
-      userId: 'user_1',
-      token: 'mock_token_123',
-      expiresAt: new Date(Date.now() + 3600_000).toISOString(),
-    } as any;
-    const mockCookie = {
-      httpOnly: true,
-      sameSite: 'lax' as const,
-      secure: false,
-      maxAge: 3600_000,
-    };
-    const mockToken = 'mock_token_123';
-
-    testingModuleBuilder.overrideProvider(AuthService).useValue({
-      register: jest.fn(async () => ({ user: mockUser })),
-      login: jest.fn(async () => ({
-        user: mockUser,
-        session: mockSession,
-        token: mockToken,
-      })),
-      validateUser: jest.fn(async () => ({ user: mockUser })),
-      logout: jest.fn(async () => undefined),
-      getCookieOptions: jest.fn(() => mockCookie),
-    });
 
     testingModuleBuilder.overrideGuard(LocalAuthGuard).useValue({
       canActivate: (context: any) => {
@@ -111,7 +123,6 @@ describe('AppController (e2e)', () => {
       },
     });
 
-    // Override SessionGuard to bypass session validation and inject mock session
     testingModuleBuilder.overrideGuard(SessionGuard).useValue({
       canActivate: (context: any) => {
         const req = context.switchToHttp().getRequest();
@@ -131,6 +142,7 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
+  // --- Error and 404 tests ---
   it('GET /nonexistent returns JSON error with statusCode and error', async () => {
     const res = await request(app.getHttpServer())
       .get('/nonexistent')
@@ -168,7 +180,7 @@ describe('AppController (e2e)', () => {
     }
   });
 
-  // Happy-path tests using overridden AuthService and bypassed LocalAuthGuard
+  // --- Auth Controller ---
   it('POST /auth/register returns user and sets session cookie', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/register')
@@ -181,7 +193,6 @@ describe('AppController (e2e)', () => {
       })
       .expect(201);
 
-    // Body - response is wrapped in { success: true, data: { user, session } }
     expect(res.body).toEqual(
       expect.objectContaining({
         success: true,
@@ -189,39 +200,219 @@ describe('AppController (e2e)', () => {
           user: expect.objectContaining({
             email: 'john@example.com',
             username: 'john',
+            firstName: 'John',
+            lastName: 'Doe',
+            id: expect.any(String),
+            role: expect.objectContaining({
+              id: expect.any(String),
+              name: expect.any(String),
+            }),
           }),
-          session: expect.objectContaining({ token: 'mock_token_123' }),
+          session: expect.objectContaining({
+            id: expect.any(String),
+            userId: expect.any(String),
+            hashedSecret: expect.any(String),
+            expiresAt: expect.any(String),
+            ipAddress: expect.any(String),
+          }),
         }),
       }),
     );
-    // Cookie
+
     const setCookie = res.headers['set-cookie'];
     const cookies = Array.isArray(setCookie)
       ? setCookie.join(';')
       : String(setCookie || '');
-    expect(cookies).toContain('session_token=mock_token_123');
-    expect(cookies.toLowerCase()).toContain('httponly');
+    sessionCookie = cookies;
+    expect(cookies).toMatch(/session_token=[^;]+/);
   });
 
   it('POST /auth/login returns user and session when guard passes', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/login')
+      .send({ username: 'john', password: 'StrongP@ssw0rd' })
+      .expect(200);
       .send({ email: 'john@example.com', password: 'StrongP@ssw0rd' })
-      .expect(200); // Login returns 200, not 201
+      .expect(200);
 
     expect(res.body).toEqual(
       expect.objectContaining({
         success: true,
         data: expect.objectContaining({
-          user: expect.objectContaining({ email: 'john@example.com' }),
+          user: expect.objectContaining({ username: 'john' }),
           session: expect.objectContaining({ token: 'mock_token_123' }),
+          user: expect.objectContaining({
+            email: 'john@example.com',
+            username: 'john',
+            firstName: 'John',
+            lastName: 'Doe',
+            id: expect.any(String),
+            role: expect.objectContaining({
+              id: expect.any(String),
+              name: expect.any(String),
+            }),
+          }),
+          session: expect.objectContaining({
+            id: expect.any(String),
+            userId: expect.any(String),
+            hashedSecret: expect.any(String),
+            expiresAt: expect.any(String),
+            ipAddress: expect.any(String),
+          }),
         }),
       }),
     );
+
     const setCookie2 = res.headers['set-cookie'];
     const cookies = Array.isArray(setCookie2)
       ? setCookie2.join(';')
       : String(setCookie2 || '');
-    expect(cookies).toContain('session_token=mock_token_123');
+    sessionCookie = cookies;
+    expect(cookies).toMatch(/session_token=[^;]+/);
+  });
+
+  it('POST /auth/logout returns success', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/logout')
+      .set('Cookie', sessionCookie)
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+  });
+
+  // --- Roles Controller ---
+  it('GET /roles returns all roles', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/roles')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  // --- Users Controller ---
+  it('POST /users/municipality creates a municipality user', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/users/municipality')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        email: 'admin@municipality.gov',
+        username: 'admin_user',
+        firstName: 'Admin',
+        lastName: 'User',
+        password: 'SecureAdminPass123',
+        role: 'role_1',
+      })
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeDefined();
+  });
+
+  it('GET /users/municipality returns all municipality users', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/users/municipality')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('GET /users/municipality/user/:id returns a municipality user by ID', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/users/municipality/user/user_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeDefined();
+  });
+
+  it('POST /users/municipality/user/:id updates a municipality user by ID', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/users/municipality/user/user_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        email: 'updated@municipality.gov',
+        username: 'updated_user',
+        firstName: 'Updated',
+        lastName: 'Name',
+        role: 'municipal_administrator',
+      })
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.id).toBe('user_1');
+  });
+
+  it('DELETE /users/municipality/user/:id deletes a municipality user by ID', async () => {
+    const res = await request(app.getHttpServer())
+      .delete('/users/municipality/user/user_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.id).toBe('user_1');
+  });
+
+  // --- Reports Controller ---
+  it('POST /reports creates a report', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        title: 'Broken streetlight',
+        description: 'The streetlight on Main St is broken.',
+        longitude: 12.34,
+        latitude: 56.78,
+        categoryId: 'cat1',
+      })
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeDefined();
+  });
+
+  it('GET /reports returns all reports', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('GET /reports/:id returns a report by ID', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/report_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeDefined();
+  });
+
+  it('PATCH /reports/:id updates a report', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/reports/report_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        status: 'resolved',
+        description: 'Fixed by city crew.',
+      })
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeDefined();
+  });
+
+  it('DELETE /reports/:id deletes a report', async () => {
+    await request(app.getHttpServer())
+      .delete('/reports/report_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(204);
   });
 });

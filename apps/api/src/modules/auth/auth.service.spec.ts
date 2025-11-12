@@ -120,7 +120,7 @@ describe('AuthService', () => {
       const savedUser = { id: 'mocked-id', ...dto, role: mockRole };
       const savedAccount = {
         id: 'mocked-id',
-        accountId: dto.email,
+        accountId: dto.username,
         providerId: 'local',
         userId: savedUser.id,
         password: 'hashed',
@@ -164,7 +164,7 @@ describe('AuthService', () => {
       expect(bcrypt.hash).toHaveBeenCalledWith(dto.password, 10);
     });
 
-    it('should throw ConflictException when user exists with same email and local account', async () => {
+    it('should throw ConflictException when user exists with same username and local account', async () => {
       const dto: RegisterDto = {
         email: 'existing@example.com',
         username: 'existinguser',
@@ -176,15 +176,15 @@ describe('AuthService', () => {
       const mockRole = { id: 'role-id', name: 'user' };
       const existingUser = {
         id: 'existing-user-id',
-        email: dto.email,
-        username: 'oldusername',
+        email: 'existing@example.com',
+        username: dto.username,
         firstName: 'Old',
         lastName: 'Name',
         role: mockRole,
       };
       const existingAccount = {
         id: 'existing-account-id',
-        accountId: dto.email,
+        accountId: dto.username,
         providerId: 'local',
         userId: existingUser.id,
         password: 'oldhashed',
@@ -217,7 +217,7 @@ describe('AuthService', () => {
       });
 
       await expect(service.register(dto)).rejects.toThrow(
-        'User with this email already exists',
+        'User with this username already exists',
       );
     });
 
@@ -234,7 +234,7 @@ describe('AuthService', () => {
       const savedUser = { id: 'mocked-id', ...dto, role: createdRole };
       const savedAccount = {
         id: 'mocked-id',
-        accountId: dto.email,
+        accountId: dto.username,
         providerId: 'local',
         userId: savedUser.id,
         password: 'hashed',
@@ -298,8 +298,8 @@ describe('AuthService', () => {
       const mockRole = { id: 'role-id', name: 'user' };
       const existingUser = {
         id: 'existing-user-id',
-        email: dto.email,
-        username: 'existingusername',
+        email: 'existing@example.com',
+        username: dto.username,
         firstName: 'Existing',
         lastName: 'User',
         role: mockRole,
@@ -307,7 +307,7 @@ describe('AuthService', () => {
     
       const newAccount = {
         id: 'mocked-id',
-        accountId: dto.email,
+        accountId: dto.username,
         providerId: 'local',
         userId: existingUser.id,
         password: 'hashed',
@@ -350,7 +350,7 @@ describe('AuthService', () => {
       expect(result).toEqual({ user: existingUser });
       expect(accountCreateSpy).toHaveBeenCalledWith({
         id: 'mocked-id',
-        accountId: dto.email,
+        accountId: dto.username,
         providerId: 'local',
         userId: existingUser.id,
         password: 'hashed',

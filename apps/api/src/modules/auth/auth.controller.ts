@@ -34,7 +34,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'User login',
-    description: `Authenticates a user with email and password.
+    description: `Authenticates a user with username and password.
                   Returns user data and creates a session cookie.
                   **Access:** Public`,
   })
@@ -44,7 +44,7 @@ export class AuthController {
       validLogin: {
         summary: 'Valid login credentials',
         value: {
-          email: 'user@example.com',
+          username: 'user@example.com',
           password: 'SecurePass123',
         },
       },
@@ -79,7 +79,7 @@ export class AuthController {
       example: {
         statusCode: 400,
         message: [
-          'Invalid email format',
+          'Invalid username format',
           'Password must be at least 6 characters',
         ],
         error: 'Bad Request',
@@ -171,7 +171,7 @@ export class AuthController {
       example: {
         statusCode: 400,
         message: [
-          'Invalid email format',
+          'Invalid username format',
           'Username is required',
           'Password must be at least 6 characters',
         ],
@@ -181,11 +181,11 @@ export class AuthController {
   })
   @ApiResponse({
     status: 409,
-    description: 'Conflict - User with this email already exists',
+    description: 'Conflict - User with this username already exists',
     schema: {
       example: {
         statusCode: 409,
-        message: 'User with this email already exists',
+        message: 'User with this username already exists',
         error: 'Conflict',
       },
     },

@@ -46,10 +46,10 @@ describe('LocalStrategy', () => {
         user: mockUser,
       });
 
-      const result = await strategy.validate('test@example.com', 'password123');
+      const result = await strategy.validate('testuser', 'password123');
 
       expect(authService.validateUser).toHaveBeenCalledWith(
-        'test@example.com',
+        'testuser',
         'password123',
       );
       expect(result).toEqual(mockUser);
@@ -59,11 +59,11 @@ describe('LocalStrategy', () => {
       (authService.validateUser as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        strategy.validate('wrong@example.com', 'wrongpassword'),
-      ).rejects.toThrow(new UnauthorizedException('Invalid email or password'));
+        strategy.validate('wrong_username', 'wrongpassword'),
+      ).rejects.toThrow(new UnauthorizedException('Invalid username or password'));
 
       expect(authService.validateUser).toHaveBeenCalledWith(
-        'wrong@example.com',
+        'wrong_username',
         'wrongpassword',
       );
     });
@@ -72,7 +72,7 @@ describe('LocalStrategy', () => {
       (authService.validateUser as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        strategy.validate('nonexistent@example.com', 'password123'),
+        strategy.validate('nonexistent_user', 'password123'),
       ).rejects.toThrow(UnauthorizedException);
     });
 
@@ -80,7 +80,7 @@ describe('LocalStrategy', () => {
       (authService.validateUser as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        strategy.validate('test@example.com', 'wrongpassword'),
+        strategy.validate('testuser', 'wrongpassword'),
       ).rejects.toThrow(UnauthorizedException);
     });
 
@@ -90,7 +90,7 @@ describe('LocalStrategy', () => {
       );
 
       await expect(
-        strategy.validate('test@example.com', 'password123'),
+        strategy.validate('testuser', 'password123'),
       ).rejects.toThrow('Database connection error');
     });
   });
