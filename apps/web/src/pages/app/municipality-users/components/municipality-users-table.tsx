@@ -64,7 +64,10 @@ export function MunicipalityUsersTable() {
   );
 
   return (
-    <TableProvider columns={columns} data={municipalUsers}>
+    <TableProvider
+      columns={columns}
+      data={municipalUsers.filter((user) => user.role.name !== 'admin')}
+    >
       <TableHeader>
         {({ headerGroup }) => (
           <TableHeaderGroup headerGroup={headerGroup}>

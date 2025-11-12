@@ -168,19 +168,21 @@ export function EditMunicipalityUserDialog({ user }: { user: User }) {
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role.id} value={role.id}>
-                      {role.name
-                        .replace(/_/g, ' ')
-                        .split(' ')
-                        .map(
-                          (w) =>
-                            w.charAt(0).toUpperCase() +
-                            w.slice(1).toLowerCase(),
-                        )
-                        .join(' ')}{' '}
-                    </SelectItem>
-                  ))}
+                  {roles
+                    .filter((role) => role.name !== 'admin')
+                    .map((role) => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.name
+                          .replace(/_/g, ' ')
+                          .split(' ')
+                          .map(
+                            (w) =>
+                              w.charAt(0).toUpperCase() +
+                              w.slice(1).toLowerCase(),
+                          )
+                          .join(' ')}{' '}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </Field>
