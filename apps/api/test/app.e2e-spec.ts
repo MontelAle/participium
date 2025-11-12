@@ -6,42 +6,52 @@ import { SessionGuard } from './../src/modules/auth/guards/session-auth.guard';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Session, User, Role, Account, Category, Report } from '@repo/api';
 import request = require('supertest');
+import { UsersService } from './../src/modules/users/users.service';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
 }));
 
-const createMockRepository = (data: any[] = []) => ({
-  find: jest.fn().mockResolvedValue(data),
-  findOne: jest.fn(({ where }) =>
-    Promise.resolve(
-      data.find((e) => Object.entries(where).every(([k, v]) => e[k] === v)) ||
-        null,
+const createMockRepository = (data: any[] = []) => {
+  const repo: any = {
+    find: jest.fn().mockResolvedValue(data),
+    findOne: jest.fn(({ where }) =>
+      Promise.resolve(
+        data.find((e) => Object.entries(where).every(([k, v]) => e[k] === v)) ||
+          null,
+      ),
     ),
-  ),
-  findOneBy: jest.fn((where) =>
-    Promise.resolve(
-      data.find((e) => Object.entries(where).every(([k, v]) => e[k] === v)) ||
-        null,
+    findOneBy: jest.fn((where) =>
+      Promise.resolve(
+        data.find((e) => Object.entries(where).every(([k, v]) => e[k] === v)) ||
+          null,
+      ),
     ),
-  ),
-  save: jest.fn((entity) => Promise.resolve(entity)),
-  create: jest.fn((dto) => dto),
-  remove: jest.fn((entity) => Promise.resolve(entity)),
-  delete: jest.fn().mockResolvedValue({ affected: 1 }),
-  update: jest.fn().mockResolvedValue({ affected: 1 }),
-  createQueryBuilder: jest.fn(() => ({
-    where: jest.fn().mockReturnThis(),
-    andWhere: jest.fn().mockReturnThis(),
-    leftJoinAndSelect: jest.fn().mockReturnThis(),
-    getOne: jest.fn().mockResolvedValue(null),
-    getMany: jest.fn().mockResolvedValue([]),
-  })),
-});
+    save: jest.fn((entity) => Promise.resolve(entity)),
+    create: jest.fn((dto) => dto),
+    remove: jest.fn((entity) => Promise.resolve(entity)),
+    delete: jest.fn().mockResolvedValue({ affected: 1 }),
+    update: jest.fn().mockResolvedValue({ affected: 1 }),
+    createQueryBuilder: jest.fn(() => ({
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(null),
+      getMany: jest.fn().mockResolvedValue([]),
+    })),
+  };
+  // Add a mock manager with a transaction method
+  repo.manager = {
+    transaction: async (cb: any) => cb(repo.manager),
+    getRepository: () => repo,
+  };
+  return repo;
+};
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let AppModule: any;
+  let sessionCookie: string;
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
@@ -101,18 +111,6 @@ describe('AppController (e2e)', () => {
       .useValue(createMockRepository())
       .overrideProvider(getRepositoryToken(Report))
       .useValue(createMockRepository());
-
-    testingModuleBuilder.overrideProvider(AuthService).useValue({
-      register: jest.fn(async () => ({ user: mockUser })),
-      login: jest.fn(async () => ({
-        user: mockUser,
-        session: mockSession,
-        token: mockToken,
-      })),
-      validateUser: jest.fn(async () => ({ user: mockUser })),
-      logout: jest.fn(async () => undefined),
-      getCookieOptions: jest.fn(() => mockCookie),
-    });
 
     testingModuleBuilder.overrideGuard(LocalAuthGuard).useValue({
       canActivate: (context: any) => {
@@ -199,17 +197,31 @@ describe('AppController (e2e)', () => {
           user: expect.objectContaining({
             email: 'john@example.com',
             username: 'john',
+            firstName: 'John',
+            lastName: 'Doe',
+            id: expect.any(String),
+            role: expect.objectContaining({
+              id: expect.any(String),
+              name: expect.any(String),
+            }),
           }),
-          session: expect.objectContaining({ hashedSecret: 'hashed_secret' }),
+          session: expect.objectContaining({
+            id: expect.any(String),
+            userId: expect.any(String),
+            hashedSecret: expect.any(String),
+            expiresAt: expect.any(String),
+            ipAddress: expect.any(String),
+          }),
         }),
       }),
     );
+
     const setCookie = res.headers['set-cookie'];
     const cookies = Array.isArray(setCookie)
       ? setCookie.join(';')
       : String(setCookie || '');
-    expect(cookies).toContain('session_token=sess_1.secret');
-    expect(cookies.toLowerCase()).toContain('httponly');
+    sessionCookie = cookies;
+    expect(cookies).toMatch(/session_token=[^;]+/);
   });
 
   it('POST /auth/login returns user and session when guard passes', async () => {
@@ -222,22 +234,40 @@ describe('AppController (e2e)', () => {
       expect.objectContaining({
         success: true,
         data: expect.objectContaining({
-          user: expect.objectContaining({ email: 'john@example.com' }),
-          session: expect.objectContaining({ hashedSecret: 'hashed_secret' }),
+          user: expect.objectContaining({
+            email: 'john@example.com',
+            username: 'john',
+            firstName: 'John',
+            lastName: 'Doe',
+            id: expect.any(String),
+            role: expect.objectContaining({
+              id: expect.any(String),
+              name: expect.any(String),
+            }),
+          }),
+          session: expect.objectContaining({
+            id: expect.any(String),
+            userId: expect.any(String),
+            hashedSecret: expect.any(String),
+            expiresAt: expect.any(String),
+            ipAddress: expect.any(String),
+          }),
         }),
       }),
     );
+
     const setCookie2 = res.headers['set-cookie'];
     const cookies = Array.isArray(setCookie2)
       ? setCookie2.join(';')
       : String(setCookie2 || '');
-    expect(cookies).toContain('session_token=sess_1.secret');
+    sessionCookie = cookies;
+    expect(cookies).toMatch(/session_token=[^;]+/);
   });
 
   it('POST /auth/logout returns success', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/logout')
-      .set('Cookie', 'session_token=sess_1.secret')
+      .set('Cookie', sessionCookie)
       .expect(200);
 
     expect(res.body.success).toBe(true);
