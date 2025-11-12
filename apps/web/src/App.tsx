@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardLayout } from '@/layouts/dashboard-layout';
 import { AuthProvider } from '@/contexts/auth-context';
 import { Toaster } from 'sonner';
-import { RequireAuth } from '@/components/require-auth';
+import { MunicipalGuard } from '@/components/municipal-guard';
+import { CitizenGuard } from './components/citizen-guard';
 
 import LoginPage from './pages/auth/login/page';
 import RegistrationPage from './pages/auth/registration/page';
@@ -18,21 +19,28 @@ const App = () => {
         <Routes>
           <Route element={<DashboardLayout />}>
             <Route index element={<Navigate to="/map" replace />} />
-            <Route path="/map" element={<MapPage />} />
+            <Route
+              path="/map"
+              element={
+                <CitizenGuard>
+                  <MapPage />
+                </CitizenGuard>
+              }
+            />
             <Route
               path="/app/dashboard"
               element={
-                <RequireAuth>
+                <MunicipalGuard>
                   <DashboardPage />
-                </RequireAuth>
+                </MunicipalGuard>
               }
             />
             <Route
               path="/app/municipality-users"
               element={
-                <RequireAuth>
+                <MunicipalGuard>
                   <MunicipalityUsersPage />
-                </RequireAuth>
+                </MunicipalGuard>
               }
             />
           </Route>
