@@ -24,6 +24,8 @@ import { ReportsList } from '@/components/reports-list';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 import { SidebarProps } from '@/types/ui';
+import { useActiveReportStore } from '@/store/activeReportStore';
+import { useCreateReport } from '@/hooks/use-reports';
 
 export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   const location = useLocation();
@@ -31,6 +33,9 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   const isAdminUser = user && user.role.name !== 'user';
   const isRegularUser = user && user.role.name === 'user';
   const isGuest = !user;
+
+  const { coordinates } = useActiveReportStore();
+  const { mutateAsync: createReport } = useCreateReport();
 
   const getUserInitials = () => {
     if (!user) return '?';
@@ -51,6 +56,23 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
       icon: Users,
     },
   ];
+
+  const handleAddReport = async () => {
+    if (!coordinates) {
+      // Optionally show a toast or error
+      return;
+    }
+    try {
+      await createReport({
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        // Add other required fields for your report DTO here
+      });
+      // Optionally show a success toast or reset coordinates
+    } catch (err) {
+      // Optionally show an error toast
+    }
+  };
 
   return (
     <aside
@@ -121,7 +143,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
               {isRegularUser && (
                 <Button
                   size="icon"
-                  onClick={() => console.log('Add report')}
+                  onClick={handleAddReport}
                   className={cn(
                     'mb-3',
                     isOpen ? 'w-full' : 'w-12 h-12 mx-auto',

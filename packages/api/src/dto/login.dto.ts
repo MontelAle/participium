@@ -8,7 +8,7 @@ export class LoginDto {
   })
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  username: string;
 
   @ApiProperty({
     description: 'User password (minimum 6 characters)',

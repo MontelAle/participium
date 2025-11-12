@@ -1,6 +1,7 @@
 import { apiFetch } from '../client';
 import type { Report } from '@repo/api';
 import type { ReportResponse } from '@/types/report';
+import { CreateReportDto } from '@repo/api';
 
 export async function getReports(): Promise<Report[]> {
   const response = await apiFetch<ReportResponse>('/roles/', {
@@ -9,7 +10,9 @@ export async function getReports(): Promise<Report[]> {
   return response.data;
 }
 
-export async function postReport(reportData: Partial<Report>): Promise<Report> {
+export async function postReport(
+  reportData: Partial<CreateReportDto>,
+): Promise<Report> {
   const response = await apiFetch<{ success: boolean; data: Report }>(
     '/reports/',
     {

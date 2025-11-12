@@ -1,20 +1,14 @@
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { Report } from "@/types/reports";
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { useState } from 'react';
+import { useReports } from '@/hooks/use-reports';
 
 export function ReportsList() {
-  const [search, setSearch] = useState("");
-  
-  //TODO: replace with API call
-  const reports: Report[] = [
-    { id: "1", title: "Broken streetlight", status: "pending" },
-    { id: "2", title: "Pothole on Main St", status: "in_progress" },
-    { id: "3", title: "Graffiti removal needed", status: "resolved" },
-  ];
+  const [search, setSearch] = useState('');
+  const { data: reports = [] } = useReports();
 
-  const filtered = reports.filter(r => 
-    r.title.toLowerCase().includes(search.toLowerCase())
+  const filtered = reports.filter((r) =>
+    r.title.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
