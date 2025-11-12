@@ -7,9 +7,13 @@ const MunicipalityUsersPage = () => {
   const location = useLocation();
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Municipality Users</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Municipality Users
+        </h1>
+      </div>
+      <div className="flex justify-end items-center">
         <CreateMunicipalityUserDialog
           openDialog={location.state?.openCreateDialog}
         />

@@ -13,6 +13,9 @@ export type AuthContextType = {
   ) => Promise<{ success: boolean; data?: User; error?: string }>;
   logout: () => Promise<void>;
   isMunicipalityUser: boolean;
+  isAdminUser: boolean;
+  isCitizenUser: boolean;
+  isGuestUser: boolean;
 };
 
 export type AuthResponse = {

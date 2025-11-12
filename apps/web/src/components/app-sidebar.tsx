@@ -32,10 +32,14 @@ import { toast } from 'sonner';
 export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
-  const isAdminUser = user && user.role.name !== 'user';
-  const isRegularUser = user && user.role.name === 'user';
-  const isGuest = !user;
+  const {
+    user,
+    logout,
+    isAdminUser,
+    isCitizenUser,
+    isGuestUser,
+    isMunicipalityUser,
+  } = useAuth();
 
   const { locationData } = useActiveReportStore();
   const { mutateAsync: createReport } = useCreateReport();
@@ -51,14 +55,23 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
     );
   };
 
-  const adminMenuItems = [
+  const municipalMenuItems = [
     { title: 'Dashboard', href: '/app/dashboard', icon: Home },
+  ];
+
+  const adminMenuItems = [
     {
       title: 'Municipality Users',
       href: '/app/municipality-users',
       icon: Users,
     },
   ];
+
+  const menuItems = municipalMenuItems;
+
+  if (isAdminUser) {
+    menuItems.push(...adminMenuItems);
+  }
 
   const handleAddReport = async () => {
     if (!locationData) {
@@ -125,9 +138,9 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
         </div>
 
         <div className="flex-1 overflow-hidden p-2">
-          {isAdminUser && (
+          {isMunicipalityUser && (
             <nav className="space-y-1">
-              {adminMenuItems.map((item) => {
+              {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
                 return (
@@ -150,9 +163,9 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
             </nav>
           )}
 
-          {(isGuest || isRegularUser) && (
+          {(isGuestUser || isCitizenUser) && (
             <>
-              {isRegularUser && (
+              {isCitizenUser && (
                 <Button
                   size="icon"
                   onClick={handleAddReport}

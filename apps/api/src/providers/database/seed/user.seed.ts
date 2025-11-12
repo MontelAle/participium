@@ -27,7 +27,7 @@ async function runSeed() {
   if (!adminRole) {
     adminRole = dataSource
       .getRepository(Role)
-      .create({ id: nanoid(), name: 'admin' });
+      .create({ id: nanoid(), name: 'admin', isMunicipal: true });
     adminRole = await dataSource.getRepository(Role).save(adminRole);
   }
 
@@ -37,7 +37,11 @@ async function runSeed() {
   if (!municipalPRole) {
     municipalPRole = dataSource
       .getRepository(Role)
-      .create({ id: nanoid(), name: 'municipal_pr_officer' });
+      .create({
+        id: nanoid(),
+        name: 'municipal_pr_officer',
+        isMunicipal: true,
+      });
     municipalPRole = await dataSource.getRepository(Role).save(municipalPRole);
   }
 
@@ -47,8 +51,14 @@ async function runSeed() {
   if (!municipalAdminRole) {
     municipalAdminRole = dataSource
       .getRepository(Role)
-      .create({ id: nanoid(), name: 'municipal_administrator' });
-    municipalAdminRole = await dataSource.getRepository(Role).save(municipalAdminRole);
+      .create({
+        id: nanoid(),
+        name: 'municipal_administrator',
+        isMunicipal: true,
+      });
+    municipalAdminRole = await dataSource
+      .getRepository(Role)
+      .save(municipalAdminRole);
   }
 
   let technicalOfficerRole = await dataSource
@@ -57,8 +67,10 @@ async function runSeed() {
   if (!technicalOfficerRole) {
     technicalOfficerRole = dataSource
       .getRepository(Role)
-      .create({ id: nanoid(), name: 'technical_officer' });
-    technicalOfficerRole = await dataSource.getRepository(Role).save(technicalOfficerRole);
+      .create({ id: nanoid(), name: 'technical_officer', isMunicipal: true });
+    technicalOfficerRole = await dataSource
+      .getRepository(Role)
+      .save(technicalOfficerRole);
   }
 
   let transportOfficerRole = await dataSource
@@ -67,8 +79,10 @@ async function runSeed() {
   if (!transportOfficerRole) {
     transportOfficerRole = dataSource
       .getRepository(Role)
-      .create({ id: nanoid(), name: 'transport_officer' });
-    transportOfficerRole = await dataSource.getRepository(Role).save(transportOfficerRole);
+      .create({ id: nanoid(), name: 'transport_officer', isMunicipal: true });
+    transportOfficerRole = await dataSource
+      .getRepository(Role)
+      .save(transportOfficerRole);
   }
 
   let SpecialProjectsRole = await dataSource
@@ -77,8 +91,14 @@ async function runSeed() {
   if (!SpecialProjectsRole) {
     SpecialProjectsRole = dataSource
       .getRepository(Role)
-      .create({ id: nanoid(), name: 'special_projects_officer' });
-    SpecialProjectsRole = await dataSource.getRepository(Role).save(SpecialProjectsRole);
+      .create({
+        id: nanoid(),
+        name: 'special_projects_officer',
+        isMunicipal: true,
+      });
+    SpecialProjectsRole = await dataSource
+      .getRepository(Role)
+      .save(SpecialProjectsRole);
   }
 
   let environmentalOfficerRole = await dataSource
@@ -87,8 +107,14 @@ async function runSeed() {
   if (!environmentalOfficerRole) {
     environmentalOfficerRole = dataSource
       .getRepository(Role)
-      .create({ id: nanoid(), name: 'environmental_officer' });
-    environmentalOfficerRole = await dataSource.getRepository(Role).save(environmentalOfficerRole);
+      .create({
+        id: nanoid(),
+        name: 'environmental_officer',
+        isMunicipal: true,
+      });
+    environmentalOfficerRole = await dataSource
+      .getRepository(Role)
+      .save(environmentalOfficerRole);
   }
 
   console.log(`✅ Seeded roles: 
