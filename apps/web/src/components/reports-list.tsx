@@ -15,7 +15,7 @@ export function ReportsList() {
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <div className="flex-1 space-y-2 overflow-y-auto">
         {reports.map((report) => (
           <button

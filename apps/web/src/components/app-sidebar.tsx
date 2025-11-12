@@ -27,6 +27,7 @@ import { SidebarProps } from '@/types/ui';
 import { useActiveReportStore } from '@/store/activeReportStore';
 import { useCreateReport } from '@/hooks/use-reports';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   const navigate = useNavigate();
@@ -61,20 +62,22 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
 
   const handleAddReport = async () => {
     if (!locationData) {
-      // Optionally show a toast or error
+      toast.warning('Select a location on the map before creating a report.');
       return;
     }
+
     try {
       await createReport({
         latitude: locationData.latitude,
         longitude: locationData.longitude,
         address: locationData.address,
-        // Add other required fields for your report DTO here
       });
 
-      // Optionally show a success toast or reset coordinates
+      toast.success('Report created successfully!');
     } catch (err) {
-      // Optionally show an error toast
+      const message =
+        err instanceof Error ? err.message : 'Failed to create report';
+      toast.error(message);
     }
   };
 
