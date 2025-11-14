@@ -94,9 +94,9 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/map');
   };
 
   return (
