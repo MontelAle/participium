@@ -1,4 +1,4 @@
-TEMPLATE FOR RETROSPECTIVE (Team ##)
+TEMPLATE FOR RETROSPECTIVE 1(Team 12)
 =====================================
 
 The retrospective should include _at least_ the following
@@ -111,6 +111,46 @@ sections:
 - Code review 
   - Total hours estimated 16h40m
   - Total hours spent 19h40m
+
+## ASSESSMENT
+
+- What did go wrong in the sprint?
+  - Task assignment -
+    Tasks were assigned to team members, but not always matched to who was immediately available. This sometimes slowed down the start of tasks and overall progress.
+  - Team organization / coordination -
+    The team was not always aligned on each other’s progress, and infrequent meetings sometimes led to misunderstandings.
+  - Task organization -
+    Tasks were not always broken down or structured in a clear way, making it harder to track and estimate progress.
+    Some tasks required rework because initial assumptions or requirements were unclear.
+
+- What caused your errors in estimation (if any)?
+  - Uncategorized tasks: time for Scrum meetings was underestimated.
+  - PRT-1/Registration-Login : test and code review were underestimated because the size of the task was not fully understood.
+  - PRT-2/Set up municipality user : backend work was overestimated.
+  - PRT-3/Role assignment : frontend work was underestimated.
+  - PRT-4/Georeport location : code review and testing were underestimated.
   
+  Overall cause: Our limited experience, combined with it being our first time planning a two-week sprint, made it more challenging to estimate and organize tasks accurately.
+  
+- What lessons did you learn (both positive and negative) in this sprint?
+  - Rely on your teammates: trusting and depending on each other helps the team move forward efficiently.
+  - A positive work environment matters: a supportive and collaborative atmosphere improves productivity and motivation.
+  - Asking for help is okay: seeking assistance from others is not a problem and can prevent delays or mistakes.
+
+- Which improvement goals set in the previous retrospective were you able to achieve?
+  - Task assignment: most tasks were assigned at the beginning of the sprint.
+  - Write more tests and increase coverage
+
+- Which ones you were not able to achieve? Why?
+  - start with a more clear plan/path and documentation : we spent time on other aspects/priorities instead of starting with a clear and planned documentation .
+  - think deeper about time estimation before assign tasks : We are still learning how to accurately estimate tasks and organize ourselves as efficiently as possible, so this will improve with experience.
 
 
+- Improvement goals for the next sprint and how to achieve them:
+  - Set smaller deadlines during meetings: breaking tasks into smaller, time-boxed goals can help keep progress visible and manageable.
+  - Increase Scrum meetings: more frequent check-ins can improve team coordination and alignment.
+  - Improve documentation: dedicating more time to clear and updated documentation will help the team work more efficiently and reduce misunderstandings.
+
+
+- One thing you are proud of as a Team!!
+  - We are proud of our strong teamwork, supporting each other, and staying flexible, which allowed us to overcome challenges and deliver a higher-quality product. Our collaboration and adaptability continue to be our greatest strengths, and we aim to improve them even further in future sprints.
