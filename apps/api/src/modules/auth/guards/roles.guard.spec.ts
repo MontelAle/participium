@@ -1,7 +1,6 @@
 import { RolesGuard } from './roles.guard';
 import { Reflector } from '@nestjs/core';
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { ROLES_KEY } from '../decorators/roles.decorator';
 
 describe('RolesGuard', () => {
   let guard: RolesGuard;
@@ -31,7 +30,9 @@ describe('RolesGuard', () => {
   it('should throw ForbiddenException if no user or role is present', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['admin']);
     const requestMock = { user: null };
-    (context.switchToHttp().getRequest as jest.Mock).mockReturnValue(requestMock);
+    (context.switchToHttp().getRequest as jest.Mock).mockReturnValue(
+      requestMock,
+    );
 
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
@@ -39,7 +40,9 @@ describe('RolesGuard', () => {
   it('should throw ForbiddenException if user role is not allowed', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['admin']);
     const requestMock = { user: { role: { name: 'user' } } };
-    (context.switchToHttp().getRequest as jest.Mock).mockReturnValue(requestMock);
+    (context.switchToHttp().getRequest as jest.Mock).mockReturnValue(
+      requestMock,
+    );
 
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
@@ -47,7 +50,9 @@ describe('RolesGuard', () => {
   it('should allow access if user role is allowed', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['admin']);
     const requestMock = { user: { role: { name: 'admin' } } };
-    (context.switchToHttp().getRequest as jest.Mock).mockReturnValue(requestMock);
+    (context.switchToHttp().getRequest as jest.Mock).mockReturnValue(
+      requestMock,
+    );
 
     expect(guard.canActivate(context)).toBe(true);
   });
@@ -55,7 +60,9 @@ describe('RolesGuard', () => {
   it('should allow access if requiredRoles array is empty', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([]);
     const requestMock = { user: { role: { name: 'user' } } };
-    (context.switchToHttp().getRequest as jest.Mock).mockReturnValue(requestMock);
+    (context.switchToHttp().getRequest as jest.Mock).mockReturnValue(
+      requestMock,
+    );
 
     expect(guard.canActivate(context)).toBe(true);
   });

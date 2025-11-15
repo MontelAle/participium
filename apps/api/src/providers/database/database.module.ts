@@ -1,7 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Session, User, Role, Category, Account, Report } from '@repo/api';
+import { Session } from '../../common/entities/session.entity';
+import { User } from '../../common/entities/user.entity';
+import { Role } from '../../common/entities/role.entity';
+import { Category } from '../../common/entities/category.entity';
+import { Account } from '../../common/entities/account.entity';
+import { Report } from '../../common/entities/report.entity';
 
 @Module({
   imports: [

@@ -38,8 +38,12 @@ async function bootstrap() {
     .setTitle('Participium API')
     .setVersion(pkg.version)
     .build();
+  /*
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
+  */
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
 
   app.setGlobalPrefix('api');
 

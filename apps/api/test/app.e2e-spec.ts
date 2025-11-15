@@ -4,7 +4,12 @@ import { LocalAuthGuard } from './../src/modules/auth/guards/local-auth.guard';
 import { SessionGuard } from './../src/modules/auth/guards/session-auth.guard';
 import { RolesGuard } from './../src/modules/auth/guards/roles.guard';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Session, User, Role, Account, Category, Report } from '@repo/api';
+import { Session } from '../src/common/entities/session.entity';
+import { User } from '../src/common/entities/user.entity';
+import { Role } from '../src/common/entities/role.entity';
+import { Account } from '../src/common/entities/account.entity';
+import { Category } from '../src/common/entities/category.entity';
+import { Report } from '../src/common/entities/report.entity';
 import request = require('supertest');
 
 jest.mock('nanoid', () => ({
@@ -23,7 +28,7 @@ const createMockRepository = (data: any[] = []) => {
               return true; // Simplified for mock
             }
             return e[k] === v;
-          })
+          }),
         );
       }
       return Promise.resolve(results);
@@ -36,7 +41,7 @@ const createMockRepository = (data: any[] = []) => {
             return true; // Simplified for mock
           }
           return e[k] === v;
-        })
+        }),
       );
       return Promise.resolve(result || null);
     }),
@@ -49,7 +54,7 @@ const createMockRepository = (data: any[] = []) => {
     save: jest.fn((entity) => {
       // If entity has an ID, it's an update - preserve existing fields
       if (entity.id) {
-        const existing = data.find(e => e.id === entity.id);
+        const existing = data.find((e) => e.id === entity.id);
         if (existing) {
           Object.assign(existing, entity);
           return Promise.resolve(existing);
