@@ -9,6 +9,8 @@ import {
   Query,
   UseGuards,
   Request,
+  HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
@@ -120,6 +122,7 @@ export class ReportsController {
    * @throws {404} Not Found - Report with specified ID does not exist
    */
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Roles('Officier')
   async remove(@Param('id') id: string) {
     await this.reportsService.remove(id);

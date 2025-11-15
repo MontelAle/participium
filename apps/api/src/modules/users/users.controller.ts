@@ -6,6 +6,8 @@ import {
   UseGuards,
   Param,
   Delete,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
@@ -98,6 +100,7 @@ export class UsersController {
    * @throws {409} Conflict - username already in use by another user
    */
   @Post('municipality/user/:id')
+  @HttpCode(HttpStatus.OK)
   @Roles('admin')
   async updateMunicipalityUserById(
     @Param('id') id: string,

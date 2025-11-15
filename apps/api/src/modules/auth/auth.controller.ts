@@ -102,6 +102,7 @@ export class AuthController {
    *
    */
   @UseGuards(SessionGuard)
+  @HttpCode(HttpStatus.OK)
   @Post('logout')
   async logout(
     @Req() req: RequestWithUserSession,
