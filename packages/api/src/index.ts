@@ -1,13 +1,14 @@
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { RegisterDto, LoginDto } from 'dto/auth.dto';
 import { User } from './entities/user.entity';
 import { Account } from './entities/account.entity';
 import { Session } from './entities/session.entity';
 import { Role } from './entities/role.entity';
 import { Category } from './entities/category.entity';
 import { Report, ReportStatus } from './entities/report.entity';
-import { CreateMunicipalityUserDto } from './dto/create-municipality-user.dto';
-import { UpdateMunicipalityUserDto } from './dto/update-municipality-user.dto';
+import {
+  CreateMunicipalityUserDto,
+  UpdateMunicipalityUserDto,
+} from './dto/municipality-user.dto';
 import {
   CreateReportDto,
   UpdateReportDto,
@@ -15,18 +16,18 @@ import {
 } from './dto/report.dto';
 
 export {
-  RegisterDto,
+  type RegisterDto,
   User,
-  Account,
-  Session,
-  LoginDto,
-  Role,
-  Category,
-  Report,
+  type Account,
+  type Session,
+  type LoginDto,
+  type Role,
+  type Category,
+  type Report,
   ReportStatus,
-  CreateMunicipalityUserDto,
-  UpdateMunicipalityUserDto,
-  CreateReportDto,
-  UpdateReportDto,
-  FilterReportsDto,
+  type CreateMunicipalityUserDto,
+  type UpdateMunicipalityUserDto,
+  type CreateReportDto,
+  type UpdateReportDto,
+  type FilterReportsDto,
 };

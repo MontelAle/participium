@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { User } from '../../common/entities/user.entity';
+import { Role } from '../../common/entities/role.entity';
 import {
   CreateMunicipalityUserDto,
-  Role,
   UpdateMunicipalityUserDto,
-  User,
-} from '@repo/api';
+} from '../../common/dto/municipality-user.dto';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 
 // Mock "nanoid" per evitare problemi ESM

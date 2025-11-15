@@ -1,7 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../../../app.module';
 import { DataSource } from 'typeorm';
-import { User, Account, Role } from '@repo/api';
+import { Role } from '../../../common/entities/role.entity';
+import { User } from '../../../common/entities/user.entity';
+import { Account } from '../../../common/entities/account.entity';
 import { nanoid } from 'nanoid';
 import bcrypt from 'bcrypt';
 import { faker, fi } from '@faker-js/faker';
@@ -35,13 +37,11 @@ async function runSeed() {
     .getRepository(Role)
     .findOne({ where: { name: 'municipal_pr_officer' } });
   if (!municipalPRole) {
-    municipalPRole = dataSource
-      .getRepository(Role)
-      .create({
-        id: nanoid(),
-        name: 'municipal_pr_officer',
-        isMunicipal: true,
-      });
+    municipalPRole = dataSource.getRepository(Role).create({
+      id: nanoid(),
+      name: 'municipal_pr_officer',
+      isMunicipal: true,
+    });
     municipalPRole = await dataSource.getRepository(Role).save(municipalPRole);
   }
 
@@ -49,13 +49,11 @@ async function runSeed() {
     .getRepository(Role)
     .findOne({ where: { name: 'municipal_administrator' } });
   if (!municipalAdminRole) {
-    municipalAdminRole = dataSource
-      .getRepository(Role)
-      .create({
-        id: nanoid(),
-        name: 'municipal_administrator',
-        isMunicipal: true,
-      });
+    municipalAdminRole = dataSource.getRepository(Role).create({
+      id: nanoid(),
+      name: 'municipal_administrator',
+      isMunicipal: true,
+    });
     municipalAdminRole = await dataSource
       .getRepository(Role)
       .save(municipalAdminRole);
@@ -89,13 +87,11 @@ async function runSeed() {
     .getRepository(Role)
     .findOne({ where: { name: 'special_projects_officer' } });
   if (!SpecialProjectsRole) {
-    SpecialProjectsRole = dataSource
-      .getRepository(Role)
-      .create({
-        id: nanoid(),
-        name: 'special_projects_officer',
-        isMunicipal: true,
-      });
+    SpecialProjectsRole = dataSource.getRepository(Role).create({
+      id: nanoid(),
+      name: 'special_projects_officer',
+      isMunicipal: true,
+    });
     SpecialProjectsRole = await dataSource
       .getRepository(Role)
       .save(SpecialProjectsRole);
@@ -105,13 +101,11 @@ async function runSeed() {
     .getRepository(Role)
     .findOne({ where: { name: 'environmental_officer' } });
   if (!environmentalOfficerRole) {
-    environmentalOfficerRole = dataSource
-      .getRepository(Role)
-      .create({
-        id: nanoid(),
-        name: 'environmental_officer',
-        isMunicipal: true,
-      });
+    environmentalOfficerRole = dataSource.getRepository(Role).create({
+      id: nanoid(),
+      name: 'environmental_officer',
+      isMunicipal: true,
+    });
     environmentalOfficerRole = await dataSource
       .getRepository(Role)
       .save(environmentalOfficerRole);
