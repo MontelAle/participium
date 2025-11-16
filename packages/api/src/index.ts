@@ -1,4 +1,9 @@
-import { RegisterDto, LoginDto } from 'dto/auth.dto';
+import {
+  RegisterDto,
+  LoginDto,
+  LoginResponseDto,
+  LogoutResponseDto,
+} from 'dto/auth.dto';
 import { User } from './entities/user.entity';
 import { Account } from './entities/account.entity';
 import { Session } from './entities/session.entity';
@@ -8,14 +13,27 @@ import { Report, ReportStatus } from './entities/report.entity';
 import {
   CreateMunicipalityUserDto,
   UpdateMunicipalityUserDto,
+  MunicipalityUserResponseDto,
+  MunicipalityUsersResponseDto,
+  MunicipalityUserIdResponseDto,
 } from './dto/municipality-user.dto';
 import {
   CreateReportDto,
   UpdateReportDto,
   FilterReportsDto,
+  ReportResponseDto,
+  ReportsResponseDto,
 } from './dto/report.dto';
+import { RolesResponseDto } from './dto/role.dto';
 
 export {
+  type MunicipalityUsersResponseDto,
+  type MunicipalityUserIdResponseDto,
+  type RolesResponseDto,
+  type ReportsResponseDto,
+  type MunicipalityUserResponseDto,
+  type LoginResponseDto,
+  type LogoutResponseDto,
   type RegisterDto,
   User,
   type Account,
@@ -30,4 +48,5 @@ export {
   type CreateReportDto,
   type UpdateReportDto,
   type FilterReportsDto,
+  type ReportResponseDto,
 };

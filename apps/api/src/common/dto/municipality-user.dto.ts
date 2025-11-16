@@ -1,6 +1,12 @@
 import { IsOptional, IsString, IsEmail } from 'class-validator';
-import { UpdateMunicipalityUserDto as UpadteMunicipalityUserDtoInterface } from '@repo/api';
-import { CreateMunicipalityUserDto as CreateMunicipalityUserDtoInterface } from '@repo/api';
+import {
+  UpdateMunicipalityUserDto as UpadteMunicipalityUserDtoInterface,
+  CreateMunicipalityUserDto as CreateMunicipalityUserDtoInterface,
+  MunicipalityUserResponseDto as MunicipalityUserResponseDtoInterface,
+  MunicipalityUsersResponseDto as MunicipalityUsersResponseDtoInterface,
+  MunicipalityUserIdResponseDto as MunicipalityUserIdResponseDtoInterface,
+  User,
+} from '@repo/api';
 
 export class UpdateMunicipalityUserDto
   implements UpadteMunicipalityUserDtoInterface
@@ -46,4 +52,25 @@ export class CreateMunicipalityUserDto
 
   @IsString()
   roleId: string;
+}
+
+export class MunicipalityUserResponseDto
+  implements MunicipalityUserResponseDtoInterface
+{
+  data: User;
+  success: boolean;
+}
+
+export class MunicipalityUsersResponseDto
+  implements MunicipalityUsersResponseDtoInterface
+{
+  data: User[];
+  success: boolean;
+}
+
+export class MunicipalityUserIdResponseDto
+  implements MunicipalityUserIdResponseDtoInterface
+{
+  data: { id: string };
+  success: boolean;
 }

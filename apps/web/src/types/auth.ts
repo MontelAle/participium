@@ -17,11 +17,3 @@ export type AuthContextType = {
   isCitizenUser: boolean;
   isGuestUser: boolean;
 };
-
-export type AuthResponse = {
-  success: boolean;
-  data: {
-    user: User;
-    session: Session;
-  };
-};

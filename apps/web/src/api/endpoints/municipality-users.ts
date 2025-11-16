@@ -1,12 +1,16 @@
 import { apiFetch } from '../client';
 import type { User } from '@repo/api';
 import { CreateMunicipalityUserDto } from '@repo/api';
-import type { MunicipalityUserResponse } from '@/types/municipality-users';
+import type {
+  MunicipalityUserResponseDto,
+  MunicipalityUsersResponseDto,
+  MunicipalityUserIdResponseDto,
+} from '@repo/api';
 import { UpdateMunicipalityUserDto } from '@repo/api';
 
 // GET all municiaplity users
 export async function getMunicipalityUsers(): Promise<User[]> {
-  const response = await apiFetch<MunicipalityUserResponse<User[]>>(
+  const response = await apiFetch<MunicipalityUsersResponseDto>(
     '/users/municipality',
     {
       method: 'GET',
@@ -17,7 +21,7 @@ export async function getMunicipalityUsers(): Promise<User[]> {
 
 // GET municiaplity user by ID
 export async function getMunicipalityUser(userId: string): Promise<User> {
-  const response = await apiFetch<MunicipalityUserResponse<User>>(
+  const response = await apiFetch<MunicipalityUserResponseDto>(
     `/users/municipality/user/${userId}`,
     { method: 'GET' },
   );
@@ -28,7 +32,7 @@ export async function getMunicipalityUser(userId: string): Promise<User> {
 export async function createMunicipalityUser(
   data: CreateMunicipalityUserDto,
 ): Promise<User> {
-  const response = await apiFetch<MunicipalityUserResponse<User>>(
+  const response = await apiFetch<MunicipalityUserResponseDto>(
     '/users/municipality',
     {
       method: 'POST',
@@ -42,8 +46,8 @@ export async function createMunicipalityUser(
 export async function updateMunicipalityUser(
   userId: string,
   data: UpdateMunicipalityUserDto,
-): Promise<MunicipalityUserResponse<{ id: string }>> {
-  const response = await apiFetch<MunicipalityUserResponse<{ id: string }>>(
+): Promise<MunicipalityUserIdResponseDto> {
+  const response = await apiFetch<MunicipalityUserIdResponseDto>(
     `/users/municipality/user/${userId}`,
     {
       method: 'POST',
@@ -61,7 +65,7 @@ export async function updateMunicipalityUser(
 export async function deleteMunicipalityUser(
   userId: string,
 ): Promise<{ id: string }> {
-  const response = await apiFetch<MunicipalityUserResponse<{ id: string }>>(
+  const response = await apiFetch<MunicipalityUserIdResponseDto>(
     `/users/municipality/user/${userId}`,
     {
       method: 'DELETE',

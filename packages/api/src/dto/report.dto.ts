@@ -1,4 +1,6 @@
-import { ReportStatus } from '../entities/report.entity';
+import { ReportStatus, Report } from '../entities/report.entity';
+import { ResponseDto } from './response.dto';
+
 export interface CreateReportDto {
   title?: string;
   description?: string;
@@ -29,4 +31,12 @@ export interface FilterReportsDto {
   searchLongitude?: number;
   searchLatitude?: number;
   radiusMeters?: number;
+}
+
+export interface ReportsResponseDto extends ResponseDto {
+  data: Report[];
+}
+
+export interface ReportResponseDto extends ResponseDto {
+  data: Report;
 }

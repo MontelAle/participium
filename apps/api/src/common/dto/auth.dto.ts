@@ -2,7 +2,11 @@ import { IsNotEmpty, IsString, MinLength, IsEmail } from 'class-validator';
 import {
   LoginDto as LoginDtoInterface,
   RegisterDto as RegisterDtoInterface,
+  LoginResponseDto as LoginResponseDtoInterface,
+  LogoutResponseDto as LogoutResponseDtoInterface,
+  User,
 } from '@repo/api';
+import { Session } from '../entities/session.entity';
 
 export class LoginDto implements LoginDtoInterface {
   @IsString()
@@ -36,4 +40,16 @@ export class RegisterDto implements RegisterDtoInterface {
   @MinLength(6)
   @IsNotEmpty()
   password: string;
+}
+
+export class LoginResponseDto implements LoginResponseDtoInterface {
+  success: boolean;
+  data: {
+    user: User;
+    session: Partial<Session>;
+  };
+}
+
+export class LogoutResponseDto implements LogoutResponseDtoInterface {
+  success: boolean;
 }

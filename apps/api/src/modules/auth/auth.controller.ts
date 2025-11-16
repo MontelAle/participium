@@ -10,15 +10,14 @@ import {
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBody,
-  ApiCookieAuth,
-} from '@nestjs/swagger';
+import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto } from '../../common/dto/auth.dto';
+import {
+  RegisterDto,
+  LoginDto,
+  LoginResponseDto,
+  LogoutResponseDto,
+} from '../../common/dto/auth.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { SessionGuard } from './guards/session-auth.guard';
 import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
@@ -34,7 +33,6 @@ export class AuthController {
    *
    * @Remarks Returns user data and creates a session cookie.
    *
-   * @returns {200} Login successful - Session cookie set
    * @throws {400} Validation error - Invalid input data
    * @throws {401} Unauthorized - Invalid username or password
    */
@@ -45,7 +43,7 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Request() req: RequestWithUserSession,
     @Res({ passthrough: true }) res: Response,
-  ) {
+  ): Promise<LoginResponseDto> {
     if (!req.user) {
       throw new UnauthorizedException('Invalid username or password');
     }
@@ -68,7 +66,6 @@ export class AuthController {
    *
    * @remarks  Creates a new user and account with user role. Automatically logs in the user after registration.
    *
-   * @throws {201} Registration successful
    * @throws {409} Conflict
    * @throws {400} Validation error
    */
@@ -77,7 +74,7 @@ export class AuthController {
     @Body() registerDto: RegisterDto,
     @Request() req: RequestWithUserSession,
     @Res({ passthrough: true }) res: Response,
-  ) {
+  ): Promise<LoginResponseDto> {
     const { user } = await this.authService.register(registerDto);
 
     const { session, token } = await this.authService.login(
@@ -96,10 +93,7 @@ export class AuthController {
   /**
    * Logs out the current user by invalidating the session and clearing the session cookie.
    *
-   *
-   * @throws {200}Logout successful - Session invalidated
    * @throws {401} Unauthorized - Invalid or missing session
-   *
    */
   @UseGuards(SessionGuard)
   @HttpCode(HttpStatus.OK)
@@ -107,7 +101,7 @@ export class AuthController {
   async logout(
     @Req() req: RequestWithUserSession,
     @Res({ passthrough: true }) res: Response,
-  ) {
+  ): Promise<LogoutResponseDto> {
     const sessionToken = req.cookies?.session_token;
 
     await this.authService.logout(sessionToken);
@@ -117,12 +111,17 @@ export class AuthController {
     return { success: true };
   }
 
+  /**
+   * Refreshes the user session by extending its validity and updating the session cookie.
+   *
+   * @throws {401} Unauthorized - Invalid or missing session
+   */
   @UseGuards(SessionGuard)
   @Post('refresh')
   async refresh(
     @Req() req: RequestWithUserSession,
     @Res({ passthrough: true }) res: Response,
-  ) {
+  ): Promise<LoginResponseDto> {
     const { user } = req;
 
     const { session } = await this.authService.refreshSession(req.session);
