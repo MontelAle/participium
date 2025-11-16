@@ -5,8 +5,8 @@ import {
   MunicipalityUserResponseDto as MunicipalityUserResponseDtoInterface,
   MunicipalityUsersResponseDto as MunicipalityUsersResponseDtoInterface,
   MunicipalityUserIdResponseDto as MunicipalityUserIdResponseDtoInterface,
-  User,
 } from '@repo/api';
+import { User } from '../entities/user.entity';
 
 export class UpdateMunicipalityUserDto
   implements UpadteMunicipalityUserDtoInterface

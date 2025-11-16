@@ -33,7 +33,6 @@ export class ReportsController {
    * Creates a new report.
    *
    *
-   * @throws {201} Report created successfully
    * @throws {400} Bad Request - Invalid data
    * @throws {401} Unauthorized - Invalid or missing session
    */
@@ -50,8 +49,6 @@ export class ReportsController {
   /**
    * Retrieves all reports with optional filters.
    *
-   *
-   * @throws {200} List of reports retrieved successfully
    */
   @Get()
   async findAll(@Query() filters: FilterReportsDto) {
@@ -61,8 +58,6 @@ export class ReportsController {
 
   /**
    * Finds nearby reports based on location and radius.
-   *
-   * @throws {200} Nearby reports retrieved successfully
    */
   @Get('nearby')
   async findNearby(
@@ -82,8 +77,6 @@ export class ReportsController {
   /**
    * Retrieves a report by its ID.
    *
-   *
-   * @throws {200} Report retrieved successfully
    * @throws {404} Not Found - Report with specified ID does not exist
    */
   @Get(':id')
@@ -95,8 +88,6 @@ export class ReportsController {
   /**
    * Updates a report by its ID.
    *
-   *
-   * @throws {200} Report updated successfully
    * @throws {401} Unauthorized - Invalid or missing session
    * @throws {403} Forbidden - Insufficient permissions (officier or user role required)
    * @throws {404} Not Found - Report with specified ID does not exist
@@ -115,8 +106,6 @@ export class ReportsController {
   /**
    * Deletes a report by its ID.
    *
-   *
-   * @throws {204} Report deleted successfully
    * @throws {401} Unauthorized - Invalid or missing session
    * @throws {403} Forbidden - Insufficient permissions (admin role required)
    * @throws {404} Not Found - Report with specified ID does not exist

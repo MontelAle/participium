@@ -4,9 +4,9 @@ import {
   RegisterDto as RegisterDtoInterface,
   LoginResponseDto as LoginResponseDtoInterface,
   LogoutResponseDto as LogoutResponseDtoInterface,
-  User,
 } from '@repo/api';
 import { Session } from '../entities/session.entity';
+import { User } from '../entities/user.entity';
 
 export class LoginDto implements LoginDtoInterface {
   @IsString()

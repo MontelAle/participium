@@ -8,12 +8,14 @@ import {
   IsArray,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ReportStatus } from '../entities/report.entity';
 import {
   CreateReportDto as CreateReportDtoInterface,
   UpdateReportDto as UpdateReportDtoInterface,
   FilterReportsDto as FilterReportsDtoInterface,
+  ReportResponseDto as ReportResponseDtoInterface,
+  ReportsResponseDto as ReportsResponseDtoInterface,
 } from '@repo/api';
+import { ReportStatus, Report } from '../entities/report.entity';
 
 export class CreateReportDto implements CreateReportDtoInterface {
   @IsString()
@@ -143,4 +145,14 @@ export class FilterReportsDto implements FilterReportsDtoInterface {
   @IsNumber()
   @IsOptional()
   radiusMeters?: number;
+}
+
+export class ReportResponseDto implements ReportResponseDtoInterface {
+  success: boolean;
+  data: Report;
+}
+
+export class ReportsResponseDto implements ReportsResponseDtoInterface {
+  success: boolean;
+  data: Report[];
 }
