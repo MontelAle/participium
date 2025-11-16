@@ -3,7 +3,9 @@ import { ReportsService } from './reports.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Report, CreateReportDto, UpdateReportDto, FilterReportsDto, ReportStatus } from '@repo/api';
 import { Repository } from 'typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { MinioProvider } from '../../providers/minio/minio.provider';
+import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 
 // Mock nanoid per avere id prevedibili
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
@@ -11,6 +13,7 @@ jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 describe('ReportsService', () => {
   let service: ReportsService;
   let reportRepository: jest.Mocked<Repository<Report>>;
+  let minioProvider: jest.Mocked<MinioProvider>;
 
   const mockReport: Partial<Report> = {
     id: 'mocked-id',
@@ -44,11 +47,21 @@ describe('ReportsService', () => {
             createQueryBuilder: jest.fn(),
           },
         },
+        {
+          provide: MinioProvider,
+          useValue: {
+            uploadFile: jest.fn(),
+            deleteFile: jest.fn(),
+            deleteFiles: jest.fn(),
+            extractFileNameFromUrl: jest.fn((url: string) => url.split('/').pop()),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<ReportsService>(ReportsService);
     reportRepository = module.get(getRepositoryToken(Report));
+    minioProvider = module.get(MinioProvider);
   });
 
   it('should be defined', () => {
@@ -56,16 +69,37 @@ describe('ReportsService', () => {
   });
 
   describe('create', () => {
-    it('should create a report with all fields', async () => {
+    it('should create a report with uploaded images', async () => {
       const createDto: CreateReportDto = {
         title: 'New Report',
         description: 'New Description',
         longitude: 7.686864,
         latitude: 45.070312,
         address: 'Via Roma 1, Torino',
-        images: ['image1.jpg'],
         categoryId: 'cat-123',
       };
+
+      const mockFiles = [
+        {
+          originalname: 'test1.jpg',
+          buffer: Buffer.from('test1'),
+          mimetype: 'image/jpeg',
+        },
+        {
+          originalname: 'test2.jpg',
+          buffer: Buffer.from('test2'),
+          mimetype: 'image/jpeg',
+        },
+      ] as Express.Multer.File[];
+
+      const mockImageUrls = [
+        'http://localhost:9000/bucket/reports/mocked-id/123-test1.jpg',
+        'http://localhost:9000/bucket/reports/mocked-id/123-test2.jpg',
+      ];
+
+      minioProvider.uploadFile
+        .mockResolvedValueOnce(mockImageUrls[0])
+        .mockResolvedValueOnce(mockImageUrls[1]);
 
       const expectedReport = {
         id: 'mocked-id',
@@ -76,35 +110,48 @@ describe('ReportsService', () => {
         },
         status: ReportStatus.PENDING,
         userId: 'user-123',
+        images: mockImageUrls,
       };
 
       reportRepository.create.mockReturnValue(expectedReport as unknown as Report);
       reportRepository.save.mockResolvedValue(expectedReport as unknown as Report);
 
-      const result = await service.create(createDto, 'user-123');
+      const result = await service.create(createDto, 'user-123', mockFiles);
 
+      expect(minioProvider.uploadFile).toHaveBeenCalledTimes(2);
       expect(reportRepository.create).toHaveBeenCalledWith({
         id: 'mocked-id',
         title: createDto.title,
         description: createDto.description,
         address: createDto.address,
-        images: createDto.images,
         categoryId: createDto.categoryId,
         location: {
           type: 'Point',
           coordinates: [7.686864, 45.070312],
         },
         userId: 'user-123',
+        images: mockImageUrls,
       });
       expect(reportRepository.save).toHaveBeenCalledWith(expectedReport);
       expect(result).toEqual(expectedReport);
     });
 
-    it('should create a report with only required fields (longitude, latitude)', async () => {
+    it('should create a report with minimum required fields and 1 image', async () => {
       const createDto: CreateReportDto = {
         longitude: 7.686864,
         latitude: 45.070312,
       };
+
+      const mockFiles = [
+        {
+          originalname: 'test.jpg',
+          buffer: Buffer.from('test'),
+          mimetype: 'image/jpeg',
+        },
+      ] as Express.Multer.File[];
+
+      const mockImageUrl = 'http://localhost:9000/bucket/reports/mocked-id/123-test.jpg';
+      minioProvider.uploadFile.mockResolvedValue(mockImageUrl);
 
       const expectedReport = {
         id: 'mocked-id',
@@ -114,13 +161,15 @@ describe('ReportsService', () => {
         },
         status: ReportStatus.PENDING,
         userId: 'user-123',
+        images: [mockImageUrl],
       };
 
       reportRepository.create.mockReturnValue(expectedReport as unknown as Report);
       reportRepository.save.mockResolvedValue(expectedReport as unknown as Report);
 
-      const result = await service.create(createDto, 'user-123');
+      const result = await service.create(createDto, 'user-123', mockFiles);
 
+      expect(minioProvider.uploadFile).toHaveBeenCalledTimes(1);
       expect(reportRepository.create).toHaveBeenCalledWith({
         id: 'mocked-id',
         location: {
@@ -128,8 +177,92 @@ describe('ReportsService', () => {
           coordinates: [7.686864, 45.070312],
         },
         userId: 'user-123',
+        images: [mockImageUrl],
       });
       expect(result).toEqual(expectedReport);
+    });
+
+    it('should create a report with 3 images (maximum)', async () => {
+      const createDto: CreateReportDto = {
+        title: 'Report with max images',
+        longitude: 7.686864,
+        latitude: 45.070312,
+      };
+
+      const mockFiles = [
+        {
+          originalname: 'test1.jpg',
+          buffer: Buffer.from('test1'),
+          mimetype: 'image/jpeg',
+        },
+        {
+          originalname: 'test2.jpg',
+          buffer: Buffer.from('test2'),
+          mimetype: 'image/jpeg',
+        },
+        {
+          originalname: 'test3.jpg',
+          buffer: Buffer.from('test3'),
+          mimetype: 'image/jpeg',
+        },
+      ] as Express.Multer.File[];
+
+      const mockImageUrls = [
+        'http://localhost:9000/bucket/reports/mocked-id/123-test1.jpg',
+        'http://localhost:9000/bucket/reports/mocked-id/123-test2.jpg',
+        'http://localhost:9000/bucket/reports/mocked-id/123-test3.jpg',
+      ];
+
+      minioProvider.uploadFile
+        .mockResolvedValueOnce(mockImageUrls[0])
+        .mockResolvedValueOnce(mockImageUrls[1])
+        .mockResolvedValueOnce(mockImageUrls[2]);
+
+      const expectedReport = {
+        id: 'mocked-id',
+        title: 'Report with max images',
+        location: {
+          type: 'Point',
+          coordinates: [7.686864, 45.070312],
+        },
+        status: ReportStatus.PENDING,
+        userId: 'user-123',
+        images: mockImageUrls,
+      };
+
+      reportRepository.create.mockReturnValue(expectedReport as unknown as Report);
+      reportRepository.save.mockResolvedValue(expectedReport as unknown as Report);
+
+      const result = await service.create(createDto, 'user-123', mockFiles);
+
+      expect(minioProvider.uploadFile).toHaveBeenCalledTimes(3);
+      expect(result.images).toHaveLength(3);
+      expect(result).toEqual(expectedReport);
+    });
+
+    it('should throw InternalServerErrorException if image upload fails', async () => {
+      const createDto: CreateReportDto = {
+        title: 'Report with failing upload',
+        longitude: 7.686864,
+        latitude: 45.070312,
+      };
+
+      const mockFiles = [
+        {
+          originalname: 'test.jpg',
+          buffer: Buffer.from('test'),
+          mimetype: 'image/jpeg',
+        },
+      ] as Express.Multer.File[];
+
+      minioProvider.uploadFile.mockRejectedValue(new Error('Upload failed'));
+
+      await expect(service.create(createDto, 'user-123', mockFiles)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+      await expect(service.create(createDto, 'user-123', mockFiles)).rejects.toThrow(
+        REPORT_ERROR_MESSAGES.IMAGE_UPLOAD_FAILED,
+      );
     });
   });
 
@@ -342,7 +475,7 @@ describe('ReportsService', () => {
 
       await expect(service.findOne('non-existent-id')).rejects.toThrow(NotFoundException);
       await expect(service.findOne('non-existent-id')).rejects.toThrow(
-        'Report with ID non-existent-id not found',
+        REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('non-existent-id'),
       );
     });
   });
@@ -476,13 +609,36 @@ describe('ReportsService', () => {
 
       await expect(service.update('non-existent-id', {})).rejects.toThrow(NotFoundException);
       await expect(service.update('non-existent-id', {})).rejects.toThrow(
-        'Report with ID non-existent-id not found',
+        REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('non-existent-id'),
       );
     });
   });
 
   describe('remove', () => {
-    it('should delete a report', async () => {
+    it('should delete a report and its images from MinIO', async () => {
+      const reportWithImages = {
+        ...mockReport,
+        images: [
+          'http://localhost:9000/bucket/reports/mocked-id/123-test1.jpg',
+          'http://localhost:9000/bucket/reports/mocked-id/123-test2.jpg',
+        ],
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithImages as unknown as Report);
+      reportRepository.remove.mockResolvedValue(reportWithImages as unknown as Report);
+      minioProvider.extractFileNameFromUrl.mockImplementation((url) => url.split('/').pop() || '');
+
+      await service.remove('mocked-id');
+
+      expect(reportRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'mocked-id' },
+        relations: ['user', 'category'],
+      });
+      expect(minioProvider.deleteFiles).toHaveBeenCalledWith(['123-test1.jpg', '123-test2.jpg']);
+      expect(reportRepository.remove).toHaveBeenCalledWith(reportWithImages);
+    });
+
+    it('should delete a report without images', async () => {
       reportRepository.findOne.mockResolvedValue(mockReport as unknown as Report);
       reportRepository.remove.mockResolvedValue(mockReport as unknown as Report);
 
@@ -492,6 +648,7 @@ describe('ReportsService', () => {
         where: { id: 'mocked-id' },
         relations: ['user', 'category'],
       });
+      expect(minioProvider.deleteFiles).not.toHaveBeenCalled();
       expect(reportRepository.remove).toHaveBeenCalledWith(mockReport);
     });
 
@@ -500,7 +657,25 @@ describe('ReportsService', () => {
 
       await expect(service.remove('non-existent-id')).rejects.toThrow(NotFoundException);
       await expect(service.remove('non-existent-id')).rejects.toThrow(
-        'Report with ID non-existent-id not found',
+        REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('non-existent-id'),
+      );
+    });
+
+    it('should throw InternalServerErrorException if image deletion fails', async () => {
+      const reportWithImages = {
+        ...mockReport,
+        images: ['http://localhost:9000/bucket/reports/id1/image1.jpg'],
+      } as Report;
+
+      reportRepository.findOne.mockResolvedValue(reportWithImages);
+      minioProvider.extractFileNameFromUrl.mockReturnValue('image1.jpg');
+      minioProvider.deleteFiles.mockRejectedValue(new Error('MinIO error'));
+
+      await expect(service.remove('mocked-id')).rejects.toThrow(
+        InternalServerErrorException,
+      );
+      await expect(service.remove('mocked-id')).rejects.toThrow(
+        REPORT_ERROR_MESSAGES.IMAGE_DELETE_FAILED,
       );
     });
   });

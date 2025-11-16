@@ -3,6 +3,7 @@ import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { CreateReportDto, UpdateReportDto, FilterReportsDto, Report, ReportStatus } from '@repo/api';
 import { NotFoundException } from '@nestjs/common';
+import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 
 // Mock "nanoid" per evitare problemi ESM
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
@@ -19,7 +20,10 @@ describe('ReportsController', () => {
     title: 'Test Report',
     description: 'Test Description',
     status: ReportStatus.PENDING,
-    location: 'POINT(7.686864 45.070312)',
+    location: {
+      type: 'Point',
+      coordinates: [7.686864, 45.070312],
+    },
     address: 'Via Roma 1, Torino',
     images: [],
     userId: 'user-123',
@@ -66,36 +70,140 @@ describe('ReportsController', () => {
         categoryId: 'cat-123',
       };
 
+      const mockFiles = [
+        {
+          originalname: 'test.jpg',
+          buffer: Buffer.from('test'),
+          mimetype: 'image/jpeg',
+          size: 1024,
+        },
+      ] as Express.Multer.File[];
+
       const mockReq = { user: { id: 'user-123' } };
 
       reportsService.create.mockResolvedValue(mockReport as Report);
 
-      const result = await controller.create(createDto, mockReq);
+      const result = await controller.create(createDto, mockFiles, mockReq);
 
-      expect(reportsService.create).toHaveBeenCalledWith(createDto, 'user-123');
+      expect(reportsService.create).toHaveBeenCalledWith(createDto, 'user-123', mockFiles);
       expect(result).toEqual({ success: true, data: mockReport });
     });
 
-    it('should create a report with only required fields', async () => {
+    it('should create a report with 3 images (maximum allowed)', async () => {
+      const createDto: CreateReportDto = {
+        title: 'Report with max images',
+        description: 'Test Description',
+        longitude: 7.686864,
+        latitude: 45.070312,
+        categoryId: 'cat-123',
+      };
+
+      const mockFiles = [
+        {
+          originalname: 'test1.jpg',
+          buffer: Buffer.from('test1'),
+          mimetype: 'image/jpeg',
+          size: 1024,
+        },
+        {
+          originalname: 'test2.jpg',
+          buffer: Buffer.from('test2'),
+          mimetype: 'image/jpeg',
+          size: 1024,
+        },
+        {
+          originalname: 'test3.jpg',
+          buffer: Buffer.from('test3'),
+          mimetype: 'image/jpeg',
+          size: 1024,
+        },
+      ] as Express.Multer.File[];
+
+      const mockReq = { user: { id: 'user-123' } };
+
+      reportsService.create.mockResolvedValue(mockReport as Report);
+
+      const result = await controller.create(createDto, mockFiles, mockReq);
+
+      expect(reportsService.create).toHaveBeenCalledWith(createDto, 'user-123', mockFiles);
+      expect(result).toEqual({ success: true, data: mockReport });
+    });
+
+    it('should throw BadRequestException if no images provided', async () => {
       const createDto: CreateReportDto = {
         longitude: 7.686864,
         latitude: 45.070312,
       };
 
       const mockReq = { user: { id: 'user-123' } };
-      const minimalReport = {
-        id: 'report-min',
-        location: 'POINT(7.686864 45.070312)',
-        status: ReportStatus.PENDING,
-        userId: 'user-123',
+
+      await expect(controller.create(createDto, [], mockReq)).rejects.toThrow(
+        REPORT_ERROR_MESSAGES.IMAGES_REQUIRED,
+      );
+    });
+
+    it('should throw BadRequestException if more than 3 images provided', async () => {
+      const createDto: CreateReportDto = {
+        longitude: 7.686864,
+        latitude: 45.070312,
       };
 
-      reportsService.create.mockResolvedValue(minimalReport as Report);
+      const mockFiles = [
+        { originalname: 'test1.jpg', mimetype: 'image/jpeg', size: 1024 },
+        { originalname: 'test2.jpg', mimetype: 'image/jpeg', size: 1024 },
+        { originalname: 'test3.jpg', mimetype: 'image/jpeg', size: 1024 },
+        { originalname: 'test4.jpg', mimetype: 'image/jpeg', size: 1024 },
+      ] as Express.Multer.File[];
 
-      const result = await controller.create(createDto, mockReq);
+      const mockReq = { user: { id: 'user-123' } };
 
-      expect(reportsService.create).toHaveBeenCalledWith(createDto, 'user-123');
-      expect(result).toEqual({ success: true, data: minimalReport });
+      await expect(controller.create(createDto, mockFiles, mockReq)).rejects.toThrow(
+        REPORT_ERROR_MESSAGES.IMAGES_REQUIRED,
+      );
+    });
+
+    it('should throw BadRequestException if invalid file type', async () => {
+      const createDto: CreateReportDto = {
+        longitude: 7.686864,
+        latitude: 45.070312,
+      };
+
+      const mockFiles = [
+        {
+          originalname: 'test.pdf',
+          buffer: Buffer.from('test'),
+          mimetype: 'application/pdf',
+          size: 1024,
+        },
+      ] as Express.Multer.File[];
+
+      const mockReq = { user: { id: 'user-123' } };
+
+      await expect(controller.create(createDto, mockFiles, mockReq)).rejects.toThrow(
+        REPORT_ERROR_MESSAGES.INVALID_FILE_TYPE('application/pdf'),
+      );
+    });
+
+    it('should throw BadRequestException if file exceeds size limit', async () => {
+      const createDto: CreateReportDto = {
+        longitude: 7.686864,
+        latitude: 45.070312,
+      };
+
+      const mockFiles = [
+        {
+          originalname: 'large.jpg',
+          buffer: Buffer.from('test'),
+          mimetype: 'image/jpeg',
+          size: 6 * 1024 * 1024, // 6MB
+        },
+      ] as Express.Multer.File[];
+
+      const mockReq = { user: { id: 'user-123' } };
+
+      await expect(controller.create(createDto, mockFiles, mockReq)).rejects.toThrow(
+        REPORT_ERROR_MESSAGES.FILE_SIZE_EXCEEDED('large.jpg'),
+      );
     });
   });
 
@@ -270,9 +378,12 @@ describe('ReportsController', () => {
         address: 'New Address',
       };
 
-      const updatedReport = {
+      const updatedReport: Partial<Report> = {
         ...mockReport,
-        location: 'POINT(8 46)',
+        location: {
+          type: 'Point',
+          coordinates: [8.0, 46.0],
+        },
         address: 'New Address',
       };
       reportsService.update.mockResolvedValue(updatedReport as Report);

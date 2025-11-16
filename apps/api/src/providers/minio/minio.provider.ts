@@ -37,8 +37,7 @@ export class MinioProvider implements OnModuleInit {
           await this.minioClient.makeBucket(this.bucketName, 'us-east-1');
           this.logger.log(`Bucket "${this.bucketName}" created successfully`);
         } catch (error) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
-          this.logger.error(`${MINIO_ERROR_MESSAGES.BUCKET_CREATION_FAILED}: ${message}`);
+          this.logger.error(`${MINIO_ERROR_MESSAGES.BUCKET_CREATION_FAILED}: ${this.getErrorMessage(error)}`);
           throw new InternalServerErrorException(
             MINIO_ERROR_MESSAGES.BUCKET_CREATION_FAILED,
           );
@@ -63,8 +62,7 @@ export class MinioProvider implements OnModuleInit {
           );
           this.logger.log(`Bucket policy set for "${this.bucketName}"`);
         } catch (error) {
-          const message = error instanceof Error ? error.message : 'Unknown error';
-          this.logger.error(`${MINIO_ERROR_MESSAGES.BUCKET_POLICY_FAILED}: ${message}`);
+          this.logger.error(`${MINIO_ERROR_MESSAGES.BUCKET_POLICY_FAILED}: ${this.getErrorMessage(error)}`);
           throw new InternalServerErrorException(
             MINIO_ERROR_MESSAGES.BUCKET_POLICY_FAILED,
           );
@@ -76,8 +74,7 @@ export class MinioProvider implements OnModuleInit {
       if (error instanceof InternalServerErrorException) {
         throw error;
       }
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`${MINIO_ERROR_MESSAGES.BUCKET_INIT_FAILED}: ${message}`);
+      this.logger.error(`${MINIO_ERROR_MESSAGES.BUCKET_INIT_FAILED}: ${this.getErrorMessage(error)}`);
       throw new InternalServerErrorException(
         MINIO_ERROR_MESSAGES.BUCKET_INIT_FAILED,
       );
@@ -90,6 +87,15 @@ export class MinioProvider implements OnModuleInit {
 
   getBucketName(): string {
     return this.bucketName;
+  }
+
+  /**
+   * Extract error message from unknown error type
+   * @param error - The error to extract message from
+   * @returns The error message string
+   */
+  private getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : 'Unknown error';
   }
 
   /**
@@ -124,8 +130,7 @@ export class MinioProvider implements OnModuleInit {
 
       return `${protocol}://${endPoint}${portString}/${this.bucketName}/${fileName}`;
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`${MINIO_ERROR_MESSAGES.FILE_UPLOAD_FAILED}: ${message}`);
+      this.logger.error(`${MINIO_ERROR_MESSAGES.FILE_UPLOAD_FAILED}: ${this.getErrorMessage(error)}`);
       throw new InternalServerErrorException(
         MINIO_ERROR_MESSAGES.FILE_UPLOAD_FAILED,
       );
@@ -141,8 +146,7 @@ export class MinioProvider implements OnModuleInit {
       await this.minioClient.removeObject(this.bucketName, fileName);
       this.logger.log(`File "${fileName}" deleted successfully`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`${MINIO_ERROR_MESSAGES.FILE_DELETE_FAILED}: ${message}`);
+      this.logger.error(`${MINIO_ERROR_MESSAGES.FILE_DELETE_FAILED}: ${this.getErrorMessage(error)}`);
       throw new InternalServerErrorException(
         MINIO_ERROR_MESSAGES.FILE_DELETE_FAILED,
       );
@@ -158,8 +162,7 @@ export class MinioProvider implements OnModuleInit {
       await this.minioClient.removeObjects(this.bucketName, fileNames);
       this.logger.log(`${fileNames.length} files deleted successfully`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`${MINIO_ERROR_MESSAGES.FILES_DELETE_FAILED}: ${message}`);
+      this.logger.error(`${MINIO_ERROR_MESSAGES.FILES_DELETE_FAILED}: ${this.getErrorMessage(error)}`);
       throw new InternalServerErrorException(
         MINIO_ERROR_MESSAGES.FILES_DELETE_FAILED,
       );
