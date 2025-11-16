@@ -18,6 +18,8 @@ import {
   CreateReportDto,
   UpdateReportDto,
   FilterReportsDto,
+  ReportResponseDto,
+  ReportsResponseDto,
 } from '../../common/dto/report.dto';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -38,7 +40,10 @@ export class ReportsController {
    */
   @Post()
   @UseGuards(SessionGuard, RolesGuard)
-  async create(@Body() createReportDto: CreateReportDto, @Request() req) {
+  async create(
+    @Body() createReportDto: CreateReportDto,
+    @Request() req,
+  ): Promise<ReportResponseDto> {
     const report = await this.reportsService.create(
       createReportDto,
       req.user.id,
@@ -51,7 +56,9 @@ export class ReportsController {
    *
    */
   @Get()
-  async findAll(@Query() filters: FilterReportsDto) {
+  async findAll(
+    @Query() filters: FilterReportsDto,
+  ): Promise<ReportsResponseDto> {
     const reports = await this.reportsService.findAll(filters);
     return { success: true, data: reports };
   }
@@ -64,7 +71,7 @@ export class ReportsController {
     @Query('longitude') longitude: string,
     @Query('latitude') latitude: string,
     @Query('radius') radius?: string,
-  ) {
+  ): Promise<ReportsResponseDto> {
     const radiusMeters = radius ? parseFloat(radius) : 5000;
     const reports = await this.reportsService.findNearby(
       parseFloat(longitude),
@@ -80,7 +87,7 @@ export class ReportsController {
    * @throws {404} Not Found - Report with specified ID does not exist
    */
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string): Promise<ReportResponseDto> {
     const report = await this.reportsService.findOne(id);
     return { success: true, data: report };
   }
@@ -98,7 +105,7 @@ export class ReportsController {
   async update(
     @Param('id') id: string,
     @Body() updateReportDto: UpdateReportDto,
-  ) {
+  ): Promise<ReportResponseDto> {
     const report = await this.reportsService.update(id, updateReportDto);
     return { success: true, data: report };
   }
