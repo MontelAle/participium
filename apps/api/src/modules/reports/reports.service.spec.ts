@@ -138,8 +138,11 @@ describe('ReportsService', () => {
 
     it('should create a report with minimum required fields and 1 image', async () => {
       const createDto: CreateReportDto = {
+        title: 'Minimum Report',
+        description: 'Minimum description',
         longitude: 7.686864,
         latitude: 45.070312,
+        categoryId: 'cat-123',
       };
 
       const mockFiles = [
@@ -155,6 +158,9 @@ describe('ReportsService', () => {
 
       const expectedReport = {
         id: 'mocked-id',
+        title: 'Minimum Report',
+        description: 'Minimum description',
+        categoryId: 'cat-123',
         location: {
           type: 'Point',
           coordinates: [7.686864, 45.070312],
@@ -172,6 +178,9 @@ describe('ReportsService', () => {
       expect(minioProvider.uploadFile).toHaveBeenCalledTimes(1);
       expect(reportRepository.create).toHaveBeenCalledWith({
         id: 'mocked-id',
+        title: 'Minimum Report',
+        description: 'Minimum description',
+        categoryId: 'cat-123',
         location: {
           type: 'Point',
           coordinates: [7.686864, 45.070312],
@@ -185,8 +194,10 @@ describe('ReportsService', () => {
     it('should create a report with 3 images (maximum)', async () => {
       const createDto: CreateReportDto = {
         title: 'Report with max images',
+        description: 'Description with max images',
         longitude: 7.686864,
         latitude: 45.070312,
+        categoryId: 'cat-123',
       };
 
       const mockFiles = [
@@ -221,6 +232,8 @@ describe('ReportsService', () => {
       const expectedReport = {
         id: 'mocked-id',
         title: 'Report with max images',
+        description: 'Description with max images',
+        categoryId: 'cat-123',
         location: {
           type: 'Point',
           coordinates: [7.686864, 45.070312],
@@ -243,8 +256,10 @@ describe('ReportsService', () => {
     it('should throw InternalServerErrorException if image upload fails', async () => {
       const createDto: CreateReportDto = {
         title: 'Report with failing upload',
+        description: 'Description with failing upload',
         longitude: 7.686864,
         latitude: 45.070312,
+        categoryId: 'cat-123',
       };
 
       const mockFiles = [

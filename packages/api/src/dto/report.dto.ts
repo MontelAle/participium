@@ -13,22 +13,20 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ReportStatus } from '../entities/report.entity';
 
 export class CreateReportDto {
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Title of the report',
     example: 'Broken streetlight on Main Street',
   })
   @IsString()
-  @IsOptional() // TODO: Rendere obbligatorio in futuro
-  title?: string;
+  title: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Detailed description of the report',
     example:
       'The streetlight in front of building number 42 has been broken for 3 days',
   })
   @IsString()
-  @IsOptional() // TODO: Rendere obbligatorio in futuro
-  description?: string;
+  description: string;
 
   @ApiProperty({
     description: 'Longitude coordinate (WGS84)',
@@ -60,13 +58,12 @@ export class CreateReportDto {
   @IsOptional()
   address?: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Category ID for the report',
     example: 'cat_streetlight',
   })
   @IsString()
-  @IsOptional() // TODO: Rendere obbligatorio in futuro
-  categoryId?: string;
+  categoryId: string;
 
   // Note: images are handled separately via multipart/form-data
   // and will be processed by Multer middleware

@@ -131,8 +131,11 @@ describe('ReportsController', () => {
 
     it('should throw BadRequestException if no images provided', async () => {
       const createDto: CreateReportDto = {
+        title: 'Test Report',
+        description: 'Test Description',
         longitude: 7.686864,
         latitude: 45.070312,
+        categoryId: 'cat-123',
       };
 
       const mockReq = { user: { id: 'user-123' } };
@@ -144,8 +147,11 @@ describe('ReportsController', () => {
 
     it('should throw BadRequestException if more than 3 images provided', async () => {
       const createDto: CreateReportDto = {
+        title: 'Test Report',
+        description: 'Test Description',
         longitude: 7.686864,
         latitude: 45.070312,
+        categoryId: 'cat-123',
       };
 
       const mockFiles = [
@@ -164,8 +170,11 @@ describe('ReportsController', () => {
 
     it('should throw BadRequestException if invalid file type', async () => {
       const createDto: CreateReportDto = {
+        title: 'Test Report',
+        description: 'Test Description',
         longitude: 7.686864,
         latitude: 45.070312,
+        categoryId: 'cat-123',
       };
 
       const mockFiles = [
@@ -186,8 +195,11 @@ describe('ReportsController', () => {
 
     it('should throw BadRequestException if file exceeds size limit', async () => {
       const createDto: CreateReportDto = {
+        title: 'Test Report',
+        description: 'Test Description',
         longitude: 7.686864,
         latitude: 45.070312,
+        categoryId: 'cat-123',
       };
 
       const mockFiles = [
