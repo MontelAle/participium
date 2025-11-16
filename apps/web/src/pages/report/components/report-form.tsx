@@ -2,12 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Field, FieldLabel } from "@/components/ui/field";
-import {
-  InputGroup,
-  InputGroupInput,
-  InputGroupAddon,
-} from "@/components/ui/input-group";
-
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectTrigger,
@@ -15,12 +10,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-
-import { Button } from "@/components/ui/button";
-
-import { FileIcon } from "lucide-react";
-
 import { useCategories } from "@/hooks/use-categories";
+import { PhotoUploader } from "./photoUploader";
 
 export function ReportForm() {
   const navigate = useNavigate();
@@ -30,7 +21,7 @@ export function ReportForm() {
     title: "",
     description: "",
     categoryId: "",
-    photo: null as File | null,
+    photos: [] as File[],
   });
 
   const handleChange = (
@@ -43,8 +34,8 @@ export function ReportForm() {
     setForm({ ...form, categoryId: value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, photo: e.target.files?.[0] || null });
+  const handlePhotosChange = (photos: File[]) => {
+    setForm({ ...form, photos });
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -53,20 +44,19 @@ export function ReportForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-sm">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md w-full mx-auto">
       
       {/* Title */}
       <Field>
         <FieldLabel>Title</FieldLabel>
-        <InputGroup>
-          <InputGroupInput
-            name="title"
-            placeholder="Enter title"
-            required
-            value={form.title}
-            onChange={handleChange}
-          />
-        </InputGroup>
+        <input
+          name="title"
+          placeholder="Enter title"
+          required
+          value={form.title}
+          onChange={handleChange}
+          className="w-full border rounded-md p-3 text-base focus-visible:outline-none"
+        />
       </Field>
 
       {/* Description */}
@@ -78,7 +68,7 @@ export function ReportForm() {
           required
           value={form.description}
           onChange={handleChange}
-          className="w-full border rounded-md p-3 min-h-[100px] resize-none focus-visible:outline-none"
+          className="w-full border rounded-md p-3 min-h-[120px] resize-none text-base focus-visible:outline-none"
         />
       </Field>
 
@@ -86,7 +76,7 @@ export function ReportForm() {
       <Field>
         <FieldLabel>Category</FieldLabel>
         <Select value={form.categoryId} onValueChange={handleCategoryChange}>
-          <SelectTrigger className="InputGroupInput">
+          <SelectTrigger className="w-full border rounded-md p-3 text-base focus-visible:outline-none">
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
           <SelectContent>
@@ -96,8 +86,7 @@ export function ReportForm() {
                   .replace(/_/g, " ")
                   .split(" ")
                   .map(
-                    (w) =>
-                      w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+                    (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
                   )
                   .join(" ")}
               </SelectItem>
@@ -106,15 +95,14 @@ export function ReportForm() {
         </Select>
       </Field>
 
-      {/* Photo */}
+      {/* Photos */}
       <Field>
-        <FieldLabel>Photo</FieldLabel>
-        <InputGroup>
-          <InputGroupInput type="file" name="photo" onChange={handleFileChange} />
-          <InputGroupAddon>
-            <FileIcon />
-          </InputGroupAddon>
-        </InputGroup>
+        <FieldLabel>Photo (1-3)</FieldLabel>
+        <PhotoUploader
+          photos={form.photos}
+          onChange={handlePhotosChange}
+          maxPhotos={3}
+        />
       </Field>
 
       {/* Buttons */}

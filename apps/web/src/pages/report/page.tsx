@@ -3,9 +3,10 @@ import { ReportForm } from "./components/report-form";
 
 function ReportPage() {
   return (
-    <div>
-        <ReportForm />
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+            <ReportForm/>
     </div>
+
   );
 }
 
