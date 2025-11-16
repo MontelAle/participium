@@ -11,7 +11,11 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -20,12 +24,20 @@ import {
   ApiBody,
   ApiParam,
   ApiQuery,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { CreateReportDto, UpdateReportDto, FilterReportsDto } from '@repo/api';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import {
+  REPORT_ERROR_MESSAGES,
+  ALLOWED_IMAGE_MIMETYPES,
+  MAX_IMAGE_SIZE,
+  MIN_IMAGES,
+  MAX_IMAGES,
+} from './constants/error-messages';
 
 @ApiTags('Reports')
 @Controller('reports')
@@ -35,27 +47,50 @@ export class ReportsController {
 
   @Post()
   @UseGuards(SessionGuard, RolesGuard)
+  @UseInterceptors(FilesInterceptor('images', 3))
   @HttpCode(HttpStatus.CREATED)
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({
-    summary: 'Create a new report',
-    description: `Create a new report with geolocation data.
-      **Access:** Any authenticated user can create a report.`,
+    summary: 'Create a new report with images',
+    description: `Create a new report with geolocation data and up to 3 images (min 1, max 3).
+      **Access:** Any authenticated user can create a report.
+      **Images:** Must be JPEG, PNG, or WebP. Max 5MB per image.`,
   })
-  @ApiBody({ type: CreateReportDto })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['longitude', 'latitude', 'images'],
+      properties: {
+        title: { type: 'string', example: 'Broken streetlight on Main Street' },
+        description: {
+          type: 'string',
+          example: 'The streetlight in front of building number 42 has been broken for 3 days',
+        },
+        longitude: { type: 'number', example: 7.686864 },
+        latitude: { type: 'number', example: 45.070312 },
+        address: { type: 'string', example: 'Via Roma 42, 10100 Torino' },
+        categoryId: { type: 'string', example: 'cat_streetlight' },
+        images: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+          minItems: 1,
+          maxItems: 3,
+          description: 'Images (min 1, max 3)',
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: 201,
     description: 'Report created successfully',
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad Request - Invalid data',
+    description: 'Bad Request - Invalid data or missing images',
     schema: {
       example: {
         statusCode: 400,
-        message: [
-          'longitude must not be less than -180',
-          'latitude must not be greater than 90',
-        ],
+        message: 'You must upload between 1 and 3 images',
         error: 'Bad Request',
       },
     },
@@ -71,10 +106,35 @@ export class ReportsController {
       },
     },
   })
-  async create(@Body() createReportDto: CreateReportDto, @Request() req) {
+  async create(
+    @Body() createReportDto: CreateReportDto,
+    @UploadedFiles() images: Express.Multer.File[],
+    @Request() req,
+  ) {
+    // Valida il numero di immagini
+    if (!images || images.length < MIN_IMAGES || images.length > MAX_IMAGES) {
+      throw new BadRequestException(REPORT_ERROR_MESSAGES.IMAGES_REQUIRED);
+    }
+
+    // Valida il tipo di file
+    for (const image of images) {
+      if (!ALLOWED_IMAGE_MIMETYPES.includes(image.mimetype as any)) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.INVALID_FILE_TYPE(image.mimetype),
+        );
+      }
+      // Valida la dimensione
+      if (image.size > MAX_IMAGE_SIZE) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.FILE_SIZE_EXCEEDED(image.originalname),
+        );
+      }
+    }
+
     const report = await this.reportsService.create(
       createReportDto,
       req.user.id,
+      images,
     );
     return { success: true, data: report };
   }

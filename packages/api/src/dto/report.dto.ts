@@ -6,6 +6,8 @@ import {
   Min,
   Max,
   IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ReportStatus } from '../entities/report.entity';
@@ -59,25 +61,15 @@ export class CreateReportDto {
   address?: string;
 
   @ApiPropertyOptional({
-    description: 'Array of image URLs',
-    type: [String],
-    example: [
-      'https://example.com/image1.jpg',
-      'https://example.com/image2.jpg',
-    ],
-  })
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  images?: string[];
-
-  @ApiPropertyOptional({
     description: 'Category ID for the report',
     example: 'cat_streetlight',
   })
   @IsString()
   @IsOptional() // TODO: Rendere obbligatorio in futuro
   categoryId?: string;
+
+  // Note: images are handled separately via multipart/form-data
+  // and will be processed by Multer middleware
 }
 
 export class UpdateReportDto {

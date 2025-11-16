@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Point, Repository } from 'typeorm';
 import {
@@ -8,12 +12,15 @@ import {
   FilterReportsDto,
 } from '@repo/api';
 import { nanoid } from 'nanoid';
+import { MinioProvider } from '../../providers/minio/minio.provider';
+import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 
 @Injectable()
 export class ReportsService {
   constructor(
     @InjectRepository(Report)
     private readonly reportRepository: Repository<Report>,
+    private readonly minioProvider: MinioProvider,
   ) {}
 
   private createPointGeometry(longitude: number, latitude: number): Point {
@@ -51,14 +58,37 @@ export class ReportsService {
   async create(
     createReportDto: CreateReportDto,
     userId: string,
+    images: Express.Multer.File[],
   ): Promise<Report> {
     const { longitude, latitude, ...reportData } = createReportDto;
+
+    // Upload images to MinIO (always required, validated in controller)
+    const imageUrls: string[] = [];
+    try {
+      for (const image of images) {
+        const reportId = nanoid();
+        const timestamp = Date.now();
+        const fileName = `reports/${reportId}/${timestamp}-${image.originalname}`;
+        
+        const imageUrl = await this.minioProvider.uploadFile(
+          fileName,
+          image.buffer,
+          image.mimetype,
+        );
+        imageUrls.push(imageUrl);
+      }
+    } catch (error) {
+      throw new InternalServerErrorException(
+        REPORT_ERROR_MESSAGES.IMAGE_UPLOAD_FAILED,
+      );
+    }
 
     const report = this.reportRepository.create({
       id: nanoid(),
       ...reportData,
       location: this.createPointGeometry(longitude, latitude),
       userId,
+      images: imageUrls,
     });
 
     return await this.reportRepository.save(report);
@@ -137,7 +167,7 @@ export class ReportsService {
     });
 
     if (!report) {
-      throw new NotFoundException(`Report with ID ${id} not found`);
+      throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
     }
 
     return report;
@@ -160,6 +190,21 @@ export class ReportsService {
 
   async remove(id: string): Promise<void> {
     const report = await this.findOne(id);
+    
+    // Delete images from MinIO before deleting the report
+    if (report.images && report.images.length > 0) {
+      try {
+        const fileNames = report.images.map(url =>
+          this.minioProvider.extractFileNameFromUrl(url),
+        );
+        await this.minioProvider.deleteFiles(fileNames);
+      } catch (error) {
+        throw new InternalServerErrorException(
+          REPORT_ERROR_MESSAGES.IMAGE_DELETE_FAILED,
+        );
+      }
+    }
+    
     await this.reportRepository.remove(report);
   }
 
