@@ -1,7 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { User, Account, Role, CreateMunicipalityUserDto } from '@repo/api';
+
+import { User } from '../../common/entities/user.entity';
+import { Account } from '../../common/entities/account.entity';
+import { Role } from '../../common/entities/role.entity';
+import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
+
 import { Repository } from 'typeorm';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';

@@ -6,11 +6,11 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Point, Repository } from 'typeorm';
 import {
-  Report,
   CreateReportDto,
   UpdateReportDto,
   FilterReportsDto,
-} from '@repo/api';
+} from '../../common/dto/report.dto';
+import { Report } from '../../common/entities/report.entity';
 import { nanoid } from 'nanoid';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';

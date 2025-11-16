@@ -1,10 +1,10 @@
 import { apiFetch } from '../client';
 import type { Report } from '@repo/api';
-import type { ReportResponse } from '@/types/report';
+import type { ReportResponseDto, ReportsResponseDto } from '@repo/api';
 import { CreateReportDto } from '@repo/api';
 
 export async function getReports(): Promise<Report[]> {
-  const response = await apiFetch<ReportResponse>('/reports/', {
+  const response = await apiFetch<ReportsResponseDto>('/reports/', {
     method: 'GET',
   });
   return response.data;
@@ -13,15 +13,12 @@ export async function getReports(): Promise<Report[]> {
 export async function postReport(
   reportData: Partial<CreateReportDto>,
 ): Promise<Report> {
-  const response = await apiFetch<{ success: boolean; data: Report }>(
-    '/reports/',
-    {
-      method: 'POST',
-      body: JSON.stringify(reportData),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+  const response = await apiFetch<ReportResponseDto>('/reports/', {
+    method: 'POST',
+    body: JSON.stringify(reportData),
+    headers: {
+      'Content-Type': 'application/json',
     },
-  );
+  });
   return response.data;
 }
