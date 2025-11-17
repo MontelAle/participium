@@ -43,7 +43,7 @@ export class MinioProvider implements OnModuleInit {
           );
         }
 
-        // Imposta la policy per rendere le immagini pubbliche (read-only)
+        // Set policy to make images publicly accessible (read-only)
         try {
           const policy = {
             Version: '2012-10-17',
@@ -121,7 +121,7 @@ export class MinioProvider implements OnModuleInit {
         },
       );
 
-      // Costruisci l'URL pubblico del file
+      // Build the public URL for the file
       const endPoint = this.configService.get<string>('minio.endPoint');
       const port = this.configService.get<number>('minio.port');
       const useSSL = this.configService.get<boolean>('minio.useSSL');

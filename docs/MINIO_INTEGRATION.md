@@ -1,12 +1,12 @@
 # MinIO Integration Guide
 
-## Panoramica
-MinIO è stato integrato nel progetto per gestire l'upload e lo storage delle immagini dei report. È un object storage compatibile con S3, deployato tramite Docker.
+## Overview
+MinIO has been integrated into the project to manage image uploads and storage for reports. It is an S3-compatible object storage, deployed via Docker.
 
-## Configurazione
+## Configuration
 
-### Variabili d'Ambiente
-Aggiungi le seguenti variabili al tuo file `.env`:
+### Environment Variables
+Add the following variables to your `.env` file:
 
 ```env
 # MinIO Configuration
@@ -19,147 +19,147 @@ MINIO_BUCKET_NAME=participium-reports
 ```
 
 ### Docker
-MinIO è configurato in `compose.yml`:
-- **API Port**: 9000 (accesso programmatico)
-- **Console Port**: 9001 (interfaccia web amministrativa)
-- **Volume**: `minio_data` per persistenza dei dati
+MinIO is configured in `compose.yml`:
+- **API Port**: 9000 (programmatic access)
+- **Console Port**: 9001 (web admin interface)
+- **Volume**: `minio_data` for data persistence
 
-## Accesso alla Console MinIO
+## Accessing MinIO Console
 
-Puoi accedere alla console web di MinIO su:
+You can access MinIO's web console at:
 - URL: http://localhost:9001
 - Username: minioadmin
 - Password: minioadmin
 
-Dalla console puoi:
-- Visualizzare i bucket
-- Esplorare i file caricati
-- Gestire le policy di accesso
-- Monitorare l'utilizzo dello storage
+From the console you can:
+- View buckets
+- Browse uploaded files
+- Manage access policies
+- Monitor storage usage
 
-## Funzionalità Implementate
+## Implemented Features
 
-### Upload Immagini nei Report
-Quando si crea un report, è ora obbligatorio caricare da 1 a 3 immagini:
+### Image Upload in Reports
+When creating a report, it is now mandatory to upload between 1 and 3 images:
 
 **Endpoint**: `POST /api/reports`
 **Content-Type**: `multipart/form-data`
 
-**Vincoli**:
-- Minimo: 1 immagine
-- Massimo: 3 immagini
-- Formati supportati: JPEG, PNG, WebP
-- Dimensione massima per file: 5MB
+**Constraints**:
+- Minimum: 1 image
+- Maximum: 3 images
+- Supported formats: JPEG, PNG, WebP
+- Maximum file size: 5MB
 
-**Esempio con curl**:
+**Example with curl**:
 ```bash
 curl -X POST http://localhost:5000/api/reports \
   -H "Cookie: session_token=YOUR_SESSION_TOKEN" \
-  -F "title=Lampione rotto" \
-  -F "description=Il lampione è rotto da 3 giorni" \
+  -F "title=Broken streetlight" \
+  -F "description=The streetlight has been broken for 3 days" \
   -F "longitude=7.686864" \
   -F "latitude=45.070312" \
-  -F "address=Via Roma 42, Torino" \
+  -F "address=Via Roma 42, Turin" \
   -F "categoryId=cat_streetlight" \
   -F "images=@/path/to/image1.jpg" \
   -F "images=@/path/to/image2.jpg"
 ```
 
-### Gestione Automatica
-- **Upload**: Le immagini vengono caricate su MinIO con nomi univoci
-- **Organizzazione**: I file sono organizzati in sottocartelle per report: `reports/{reportId}/{timestamp}-{filename}`
-- **URL Pubblici**: Le immagini sono accessibili pubblicamente tramite URL diretti
-- **Eliminazione**: Quando un report viene eliminato, anche le sue immagini vengono rimosse da MinIO
+### Automatic Management
+- **Upload**: Images are uploaded to MinIO with unique names
+- **Organization**: Files are organized in subfolders per report: `reports/{reportId}/{timestamp}-{filename}`
+- **Public URLs**: Images are publicly accessible via direct URLs
+- **Deletion**: When a report is deleted, its images are also removed from MinIO
 
-## Architettura
+## Architecture
 
 ### MinioProvider
-Servizio globale che gestisce tutte le operazioni con MinIO:
+Global service that handles all operations with MinIO:
 
-**Metodi principali**:
-- `uploadFile(fileName, buffer, mimetype)`: Upload di un file
-- `deleteFile(fileName)`: Eliminazione singolo file
-- `deleteFiles(fileNames[])`: Eliminazione multipla
-- `extractFileNameFromUrl(url)`: Estrae il nome del file dall'URL
+**Main methods**:
+- `uploadFile(fileName, buffer, mimetype)`: Upload a file
+- `deleteFile(fileName)`: Delete single file
+- `deleteFiles(fileNames[])`: Multiple deletion
+- `extractFileNameFromUrl(url)`: Extract file name from URL
 
-**Inizializzazione automatica**:
-- Crea il bucket se non esiste
-- Configura la policy per accesso pubblico in lettura
-- Verifica la connessione a MinIO
+**Automatic initialization**:
+- Creates bucket if it doesn't exist
+- Configures policy for public read access
+- Verifies connection to MinIO
 
-### Modifiche al Report
+### Report Modifications
 
 **Entity** (`Report`):
-- Campo `images` rimane `string[]` ma ora contiene URL completi di MinIO
+- `images` field remains `string[]` but now contains full MinIO URLs
 
 **DTO** (`CreateReportDto`):
-- Rimosso il campo `images` (gestito via multipart)
-- Le immagini vengono caricate tramite `FilesInterceptor`
+- Removed `images` field (handled via multipart)
+- Images are uploaded through `FilesInterceptor`
 
 **Controller** (`ReportsController`):
-- Usa `@UseInterceptors(FilesInterceptor('images', 3))`
-- Usa `@ApiConsumes('multipart/form-data')`
-- Valida numero, tipo e dimensione dei file
+- Uses `@UseInterceptors(FilesInterceptor('images', 3))`
+- Uses `@ApiConsumes('multipart/form-data')`
+- Validates number, type and size of files
 
 **Service** (`ReportsService`):
-- Integra `MinioProvider` per upload durante la creazione
-- Elimina le immagini da MinIO quando un report viene cancellato
+- Integrates `MinioProvider` for upload during creation
+- Deletes images from MinIO when a report is deleted
 
-## Test e Sviluppo
+## Testing and Development
 
-### Avvio dei Container
+### Starting Containers
 ```bash
 cd apps/api
 docker compose up -d
 ```
 
-### Verifica dello Stato
+### Checking Status
 ```bash
 docker ps
 docker logs participium-minio
 ```
 
-### Test dell'Upload
-Usa la documentazione Swagger su `http://localhost:5000/api/docs` per testare l'upload:
-1. Esegui il login
-2. Naviga all'endpoint `POST /reports`
-3. Clicca su "Try it out"
-4. Compila i campi e carica le immagini
-5. Verifica la risposta e gli URL delle immagini
+### Testing Upload
+Use Swagger documentation at `http://localhost:5000/api/docs` to test upload:
+1. Perform login
+2. Navigate to `POST /reports` endpoint
+3. Click "Try it out"
+4. Fill in fields and upload images
+5. Verify response and image URLs
 
-### Visualizzazione Immagini
-Gli URL delle immagini avranno il formato:
+### Viewing Images
+Image URLs will have the format:
 ```
 http://localhost:9000/participium-reports/reports/{reportId}/{timestamp}-{filename}
 ```
 
-Puoi aprire questi URL direttamente nel browser per vedere le immagini.
+You can open these URLs directly in the browser to view images.
 
-## Produzione
+## Production
 
-Per l'ambiente di produzione, considera:
+For production environment, consider:
 
-1. **Credenziali**: Cambia `MINIO_ACCESS_KEY` e `MINIO_SECRET_KEY` con valori sicuri
-2. **SSL/TLS**: Abilita `MINIO_USE_SSL=true` e configura certificati
-3. **Backup**: Configura backup regolari del volume `minio_data`
-4. **Monitoring**: Usa MinIO Prometheus metrics
-5. **CDN**: Considera l'uso di un CDN per servire le immagini
-6. **Limiti**: Implementa rate limiting per prevenire abusi
+1. **Credentials**: Change `MINIO_ACCESS_KEY` and `MINIO_SECRET_KEY` with secure values
+2. **SSL/TLS**: Enable `MINIO_USE_SSL=true` and configure certificates
+3. **Backup**: Configure regular backups of `minio_data` volume
+4. **Monitoring**: Use MinIO Prometheus metrics
+5. **CDN**: Consider using a CDN to serve images
+6. **Limits**: Implement rate limiting to prevent abuse
 
 ## Troubleshooting
 
-### MinIO non si avvia
+### MinIO won't start
 ```bash
 docker logs participium-minio
 ```
 
-### Bucket non creato automaticamente
-Verifica i log dell'applicazione NestJS all'avvio
+### Bucket not created automatically
+Check NestJS application logs at startup
 
-### Errore di permessi
-Verifica che la policy del bucket sia configurata correttamente dalla console MinIO
+### Permission errors
+Verify that bucket policy is configured correctly from MinIO console
 
-### Immagini non accessibili
-- Verifica che la porta 9000 sia aperta
-- Controlla che il bucket abbia policy pubblica in lettura
-- Verifica gli URL generati nel database
+### Images not accessible
+- Verify that port 9000 is open
+- Check that bucket has public read policy
+- Verify URLs generated in database

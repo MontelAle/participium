@@ -86,8 +86,8 @@ describe('SessionGuard', () => {
     const expiredSession: Partial<Session> = {
       id: 'sessionId',
       hashedSecret: 'somehash',
-      expiresAt: new Date(Date.now() + 10000), // non usato più
-      updatedAt: new Date(Date.now() - 3700000), // più di 1 ora fa (expired)
+      expiresAt: new Date(Date.now() + 10000), // no longer used
+      updatedAt: new Date(Date.now() - 3700000), // more than 1 hour ago (expired)
       user: { id: 'user1', role: { name: 'admin' } } as User,
     };
     sessionRepository.findOne.mockResolvedValue(expiredSession);
