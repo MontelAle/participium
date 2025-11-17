@@ -10,6 +10,7 @@ import { Role } from '../src/common/entities/role.entity';
 import { Account } from '../src/common/entities/account.entity';
 import { Category } from '../src/common/entities/category.entity';
 import { Report } from '../src/common/entities/report.entity';
+import { REPORT_ERROR_MESSAGES } from '../src/modules/reports/constants/error-messages';
 import request = require('supertest');
 
 jest.mock('nanoid', () => ({
@@ -517,7 +518,7 @@ describe('AppController (e2e)', () => {
       .field('categoryId', 'cat_1')
       .expect(400);
 
-    expect(res.body.message).toContain('upload between 1 and 3 images');
+    expect(res.body.message).toContain(REPORT_ERROR_MESSAGES.IMAGES_REQUIRED);
   });
 
   it('POST /reports with more than 3 images returns 400', async () => {
@@ -539,6 +540,37 @@ describe('AppController (e2e)', () => {
     expect(res.body.message).toContain('Unexpected field');
   });
 
+  it('POST /reports with invalid file type returns 400', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Invalid file type')
+      .field('description', 'This should fail')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('fake-pdf'), 'test.pdf')
+      .expect(400);
+
+    expect(res.body.message).toContain('application/pdf');
+  });
+
+  it('POST /reports with oversized file returns 400', async () => {
+    const largeBuffer = Buffer.alloc(6 * 1024 * 1024); // 6MB
+    const res = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Oversized file')
+      .field('description', 'This should fail')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .attach('images', largeBuffer, 'large.jpg')
+      .expect(400);
+
+    expect(res.body.message).toContain('large.jpg');
+  });
+
   it('GET /reports returns all reports', async () => {
     const res = await request(app.getHttpServer())
       .get('/reports')
@@ -557,6 +589,15 @@ describe('AppController (e2e)', () => {
 
     expect(res.body.success).toBe(true);
     expect(res.body.data).toBeDefined();
+  });
+
+  it('GET /reports/:id with non-existent ID returns 404', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/non-existent-id')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(404);
+
+    expect(res.body.message).toContain('non-existent-id');
   });
 
   it('PATCH /reports/:id updates a report', async () => {

@@ -10,6 +10,8 @@ const config: Config = {
     '!<rootDir>/main.ts',
     '!<rootDir>/**/seed/**/*.ts',
     '!<rootDir>/**/*.type.ts',
+    '!<rootDir>/common/dto/**/*.ts',
+    '!<rootDir>/common/entities/**/*.ts',
   ],
 };
 

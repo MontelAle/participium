@@ -369,6 +369,13 @@ describe('MinioProvider', () => {
       const result = provider.extractFileNameFromUrl(url);
       expect(result).toBe('reports/123/image.jpg');
     });
+
+    it('should throw error for invalid URL format', () => {
+      const invalidUrl = 'http://localhost:9000/invalid-url-without-bucket';
+      expect(() => provider.extractFileNameFromUrl(invalidUrl)).toThrow(
+        'Invalid MinIO URL format',
+      );
+    });
   });
 
   describe('getClient', () => {
