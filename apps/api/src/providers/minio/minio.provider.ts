@@ -172,10 +172,15 @@ export class MinioProvider implements OnModuleInit {
   /**
    * Extract the file name from a MinIO URL
    * @param url - The full MinIO URL
-   * @returns The file name
+   * @returns The file name (full path after bucket name)
    */
   extractFileNameFromUrl(url: string): string {
-    const parts = url.split('/');
-    return parts[parts.length - 1];
+    // URL format: http://localhost:9000/participium-reports/reports/{reportId}/{timestamp}-{filename}
+    // We need to extract: reports/{reportId}/{timestamp}-{filename}
+    const urlParts = url.split(`/${this.bucketName}/`);
+    if (urlParts.length < 2) {
+      throw new Error('Invalid MinIO URL format');
+    }
+    return urlParts[1];
   }
 }
