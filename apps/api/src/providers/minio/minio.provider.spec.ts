@@ -364,10 +364,10 @@ describe('MinioProvider', () => {
   });
 
   describe('extractFileNameFromUrl', () => {
-    it('should extract filename from URL', () => {
+    it('should extract full path from URL after bucket name', () => {
       const url = 'http://localhost:9000/test-bucket/reports/123/image.jpg';
       const result = provider.extractFileNameFromUrl(url);
-      expect(result).toBe('image.jpg');
+      expect(result).toBe('reports/123/image.jpg');
     });
   });
 
