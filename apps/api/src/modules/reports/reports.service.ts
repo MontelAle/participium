@@ -84,7 +84,7 @@ export class ReportsService {
     }
 
     const report = this.reportRepository.create({
-      id: nanoid(),
+      id: reportId,
       ...reportData,
       location: this.createPointGeometry(longitude, latitude),
       userId,
