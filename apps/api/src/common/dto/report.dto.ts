@@ -19,12 +19,10 @@ import { ReportStatus, Report } from '../entities/report.entity';
 
 export class CreateReportDto implements CreateReportDtoInterface {
   @IsString()
-  @IsOptional() // TODO: Rendere obbligatorio in futuro
-  title?: string;
+  title: string;
 
   @IsString()
-  @IsOptional() // TODO: Rendere obbligatorio in futuro
-  description?: string;
+  description: string;
 
   @ApiProperty({
     minimum: -180,
@@ -54,8 +52,7 @@ export class CreateReportDto implements CreateReportDtoInterface {
   images?: string[];
 
   @IsString()
-  @IsOptional() // TODO: Rendere obbligatorio in futuro
-  categoryId?: string;
+  categoryId: string;
 }
 
 export class UpdateReportDto implements UpdateReportDtoInterface {

@@ -2,14 +2,15 @@ import { ReportStatus, Report } from '../entities/report.entity';
 import { ResponseDto } from './response.dto';
 
 export interface CreateReportDto {
-  title?: string;
-  description?: string;
+  title: string;
+  description: string;
   longitude: number;
   latitude: number;
   address?: string;
-  images?: string[];
-  categoryId?: string;
+  categoryId: string;
+  // Note: images are handled separately via multipart/form-data
 }
+
 export interface UpdateReportDto {
   title?: string;
   description?: string;
@@ -20,6 +21,7 @@ export interface UpdateReportDto {
   images?: string[];
   categoryId?: string;
 }
+
 export interface FilterReportsDto {
   status?: ReportStatus;
   categoryId?: string;

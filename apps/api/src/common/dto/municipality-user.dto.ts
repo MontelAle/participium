@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsEmail } from 'class-validator';
 import {
-  UpdateMunicipalityUserDto as UpadteMunicipalityUserDtoInterface,
+  UpdateMunicipalityUserDto as UpdateMunicipalityUserDtoInterface,
   CreateMunicipalityUserDto as CreateMunicipalityUserDtoInterface,
   MunicipalityUserResponseDto as MunicipalityUserResponseDtoInterface,
   MunicipalityUsersResponseDto as MunicipalityUsersResponseDtoInterface,
@@ -9,7 +9,7 @@ import {
 import { User } from '../entities/user.entity';
 
 export class UpdateMunicipalityUserDto
-  implements UpadteMunicipalityUserDtoInterface
+  implements UpdateMunicipalityUserDtoInterface
 {
   @IsEmail()
   @IsOptional()

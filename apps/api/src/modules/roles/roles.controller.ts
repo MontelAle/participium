@@ -5,7 +5,6 @@ import { SessionGuard } from '../auth/guards/session-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesResponseDto } from '../../common/dto/role.dto';
-import { Role } from '../../common/entities/role.entity';
 
 @ApiTags('Roles')
 @Controller('roles')

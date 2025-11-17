@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { User } from '../../common/entities/user.entity';
-import { Role } from '../../common/entities/role.entity';
 import {
   CreateMunicipalityUserDto,
   UpdateMunicipalityUserDto,
@@ -63,7 +62,7 @@ describe('UsersController', () => {
       const mockUser: Partial<User> = {
         id: '1',
         username: 'officier1',
-        role: { id: 'role-id', name: 'municipal_pr_officer' },
+        role: { id: 'role-id', name: 'municipal_pr_officer', isMunicipal: true },
       };
 
       usersService.findMunicipalityUserById.mockResolvedValue(mockUser as User);
@@ -93,7 +92,7 @@ describe('UsersController', () => {
         firstName: 'New',
         lastName: 'User',
         password: 'SecurePass123',
-        role: { id: 'role-id', name: 'municipal_pr_officer' },
+        roleId: 'role-id',
       };
 
       const mockUser: Partial<User> = {
@@ -117,7 +116,7 @@ describe('UsersController', () => {
         firstName: 'Dup',
         lastName: 'User',
         password: 'SecurePass123',
-        role: { id: 'role-id', name: 'municipal_pr_officer' },
+        roleId: 'role-id',
       };
 
       usersService.createMunicipalityUser.mockRejectedValue(

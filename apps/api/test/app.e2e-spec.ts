@@ -10,6 +10,7 @@ import { Role } from '../src/common/entities/role.entity';
 import { Account } from '../src/common/entities/account.entity';
 import { Category } from '../src/common/entities/category.entity';
 import { Report } from '../src/common/entities/report.entity';
+import { REPORT_ERROR_MESSAGES } from '../src/modules/reports/constants/error-messages';
 import request = require('supertest');
 
 jest.mock('nanoid', () => ({
@@ -195,6 +196,16 @@ describe('AppController (e2e)', () => {
     const { DatabaseModule } = await import(
       './../src/providers/database/database.module'
     );
+    const { MinioProvider } = await import(
+      './../src/providers/minio/minio.provider'
+    );
+
+    const mockMinioProvider = {
+      uploadFile: jest.fn().mockResolvedValue('http://localhost:9000/bucket/reports/mocked-id/test.jpg'),
+      deleteFile: jest.fn().mockResolvedValue(undefined),
+      deleteFiles: jest.fn().mockResolvedValue(undefined),
+      extractFileNameFromUrl: jest.fn((url: string) => url.split('/').pop()),
+    };
 
     const testingModuleBuilder = Test.createTestingModule({
       imports: [AppModule],
@@ -219,7 +230,9 @@ describe('AppController (e2e)', () => {
       .overrideProvider(getRepositoryToken(Category))
       .useValue(createMockRepository(mockCategories))
       .overrideProvider(getRepositoryToken(Report))
-      .useValue(createMockRepository(mockReports));
+      .useValue(createMockRepository(mockReports))
+      .overrideProvider(MinioProvider)
+      .useValue(mockMinioProvider);
 
     testingModuleBuilder.overrideGuard(LocalAuthGuard).useValue({
       canActivate: (context: any) => {
@@ -459,21 +472,103 @@ describe('AppController (e2e)', () => {
   });
 
   // --- Reports Controller ---
-  it('POST /reports creates a report', async () => {
+  it('POST /reports creates a report with images', async () => {
     const res = await request(app.getHttpServer())
       .post('/reports')
       .set('Cookie', 'session_token=sess_1.secret')
-      .send({
-        title: 'Broken streetlight',
-        description: 'The streetlight on Main St is broken.',
-        longitude: 12.34,
-        latitude: 56.78,
-        categoryId: 'cat1',
-      })
+      .field('title', 'Broken streetlight')
+      .field('description', 'The streetlight on Main St is broken.')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('fake-image-data'), 'test.jpg')
       .expect(201);
 
     expect(res.body.success).toBe(true);
     expect(res.body.data).toBeDefined();
+    expect(res.body.data.images).toBeDefined();
+  });
+
+  it('POST /reports with 3 images (maximum allowed)', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Multiple issues')
+      .field('description', 'Multiple problems detected')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('fake-image-1'), 'test1.jpg')
+      .attach('images', Buffer.from('fake-image-2'), 'test2.jpg')
+      .attach('images', Buffer.from('fake-image-3'), 'test3.jpg')
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.images).toHaveLength(3);
+  });
+
+  it('POST /reports without images returns 400', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'No images')
+      .field('description', 'This should fail')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .expect(400);
+
+    expect(res.body.message).toContain(REPORT_ERROR_MESSAGES.IMAGES_REQUIRED);
+  });
+
+  it('POST /reports with more than 3 images returns 400', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Too many images')
+      .field('description', 'This should fail')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('fake-image-1'), 'test1.jpg')
+      .attach('images', Buffer.from('fake-image-2'), 'test2.jpg')
+      .attach('images', Buffer.from('fake-image-3'), 'test3.jpg')
+      .attach('images', Buffer.from('fake-image-4'), 'test4.jpg')
+      .expect(400);
+
+    // Multer intercepts and rejects before controller validation
+    expect(res.body.message).toContain('Unexpected field');
+  });
+
+  it('POST /reports with invalid file type returns 400', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Invalid file type')
+      .field('description', 'This should fail')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('fake-pdf'), 'test.pdf')
+      .expect(400);
+
+    expect(res.body.message).toContain('application/pdf');
+  });
+
+  it('POST /reports with oversized file returns 400', async () => {
+    const largeBuffer = Buffer.alloc(6 * 1024 * 1024); // 6MB
+    const res = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Oversized file')
+      .field('description', 'This should fail')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .attach('images', largeBuffer, 'large.jpg')
+      .expect(400);
+
+    expect(res.body.message).toContain('large.jpg');
   });
 
   it('GET /reports returns all reports', async () => {
@@ -494,6 +589,15 @@ describe('AppController (e2e)', () => {
 
     expect(res.body.success).toBe(true);
     expect(res.body.data).toBeDefined();
+  });
+
+  it('GET /reports/:id with non-existent ID returns 404', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/non-existent-id')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(404);
+
+    expect(res.body.message).toContain('non-existent-id');
   });
 
   it('PATCH /reports/:id updates a report', async () => {
