@@ -4,18 +4,12 @@ import {
   Post,
   Body,
   UseGuards,
-  HttpCode,
-  HttpStatus,
   Param,
   Delete,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiCookieAuth,
-  ApiBody,
-} from '@nestjs/swagger';
+import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -23,7 +17,10 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import {
   CreateMunicipalityUserDto,
   UpdateMunicipalityUserDto,
-} from '@repo/api';
+  MunicipalityUserResponseDto,
+  MunicipalityUsersResponseDto,
+  MunicipalityUserIdResponseDto,
+} from '../../common/dto/municipality-user.dto';
 
 @ApiTags('Users')
 @Controller('users')
@@ -32,334 +29,88 @@ import {
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  /**
+   * Retrieves a list of all users with municipality roles. (Admin only)
+   *
+   *
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Insufficient permissions (admin role required)
+   *
+   */
   @Get('municipality')
   @Roles('admin')
-  @ApiOperation({
-    summary: 'Get all municipality users (Admin only)',
-    description: `Returns a list of all users with municipality roles.
-      **Access:** Requires admin role.`,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'List of municipality users retrieved successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing session',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'No session token',
-        error: 'Unauthorized',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Insufficient permissions (admin role required)',
-    schema: {
-      example: {
-        statusCode: 403,
-        message: 'Insufficient permissions',
-        error: 'Forbidden',
-      },
-    },
-  })
-  async getMunicipalityUsers() {
+  async getMunicipalityUsers(): Promise<MunicipalityUsersResponseDto> {
     const users = await this.usersService.findMunicipalityUsers();
     return { success: true, data: users };
   }
 
+  /**
+   * Retrieves a municipality user by ID. (Admin only)
+   *
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Insufficient permissions (admin role required)
+   * @throws {404} Not Found - Municipality user with specified ID does not exist
+   */
   @Get('municipality/user/:id')
   @Roles('admin')
-  @ApiOperation({
-    summary: 'Get municipality user by ID (Admin only)',
-    description: `Returns the municipality user with its role.
-      **Access:** Requires admin role.`,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Municipality user retrieved successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing session',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'No session token',
-        error: 'Unauthorized',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Insufficient permissions (admin role required)',
-    schema: {
-      example: {
-        statusCode: 403,
-        message: 'Insufficient permissions',
-        error: 'Forbidden',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description:
-      'Not Found - Municipality user with specified ID does not exist',
-    schema: {
-      example: {
-        statusCode: 404,
-        message: 'Municipality user not found',
-        error: 'Not Found',
-      },
-    },
-  })
-  async getMunicipalityUserById(@Param('id') id: string) {
-    const users = await this.usersService.findMunicipalityUserById(id);
-    return { success: true, data: users };
+  async getMunicipalityUserById(
+    @Param('id') id: string,
+  ): Promise<MunicipalityUserResponseDto> {
+    const user = await this.usersService.findMunicipalityUserById(id);
+    return { success: true, data: user };
   }
 
+  /**
+   * Creates a new municipality user. (Admin only)
+   *
+   * @throws {400} Validation error - Invalid input data
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Insufficient permissions (admin role required)
+   * @throws {404} Not Found - Specified role does not exist
+   * @throws {409} Conflict - User with this username/email already exists
+   */
   @Post('municipality')
   @Roles('admin')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: 'Create municipality user (Admin only)',
-    description: `Creates a new user account with a municipality role
-                  **Access:** Requires admin role`,
-  })
-  @ApiBody({
-    type: CreateMunicipalityUserDto,
-    examples: {
-      adminUser: {
-        summary: 'Create admin user',
-        value: {
-          email: 'admin@municipality.gov',
-          username: 'admin_user',
-          firstName: 'Admin',
-          lastName: 'User',
-          password: 'SecureAdminPass123',
-          role: 'admin',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Municipality user created successfully',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Validation error - Invalid input data',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: [
-          'Invalid email format',
-          'Role must be admin',
-          'Password must be at least 6 characters',
-        ],
-        error: 'Bad Request',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing session',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Insufficient permissions (admin role required)',
-    schema: {
-      example: {
-        statusCode: 403,
-        message: 'Insufficient permissions',
-        error: 'Forbidden',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Not Found - Specified role does not exist',
-    schema: {
-      example: {
-        statusCode: 404,
-        message: 'Role not found',
-        error: 'Not Found',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'Conflict - User with this username/email already exists',
-    schema: {
-      example: {
-        statusCode: 409,
-        message: 'User with this username/email already exists',
-        error: 'Conflict',
-      },
-    },
-  })
-  async createMunicipalityUser(@Body() dto: CreateMunicipalityUserDto) {
+  async createMunicipalityUser(
+    @Body() dto: CreateMunicipalityUserDto,
+  ): Promise<MunicipalityUserResponseDto> {
     const user = await this.usersService.createMunicipalityUser(dto);
     return { success: true, data: user };
   }
 
+  /**
+   * Deletes a municipality user by ID. (Admin only)
+   *
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Insufficient permissions (admin role required)
+   * @throws {404} Not Found - Municipality user with specified ID does not exist
+   */
   @Delete('municipality/user/:id')
   @Roles('admin')
-  @ApiOperation({
-    summary: 'Delete municipality user by ID (Admin only)',
-    description: `Deletes the municipality user with the specified ID.
-      **Access:** Requires admin role.`,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Municipality user deleted successfully',
-    schema: {
-      example: {
-        success: true,
-        data: {
-          id: '123',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing session',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'No session token',
-        error: 'Unauthorized',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Insufficient permissions (admin role required)',
-    schema: {
-      example: {
-        statusCode: 403,
-        message: 'Insufficient permissions',
-        error: 'Forbidden',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description:
-      'Not Found - Municipality user with specified ID does not exist',
-    schema: {
-      example: {
-        statusCode: 404,
-        message: 'Municipality user not found',
-        error: 'Not Found',
-      },
-    },
-  })
-  async deleteMunicipalityUserById(@Param('id') id: string) {
+  async deleteMunicipalityUserById(
+    @Param('id') id: string,
+  ): Promise<MunicipalityUserIdResponseDto> {
     await this.usersService.deleteMunicipalityUserById(id);
     return { success: true, data: { id } };
   }
 
+  /**
+   * Updates a municipality user by ID. (Admin only)
+   *
+   * @throws {400} Validation error - Invalid input data
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Insufficient permissions (admin role required)
+   * @throws {404} Not Found - User with specified ID does not exist
+   * @throws {409} Conflict - username already in use by another user
+   */
   @Post('municipality/user/:id')
-  @Roles('admin')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Update municipality user by ID (Admin only)',
-    description: `Updates the municipality user with the specified ID.
-      **Access:** Requires admin role.`,
-  })
-  @ApiBody({
-    type: UpdateMunicipalityUserDto,
-    examples: {
-      updateUser: {
-        summary: 'Update user information',
-        value: {
-          email: 'updated@municipality.gov',
-          username: 'updated_user',
-          firstName: 'Updated',
-          lastName: 'Name',
-          role: 'municipal_administrator',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Municipality user updated successfully',
-    schema: {
-      example: {
-        success: true,
-        data: {
-          id: '123',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Validation error - Invalid input data',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: ['Invalid email format', 'Role must be a valid role name'],
-        error: 'Bad Request',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing session',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'No session token',
-        error: 'Unauthorized',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Insufficient permissions (admin role required)',
-    schema: {
-      example: {
-        statusCode: 403,
-        message: 'Insufficient permissions',
-        error: 'Forbidden',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Not Found - User with specified ID does not exist',
-    schema: {
-      example: {
-        statusCode: 404,
-        message: 'User not found',
-        error: 'Not Found',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'Conflict - username already in use by another user',
-    schema: {
-      example: {
-        statusCode: 409,
-        message: 'Username already in use',
-        error: 'Conflict',
-      },
-    },
-  })
-  // params and body as requested
+  @Roles('admin')
   async updateMunicipalityUserById(
     @Param('id') id: string,
     @Body() dto: UpdateMunicipalityUserDto,
-  ) {
+  ): Promise<MunicipalityUserIdResponseDto> {
     await this.usersService.updateMunicipalityUserById(id, dto);
-    // returns only Id of the updated user
     return { success: true, data: { id } };
   }
 }

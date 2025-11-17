@@ -1,7 +1,11 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, Account, RegisterDto, Session, Role } from '@repo/api';
+import { User } from '../../common/entities/user.entity';
+import { Account } from '../../common/entities/account.entity';
+import { Session } from '../../common/entities/session.entity';
+import { Role } from '../../common/entities/role.entity';
+import { RegisterDto } from '../../common/dto/auth.dto';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { ConfigService } from '@nestjs/config';

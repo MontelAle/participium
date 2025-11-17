@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from './providers/database/database.module';
+import { MinioModule } from './providers/minio/minio.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { UsersModule } from './modules/users/users.module';
@@ -15,6 +16,7 @@ import appConfig from './config/app.config';
       load: [appConfig],
     }),
     DatabaseModule,
+    MinioModule,
     AuthModule,
     RolesModule,
     UsersModule,

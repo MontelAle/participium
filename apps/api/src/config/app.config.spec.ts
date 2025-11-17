@@ -40,6 +40,14 @@ describe('appConfig', () => {
           password: 'password',
           database: 'participium',
         },
+        minio: {
+          endPoint: 'localhost',
+          port: 9000,
+          useSSL: false,
+          accessKey: 'minioadmin',
+          secretKey: 'minioadmin',
+          bucketName: 'participium-reports',
+        },
       });
     });
   });

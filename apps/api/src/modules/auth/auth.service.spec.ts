@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { User, Account, RegisterDto, Session, Role } from '@repo/api';
+import { User } from '../../common/entities/user.entity';
+import { Account } from '../../common/entities/account.entity';
+import { Session } from '../../common/entities/session.entity';
+import { Role } from '../../common/entities/role.entity';
+import { RegisterDto } from '../../common/dto/auth.dto';
 import { ConfigService } from '@nestjs/config';
 import bcrypt from 'bcrypt';
 import { createHash } from 'crypto';
@@ -294,7 +298,7 @@ describe('AuthService', () => {
         lastName: 'User',
         password: 'password',
       };
-    
+
       const mockRole = { id: 'role-id', name: 'user' };
       const existingUser = {
         id: 'existing-user-id',
@@ -304,7 +308,7 @@ describe('AuthService', () => {
         lastName: 'User',
         role: mockRole,
       };
-    
+
       const newAccount = {
         id: 'mocked-id',
         accountId: dto.username,
@@ -313,12 +317,12 @@ describe('AuthService', () => {
         password: 'hashed',
         user: existingUser,
       };
-    
+
       (jest.spyOn(bcrypt, 'hash') as jest.Mock).mockResolvedValue('hashed');
-    
+
       const accountCreateSpy = jest.fn().mockReturnValue(newAccount);
       const accountSaveSpy = jest.fn().mockResolvedValue(newAccount);
-    
+
       const mockManager = {
         getRepository: jest.fn((entity) => {
           if (entity === Role) {
@@ -340,13 +344,13 @@ describe('AuthService', () => {
           }
         }),
       };
-    
+
       userRepository.manager.transaction.mockImplementation(async (cb: any) => {
         return cb(mockManager);
       });
-    
+
       const result = await service.register(dto);
-    
+
       expect(result).toEqual({ user: existingUser });
       expect(accountCreateSpy).toHaveBeenCalledWith({
         id: 'mocked-id',
