@@ -48,8 +48,8 @@ export class Report implements ReportInterface {
   @Column('varchar', { nullable: true })
   address?: string;
 
-  @Column('varchar', { array: true, nullable: true })
-  images?: string[];
+  @Column('varchar', { array: true })
+  images: string[];
 
   @Column('varchar')
   userId: string;
