@@ -63,10 +63,10 @@ export class ReportsService {
     const { longitude, latitude, ...reportData } = createReportDto;
 
     // Upload images to MinIO (always required, validated in controller)
+    const reportId = nanoid();
     const imageUrls: string[] = [];
     try {
       for (const image of images) {
-        const reportId = nanoid();
         const timestamp = Date.now();
         const fileName = `reports/${reportId}/${timestamp}-${image.originalname}`;
         
