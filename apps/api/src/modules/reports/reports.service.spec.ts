@@ -1,7 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportsService } from './reports.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Report, CreateReportDto, UpdateReportDto, FilterReportsDto, ReportStatus } from '@repo/api';
+import { Report, ReportStatus } from '../../common/entities/report.entity';
+import {
+  CreateReportDto,
+  UpdateReportDto,
+  FilterReportsDto,
+} from '../../common/dto/report.dto';
 import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 
@@ -78,8 +83,12 @@ describe('ReportsService', () => {
         userId: 'user-123',
       };
 
-      reportRepository.create.mockReturnValue(expectedReport as unknown as Report);
-      reportRepository.save.mockResolvedValue(expectedReport as unknown as Report);
+      reportRepository.create.mockReturnValue(
+        expectedReport as unknown as Report,
+      );
+      reportRepository.save.mockResolvedValue(
+        expectedReport as unknown as Report,
+      );
 
       const result = await service.create(createDto, 'user-123');
 
@@ -116,8 +125,12 @@ describe('ReportsService', () => {
         userId: 'user-123',
       };
 
-      reportRepository.create.mockReturnValue(expectedReport as unknown as Report);
-      reportRepository.save.mockResolvedValue(expectedReport as unknown as Report);
+      reportRepository.create.mockReturnValue(
+        expectedReport as unknown as Report,
+      );
+      reportRepository.save.mockResolvedValue(
+        expectedReport as unknown as Report,
+      );
 
       const result = await service.create(createDto, 'user-123');
 
@@ -136,7 +149,7 @@ describe('ReportsService', () => {
   describe('findAll', () => {
     it('should return all reports without filters', async () => {
       const mockReports = [mockReport, { ...mockReport, id: 'report-2' }];
-      
+
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
@@ -144,14 +157,27 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.findAll();
 
-      expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith('report');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('report.user', 'user');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('report.category', 'category');
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('report.createdAt', 'DESC');
+      expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'report',
+      );
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'report.user',
+        'user',
+      );
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'report.category',
+        'category',
+      );
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'report.createdAt',
+        'DESC',
+      );
       expect(result).toEqual(mockReports);
     });
 
@@ -166,14 +192,21 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.findAll(filters);
 
-      expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith('report');
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('report.status = :status', {
-        status: ReportStatus.PENDING,
-      });
+      expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'report',
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.status = :status',
+        {
+          status: ReportStatus.PENDING,
+        },
+      );
       expect(result).toEqual(mockReports);
     });
 
@@ -189,13 +222,18 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.findAll(filters);
 
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('report.categoryId = :categoryId', {
-        categoryId: 'cat-123',
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.categoryId = :categoryId',
+        {
+          categoryId: 'cat-123',
+        },
+      );
       expect(result).toEqual(mockReports);
     });
 
@@ -211,13 +249,18 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.findAll(filters);
 
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('report.userId = :userId', {
-        userId: 'user-123',
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.userId = :userId',
+        {
+          userId: 'user-123',
+        },
+      );
       expect(result).toEqual(mockReports);
     });
 
@@ -238,7 +281,9 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.findAll(filters);
 
@@ -273,7 +318,9 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.findAll(filters);
 
@@ -307,26 +354,39 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.findAll(filters);
 
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('report.status = :status', {
-        status: ReportStatus.PENDING,
-      });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('report.categoryId = :categoryId', {
-        categoryId: 'cat-123',
-      });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('report.userId = :userId', {
-        userId: 'user-123',
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.status = :status',
+        {
+          status: ReportStatus.PENDING,
+        },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.categoryId = :categoryId',
+        {
+          categoryId: 'cat-123',
+        },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.userId = :userId',
+        {
+          userId: 'user-123',
+        },
+      );
       expect(result).toEqual(mockReports);
     });
   });
 
   describe('findOne', () => {
     it('should return a report by id', async () => {
-      reportRepository.findOne.mockResolvedValue(mockReport as unknown as Report);
+      reportRepository.findOne.mockResolvedValue(
+        mockReport as unknown as Report,
+      );
 
       const result = await service.findOne('mocked-id');
 
@@ -340,7 +400,9 @@ describe('ReportsService', () => {
     it('should throw NotFoundException if report not found', async () => {
       reportRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('non-existent-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('non-existent-id')).rejects.toThrow(
+        NotFoundException,
+      );
       await expect(service.findOne('non-existent-id')).rejects.toThrow(
         'Report with ID non-existent-id not found',
       );
@@ -366,11 +428,15 @@ describe('ReportsService', () => {
         }),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.findNearby(7.686864, 45.070312, 5000);
 
-      expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith('report');
+      expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'report',
+      );
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         `ST_DWithin(
           report.location::geography,
@@ -405,7 +471,9 @@ describe('ReportsService', () => {
         }),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       const result = await service.findNearby(0, 0, 1000);
 
@@ -422,8 +490,12 @@ describe('ReportsService', () => {
 
       const updatedReport = { ...mockReport, ...updateDto };
 
-      reportRepository.findOne.mockResolvedValue(mockReport as unknown as Report);
-      reportRepository.save.mockResolvedValue(updatedReport as unknown as Report);
+      reportRepository.findOne.mockResolvedValue(
+        mockReport as unknown as Report,
+      );
+      reportRepository.save.mockResolvedValue(
+        updatedReport as unknown as Report,
+      );
 
       const result = await service.update('mocked-id', updateDto);
 
@@ -474,7 +546,9 @@ describe('ReportsService', () => {
     it('should throw NotFoundException if report not found', async () => {
       reportRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update('non-existent-id', {})).rejects.toThrow(NotFoundException);
+      await expect(service.update('non-existent-id', {})).rejects.toThrow(
+        NotFoundException,
+      );
       await expect(service.update('non-existent-id', {})).rejects.toThrow(
         'Report with ID non-existent-id not found',
       );
@@ -483,8 +557,12 @@ describe('ReportsService', () => {
 
   describe('remove', () => {
     it('should delete a report', async () => {
-      reportRepository.findOne.mockResolvedValue(mockReport as unknown as Report);
-      reportRepository.remove.mockResolvedValue(mockReport as unknown as Report);
+      reportRepository.findOne.mockResolvedValue(
+        mockReport as unknown as Report,
+      );
+      reportRepository.remove.mockResolvedValue(
+        mockReport as unknown as Report,
+      );
 
       await service.remove('mocked-id');
 
@@ -498,7 +576,9 @@ describe('ReportsService', () => {
     it('should throw NotFoundException if report not found', async () => {
       reportRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.remove('non-existent-id')).rejects.toThrow(NotFoundException);
+      await expect(service.remove('non-existent-id')).rejects.toThrow(
+        NotFoundException,
+      );
       await expect(service.remove('non-existent-id')).rejects.toThrow(
         'Report with ID non-existent-id not found',
       );

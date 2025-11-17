@@ -2,11 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Point, Repository } from 'typeorm';
 import {
-  Report,
   CreateReportDto,
   UpdateReportDto,
   FilterReportsDto,
-} from '@repo/api';
+} from '../../common/dto/report.dto';
+import { Report } from '../../common/entities/report.entity';
 import { nanoid } from 'nanoid';
 
 @Injectable()

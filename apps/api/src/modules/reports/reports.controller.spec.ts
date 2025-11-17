@@ -1,8 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
-import { CreateReportDto, UpdateReportDto, FilterReportsDto, Report, ReportStatus } from '@repo/api';
 import { NotFoundException } from '@nestjs/common';
+import {
+  CreateReportDto,
+  UpdateReportDto,
+  FilterReportsDto,
+} from 'src/common/dto/report.dto';
+import { Report, ReportStatus } from '../../common/entities/report.entity';
 
 // Mock "nanoid" per evitare problemi ESM
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
@@ -202,7 +207,11 @@ describe('ReportsController', () => {
 
       const result = await controller.findNearby('7.686864', '45.070312');
 
-      expect(reportsService.findNearby).toHaveBeenCalledWith(7.686864, 45.070312, 5000);
+      expect(reportsService.findNearby).toHaveBeenCalledWith(
+        7.686864,
+        45.070312,
+        5000,
+      );
       expect(result).toEqual({ success: true, data: mockNearbyReports });
     });
 
@@ -211,9 +220,17 @@ describe('ReportsController', () => {
 
       reportsService.findNearby.mockResolvedValue(mockNearbyReports as any);
 
-      const result = await controller.findNearby('7.686864', '45.070312', '1000');
+      const result = await controller.findNearby(
+        '7.686864',
+        '45.070312',
+        '1000',
+      );
 
-      expect(reportsService.findNearby).toHaveBeenCalledWith(7.686864, 45.070312, 1000);
+      expect(reportsService.findNearby).toHaveBeenCalledWith(
+        7.686864,
+        45.070312,
+        1000,
+      );
       expect(result).toEqual({ success: true, data: mockNearbyReports });
     });
 
@@ -242,7 +259,9 @@ describe('ReportsController', () => {
         new NotFoundException('Report with ID non-existent not found'),
       );
 
-      await expect(controller.findOne('non-existent')).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(reportsService.findOne).toHaveBeenCalledWith('non-existent');
     });
   });
@@ -259,7 +278,10 @@ describe('ReportsController', () => {
 
       const result = await controller.update('report-123', updateDto);
 
-      expect(reportsService.update).toHaveBeenCalledWith('report-123', updateDto);
+      expect(reportsService.update).toHaveBeenCalledWith(
+        'report-123',
+        updateDto,
+      );
       expect(result).toEqual({ success: true, data: updatedReport });
     });
 
@@ -279,7 +301,10 @@ describe('ReportsController', () => {
 
       const result = await controller.update('report-123', updateDto);
 
-      expect(reportsService.update).toHaveBeenCalledWith('report-123', updateDto);
+      expect(reportsService.update).toHaveBeenCalledWith(
+        'report-123',
+        updateDto,
+      );
       expect(result).toEqual({ success: true, data: updatedReport });
     });
 
@@ -290,8 +315,13 @@ describe('ReportsController', () => {
         new NotFoundException('Report with ID non-existent not found'),
       );
 
-      await expect(controller.update('non-existent', updateDto)).rejects.toThrow(NotFoundException);
-      expect(reportsService.update).toHaveBeenCalledWith('non-existent', updateDto);
+      await expect(
+        controller.update('non-existent', updateDto),
+      ).rejects.toThrow(NotFoundException);
+      expect(reportsService.update).toHaveBeenCalledWith(
+        'non-existent',
+        updateDto,
+      );
     });
   });
 
@@ -309,7 +339,9 @@ describe('ReportsController', () => {
         new NotFoundException('Report with ID non-existent not found'),
       );
 
-      await expect(controller.remove('non-existent')).rejects.toThrow(NotFoundException);
+      await expect(controller.remove('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(reportsService.remove).toHaveBeenCalledWith('non-existent');
     });
   });
