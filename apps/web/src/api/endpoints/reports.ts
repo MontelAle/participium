@@ -10,15 +10,42 @@ export async function getReports(): Promise<Report[]> {
   return response.data;
 }
 
-export async function postReport(
-  reportData: Partial<CreateReportDto>,
-): Promise<Report> {
-  const response = await apiFetch<ReportResponseDto>('/reports/', {
-    method: 'POST',
-    body: JSON.stringify(reportData),
-    headers: {
-      'Content-Type': 'application/json',
-    },
+
+export async function postReportWithImages(reportData: {
+  title?: string;
+  description?: string;
+  longitude?: number;
+  latitude?: number;
+  address?: string;
+  categoryId?: string;
+  photos: File[];
+}) {
+  const formData = new FormData();
+
+  if (reportData.title) formData.append('title', reportData.title);
+  if (reportData.description) formData.append('description', reportData.description);
+  if (reportData.longitude !== undefined) formData.append('longitude', String(reportData.longitude));
+  if (reportData.latitude !== undefined) formData.append('latitude', String(reportData.latitude));
+  if (reportData.address) formData.append('address', reportData.address);
+  if (reportData.categoryId) formData.append('categoryId', reportData.categoryId);
+
+  reportData.photos.forEach((photo) => {
+    formData.append('images', photo); // 'images' = FilesInterceptor
   });
-  return response.data;
+
+  const res = await fetch('http://localhost:5000/api/reports/', {
+    method: 'POST',
+    body: formData,
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Network error' }));
+    const errorMessage = Array.isArray(error.message)
+      ? error.message[0]
+      : error.message || `Request failed with status ${res.status}`;
+    throw new Error(errorMessage);
+  }
+
+  return res.json();
 }

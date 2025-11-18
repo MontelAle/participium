@@ -12,11 +12,14 @@ import {
 } from "@/components/ui/select";
 import { useCategories } from "@/hooks/use-categories";
 import { PhotoUploader } from "./photoUploader";
+import { useCreateReport } from "@/hooks/use-reports";
+import { toast } from "sonner";
 
 export function ReportForm() {
   const navigate = useNavigate();
   const location = useLocation();
   const { data: categories = [] } = useCategories();
+  const createReportMutation = useCreateReport();
 
   const [form, setForm] = useState(() => ({
     latitude: location.state?.latitude || "",
@@ -53,18 +56,43 @@ export function ReportForm() {
     setForm({ ...form, photos });
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    console.log("Submit is disabled for now", form);
-    //integrare la logica per creare il report 
-  };
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+
+  if (!form.categoryId) {
+    toast.warning("Please select a category.");
+    return;
+  }
+
+  if (form.photos.length < 1 || form.photos.length > 3) {
+    toast.warning("You must upload between 1 and 3 images.");
+    return;
+  }
+
+  try {
+    await createReportMutation.mutateAsync({
+      ...form,
+      photos: form.photos,
+    });
+
+    toast.success("Report created successfully!");
+    navigate(-1);
+
+  } catch (error) {
+    toast.error("There was an error creating the report.");
+    console.error(error);
+  }
+};
+
+  
+
 
   return (
     <form
       onSubmit={handleSubmit}
       className="flex flex-col gap-4 max-w-md w-full mx-auto"
     >
-      
+
       {/* Latitude */}
       <Field>
         <FieldLabel>Latitude</FieldLabel>
@@ -154,7 +182,7 @@ export function ReportForm() {
 
       {/* Photos */}
       <Field>
-        <FieldLabel>Photo (1-3)</FieldLabel>
+        <FieldLabel>Photo (JPEG,PNG,WebP)</FieldLabel>
         <PhotoUploader
           photos={form.photos}
           onChange={handlePhotosChange}
