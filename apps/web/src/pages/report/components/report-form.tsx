@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
@@ -15,14 +15,29 @@ import { PhotoUploader } from "./photoUploader";
 
 export function ReportForm() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: categories = [] } = useCategories();
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => ({
+    latitude: location.state?.latitude || "",
+    longitude: location.state?.longitude || "",
+    address: location.state?.address || "",
     title: "",
     description: "",
     categoryId: "",
     photos: [] as File[],
-  });
+  }));
+
+  useEffect(() => {
+    if (location.state?.latitude) {
+      setForm((prev) => ({
+        ...prev,
+        latitude: location.state.latitude,
+        longitude: location.state.longitude,
+        address: location.state.address,
+      }));
+    }
+  }, [location.state]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -41,11 +56,53 @@ export function ReportForm() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("Submit is disabled for now", form);
+    //integrare la logica per creare il report 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md w-full mx-auto">
-      
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 max-w-md w-full mx-auto"
+    >
+      {/* Latitude */}
+      <Field>
+        <FieldLabel>Latitude</FieldLabel>
+        <input
+          name="latitude"
+          placeholder="Enter latitude"
+          required
+          value={form.latitude}
+          onChange={handleChange}
+          className="w-full border rounded-md p-3 text-base focus-visible:outline-none"
+        />
+      </Field>
+
+      {/* Longitude */}
+      <Field>
+        <FieldLabel>Longitude</FieldLabel>
+        <input
+          name="longitude"
+          placeholder="Enter longitude"
+          required
+          value={form.longitude}
+          onChange={handleChange}
+          className="w-full border rounded-md p-3 text-base focus-visible:outline-none"
+        />
+      </Field>
+
+      {/* Address */}
+      <Field>
+        <FieldLabel>Address</FieldLabel>
+        <input
+          name="address"
+          placeholder="Enter address"
+          required
+          value={form.address}
+          onChange={handleChange}
+          className="w-full border rounded-md p-3 text-base focus-visible:outline-none"
+        />
+      </Field>
+
       {/* Title */}
       <Field>
         <FieldLabel>Title</FieldLabel>
@@ -85,9 +142,7 @@ export function ReportForm() {
                 {cat.name
                   .replace(/_/g, " ")
                   .split(" ")
-                  .map(
-                    (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
-                  )
+                  .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
                   .join(" ")}
               </SelectItem>
             ))}
@@ -111,9 +166,7 @@ export function ReportForm() {
           Cancel
         </Button>
 
-        <Button type="submit">
-          Submit
-        </Button>
+        <Button type="submit">Submit</Button>
       </div>
     </form>
   );

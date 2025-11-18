@@ -42,7 +42,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   } = useAuth();
 
   const { locationData } = useActiveReportStore();
-  const { mutateAsync: createReport } = useCreateReport();
+  //const { mutateAsync: createReport } = useCreateReport();
 
   const getUserInitials = () => {
     if (!user) return '?';
@@ -73,26 +73,22 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
     menuItems.push(...adminMenuItems);
   }
 
-  const handleAddReport = async () => {
-    if (!locationData) {
-      toast.warning('Select a location on the map before creating a report.');
-      return;
-    }
+const handleAddReport = () => {
+  console.log('locationData:', locationData);
+  if (!locationData) {
+    toast.warning('Select a location on the map before creating a report.');
+    return;
+  }
 
-    try {
-      await createReport({
-        latitude: locationData.latitude,
-        longitude: locationData.longitude,
-        address: locationData.address,
-      });
+  navigate('/report', {
+    state: {
+      latitude: locationData.latitude,
+      longitude: locationData.longitude,
+      address: locationData.address,
+    },
+  });
+};
 
-      toast.success('Report created successfully!');
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to create report';
-      toast.error(message);
-    }
-  };
 
   const handleLogout = async () => {
     await logout();
