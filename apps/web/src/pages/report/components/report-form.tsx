@@ -59,6 +59,16 @@ export function ReportForm() {
 const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
 
+  if (!form.title) {
+    toast.warning("Please insert a title.");
+    return;
+  }
+
+  if (!form.description) {
+    toast.warning("Please write a description.");
+    return;
+  }
+
   if (!form.categoryId) {
     toast.warning("Please select a category.");
     return;
@@ -139,7 +149,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         <input
           name="title"
           placeholder="Enter title"
-          required
+          //required
           value={form.title}
           onChange={handleChange}
           className="w-full border rounded-md p-3 text-base focus-visible:outline-none"
@@ -152,7 +162,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         <textarea
           name="description"
           placeholder="Enter description"
-          required
+          //required
           value={form.description}
           onChange={handleChange}
           className="w-full border rounded-md p-3 min-h-[120px] resize-none text-base focus-visible:outline-none"

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { InputGroup, InputGroupInput, InputGroupAddon } from "@/components/ui/input-group";
 import { FileIcon } from "lucide-react";
+import { toast } from "sonner";
 
 interface PhotoUploaderProps {
   photos: File[];
@@ -9,10 +10,24 @@ interface PhotoUploaderProps {
   maxPhotos?: number;
 }
 
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 export function PhotoUploader({ photos, onChange, maxPhotos = 3 }: PhotoUploaderProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const filesArray = Array.from(e.target.files);
+
+    const invalidFiles = filesArray.filter(
+      (file) => !ACCEPTED_TYPES.includes(file.type)
+    );
+
+    if (invalidFiles.length > 0) {
+      toast.error(
+        "Invalid file format. Allowed formats are: JPEG (.jpg, .jpeg), PNG, WebP."
+      );
+      return;
+    }
+
     const newPhotos = [...photos, ...filesArray].slice(0, maxPhotos);
     onChange(newPhotos);
   };
@@ -43,7 +58,7 @@ export function PhotoUploader({ photos, onChange, maxPhotos = 3 }: PhotoUploader
 
       {photos.length < maxPhotos && (
         <InputGroup>
-            <InputGroupInput type="file" name="photo" onChange={handleFileChange} />
+            <InputGroupInput type="file" name="photo"  accept=".jpg,.jpeg,.png,.webp" onChange={handleFileChange} />
         </InputGroup>
       )}
     </div>
