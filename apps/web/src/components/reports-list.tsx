@@ -25,8 +25,32 @@ export function ReportsList() {
             onClick={() => handleReportClick(report)}
           >
             <p className="font-medium">
-              {report.location.coordinates.join(' - ')}
+              {report.title}
             </p>
+            <p className="text-sm text-muted-foreground">
+              Category : {report.category?.name}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Address : {report.address ?? ''}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Coordinates : {report.location.coordinates.join(' - ')}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Description : {report.description}
+            </p>
+            {report.images && report.images.length > 0 && (
+              <div className="mt-2 flex gap-2 overflow-x-auto">
+                {report.images.map((img, index) => (
+                  <img
+                    key={index}
+                    src={img} 
+                    alt={`Immagine del report ${report.title}`}
+                    className="h-20 w-20 rounded object-cover flex-shrink-0"
+                  />
+                ))}
+              </div>
+            )}
           </button>
         ))}
       </div>
