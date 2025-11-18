@@ -8,6 +8,10 @@ import { nanoid } from 'nanoid';
 import bcrypt from 'bcrypt';
 import { faker, fi } from '@faker-js/faker';
 
+//
+import { runCategorySeed } from './categories.seed';
+//
+
 async function runSeed() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const dataSource = app.get(DataSource);
@@ -176,5 +180,11 @@ async function runSeed() {
 
 runSeed().catch((err) => {
   console.error('❌ Error seeding database', err);
+  process.exit(1);
+});
+
+/////////////////////////////////////////////////
+runCategorySeed().catch((err) => {
+  console.error('❌ Error seeding database categories', err);
   process.exit(1);
 });

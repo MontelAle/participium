@@ -1,10 +1,11 @@
 import { apiFetch } from '../client';
 import type { Category } from '@repo/api';
-import { CategoryResponse } from '@/types/categoty';
+import type { CategoriesResponseDto } from '@repo/api';
 
 export async function getCategories(): Promise<Category[]> {
-  const response = await apiFetch<CategoryResponse>('/categories/', {
+  const response = await apiFetch<CategoriesResponseDto>('/categories/', {
     method: 'GET',
   });
   return response.data;
 }
+
