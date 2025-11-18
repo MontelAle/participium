@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {
   ChevronRight,
   Home,
@@ -7,6 +8,7 @@ import {
   ChevronsUpDown,
   Map,
   Plus,
+  Menu,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -28,8 +30,13 @@ import { useActiveReportStore } from '@/store/activeReportStore';
 import { useCreateReport } from '@/hooks/use-reports';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
-export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
+function SidebarContent({
+  isOpen,
+  onToggle,
+  onClose,
+}: SidebarProps & { onClose?: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
   const {
@@ -67,8 +74,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
     },
   ];
 
-  const menuItems = municipalMenuItems;
-
+  const menuItems = [...municipalMenuItems];
   if (isAdminUser) {
     menuItems.push(...adminMenuItems);
   }
@@ -87,6 +93,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
       });
 
       toast.success('Report created successfully!');
+      if (onClose) onClose();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Failed to create report';
@@ -97,19 +104,24 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
   const handleLogout = async () => {
     await logout();
     navigate('/map');
+    if (onClose) onClose();
   };
 
   return (
     <aside
       className={cn(
         'fixed left-0 top-0 z-40 h-screen border-r bg-sidebar transition-all duration-300',
-        isOpen ? 'w-72' : 'w-20',
+        isOpen ? 'w-72' : 'w-16',
       )}
     >
       <div className="flex h-full flex-col">
         <div className="flex h-16 items-center justify-between border-b px-4">
           {isOpen ? (
-            <Link to="/" className="flex items-center gap-2 font-semibold">
+            <Link
+              to="/"
+              className="flex items-center gap-2 font-semibold"
+              onClick={onClose}
+            >
               <div className="flex size-12 items-center justify-center rounded-lg bg-primary overflow-hidden">
                 <img
                   src="/logo.png"
@@ -119,9 +131,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
               </div>
               <span>Participium</span>
             </Link>
-          ) : (
-            <></>
-          )}
+          ) : null}
           <Button
             variant="ghost"
             size="icon-sm"
@@ -144,7 +154,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href;
                 return (
-                  <Link key={item.href} to={item.href}>
+                  <Link key={item.href} to={item.href} onClick={onClose}>
                     <Button
                       variant={isActive ? 'secondary' : 'ghost'}
                       className={cn(
@@ -255,7 +265,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
             </DropdownMenu>
           ) : (
             isOpen && (
-              <Link to="/auth/login">
+              <Link to="/auth/login" onClick={onClose}>
                 <Button className="w-full">Login / Register</Button>
               </Link>
             )
@@ -264,4 +274,49 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
       </div>
     </aside>
   );
+}
+
+// Mobile navbar component
+function MobileNavbar({ onOpen }: { onOpen: () => void }) {
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-sidebar border-b flex items-center px-4">
+      <Button variant="ghost" size="icon" onClick={onOpen}>
+        <Menu className="size-6" />
+      </Button>
+      <span className="ml-4 font-semibold text-lg">Participium</span>
+    </nav>
+  );
+}
+
+export function AppSidebar(props: SidebarProps) {
+  const isMobile = useIsMobile();
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  if (isMobile) {
+    return (
+      <>
+        <MobileNavbar onOpen={() => setMobileOpen(true)} />
+        {mobileOpen && (
+          <div
+            className="fixed inset-0 z-50 bg-black/40"
+            onClick={() => setMobileOpen(false)}
+          >
+            <div
+              className="fixed left-0 top-0 h-full z-50"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <SidebarContent
+                isOpen={true}
+                onToggle={() => setMobileOpen(false)}
+                onClose={() => setMobileOpen(false)}
+              />
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Desktop sidebar
+  return <SidebarContent {...props} />;
 }
