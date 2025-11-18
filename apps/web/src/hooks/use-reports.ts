@@ -9,8 +9,6 @@ export function useReports() {
   });
 }
 
-
-
 export function useCreateReport() {
   const queryClient = useQueryClient();
   return useMutation({

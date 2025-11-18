@@ -30,7 +30,7 @@ export async function postReportWithImages(reportData: {
   if (reportData.categoryId) formData.append('categoryId', reportData.categoryId);
 
   reportData.photos.forEach((photo) => {
-    formData.append('images', photo); // 'images' = FilesInterceptor
+    formData.append('images', photo); 
   });
 
   const res = await fetch('http://localhost:5000/api/reports/', {

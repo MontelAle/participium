@@ -28,7 +28,7 @@ export function ReportsList() {
               {report.title}
             </p>
             <p className="text-sm text-muted-foreground">
-              Category : {report.category?.name}
+              Category : {report.category.name}
             </p>
             <p className="text-sm text-muted-foreground">
               Address : {report.address ?? ''}
