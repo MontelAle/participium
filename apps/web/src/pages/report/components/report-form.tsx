@@ -64,6 +64,7 @@ export function ReportForm() {
       onSubmit={handleSubmit}
       className="flex flex-col gap-4 max-w-md w-full mx-auto"
     >
+      
       {/* Latitude */}
       <Field>
         <FieldLabel>Latitude</FieldLabel>
@@ -72,10 +73,10 @@ export function ReportForm() {
           placeholder="Enter latitude"
           required
           value={form.latitude}
-          onChange={handleChange}
-          className="w-full border rounded-md p-3 text-base focus-visible:outline-none"
+          readOnly   
+          className="w-full border rounded-md p-3 text-base focus-visible:outline-none bg-gray-100"
         />
-      </Field>
+        </Field>
 
       {/* Longitude */}
       <Field>
@@ -85,8 +86,8 @@ export function ReportForm() {
           placeholder="Enter longitude"
           required
           value={form.longitude}
-          onChange={handleChange}
-          className="w-full border rounded-md p-3 text-base focus-visible:outline-none"
+          readOnly
+          className="w-full border rounded-md p-3 text-base focus-visible:outline-none bg-gray-100"
         />
       </Field>
 
@@ -98,10 +99,11 @@ export function ReportForm() {
           placeholder="Enter address"
           required
           value={form.address}
-          onChange={handleChange}
-          className="w-full border rounded-md p-3 text-base focus-visible:outline-none"
+          readOnly
+          className="w-full border rounded-md p-3 text-base focus-visible:outline-none bg-gray-100"
         />
       </Field>
+
 
       {/* Title */}
       <Field>
