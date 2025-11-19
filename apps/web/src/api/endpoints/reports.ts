@@ -12,22 +12,22 @@ export async function getReports(): Promise<Report[]> {
 
 
 export async function postReportWithImages(reportData: {
-  title?: string;
-  description?: string;
-  longitude?: number;
-  latitude?: number;
+  title: string;
+  description: string;
+  longitude: number;
+  latitude: number;
   address?: string;
-  categoryId?: string;
+  categoryId: string;
   photos: File[];
 }) {
   const formData = new FormData();
 
-  if (reportData.title) formData.append('title', reportData.title);
-  if (reportData.description) formData.append('description', reportData.description);
-  if (reportData.longitude !== undefined) formData.append('longitude', String(reportData.longitude));
-  if (reportData.latitude !== undefined) formData.append('latitude', String(reportData.latitude));
-  if (reportData.address) formData.append('address', reportData.address);
-  if (reportData.categoryId) formData.append('categoryId', reportData.categoryId);
+formData.append('title', reportData.title);
+formData.append('description', reportData.description);
+formData.append('longitude', String(reportData.longitude));
+formData.append('latitude', String(reportData.latitude));
+if (reportData.address) formData.append('address', reportData.address);
+formData.append('categoryId', reportData.categoryId);
 
   reportData.photos.forEach((photo) => {
     formData.append('images', photo); 
