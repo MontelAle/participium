@@ -9,13 +9,13 @@ import { CategoriesResponseDto } from '../../common/dto/category.dto';
 
 @ApiTags('Categories')
 @Controller('categories')
-@UseGuards(SessionGuard /*, RolesGuard*/)
+@UseGuards(SessionGuard , RolesGuard)
 @ApiCookieAuth('session_token')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
-  //@Roles('user')
+  @Roles('officier', 'user') 
   async findAll(): Promise<CategoriesResponseDto> {
     const categories = await this.categoriesService.findAll();
     return { success: true, data: categories };
