@@ -2,6 +2,8 @@ import { apiFetch } from '../client';
 import type { Report } from '@repo/api';
 import type { ReportResponseDto, ReportsResponseDto } from '@repo/api';
 import { CreateReportDto } from '@repo/api';
+import { ReportData ,createReportFormData } from '@/types/report';
+
 
 export async function getReports(): Promise<Report[]> {
   const response = await apiFetch<ReportsResponseDto>('/reports/', {
@@ -10,28 +12,9 @@ export async function getReports(): Promise<Report[]> {
   return response.data;
 }
 
+export async function postReportWithImages(reportData: ReportData) {
 
-export async function postReportWithImages(reportData: {
-  title: string;
-  description: string;
-  longitude: number;
-  latitude: number;
-  address?: string;
-  categoryId: string;
-  photos: File[];
-}) {
-  const formData = new FormData();
-
-formData.append('title', reportData.title);
-formData.append('description', reportData.description);
-formData.append('longitude', String(reportData.longitude));
-formData.append('latitude', String(reportData.latitude));
-if (reportData.address) formData.append('address', reportData.address);
-formData.append('categoryId', reportData.categoryId);
-
-  reportData.photos.forEach((photo) => {
-    formData.append('images', photo); 
-  });
+  const formData = createReportFormData(reportData);
 
   const res = await fetch('http://localhost:5000/api/reports/', {
     method: 'POST',
