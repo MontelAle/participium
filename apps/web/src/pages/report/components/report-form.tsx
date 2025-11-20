@@ -94,8 +94,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   }
 };
 
-  
-
 
   return (
     <form
@@ -103,7 +101,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       className="flex flex-col gap-4 max-w-md w-full mx-auto"
     >
 
-      {/* Latitude */}
       <Field>
         <FieldLabel>Latitude</FieldLabel>
         <input
@@ -116,7 +113,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         />
         </Field>
 
-      {/* Longitude */}
       <Field>
         <FieldLabel>Longitude</FieldLabel>
         <input
@@ -128,8 +124,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
           className="w-full border rounded-md p-3 text-base focus-visible:outline-none bg-gray-100"
         />
       </Field>
-
-      {/* Address */}
       <Field>
         <FieldLabel>Address</FieldLabel>
         <input
@@ -142,34 +136,28 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         />
       </Field>
 
-
-      {/* Title */}
       <Field>
         <FieldLabel>Title</FieldLabel>
         <input
           name="title"
           placeholder="Enter title"
-          //required
           value={form.title}
           onChange={handleChange}
           className="w-full border rounded-md p-3 text-base focus-visible:outline-none"
         />
       </Field>
 
-      {/* Description */}
       <Field>
         <FieldLabel>Description</FieldLabel>
         <textarea
           name="description"
           placeholder="Enter description"
-          //required
           value={form.description}
           onChange={handleChange}
           className="w-full border rounded-md p-3 min-h-[120px] resize-none text-base focus-visible:outline-none"
         />
       </Field>
 
-      {/* Category */}
       <Field>
         <FieldLabel>Category</FieldLabel>
         <Select value={form.categoryId} onValueChange={handleCategoryChange}>
@@ -190,7 +178,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         </Select>
       </Field>
 
-      {/* Photos */}
       <Field>
         <FieldLabel>Photo (JPEG,PNG,WebP)</FieldLabel>
         <PhotoUploader
@@ -200,7 +187,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         />
       </Field>
 
-      {/* Buttons */}
       <div className="flex justify-end gap-2 mt-4">
         <Button type="button" variant="outline" onClick={() => navigate(-1)}>
           Cancel
