@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { User as UserInterface } from '@repo/api';
 import { Role } from './role.entity';
+import { Office } from './office.entity';
 
 @Entity('user')
 export class User implements UserInterface {
@@ -33,6 +34,13 @@ export class User implements UserInterface {
   @ManyToOne(() => Role, { nullable: false })
   @JoinColumn({ name: 'roleId' })
   role: Role;
+
+  @Column({ nullable: true })
+  officeId: string;
+
+  @ManyToOne(() => Office, { nullable: true })
+  @JoinColumn({ name: 'officeId' })
+  office: Office;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;

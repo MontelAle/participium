@@ -9,6 +9,7 @@ import { Account } from './entities/account.entity';
 import { Session } from './entities/session.entity';
 import { Role } from './entities/role.entity';
 import { Category } from './entities/category.entity';
+import { Office } from './entities/office.entity';
 import { Report, ReportStatus } from './entities/report.entity';
 import {
   CreateMunicipalityUserDto,
@@ -49,4 +50,5 @@ export {
   type UpdateReportDto,
   type FilterReportsDto,
   type ReportResponseDto,
+  type Office,
 };
