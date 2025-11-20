@@ -1,25 +1,30 @@
 # MinIO Integration Guide
 
 ## Overview
+
 MinIO has been integrated into the project to manage image uploads and storage for reports. It is an S3-compatible object storage, deployed via Docker.
 
 ## Configuration
 
 ### Environment Variables
+
 Add the following variables to your `.env` file:
 
 ```env
 # MinIO Configuration
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
 MINIO_ENDPOINT=localhost
 MINIO_PORT=9000
-MINIO_USE_SSL=false
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
+MINIO_CONSOLE_PORT=9001
 MINIO_BUCKET_NAME=participium-reports
+MINIO_USE_SSL=false
 ```
 
 ### Docker
+
 MinIO is configured in `compose.yml`:
+
 - **API Port**: 9000 (programmatic access)
 - **Console Port**: 9001 (web admin interface)
 - **Volume**: `minio_data` for data persistence
@@ -27,11 +32,13 @@ MinIO is configured in `compose.yml`:
 ## Accessing MinIO Console
 
 You can access MinIO's web console at:
+
 - URL: http://localhost:9001
 - Username: minioadmin
 - Password: minioadmin
 
 From the console you can:
+
 - View buckets
 - Browse uploaded files
 - Manage access policies
@@ -40,18 +47,21 @@ From the console you can:
 ## Implemented Features
 
 ### Image Upload in Reports
+
 When creating a report, it is now mandatory to upload between 1 and 3 images:
 
 **Endpoint**: `POST /api/reports`
 **Content-Type**: `multipart/form-data`
 
 **Constraints**:
+
 - Minimum: 1 image
 - Maximum: 3 images
 - Supported formats: JPEG, PNG, WebP
 - Maximum file size: 5MB
 
 **Example with curl**:
+
 ```bash
 curl -X POST http://localhost:5000/api/reports \
   -H "Cookie: session_token=YOUR_SESSION_TOKEN" \
@@ -66,6 +76,7 @@ curl -X POST http://localhost:5000/api/reports \
 ```
 
 ### Automatic Management
+
 - **Upload**: Images are uploaded to MinIO with unique names
 - **Organization**: Files are organized in subfolders per report: `reports/{reportId}/{timestamp}-{filename}`
 - **Public URLs**: Images are publicly accessible via direct URLs
@@ -74,15 +85,18 @@ curl -X POST http://localhost:5000/api/reports \
 ## Architecture
 
 ### MinioProvider
+
 Global service that handles all operations with MinIO:
 
 **Main methods**:
+
 - `uploadFile(fileName, buffer, mimetype)`: Upload a file
 - `deleteFile(fileName)`: Delete single file
 - `deleteFiles(fileNames[])`: Multiple deletion
 - `extractFileNameFromUrl(url)`: Extract file name from URL
 
 **Automatic initialization**:
+
 - Creates bucket if it doesn't exist
 - Configures policy for public read access
 - Verifies connection to MinIO
@@ -90,37 +104,45 @@ Global service that handles all operations with MinIO:
 ### Report Modifications
 
 **Entity** (`Report`):
+
 - `images` field remains `string[]` but now contains full MinIO URLs
 
 **DTO** (`CreateReportDto`):
+
 - Removed `images` field (handled via multipart)
 - Images are uploaded through `FilesInterceptor`
 
 **Controller** (`ReportsController`):
+
 - Uses `@UseInterceptors(FilesInterceptor('images', 3))`
 - Uses `@ApiConsumes('multipart/form-data')`
 - Validates number, type and size of files
 
 **Service** (`ReportsService`):
+
 - Integrates `MinioProvider` for upload during creation
 - Deletes images from MinIO when a report is deleted
 
 ## Testing and Development
 
 ### Starting Containers
+
 ```bash
 cd apps/api
 docker compose up -d
 ```
 
 ### Checking Status
+
 ```bash
 docker ps
 docker logs participium-minio
 ```
 
 ### Testing Upload
+
 Use Swagger documentation at `http://localhost:5000/api/docs` to test upload:
+
 1. Perform login
 2. Navigate to `POST /reports` endpoint
 3. Click "Try it out"
@@ -128,7 +150,9 @@ Use Swagger documentation at `http://localhost:5000/api/docs` to test upload:
 5. Verify response and image URLs
 
 ### Viewing Images
+
 Image URLs will have the format:
+
 ```
 http://localhost:9000/participium-reports/reports/{reportId}/{timestamp}-{filename}
 ```
@@ -149,17 +173,21 @@ For production environment, consider:
 ## Troubleshooting
 
 ### MinIO won't start
+
 ```bash
 docker logs participium-minio
 ```
 
 ### Bucket not created automatically
+
 Check NestJS application logs at startup
 
 ### Permission errors
+
 Verify that bucket policy is configured correctly from MinIO console
 
 ### Images not accessible
+
 - Verify that port 9000 is open
 - Check that bucket has public read policy
 - Verify URLs generated in database

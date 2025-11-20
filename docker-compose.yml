@@ -1,0 +1,81 @@
+name: participium-release
+
+services:
+  # --- Backend ---
+  api:
+    image: giova21/participium-api:latest
+    container_name: participium-api
+    restart: always
+    depends_on:
+      - postgres
+      - minio
+    environment:
+      PORT: 5000
+      FRONTEND_URL: http://localhost:5173
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-participium}
+      # Configurazione Minio per NestJS
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET: participium-reports
+      MINIO_USE_SSL: "false"
+    ports:
+      - "5000:5000"
+    networks:
+      - participium-net
+
+  # --- Frontend ---
+  web:
+    image: giova21/participium-web:latest
+    container_name: participium-web
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+    networks:
+      - participium-net
+
+  # --- Database ---
+  postgres:
+    image: postgis/postgis:18-3.6
+    platform: linux/amd64
+    container_name: participium-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-participium}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - participium-net
+
+  # --- Object Storage ---
+  minio:
+    image: minio/minio:latest
+    container_name: participium-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - participium-net
+    ports:
+      - "9001:9001" 
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  participium-net:
+    driver: bridge
