@@ -11,6 +11,7 @@ import MapPage from './pages/map/page';
 import MunicipalityUsersPage from './pages/app/municipality-users/page';
 import DashboardPage from './pages/app/dashboard/page';
 import ReportPage from './pages/report/page';
+import MunicipalityPrOfficerPage from './pages/app/municipality-pr-officer/page';
 
 const App = () => {
   return (
@@ -49,6 +50,14 @@ const App = () => {
               element={
                 <MunicipalGuard>
                   <MunicipalityUsersPage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
+              path="/app/municipality-pr-officer"
+              element={
+                <MunicipalGuard>
+                  <MunicipalityPrOfficerPage />
                 </MunicipalGuard>
               }
             />
