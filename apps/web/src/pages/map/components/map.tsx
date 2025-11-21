@@ -321,7 +321,7 @@ export default function Map() {
         removeOutsideVisibleBounds: true,
         animate: true,
         animateAddingMarkers: true,
-        disableClusteringAtZoom: 16, // Disabilita clustering ad alto zoom
+        disableClusteringAtZoom: 16, // Disable clustering at high zoom
         maxClusterRadius: 80,
         iconCreateFunction: function (cluster) {
           const count = cluster.getChildCount();
