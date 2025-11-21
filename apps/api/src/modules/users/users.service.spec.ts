@@ -71,7 +71,7 @@ describe('UsersService', () => {
 
       expect(userRepository.find).toHaveBeenCalledWith(
         expect.objectContaining({
-          relations: ['role'],
+          relations: ['role', 'office'],
           where: { role: { isMunicipal: true } },
         }),
       );
@@ -97,7 +97,7 @@ describe('UsersService', () => {
 
       expect(userRepository.findOne).toHaveBeenCalledWith(
         expect.objectContaining({
-          relations: ['role'],
+          relations: ['role', 'office'],
           where: { id: '1', role: { isMunicipal: true } },
         }),
       );
@@ -113,7 +113,7 @@ describe('UsersService', () => {
 
       expect(userRepository.findOne).toHaveBeenCalledWith(
         expect.objectContaining({
-          relations: ['role'],
+          relations: ['role', 'office'],
           where: { id: 'missing', role: { isMunicipal: true } },
         }),
       );

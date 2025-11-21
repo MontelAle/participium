@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import type { User, UpdateMunicipalityUserDto } from '@repo/api';
 import { Pencil, XIcon, MailIcon, UserIcon } from 'lucide-react';
 import { useRoles } from '@/hooks/use-roles';
+import { useOffices } from '@/hooks/use-offices';
 import { useUpdateMunicipalityUser } from '@/hooks/use-municipality-users';
 import { Field } from '@/components/ui/field';
 import {
@@ -23,6 +24,7 @@ import { toast } from 'sonner';
 
 export function EditMunicipalityUserDialog({ user }: { user: User }) {
   const { data: roles = [] } = useRoles();
+  const { data: offices = [] } = useOffices();
   const { mutateAsync: updateMunicipalityUser } = useUpdateMunicipalityUser();
 
   const [open, setOpen] = React.useState(false);
@@ -34,6 +36,7 @@ export function EditMunicipalityUserDialog({ user }: { user: User }) {
     firstName: user.firstName ?? '',
     lastName: user.lastName ?? '',
     roleId: user.role?.id ?? '',
+    officeId: user.office?.id ?? '',
   };
 
   const [form, setForm] = useState<UpdateMunicipalityUserDto>(initialForm);
@@ -46,6 +49,10 @@ export function EditMunicipalityUserDialog({ user }: { user: User }) {
     setForm({ ...form, roleId: value });
   };
 
+  const handleOfficeChange = (value: string) => {
+    setForm({ ...form, officeId: value });
+  };
+
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
     if (!next) {
@@ -56,6 +63,7 @@ export function EditMunicipalityUserDialog({ user }: { user: User }) {
         firstName: user.firstName ?? '',
         lastName: user.lastName ?? '',
         roleId: user.role?.id ?? '',
+        officeId: user.office?.id ?? '',
       });
     }
   };
@@ -187,13 +195,28 @@ export function EditMunicipalityUserDialog({ user }: { user: User }) {
               </Select>
             </Field>
 
+            <Field>
+              <Select value={form.officeId} onValueChange={handleOfficeChange}>
+                <SelectTrigger className="InputGroupInput">
+                  <SelectValue placeholder="Select office" />
+                </SelectTrigger>
+                <SelectContent>
+                  {offices.map((office) => (
+                    <SelectItem key={office.id} value={office.id}>
+                      {office.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
             <div className="flex gap-2 justify-end">
               <Dialog.Close asChild>
                 <Button type="button" variant="outline">
                   Cancel
                 </Button>
               </Dialog.Close>
-              <Button type="submit" disabled={isLoading || !form.roleId}>
+              <Button type="submit" disabled={isLoading || !form.roleId || !form.officeId}>
                 {isLoading ? 'Updating...' : 'Confirm'}
               </Button>
             </div>
