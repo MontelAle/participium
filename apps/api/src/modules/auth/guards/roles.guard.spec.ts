@@ -11,7 +11,6 @@ describe('RolesGuard', () => {
     reflector = new Reflector();
     guard = new RolesGuard(reflector);
 
-    // Mock di ExecutionContext
     context = {
       getHandler: jest.fn(),
       getClass: jest.fn(),

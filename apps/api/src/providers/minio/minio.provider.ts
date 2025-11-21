@@ -24,8 +24,14 @@ export class MinioProvider implements OnModuleInit {
       endPoint: this.configService.get<string>('minio.endPoint', 'localhost'),
       port: this.configService.get<number>('minio.port', 9000),
       useSSL: this.configService.get<boolean>('minio.useSSL', false),
-      accessKey: this.configService.get<string>('minio.accessKey', 'minioadmin'),
-      secretKey: this.configService.get<string>('minio.secretKey', 'minioadmin'),
+      accessKey: this.configService.get<string>(
+        'minio.accessKey',
+        'minioadmin',
+      ),
+      secretKey: this.configService.get<string>(
+        'minio.secretKey',
+        'minioadmin',
+      ),
     });
   }
 
@@ -37,13 +43,14 @@ export class MinioProvider implements OnModuleInit {
           await this.minioClient.makeBucket(this.bucketName, 'us-east-1');
           this.logger.log(`Bucket "${this.bucketName}" created successfully`);
         } catch (error) {
-          this.logger.error(`${MINIO_ERROR_MESSAGES.BUCKET_CREATION_FAILED}: ${this.getErrorMessage(error)}`);
+          this.logger.error(
+            `${MINIO_ERROR_MESSAGES.BUCKET_CREATION_FAILED}: ${this.getErrorMessage(error)}`,
+          );
           throw new InternalServerErrorException(
             MINIO_ERROR_MESSAGES.BUCKET_CREATION_FAILED,
           );
         }
 
-        // Set policy to make images publicly accessible (read-only)
         try {
           const policy = {
             Version: '2012-10-17',
@@ -62,7 +69,9 @@ export class MinioProvider implements OnModuleInit {
           );
           this.logger.log(`Bucket policy set for "${this.bucketName}"`);
         } catch (error) {
-          this.logger.error(`${MINIO_ERROR_MESSAGES.BUCKET_POLICY_FAILED}: ${this.getErrorMessage(error)}`);
+          this.logger.error(
+            `${MINIO_ERROR_MESSAGES.BUCKET_POLICY_FAILED}: ${this.getErrorMessage(error)}`,
+          );
           throw new InternalServerErrorException(
             MINIO_ERROR_MESSAGES.BUCKET_POLICY_FAILED,
           );
@@ -74,7 +83,9 @@ export class MinioProvider implements OnModuleInit {
       if (error instanceof InternalServerErrorException) {
         throw error;
       }
-      this.logger.error(`${MINIO_ERROR_MESSAGES.BUCKET_INIT_FAILED}: ${this.getErrorMessage(error)}`);
+      this.logger.error(
+        `${MINIO_ERROR_MESSAGES.BUCKET_INIT_FAILED}: ${this.getErrorMessage(error)}`,
+      );
       throw new InternalServerErrorException(
         MINIO_ERROR_MESSAGES.BUCKET_INIT_FAILED,
       );
@@ -121,7 +132,6 @@ export class MinioProvider implements OnModuleInit {
         },
       );
 
-      // Build the public URL for the file
       const endPoint = this.configService.get<string>('minio.endPoint');
       const port = this.configService.get<number>('minio.port');
       const useSSL = this.configService.get<boolean>('minio.useSSL');
@@ -130,7 +140,9 @@ export class MinioProvider implements OnModuleInit {
 
       return `${protocol}://${endPoint}${portString}/${this.bucketName}/${fileName}`;
     } catch (error) {
-      this.logger.error(`${MINIO_ERROR_MESSAGES.FILE_UPLOAD_FAILED}: ${this.getErrorMessage(error)}`);
+      this.logger.error(
+        `${MINIO_ERROR_MESSAGES.FILE_UPLOAD_FAILED}: ${this.getErrorMessage(error)}`,
+      );
       throw new InternalServerErrorException(
         MINIO_ERROR_MESSAGES.FILE_UPLOAD_FAILED,
       );
@@ -146,7 +158,9 @@ export class MinioProvider implements OnModuleInit {
       await this.minioClient.removeObject(this.bucketName, fileName);
       this.logger.log(`File "${fileName}" deleted successfully`);
     } catch (error) {
-      this.logger.error(`${MINIO_ERROR_MESSAGES.FILE_DELETE_FAILED}: ${this.getErrorMessage(error)}`);
+      this.logger.error(
+        `${MINIO_ERROR_MESSAGES.FILE_DELETE_FAILED}: ${this.getErrorMessage(error)}`,
+      );
       throw new InternalServerErrorException(
         MINIO_ERROR_MESSAGES.FILE_DELETE_FAILED,
       );
@@ -162,7 +176,9 @@ export class MinioProvider implements OnModuleInit {
       await this.minioClient.removeObjects(this.bucketName, fileNames);
       this.logger.log(`${fileNames.length} files deleted successfully`);
     } catch (error) {
-      this.logger.error(`${MINIO_ERROR_MESSAGES.FILES_DELETE_FAILED}: ${this.getErrorMessage(error)}`);
+      this.logger.error(
+        `${MINIO_ERROR_MESSAGES.FILES_DELETE_FAILED}: ${this.getErrorMessage(error)}`,
+      );
       throw new InternalServerErrorException(
         MINIO_ERROR_MESSAGES.FILES_DELETE_FAILED,
       );

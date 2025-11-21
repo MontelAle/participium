@@ -114,7 +114,7 @@ describe('AuthController', () => {
         password: 'password',
       };
       const req: any = {
-        user: null, // No user attached by guard
+        user: null,
         ip: '127.0.0.1',
         headers: { 'user-agent': 'jest' },
       };

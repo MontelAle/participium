@@ -8,11 +8,13 @@ import {
   FilterReportsDto,
 } from '../../common/dto/report.dto';
 import { Repository } from 'typeorm';
-import { NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import {
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 
-// Mock nanoid per avere id prevedibili
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
 describe('ReportsService', () => {
@@ -58,7 +60,9 @@ describe('ReportsService', () => {
             uploadFile: jest.fn(),
             deleteFile: jest.fn(),
             deleteFiles: jest.fn(),
-            extractFileNameFromUrl: jest.fn((url: string) => url.split('/').pop()),
+            extractFileNameFromUrl: jest.fn((url: string) =>
+              url.split('/').pop(),
+            ),
           },
         },
       ],
@@ -162,7 +166,8 @@ describe('ReportsService', () => {
         },
       ] as Express.Multer.File[];
 
-      const mockImageUrl = 'http://localhost:9000/bucket/reports/mocked-id/123-test.jpg';
+      const mockImageUrl =
+        'http://localhost:9000/bucket/reports/mocked-id/123-test.jpg';
       minioProvider.uploadFile.mockResolvedValue(mockImageUrl);
 
       const expectedReport = {
@@ -256,8 +261,12 @@ describe('ReportsService', () => {
         images: mockImageUrls,
       };
 
-      reportRepository.create.mockReturnValue(expectedReport as unknown as Report);
-      reportRepository.save.mockResolvedValue(expectedReport as unknown as Report);
+      reportRepository.create.mockReturnValue(
+        expectedReport as unknown as Report,
+      );
+      reportRepository.save.mockResolvedValue(
+        expectedReport as unknown as Report,
+      );
 
       const result = await service.create(createDto, 'user-123', mockFiles);
 
@@ -285,12 +294,12 @@ describe('ReportsService', () => {
 
       minioProvider.uploadFile.mockRejectedValue(new Error('Upload failed'));
 
-      await expect(service.create(createDto, 'user-123', mockFiles)).rejects.toThrow(
-        InternalServerErrorException,
-      );
-      await expect(service.create(createDto, 'user-123', mockFiles)).rejects.toThrow(
-        REPORT_ERROR_MESSAGES.IMAGE_UPLOAD_FAILED,
-      );
+      await expect(
+        service.create(createDto, 'user-123', mockFiles),
+      ).rejects.toThrow(InternalServerErrorException);
+      await expect(
+        service.create(createDto, 'user-123', mockFiles),
+      ).rejects.toThrow(REPORT_ERROR_MESSAGES.IMAGE_UPLOAD_FAILED);
     });
   });
 
@@ -713,9 +722,15 @@ describe('ReportsService', () => {
         ],
       };
 
-      reportRepository.findOne.mockResolvedValue(reportWithImages as unknown as Report);
-      reportRepository.remove.mockResolvedValue(reportWithImages as unknown as Report);
-      minioProvider.extractFileNameFromUrl.mockImplementation((url) => url.split('/').pop() || '');
+      reportRepository.findOne.mockResolvedValue(
+        reportWithImages as unknown as Report,
+      );
+      reportRepository.remove.mockResolvedValue(
+        reportWithImages as unknown as Report,
+      );
+      minioProvider.extractFileNameFromUrl.mockImplementation(
+        (url) => url.split('/').pop() || '',
+      );
 
       await service.remove('mocked-id');
 
@@ -723,13 +738,20 @@ describe('ReportsService', () => {
         where: { id: 'mocked-id' },
         relations: ['user', 'category'],
       });
-      expect(minioProvider.deleteFiles).toHaveBeenCalledWith(['123-test1.jpg', '123-test2.jpg']);
+      expect(minioProvider.deleteFiles).toHaveBeenCalledWith([
+        '123-test1.jpg',
+        '123-test2.jpg',
+      ]);
       expect(reportRepository.remove).toHaveBeenCalledWith(reportWithImages);
     });
 
     it('should delete a report without images', async () => {
-      reportRepository.findOne.mockResolvedValue(mockReport as unknown as Report);
-      reportRepository.remove.mockResolvedValue(mockReport as unknown as Report);
+      reportRepository.findOne.mockResolvedValue(
+        mockReport as unknown as Report,
+      );
+      reportRepository.remove.mockResolvedValue(
+        mockReport as unknown as Report,
+      );
 
       await service.remove('mocked-id');
 

@@ -15,6 +15,6 @@ export const ALLOWED_IMAGE_MIMETYPES = [
   'image/webp',
 ] as const;
 
-export const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+export const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 export const MIN_IMAGES = 1;
 export const MAX_IMAGES = 3;

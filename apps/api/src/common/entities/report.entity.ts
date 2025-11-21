@@ -37,7 +37,6 @@ export class Report implements ReportInterface {
   })
   status: ReportStatus;
 
-  // PostGIS geometry column - stores point coordinates (longitude, latitude)
   @Column({
     type: 'geometry',
     spatialFeatureType: 'Point',

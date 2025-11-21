@@ -154,7 +154,6 @@ export function TableColumnHeader<TData, TValue>({
     column.toggleSorting(true);
   }, [column]);
 
-  // Usa TableHeadRaw invece di div
   return (
     <TableHeadRaw className={className}>
       {!column.getCanSort() ? (

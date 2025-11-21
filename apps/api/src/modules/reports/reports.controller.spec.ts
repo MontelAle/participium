@@ -10,7 +10,6 @@ import {
 } from '../../common/dto/report.dto';
 import { Report, ReportStatus } from '../../common/entities/report.entity';
 
-// Mock "nanoid" per evitare problemi ESM
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
 const mockSessionGuard = { canActivate: jest.fn(() => true) };
@@ -90,7 +89,11 @@ describe('ReportsController', () => {
 
       const result = await controller.create(createDto, mockFiles, mockReq);
 
-      expect(reportsService.create).toHaveBeenCalledWith(createDto, 'user-123', mockFiles);
+      expect(reportsService.create).toHaveBeenCalledWith(
+        createDto,
+        'user-123',
+        mockFiles,
+      );
       expect(result).toEqual({ success: true, data: mockReport });
     });
 
@@ -130,7 +133,11 @@ describe('ReportsController', () => {
 
       const result = await controller.create(createDto, mockFiles, mockReq);
 
-      expect(reportsService.create).toHaveBeenCalledWith(createDto, 'user-123', mockFiles);
+      expect(reportsService.create).toHaveBeenCalledWith(
+        createDto,
+        'user-123',
+        mockFiles,
+      );
       expect(result).toEqual({ success: true, data: mockReport });
     });
 
@@ -168,9 +175,9 @@ describe('ReportsController', () => {
 
       const mockReq = { user: { id: 'user-123' } };
 
-      await expect(controller.create(createDto, mockFiles, mockReq)).rejects.toThrow(
-        REPORT_ERROR_MESSAGES.IMAGES_REQUIRED,
-      );
+      await expect(
+        controller.create(createDto, mockFiles, mockReq),
+      ).rejects.toThrow(REPORT_ERROR_MESSAGES.IMAGES_REQUIRED);
     });
 
     it('should throw BadRequestException if invalid file type', async () => {
@@ -193,7 +200,9 @@ describe('ReportsController', () => {
 
       const mockReq = { user: { id: 'user-123' } };
 
-      await expect(controller.create(createDto, mockFiles, mockReq)).rejects.toThrow(
+      await expect(
+        controller.create(createDto, mockFiles, mockReq),
+      ).rejects.toThrow(
         REPORT_ERROR_MESSAGES.INVALID_FILE_TYPE('application/pdf'),
       );
     });
@@ -212,15 +221,15 @@ describe('ReportsController', () => {
           originalname: 'large.jpg',
           buffer: Buffer.from('test'),
           mimetype: 'image/jpeg',
-          size: 6 * 1024 * 1024, // 6MB
+          size: 6 * 1024 * 1024,
         },
       ] as Express.Multer.File[];
 
       const mockReq = { user: { id: 'user-123' } };
 
-      await expect(controller.create(createDto, mockFiles, mockReq)).rejects.toThrow(
-        REPORT_ERROR_MESSAGES.FILE_SIZE_EXCEEDED('large.jpg'),
-      );
+      await expect(
+        controller.create(createDto, mockFiles, mockReq),
+      ).rejects.toThrow(REPORT_ERROR_MESSAGES.FILE_SIZE_EXCEEDED('large.jpg'));
     });
   });
 

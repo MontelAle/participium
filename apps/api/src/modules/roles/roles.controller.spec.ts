@@ -15,11 +15,8 @@ describe('RolesController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RolesController],
-      providers: [
-        { provide: RolesService, useValue: rolesService },
-      ],
+      providers: [{ provide: RolesService, useValue: rolesService }],
     })
-      // Mock guards to bypass authentication/authorization for controller tests
       .overrideGuard(SessionGuard)
       .useValue({ canActivate: jest.fn(() => true) })
       .overrideGuard(RolesGuard)
