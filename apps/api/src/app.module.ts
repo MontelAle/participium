@@ -7,6 +7,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { ConfigModule } from '@nestjs/config';
 import { CategoriesModule } from './modules/categories/categories.module';
+import { OfficesModule } from './modules/offices/offices.module';
 
 import appConfig from './config/app.config';
 
@@ -22,7 +23,8 @@ import appConfig from './config/app.config';
     RolesModule,
     UsersModule,
     ReportsModule,
-    CategoriesModule
+    CategoriesModule,
+    OfficesModule
   ],
   controllers: [],
   providers: [],

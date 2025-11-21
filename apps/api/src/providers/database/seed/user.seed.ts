@@ -28,7 +28,10 @@ export async function seedDatabase(dataSource: DataSource) {
     { name: 'road', label: 'Road' },
     { name: 'sewer-system', label: 'Sewer System' },
     { name: 'parks', label: 'Parks' },
+    { name: 'administration', label: 'Administration' },
   ];
+
+  const officesMap = new Map<string, Office>();
 
   for (const o of officesData) {
     let office = await officeRepo.findOne({ where: { name: o.name } });
@@ -40,13 +43,15 @@ export async function seedDatabase(dataSource: DataSource) {
       });
       await officeRepo.save(office);
     }
+
+    officesMap.set(o.name, office);
   }
 
   const rolesData = [
     { name: 'user', label: 'User', isMunicipal: false },
     { name: 'admin', label: 'Admin', isMunicipal: true },
-    { name: 'office_manager', label: 'Office Manager', isMunicipal: true },
-    { name: 'office_worker', label: 'Office Worker', isMunicipal: true },
+    { name: 'pr_officer', label: 'PR Officer', isMunicipal: true },
+    { name: 'officer', label: 'Officer', isMunicipal: true },
   ];
 
   const rolesMap = new Map<string, Role>();
@@ -57,6 +62,7 @@ export async function seedDatabase(dataSource: DataSource) {
       role = roleRepo.create({
         id: nanoid(),
         name: r.name,
+        label: r.label,
         isMunicipal: r.isMunicipal,
       });
       await roleRepo.save(role);
@@ -93,6 +99,7 @@ export async function seedDatabase(dataSource: DataSource) {
     roleName: string,
     firstName: string,
     lastName: string,
+    officeName?: string,
   ) => {
     let user = await userRepo.findOne({ where: { username } });
 
@@ -104,6 +111,7 @@ export async function seedDatabase(dataSource: DataSource) {
         username,
         email: `${username}@example.com`,
         role: rolesMap.get(roleName),
+        office: officesMap.get(officeName) || null,
       });
       await userRepo.save(user);
 
@@ -118,13 +126,20 @@ export async function seedDatabase(dataSource: DataSource) {
     return user;
   };
 
-  const adminUser = await createUser('admin', 'admin', 'Super', 'Admin');
+  const adminUser = await createUser(
+    'admin',
+    'admin',
+    'Super',
+    'Admin',
+    'administration',
+  );
   const regularUser = await createUser('user', 'user', 'Mario', 'Rossi');
   const municipalUser = await createUser(
     'officer',
-    'municipal_administrator',
+    'pr_officer',
     'Luigi',
     'Verdi',
+    'road',
   );
 
   const reportsCount = await reportRepo.count();

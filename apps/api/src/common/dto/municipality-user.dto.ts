@@ -30,6 +30,10 @@ export class UpdateMunicipalityUserDto
   @IsString()
   @IsOptional()
   roleId?: string;
+
+  @IsString()
+  @IsOptional()
+  officeId?: string;
 }
 
 export class CreateMunicipalityUserDto
@@ -52,6 +56,10 @@ export class CreateMunicipalityUserDto
 
   @IsString()
   roleId: string;
+
+  @IsString()
+  @IsOptional()
+  officeId?: string;
 }
 
 export class MunicipalityUserResponseDto
