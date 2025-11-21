@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import 'leaflet.markercluster';
 import { useActiveReportStore } from '@/store/activeReportStore';
 import { useReports } from '@/hooks/use-reports';
 
@@ -131,6 +134,44 @@ const injectStylesOnce = (() => {
         background: #111; color: #fff; font: 600 11px/1 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
         white-space: nowrap; box-shadow: 0 6px 16px rgba(0,0,0,.25);
       }
+
+      /* Cluster marker styles */
+      .marker-cluster-small {
+        background-color: rgba(181, 226, 140, 0.6);
+      }
+      .marker-cluster-small div {
+        background-color: rgba(110, 204, 57, 0.6);
+      }
+      .marker-cluster-medium {
+        background-color: rgba(241, 211, 87, 0.6);
+      }
+      .marker-cluster-medium div {
+        background-color: rgba(240, 194, 12, 0.6);
+      }
+      .marker-cluster-large {
+        background-color: rgba(253, 156, 115, 0.6);
+      }
+      .marker-cluster-large div {
+        background-color: rgba(241, 128, 23, 0.6);
+      }
+      .marker-cluster {
+        background-clip: padding-box;
+        border-radius: 20px;
+      }
+      .marker-cluster div {
+        width: 30px;
+        height: 30px;
+        margin-left: 5px;
+        margin-top: 5px;
+        text-align: center;
+        border-radius: 15px;
+        font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+      }
+      .marker-cluster span {
+        line-height: 30px;
+        color: #fff;
+        font-weight: bold;
+      }
     `;
     const style = document.createElement('style');
     style.setAttribute('data-gp', '1');
@@ -147,7 +188,7 @@ export default function Map() {
   const setLocation = useActiveReportStore((state) => state.setLocation);
   const location = useActiveReportStore((state) => state.locationData);
   const clearLocation = useActiveReportStore((s) => s.clearLocation);
-  const savedGroupRef = useRef<L.LayerGroup | null>(null);
+  const markerClusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
   const { data: reports = [] } = useReports();
 
   useEffect(() => {
@@ -271,12 +312,44 @@ export default function Map() {
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    if (!savedGroupRef.current) {
-      savedGroupRef.current = L.layerGroup().addTo(map);
+    // Inizializza il MarkerClusterGroup se non esiste
+    if (!markerClusterGroupRef.current) {
+      markerClusterGroupRef.current = L.markerClusterGroup({
+        showCoverageOnHover: true,
+        zoomToBoundsOnClick: true,
+        spiderfyOnMaxZoom: true,
+        removeOutsideVisibleBounds: true,
+        animate: true,
+        animateAddingMarkers: true,
+        disableClusteringAtZoom: 16, // Disabilita clustering ad alto zoom
+        maxClusterRadius: 80,
+        iconCreateFunction: function (cluster) {
+          const count = cluster.getChildCount();
+          let size = 'small';
+          let c = ' marker-cluster-';
+          
+          if (count < 10) {
+            size = 'small';
+            c += 'small';
+          } else if (count < 50) {
+            size = 'medium';
+            c += 'medium';
+          } else {
+            size = 'large';
+            c += 'large';
+          }
+
+          return L.divIcon({
+            html: `<div><span>${count}</span></div>`,
+            className: 'marker-cluster' + c,
+            iconSize: L.point(40, 40),
+          });
+        },
+      }).addTo(map);
     }
 
-    const group = savedGroupRef.current;
-    group.clearLayers();
+    const clusterGroup = markerClusterGroupRef.current;
+    clusterGroup.clearLayers();
 
     if (!reports?.length) return;
 
@@ -292,7 +365,7 @@ export default function Map() {
         title: report.address ?? 'Saved report',
         alt: report.address ?? 'Saved report',
         riseOnHover: true,
-      }).addTo(group);
+      });
 
       m.bindTooltip(report.address ?? `${lat.toFixed(5)}, ${lng.toFixed(5)}`, {
         direction: 'top',
@@ -313,6 +386,8 @@ export default function Map() {
           city: 'Unavailable Zone',
         });
       });
+
+      clusterGroup.addLayer(m);
     });
   }, [reports, setLocation]);
   useEffect(() => {
