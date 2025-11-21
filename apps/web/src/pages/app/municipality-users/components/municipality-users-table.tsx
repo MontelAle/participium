@@ -45,6 +45,20 @@ export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
         },
       },
       {
+        accessorKey: 'office',
+        header: 'Office',
+        cell: ({ getValue }: any) => {
+          const v = getValue();
+          const label =
+            typeof v === 'object' ? (v?.label ?? '-') : String(v ?? '-');
+          return (
+            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
+              {label}
+            </span>
+          );
+        },
+      },
+      {
         id: 'operations',
         header: 'Operations',
         cell: ({ row }: any) => {

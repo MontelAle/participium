@@ -31,7 +31,7 @@ export class UsersService {
 
   async findMunicipalityUsers(): Promise<User[]> {
     return this.userRepository.find({
-      relations: ['role'],
+      relations: ['role', 'office'],
       where: {
         role: {
           isMunicipal: true,
@@ -42,7 +42,7 @@ export class UsersService {
 
   async findMunicipalityUserById(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
-      relations: ['role'],
+      relations: ['role', 'office'],
       where: {
         id,
         role: {
