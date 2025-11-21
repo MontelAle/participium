@@ -30,31 +30,6 @@ export class ReportsService {
     };
   }
 
-  /**
-   * Extract coordinates from a Point geometry
-   *
-   * NOTE: This method is currently unused but will be useful for future features
-   * such as extracting coordinates for display, coordinate-based filtering,
-   * or returning coordinate data in specific API responses.
-   *
-   * @param location - WKT format string: POINT(longitude latitude)
-   * @returns Object with longitude and latitude values
-   */
-  // private extractCoordinates(location: string): {
-  //   longitude: number;
-  //   latitude: number;
-  // } {
-  //   // Parse WKT format: POINT(longitude latitude)
-  //   const match = location.match(/POINT\(([^ ]+) ([^ ]+)\)/);
-  //   if (match) {
-  //     return {
-  //       longitude: parseFloat(match[1]),
-  //       latitude: parseFloat(match[2]),
-  //     };
-  //   }
-  //   return { longitude: 0, latitude: 0 };
-  // }
-
   async create(
     createReportDto: CreateReportDto,
     userId: string,
@@ -62,14 +37,13 @@ export class ReportsService {
   ): Promise<Report> {
     const { longitude, latitude, ...reportData } = createReportDto;
 
-    // Upload images to MinIO (always required, validated in controller)
     const reportId = nanoid();
     const imageUrls: string[] = [];
     try {
       for (const image of images) {
         const timestamp = Date.now();
         const fileName = `reports/${reportId}/${timestamp}-${image.originalname}`;
-        
+
         const imageUrl = await this.minioProvider.uploadFile(
           fileName,
           image.buffer,
@@ -114,7 +88,6 @@ export class ReportsService {
       query.andWhere('report.userId = :userId', { userId: filters.userId });
     }
 
-    // Bounding box filter (geographical area)
     if (
       filters?.minLongitude !== undefined &&
       filters?.maxLongitude !== undefined &&
@@ -135,7 +108,6 @@ export class ReportsService {
       );
     }
 
-    // Radius filter (distance from a point)
     if (
       filters?.searchLongitude !== undefined &&
       filters?.searchLatitude !== undefined &&
@@ -178,7 +150,6 @@ export class ReportsService {
 
     const { longitude, latitude, ...updateData } = updateReportDto;
 
-    // Update location if coordinates are provided
     if (longitude !== undefined && latitude !== undefined) {
       report.location = this.createPointGeometry(longitude, latitude);
     }
@@ -190,11 +161,10 @@ export class ReportsService {
 
   async remove(id: string): Promise<void> {
     const report = await this.findOne(id);
-    
-    // Delete images from MinIO before deleting the report
+
     if (report.images && report.images.length > 0) {
       try {
-        const fileNames = report.images.map(url =>
+        const fileNames = report.images.map((url) =>
           this.minioProvider.extractFileNameFromUrl(url),
         );
         await this.minioProvider.deleteFiles(fileNames);
@@ -204,7 +174,7 @@ export class ReportsService {
         );
       }
     }
-    
+
     await this.reportRepository.remove(report);
   }
 

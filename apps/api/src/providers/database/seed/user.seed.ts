@@ -1,180 +1,150 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../../../app.module';
 import { DataSource } from 'typeorm';
 import { Role } from '../../../common/entities/role.entity';
 import { User } from '../../../common/entities/user.entity';
 import { Account } from '../../../common/entities/account.entity';
+import { Category } from '../../../common/entities/category.entity';
+import { Report, ReportStatus } from '../../../common/entities/report.entity';
 import { nanoid } from 'nanoid';
-import bcrypt from 'bcrypt';
-import { faker, fi } from '@faker-js/faker';
+import * as bcrypt from 'bcrypt';
+import { faker } from '@faker-js/faker';
 
-async function runSeed() {
-  const app = await NestFactory.createApplicationContext(AppModule);
-  const dataSource = app.get(DataSource);
+const TORINO_LAT = 45.0703;
+const TORINO_LNG = 7.6869;
 
-  // Seed roles
-  let userRole = await dataSource
-    .getRepository(Role)
-    .findOne({ where: { name: 'user' } });
-  if (!userRole) {
-    userRole = dataSource
-      .getRepository(Role)
-      .create({ id: nanoid(), name: 'user' });
-    userRole = await dataSource.getRepository(Role).save(userRole);
+export async function seedDatabase(dataSource: DataSource) {
+  const roleRepo = dataSource.getRepository(Role);
+  const userRepo = dataSource.getRepository(User);
+  const accountRepo = dataSource.getRepository(Account);
+  const categoryRepo = dataSource.getRepository(Category);
+  const reportRepo = dataSource.getRepository(Report);
+
+  const rolesData = [
+    { name: 'user', isMunicipal: false },
+    { name: 'admin', isMunicipal: true },
+    { name: 'municipal_pr_officer', isMunicipal: true },
+    { name: 'municipal_administrator', isMunicipal: true },
+    { name: 'technical_officer', isMunicipal: true },
+    { name: 'transport_officer', isMunicipal: true },
+    { name: 'special_projects_officer', isMunicipal: true },
+    { name: 'environmental_officer', isMunicipal: true },
+  ];
+
+  const rolesMap = new Map<string, Role>();
+
+  for (const r of rolesData) {
+    let role = await roleRepo.findOne({ where: { name: r.name } });
+    if (!role) {
+      role = roleRepo.create({
+        id: nanoid(),
+        name: r.name,
+        isMunicipal: r.isMunicipal,
+      });
+      await roleRepo.save(role);
+    }
+    rolesMap.set(r.name, role);
   }
 
-  let adminRole = await dataSource
-    .getRepository(Role)
-    .findOne({ where: { name: 'admin' } });
-  if (!adminRole) {
-    adminRole = dataSource
-      .getRepository(Role)
-      .create({ id: nanoid(), name: 'admin', isMunicipal: true });
-    adminRole = await dataSource.getRepository(Role).save(adminRole);
+  const categoriesData = [
+    { name: 'Road Maintenance', description: 'Potholes, damaged asphalt' },
+    {
+      name: 'Waste Management',
+      description: 'Overflowing bins, abandoned waste',
+    },
+    { name: 'Public Lighting', description: 'Broken street lamps' },
+    { name: 'Vandalism', description: 'Graffiti, broken benches' },
+    { name: 'Green Areas', description: 'Uncut grass, fallen trees' },
+  ];
+
+  const categories: Category[] = [];
+  for (const c of categoriesData) {
+    let category = await categoryRepo.findOne({ where: { name: c.name } });
+    if (!category) {
+      category = categoryRepo.create({
+        id: nanoid(),
+        name: c.name,
+      });
+      await categoryRepo.save(category);
+    }
+    categories.push(category);
   }
 
-  let municipalPRole = await dataSource
-    .getRepository(Role)
-    .findOne({ where: { name: 'municipal_pr_officer' } });
-  if (!municipalPRole) {
-    municipalPRole = dataSource.getRepository(Role).create({
-      id: nanoid(),
-      name: 'municipal_pr_officer',
-      isMunicipal: true,
-    });
-    municipalPRole = await dataSource.getRepository(Role).save(municipalPRole);
-  }
+  const createUser = async (
+    username: string,
+    roleName: string,
+    firstName: string,
+    lastName: string,
+  ) => {
+    let user = await userRepo.findOne({ where: { username } });
 
-  let municipalAdminRole = await dataSource
-    .getRepository(Role)
-    .findOne({ where: { name: 'municipal_administrator' } });
-  if (!municipalAdminRole) {
-    municipalAdminRole = dataSource.getRepository(Role).create({
-      id: nanoid(),
-      name: 'municipal_administrator',
-      isMunicipal: true,
-    });
-    municipalAdminRole = await dataSource
-      .getRepository(Role)
-      .save(municipalAdminRole);
-  }
+    if (!user) {
+      user = userRepo.create({
+        id: nanoid(),
+        firstName,
+        lastName,
+        username,
+        email: `${username}@example.com`,
+        role: rolesMap.get(roleName),
+      });
+      await userRepo.save(user);
 
-  let technicalOfficerRole = await dataSource
-    .getRepository(Role)
-    .findOne({ where: { name: 'technical_officer' } });
-  if (!technicalOfficerRole) {
-    technicalOfficerRole = dataSource
-      .getRepository(Role)
-      .create({ id: nanoid(), name: 'technical_officer', isMunicipal: true });
-    technicalOfficerRole = await dataSource
-      .getRepository(Role)
-      .save(technicalOfficerRole);
-  }
+      await accountRepo.save({
+        id: nanoid(),
+        user,
+        providerId: 'local',
+        accountId: username,
+        password: await bcrypt.hash('password', 10),
+      });
+    }
+    return user;
+  };
 
-  let transportOfficerRole = await dataSource
-    .getRepository(Role)
-    .findOne({ where: { name: 'transport_officer' } });
-  if (!transportOfficerRole) {
-    transportOfficerRole = dataSource
-      .getRepository(Role)
-      .create({ id: nanoid(), name: 'transport_officer', isMunicipal: true });
-    transportOfficerRole = await dataSource
-      .getRepository(Role)
-      .save(transportOfficerRole);
-  }
-
-  let SpecialProjectsRole = await dataSource
-    .getRepository(Role)
-    .findOne({ where: { name: 'special_projects_officer' } });
-  if (!SpecialProjectsRole) {
-    SpecialProjectsRole = dataSource.getRepository(Role).create({
-      id: nanoid(),
-      name: 'special_projects_officer',
-      isMunicipal: true,
-    });
-    SpecialProjectsRole = await dataSource
-      .getRepository(Role)
-      .save(SpecialProjectsRole);
-  }
-
-  let environmentalOfficerRole = await dataSource
-    .getRepository(Role)
-    .findOne({ where: { name: 'environmental_officer' } });
-  if (!environmentalOfficerRole) {
-    environmentalOfficerRole = dataSource.getRepository(Role).create({
-      id: nanoid(),
-      name: 'environmental_officer',
-      isMunicipal: true,
-    });
-    environmentalOfficerRole = await dataSource
-      .getRepository(Role)
-      .save(environmentalOfficerRole);
-  }
-
-  console.log(`✅ Seeded roles: 
-    ${userRole.name}, ${adminRole.name}, 
-    ${municipalPRole.name}, ${municipalAdminRole.name}, 
-    ${technicalOfficerRole.name}, ${transportOfficerRole.name}, 
-    ${SpecialProjectsRole.name}, ${environmentalOfficerRole.name}`);
-
-  // Seed admin user
-  const adminFirstName = 'Admin';
-  const adminLastName = 'User';
-  const adminUsername = 'admin';
-  const adminEmail = 'admin@example.com';
-  const adminPassword = 'admin123';
-
-  const adminUser = await dataSource.getRepository(User).save({
-    id: nanoid(),
-    firstName: adminFirstName,
-    lastName: adminLastName,
-    username: adminUsername,
-    email: adminEmail,
-    role: adminRole,
-  });
-
-  await dataSource.getRepository(Account).save({
-    id: nanoid(),
-    user: adminUser,
-    providerId: 'local',
-    accountId: adminUser.username,
-    password: await bcrypt.hash(adminPassword, 10),
-  });
-
-  console.log(
-    `✅ Seeded admin\n username: ${adminUsername} / password: ${adminPassword}`,
+  const adminUser = await createUser('admin', 'admin', 'Super', 'Admin');
+  const regularUser = await createUser('user', 'user', 'Mario', 'Rossi');
+  const municipalUser = await createUser(
+    'officer',
+    'municipal_administrator',
+    'Luigi',
+    'Verdi',
   );
 
-  // Seed regular user
-  const firstName = faker.person.firstName();
-  const lastName = faker.person.lastName();
-  const username = faker.internet.username({ firstName });
-  const email = `${firstName.toLowerCase()}@example.com`;
-  const password = 'password';
+  const reportsCount = await reportRepo.count();
 
-  const user = await dataSource.getRepository(User).save({
-    id: nanoid(),
-    firstName,
-    lastName,
-    username,
-    email,
-    role: userRole,
-  });
+  if (reportsCount < 5) {
+    const reportsToCreate = 20;
+    const newReports: Report[] = [];
 
-  // Seed account
-  await dataSource.getRepository(Account).save({
-    id: nanoid(),
-    user,
-    providerId: 'local',
-    accountId: user.username,
-    password: await bcrypt.hash(password, 10),
-  });
+    for (let i = 0; i < reportsToCreate; i++) {
+      const lat = TORINO_LAT + (Math.random() - 0.5) * 0.04;
+      const lng = TORINO_LNG + (Math.random() - 0.5) * 0.04;
 
-  console.log(`✅ Seeded user\n username: ${username} / password: ${password}`);
-  await app.close();
+      const randomCategory =
+        categories[Math.floor(Math.random() * categories.length)];
+      const isPending = Math.random() > 0.5;
+
+      const report = reportRepo.create({
+        id: nanoid(),
+        title: faker.lorem.sentence(3),
+        description: faker.lorem.paragraph(),
+        status: isPending ? ReportStatus.PENDING : ReportStatus.RESOLVED,
+        address: 'Torino, Italy',
+        location: {
+          type: 'Point',
+          coordinates: [lng, lat],
+        },
+        images: [faker.image.url()],
+        user: regularUser,
+        category: randomCategory,
+      });
+
+      newReports.push(report);
+    }
+
+    await reportRepo.save(newReports);
+  } else {
+    console.log(
+      `Reports already present (${reportsCount}). Skipping generation.`,
+    );
+  }
+
+  console.log(' Database seed check completed.');
 }
-
-runSeed().catch((err) => {
-  console.error('❌ Error seeding database', err);
-  process.exit(1);
-});

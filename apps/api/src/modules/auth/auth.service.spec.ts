@@ -254,7 +254,7 @@ describe('AuthService', () => {
         getRepository: jest.fn((entity) => {
           if (entity === Role) {
             return {
-              findOne: jest.fn().mockResolvedValue(null), // Role doesn't exist
+              findOne: jest.fn().mockResolvedValue(null),
               create: roleCreateSpy,
               save: roleSaveSpy,
             };
@@ -332,12 +332,12 @@ describe('AuthService', () => {
           }
           if (entity === User) {
             return {
-              findOne: jest.fn().mockResolvedValue(existingUser), // User exists
+              findOne: jest.fn().mockResolvedValue(existingUser),
             };
           }
           if (entity === Account) {
             return {
-              findOne: jest.fn().mockResolvedValue(null), // But no local account
+              findOne: jest.fn().mockResolvedValue(null),
               create: accountCreateSpy,
               save: accountSaveSpy,
             };
@@ -374,7 +374,7 @@ describe('AuthService', () => {
         firstName: 'First',
         lastName: 'Last',
       };
-      const secret = 'mocked-id'; // nanoid is mocked
+      const secret = 'mocked-id';
       const hashedSecret = createHash('sha256').update(secret).digest('hex');
       const session = { id: 'mocked-id', userId: user.id, hashedSecret };
       sessionRepository.create.mockReturnValue(session);

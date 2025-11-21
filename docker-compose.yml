@@ -1,7 +1,6 @@
 name: participium-release
 
 services:
-  # --- Backend ---
   api:
     image: giova21/participium-api:latest
     container_name: participium-api
@@ -17,7 +16,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: ${POSTGRES_DB:-participium}
-      # Configurazione Minio per NestJS
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
@@ -29,7 +27,6 @@ services:
     networks:
       - participium-net
 
-  # --- Frontend ---
   web:
     image: giova21/participium-web:latest
     container_name: participium-web
@@ -41,7 +38,6 @@ services:
     networks:
       - participium-net
 
-  # --- Database ---
   postgres:
     image: postgis/postgis:18-3.6
     platform: linux/amd64
@@ -56,7 +52,6 @@ services:
     networks:
       - participium-net
 
-  # --- Object Storage ---
   minio:
     image: minio/minio:latest
     container_name: participium-minio

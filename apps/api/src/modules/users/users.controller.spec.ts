@@ -8,7 +8,6 @@ import {
 } from '../../common/dto/municipality-user.dto';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 
-// Mock "nanoid" per evitare problemi ESM
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
 const mockSessionGuard = { canActivate: jest.fn(() => true) };
@@ -62,7 +61,11 @@ describe('UsersController', () => {
       const mockUser: Partial<User> = {
         id: '1',
         username: 'officier1',
-        role: { id: 'role-id', name: 'municipal_pr_officer', isMunicipal: true },
+        role: {
+          id: 'role-id',
+          name: 'municipal_pr_officer',
+          isMunicipal: true,
+        },
       };
 
       usersService.findMunicipalityUserById.mockResolvedValue(mockUser as User);

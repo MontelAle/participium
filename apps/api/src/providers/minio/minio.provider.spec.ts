@@ -5,7 +5,6 @@ import { InternalServerErrorException } from '@nestjs/common';
 import { MINIO_ERROR_MESSAGES } from './constants/error-messages';
 import * as Minio from 'minio';
 
-// MinIO client mock
 jest.mock('minio');
 
 describe('MinioProvider', () => {

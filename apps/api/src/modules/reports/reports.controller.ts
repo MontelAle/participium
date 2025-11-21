@@ -77,7 +77,8 @@ export class ReportsController {
         title: { type: 'string', example: 'Broken streetlight on Main Street' },
         description: {
           type: 'string',
-          example: 'The streetlight in front of building number 42 has been broken for 3 days',
+          example:
+            'The streetlight in front of building number 42 has been broken for 3 days',
         },
         longitude: { type: 'number', example: 7.686864 },
         latitude: { type: 'number', example: 45.070312 },
@@ -124,19 +125,15 @@ export class ReportsController {
     @UploadedFiles() images: Express.Multer.File[],
     @Request() req,
   ): Promise<ReportResponseDto> {
-    // Valida il numero di immagini
     if (!images || images.length < MIN_IMAGES || images.length > MAX_IMAGES) {
       throw new BadRequestException(REPORT_ERROR_MESSAGES.IMAGES_REQUIRED);
     }
-
-    // Valida il tipo di file
     for (const image of images) {
       if (!ALLOWED_IMAGE_MIMETYPES.includes(image.mimetype as any)) {
         throw new BadRequestException(
           REPORT_ERROR_MESSAGES.INVALID_FILE_TYPE(image.mimetype),
         );
       }
-      // Valida la dimensione
       if (image.size > MAX_IMAGE_SIZE) {
         throw new BadRequestException(
           REPORT_ERROR_MESSAGES.FILE_SIZE_EXCEEDED(image.originalname),
