@@ -20,7 +20,7 @@ services:
       MINIO_PORT: 9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      MINIO_BUCKET: participium-reports
+      MINIO_BUCKET_NAME: participium-reports
       MINIO_USE_SSL: "false"
     ports:
       - "5000:5000"
