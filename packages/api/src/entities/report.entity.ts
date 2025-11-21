@@ -7,6 +7,7 @@ export enum ReportStatus {
   IN_PROGRESS = 'in_progress',
   RESOLVED = 'resolved',
   REJECTED = 'rejected',
+  ASSIGNED = 'assigned',
 }
 
 export interface Report {

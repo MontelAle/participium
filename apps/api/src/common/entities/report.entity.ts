@@ -17,6 +17,7 @@ export enum ReportStatus {
   IN_PROGRESS = 'in_progress',
   RESOLVED = 'resolved',
   REJECTED = 'rejected',
+  ASSIGNED = 'assigned',
 }
 
 @Entity('report')

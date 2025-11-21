@@ -1,10 +1,11 @@
 import * as React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
-import type { Report } from '@repo/api';
+import type { Report , UpdateReportDto } from '@repo/api';
 import { XIcon } from 'lucide-react';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { useCategories } from '@/hooks/use-categories';
+import { ReportStatus } from '@repo/api';
 
 type ReviewReportDialogProps = {
   report: Report;
@@ -14,27 +15,15 @@ type ReviewReportDialogProps = {
 
 export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialogProps) {
   const { data: categories = [] } = useCategories();
-  const [selectedCategory, setSelectedCategory] = React.useState<string>(report.category?.id ?? '');
+  const [selectedCategory, setSelectedCategory] = React.useState<string>('');
 
+  // Aggiorna la categoria selezionata quando cambia il report
   React.useEffect(() => {
     setSelectedCategory(report.category?.id ?? '');
   }, [report]);
 
   const latitude = report.location.coordinates[1];
   const longitude = report.location.coordinates[0];
-
-  const getStatusClasses = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'in_progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'closed':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
 
   return (
     <Dialog.Root open={open} onOpenChange={onClose}>
@@ -123,10 +112,10 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
               </Select>
             </div>
 
-            {/* Immagini con possibilità di aprire in grande */}
+            {/* Immagini */}
             {report.images && report.images.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Images</label>
+              <div className="mb-4">
+                <strong>Images:</strong>
                 <div className="mt-2 flex gap-2 overflow-x-auto">
                   {report.images.map((img, index) => (
                     <Dialog.Root key={index}>
@@ -165,17 +154,22 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                 type="text"
                 value={report.status.replace('_', ' ')}
                 readOnly
-                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100 ${getStatusClasses(
-                  report.status,
-                )}`}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
               />
             </div>
 
-            {/* Pulsante chiudi */}
-            <div className="flex justify-end mt-4">
+            {/* Pulsanti chiudi e conferma */}
+            <div className="flex justify-end mt-4 gap-3">
               <Dialog.Close asChild>
                 <Button variant="outline">Close</Button>
               </Dialog.Close>
+
+              {/* Show Confirm only if status is pending */}
+              {report.status === 'pending' && (
+                <Dialog.Close asChild>
+                  <Button className="bg-black text-white hover:bg-gray-800">Confirm</Button>
+                </Dialog.Close>
+              )}
             </div>
           </form>
         </Dialog.Content>
