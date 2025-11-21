@@ -27,7 +27,7 @@ describe('SessionGuard', () => {
           useValue: {
             get: jest.fn((key: string) => {
               if (key === 'cookie.name') return 'session_token';
-              if (key === 'session.expiresInSeconds') return 3600; // 1 ora
+              if (key === 'session.expiresInSeconds') return 3600;
               return null;
             }),
           },
@@ -41,7 +41,6 @@ describe('SessionGuard', () => {
     ) as unknown as MockRepository<Session>;
   });
 
-  // Mock dell'ExecutionContext con req persistente
   const mockExecutionContext = (cookies?: Record<string, string>) => {
     const req: any = {
       cookies,
@@ -53,7 +52,7 @@ describe('SessionGuard', () => {
       switchToHttp: () => ({
         getRequest: () => req,
       }),
-      req, // export del req per poterlo verificare nel test
+      req,
     } as unknown as any;
   };
 
@@ -86,8 +85,8 @@ describe('SessionGuard', () => {
     const expiredSession: Partial<Session> = {
       id: 'sessionId',
       hashedSecret: 'somehash',
-      expiresAt: new Date(Date.now() + 10000), // no longer used
-      updatedAt: new Date(Date.now() - 3700000), // more than 1 hour ago (expired)
+      expiresAt: new Date(Date.now() + 10000),
+      updatedAt: new Date(Date.now() - 3700000),
       user: { id: 'user1', role: { name: 'admin' } } as User,
     };
     sessionRepository.findOne.mockResolvedValue(expiredSession);
@@ -105,7 +104,7 @@ describe('SessionGuard', () => {
       id: 'sessionId',
       hashedSecret: 'correcthash',
       expiresAt: new Date(Date.now() + 10000),
-      updatedAt: new Date(), // appena aggiornata
+      updatedAt: new Date(),
       user: { id: 'user1', role: { name: 'admin' } } as User,
     };
     sessionRepository.findOne.mockResolvedValue(validSession);
@@ -119,7 +118,6 @@ describe('SessionGuard', () => {
   });
 
   it('should allow access and attach user and session if session is valid', async () => {
-    // Genera un hash corretto per 'secret123'
     const crypto = require('crypto');
     const correctHash = crypto
       .createHash('sha256')
@@ -131,7 +129,7 @@ describe('SessionGuard', () => {
       id: 'sessionId',
       hashedSecret: correctHash,
       expiresAt: new Date(Date.now() + 10000),
-      updatedAt: new Date(), // appena aggiornata
+      updatedAt: new Date(),
       user: expectedUser,
     };
     sessionRepository.findOne.mockResolvedValue(validSession);
@@ -139,13 +137,12 @@ describe('SessionGuard', () => {
     const context = mockExecutionContext({
       session_token: 'sessionId.secret123',
     });
-    const req = context.req; // prendi il req reale modificato dal guard
+    const req = context.req;
 
     const result = await guard.canActivate(context);
 
     expect(result).toBe(true);
     expect(req.user).toEqual(expectedUser);
-    // Dopo il guard, session.user viene impostato a undefined
     expect(req.session).toEqual({ ...validSession, user: undefined });
   });
 });

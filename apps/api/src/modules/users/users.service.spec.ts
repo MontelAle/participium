@@ -12,7 +12,6 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 
-// Mock nanoid per avere id prevedibili
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
 describe('UsersService', () => {
@@ -52,7 +51,6 @@ describe('UsersService', () => {
     accountRepository = module.get(getRepositoryToken(Account));
     roleRepository = module.get(getRepositoryToken(Role));
 
-    // Castiamo transaction come Jest mock per usarlo nei test
     (userRepository.manager.transaction as unknown as jest.Mock) =
       mockTransaction;
   });
@@ -140,7 +138,7 @@ describe('UsersService', () => {
         async (fn) =>
           fn({
             getRepository: () => ({
-              findOne: async () => null, // role non trovato
+              findOne: async () => null,
             }),
           }),
       );
@@ -158,7 +156,7 @@ describe('UsersService', () => {
               findOne: async () => {
                 if (entity === Role)
                   return { id: 'role-id', name: 'municipal_pr_officer' };
-                if (entity === User) return { username: dto.username }; // user esiste
+                if (entity === User) return { username: dto.username };
                 return null;
               },
               create: jest.fn(),

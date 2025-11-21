@@ -10,6 +10,7 @@ import RegistrationPage from './pages/auth/registration/page';
 import MapPage from './pages/map/page';
 import MunicipalityUsersPage from './pages/app/municipality-users/page';
 import DashboardPage from './pages/app/dashboard/page';
+import ReportPage from './pages/report/page';
 
 const App = () => {
   return (
@@ -24,6 +25,14 @@ const App = () => {
               element={
                 <CitizenGuard>
                   <MapPage />
+                </CitizenGuard>
+              }
+            />
+            <Route
+              path="/report"
+              element={
+                <CitizenGuard>
+                  <ReportPage />
                 </CitizenGuard>
               }
             />

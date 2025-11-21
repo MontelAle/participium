@@ -163,13 +163,11 @@ export class UsersService {
     }
 
     await this.userRepository.manager.transaction(async (manager) => {
-      // Update user fields
       if (dto.email) user.email = dto.email;
       if (dto.username) user.username = dto.username;
       if (dto.firstName) user.firstName = dto.firstName;
       if (dto.lastName) user.lastName = dto.lastName;
 
-      // we can get rid of this if the admin can select only from a list
       if (dto.roleId) {
         const role = await this.roleRepository.findOne({
           where: { id: dto.roleId },
@@ -184,7 +182,6 @@ export class UsersService {
 
       await manager.getRepository(User).save(user);
 
-      // Update associated account if username is changed
       if (dto.username) {
         const account = await manager.getRepository(Account).findOne({
           where: { userId: id, providerId: 'local' },

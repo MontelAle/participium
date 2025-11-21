@@ -8,7 +8,6 @@ import type {
 } from '@repo/api';
 import { UpdateMunicipalityUserDto } from '@repo/api';
 
-// GET all municiaplity users
 export async function getMunicipalityUsers(): Promise<User[]> {
   const response = await apiFetch<MunicipalityUsersResponseDto>(
     '/users/municipality',
@@ -19,7 +18,6 @@ export async function getMunicipalityUsers(): Promise<User[]> {
   return response.data;
 }
 
-// GET municiaplity user by ID
 export async function getMunicipalityUser(userId: string): Promise<User> {
   const response = await apiFetch<MunicipalityUserResponseDto>(
     `/users/municipality/user/${userId}`,
@@ -28,7 +26,6 @@ export async function getMunicipalityUser(userId: string): Promise<User> {
   return response.data;
 }
 
-// CREATE municiaplity user
 export async function createMunicipalityUser(
   data: CreateMunicipalityUserDto,
 ): Promise<User> {
@@ -61,7 +58,6 @@ export async function updateMunicipalityUser(
   return response;
 }
 
-// DELETE municipality user
 export async function deleteMunicipalityUser(
   userId: string,
 ): Promise<{ id: string }> {

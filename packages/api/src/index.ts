@@ -26,6 +26,7 @@ import {
   ReportsResponseDto,
 } from './dto/report.dto';
 import { RolesResponseDto } from './dto/role.dto';
+import { CategoriesResponseDto } from 'dto/category.dto';
 
 export {
   type MunicipalityUsersResponseDto,
@@ -51,4 +52,5 @@ export {
   type FilterReportsDto,
   type ReportResponseDto,
   type Office,
+  type CategoriesResponseDto,
 };

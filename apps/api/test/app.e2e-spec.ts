@@ -25,8 +25,7 @@ const createMockRepository = (data: any[] = []) => {
         results = results.filter((e) =>
           Object.entries(where).every(([k, v]) => {
             if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
-              // Handle nested where conditions (e.g., role: { name: Not('user') })
-              return true; // Simplified for mock
+              return true;
             }
             return e[k] === v;
           }),
@@ -38,8 +37,7 @@ const createMockRepository = (data: any[] = []) => {
       const result = data.find((e) =>
         Object.entries(where || {}).every(([k, v]) => {
           if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
-            // Handle nested where conditions
-            return true; // Simplified for mock
+            return true;
           }
           return e[k] === v;
         }),
@@ -53,7 +51,6 @@ const createMockRepository = (data: any[] = []) => {
       ),
     ),
     save: jest.fn((entity) => {
-      // If entity has an ID, it's an update - preserve existing fields
       if (entity.id) {
         const existing = data.find((e) => e.id === entity.id);
         if (existing) {
@@ -61,7 +58,6 @@ const createMockRepository = (data: any[] = []) => {
           return Promise.resolve(existing);
         }
       }
-      // Otherwise it's a new entity
       const newEntity = { ...entity, id: entity.id || 'mocked-id' };
       data.push(newEntity);
       return Promise.resolve(newEntity);
@@ -84,12 +80,10 @@ const createMockRepository = (data: any[] = []) => {
       }),
     })),
   };
-  // Add a mock manager with a transaction method
   repo.manager = {
     transaction: async (cb: any) => {
       const mockManager = {
         getRepository: (entity: any) => {
-          // Return appropriate repo based on entity type
           if (entity?.name === 'Role') {
             return createMockRepository([
               { id: 'role_1', name: 'admin' },
@@ -201,7 +195,11 @@ describe('AppController (e2e)', () => {
     );
 
     const mockMinioProvider = {
-      uploadFile: jest.fn().mockResolvedValue('http://localhost:9000/bucket/reports/mocked-id/test.jpg'),
+      uploadFile: jest
+        .fn()
+        .mockResolvedValue(
+          'http://localhost:9000/bucket/reports/mocked-id/test.jpg',
+        ),
       deleteFile: jest.fn().mockResolvedValue(undefined),
       deleteFiles: jest.fn().mockResolvedValue(undefined),
       extractFileNameFromUrl: jest.fn((url: string) => url.split('/').pop()),
@@ -266,7 +264,6 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
-  // --- Error and 404 tests ---
   it('GET /nonexistent returns JSON error with statusCode and error', async () => {
     const res = await request(app.getHttpServer())
       .get('/nonexistent')
@@ -304,7 +301,6 @@ describe('AppController (e2e)', () => {
     }
   });
 
-  // --- Auth Controller ---
   it('POST /auth/register returns user and sets session cookie', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/register')
@@ -400,7 +396,6 @@ describe('AppController (e2e)', () => {
     expect(res.body.success).toBe(true);
   });
 
-  // --- Roles Controller ---
   it('GET /roles returns all roles', async () => {
     const res = await request(app.getHttpServer())
       .get('/roles')
@@ -411,7 +406,6 @@ describe('AppController (e2e)', () => {
     expect(Array.isArray(res.body.data)).toBe(true);
   });
 
-  // --- Users Controller ---
   it('POST /users/municipality creates a municipality user', async () => {
     const res = await request(app.getHttpServer())
       .post('/users/municipality')
@@ -471,7 +465,6 @@ describe('AppController (e2e)', () => {
     expect(res.body.data.id).toBe('user_1');
   });
 
-  // --- Reports Controller ---
   it('POST /reports creates a report with images', async () => {
     const res = await request(app.getHttpServer())
       .post('/reports')
@@ -536,7 +529,6 @@ describe('AppController (e2e)', () => {
       .attach('images', Buffer.from('fake-image-4'), 'test4.jpg')
       .expect(400);
 
-    // Multer intercepts and rejects before controller validation
     expect(res.body.message).toContain('Unexpected field');
   });
 
@@ -556,7 +548,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('POST /reports with oversized file returns 400', async () => {
-    const largeBuffer = Buffer.alloc(6 * 1024 * 1024); // 6MB
+    const largeBuffer = Buffer.alloc(6 * 1024 * 1024);
     const res = await request(app.getHttpServer())
       .post('/reports')
       .set('Cookie', 'session_token=sess_1.secret')

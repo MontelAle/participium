@@ -8,7 +8,6 @@ export interface CreateReportDto {
   latitude: number;
   address?: string;
   categoryId: string;
-  // Note: images are handled separately via multipart/form-data
 }
 
 export interface UpdateReportDto {

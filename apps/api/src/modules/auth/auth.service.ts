@@ -48,7 +48,6 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return this.userRepository.manager.transaction(async (manager) => {
-      // Role check/create
       let userRole = await manager
         .getRepository(Role)
         .findOne({ where: { name: 'user' } });
@@ -59,7 +58,6 @@ export class AuthService {
         await manager.getRepository(Role).save(userRole);
       }
 
-      // User check/create
       let user = await manager.getRepository(User).findOne({
         where: { username },
         relations: ['role'],

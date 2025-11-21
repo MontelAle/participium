@@ -223,11 +223,11 @@ File: `src/config/app.config.ts`
     env: 'development'
   },
   session: {
-    expiresInSeconds: 86400  // 24 hours
+    expiresInSeconds: 86400
   },
   cookie: {
     httpOnly: true,
-    secure: false,           // true in production
+    secure: false,
     sameSite: 'lax'
   },
   db: {
@@ -379,21 +379,21 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### Report
 
-| Field       | Type                  | Description               | Nullable | Notes                          |
-| ----------- | --------------------- | ------------------------- | -------- | ------------------------------ |
-| id          | string                | Primary key               | No       |                                |
-| title       | string                | Report title              | No       |                                |
-| description | string                | Report description        | No       | Text type for longer content   |
-| status      | enum                  | Report status             | No       | Values: pending, in_progress, resolved, rejected. Default: pending |
-| location    | string                | Geographic coordinates    | No       | PostGIS geometry(Point, 4326), stored as WKT format |
-| address     | string                | Physical address          | Yes      | Optional                       |
-| images      | string[]              | Array of image paths/URLs | Yes      | Optional                       |
-| userId      | string                | Linked user ID            | No       | Foreign key to User entity     |
-| user        | User                  | User entity relation      | No       | Many-to-one, cascade delete    |
-| categoryId  | string                | Linked category ID        | No       | Foreign key to Category entity |
-| category    | Category              | Category entity relation  | No       | Many-to-one, not nullable      |
-| createdAt   | Date                  | Creation timestamp        | No       | Auto-generated                 |
-| updatedAt   | Date                  | Last update timestamp     | No       | Auto-generated                 |
+| Field       | Type     | Description               | Nullable | Notes                                                              |
+| ----------- | -------- | ------------------------- | -------- | ------------------------------------------------------------------ |
+| id          | string   | Primary key               | No       |                                                                    |
+| title       | string   | Report title              | No       |                                                                    |
+| description | string   | Report description        | No       | Text type for longer content                                       |
+| status      | enum     | Report status             | No       | Values: pending, in_progress, resolved, rejected. Default: pending |
+| location    | string   | Geographic coordinates    | No       | PostGIS geometry(Point, 4326), stored as WKT format                |
+| address     | string   | Physical address          | Yes      | Optional                                                           |
+| images      | string[] | Array of image paths/URLs | Yes      | Optional                                                           |
+| userId      | string   | Linked user ID            | No       | Foreign key to User entity                                         |
+| user        | User     | User entity relation      | No       | Many-to-one, cascade delete                                        |
+| categoryId  | string   | Linked category ID        | No       | Foreign key to Category entity                                     |
+| category    | Category | Category entity relation  | No       | Many-to-one, not nullable                                          |
+| createdAt   | Date     | Creation timestamp        | No       | Auto-generated                                                     |
+| updatedAt   | Date     | Last update timestamp     | No       | Auto-generated                                                     |
 
 **PostGIS Integration**:
 
@@ -417,7 +417,6 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 **Bounding Box**: Find reports within a rectangular area
 
 ```typescript
-// Example: Reports in Turin city center
 ((minLongitude = 7.65), (maxLongitude = 7.72));
 ((minLatitude = 45.03), (maxLatitude = 45.1));
 ```
@@ -425,7 +424,6 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 **Radius Search**: Find reports within a circular area
 
 ```typescript
-// Example: Reports within 5km from Piazza Castello
 ((searchLongitude = 7.686864), (searchLatitude = 45.070312));
 radiusMeters = 5000;
 ```
@@ -433,7 +431,6 @@ radiusMeters = 5000;
 **Nearby with Distances**: Reports ordered by distance from a point
 
 ```typescript
-// Returns reports with calculated distance in meters
 ((longitude = 7.686864), (latitude = 45.070312), (radius = 5000));
 ```
 
