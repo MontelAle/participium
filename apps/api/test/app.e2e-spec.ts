@@ -10,6 +10,7 @@ import { Role } from '../src/common/entities/role.entity';
 import { Account } from '../src/common/entities/account.entity';
 import { Category } from '../src/common/entities/category.entity';
 import { Report } from '../src/common/entities/report.entity';
+import { Office } from '../src/common/entities/office.entity';
 import { REPORT_ERROR_MESSAGES } from '../src/modules/reports/constants/error-messages';
 import request = require('supertest');
 
@@ -173,6 +174,14 @@ describe('AppController (e2e)', () => {
       },
     ];
 
+    const mockOffices = [
+      {
+        id: 'office_1',
+        name: 'administration',
+        label: 'Administration',
+      },
+    ];
+
     const mockSession = {
       id: 'sess_1',
       userId: 'user_1',
@@ -229,6 +238,8 @@ describe('AppController (e2e)', () => {
       .useValue(createMockRepository(mockCategories))
       .overrideProvider(getRepositoryToken(Report))
       .useValue(createMockRepository(mockReports))
+      .overrideProvider(getRepositoryToken(Office))
+      .useValue(createMockRepository(mockOffices))
       .overrideProvider(MinioProvider)
       .useValue(mockMinioProvider);
 

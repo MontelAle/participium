@@ -11,6 +11,7 @@ import { Role } from '../../common/entities/role.entity';
 import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
+import { Office } from '../../common/entities/office.entity';
 
 @Injectable()
 export class UsersService {
@@ -23,6 +24,9 @@ export class UsersService {
 
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
+
+    @InjectRepository(Office)
+    private readonly officeRepository: Repository<Office>,
   ) {}
 
   async findMunicipalityUsers(): Promise<User[]> {
@@ -69,6 +73,11 @@ export class UsersService {
         throw new NotFoundException(`Role not found`);
       }
 
+      const officeRepo = manager.getRepository(Office);
+      const dbOffice = await officeRepo.findOne({
+        where: { id: dto.officeId },
+      });
+
       const existingUser = await manager.getRepository(User).findOne({
         where: { username },
       });
@@ -90,6 +99,7 @@ export class UsersService {
         firstName,
         lastName,
         role: dbRole,
+        office: dbOffice || null,
       });
 
       const user = await manager.getRepository(User).save(newUser);
@@ -178,6 +188,14 @@ export class UsersService {
         }
 
         user.roleId = role.id;
+      }
+
+      if (dto.officeId) {
+        const office = await this.officeRepository.findOne({
+          where: { id: dto.officeId },
+        });
+
+        user.officeId = office ? office.id : null;
       }
 
       await manager.getRepository(User).save(user);

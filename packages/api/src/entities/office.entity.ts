@@ -1,6 +1,5 @@
-export interface Role {
+export interface Office {
   id: string;
   name: string;
   label: string;
-  isMunicipal: boolean;
 }

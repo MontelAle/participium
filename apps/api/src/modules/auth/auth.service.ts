@@ -33,7 +33,7 @@ export class AuthService {
   async validateUser(username: string, password: string) {
     const account = await this.accountRepository.findOne({
       where: { providerId: 'local', accountId: username },
-      relations: ['user', 'user.role'],
+      relations: ['user', 'user.role', 'user.office'],
     });
 
     if (!account) return null;
