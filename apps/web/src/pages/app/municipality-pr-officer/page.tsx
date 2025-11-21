@@ -75,7 +75,7 @@ const MunicipalityPrOfficerPage = () => {
         />
       </div>
 
-      <ReportsTable data={filteredReports} onViewReport={handleViewReport} />
+      <ReportsTable data={filteredReports}  />
     </div>
   );
 };
