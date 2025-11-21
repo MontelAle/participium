@@ -312,7 +312,7 @@ export default function Map() {
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    // Inizializza il MarkerClusterGroup se non esiste
+    // Initialize the MarkerClusterGroup if it doesn't exist
     if (!markerClusterGroupRef.current) {
       markerClusterGroupRef.current = L.markerClusterGroup({
         showCoverageOnHover: true,
