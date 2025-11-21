@@ -4,6 +4,7 @@ import { User } from '../../../common/entities/user.entity';
 import { Account } from '../../../common/entities/account.entity';
 import { Category } from '../../../common/entities/category.entity';
 import { Report, ReportStatus } from '../../../common/entities/report.entity';
+import { Office } from '../../../common/entities/office.entity';
 import { nanoid } from 'nanoid';
 import * as bcrypt from 'bcrypt';
 import { faker } from '@faker-js/faker';
@@ -17,16 +18,35 @@ export async function seedDatabase(dataSource: DataSource) {
   const accountRepo = dataSource.getRepository(Account);
   const categoryRepo = dataSource.getRepository(Category);
   const reportRepo = dataSource.getRepository(Report);
+  const officeRepo = dataSource.getRepository(Office);
+
+  const officesData = [
+    { name: 'water-supply', label: 'Water Supply' },
+    { name: 'architectural-barriers', label: 'Architectural Barriers' },
+    { name: 'public-lighting', label: 'Public Lighting' },
+    { name: 'waste', label: 'Waste' },
+    { name: 'road', label: 'Road' },
+    { name: 'sewer-system', label: 'Sewer System' },
+    { name: 'parks', label: 'Parks' },
+  ];
+
+  for (const o of officesData) {
+    let office = await officeRepo.findOne({ where: { name: o.name } });
+    if (!office) {
+      office = officeRepo.create({
+        id: nanoid(),
+        name: o.name,
+        label: o.label,
+      });
+      await officeRepo.save(office);
+    }
+  }
 
   const rolesData = [
-    { name: 'user', isMunicipal: false },
-    { name: 'admin', isMunicipal: true },
-    { name: 'municipal_pr_officer', isMunicipal: true },
-    { name: 'municipal_administrator', isMunicipal: true },
-    { name: 'technical_officer', isMunicipal: true },
-    { name: 'transport_officer', isMunicipal: true },
-    { name: 'special_projects_officer', isMunicipal: true },
-    { name: 'environmental_officer', isMunicipal: true },
+    { name: 'user', label: 'User', isMunicipal: false },
+    { name: 'admin', label: 'Admin', isMunicipal: true },
+    { name: 'office_manager', label: 'Office Manager', isMunicipal: true },
+    { name: 'office_worker', label: 'Office Worker', isMunicipal: true },
   ];
 
   const rolesMap = new Map<string, Role>();
