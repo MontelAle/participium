@@ -325,17 +325,13 @@ export default function Map() {
         maxClusterRadius: 80,
         iconCreateFunction: function (cluster) {
           const count = cluster.getChildCount();
-          let size = 'small';
           let c = ' marker-cluster-';
           
           if (count < 10) {
-            size = 'small';
             c += 'small';
           } else if (count < 50) {
-            size = 'medium';
             c += 'medium';
           } else {
-            size = 'large';
             c += 'large';
           }
 
