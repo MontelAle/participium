@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/shadcn-io/table';
 import type { Report } from '@repo/api';
 import { Button } from '@/components/ui/button';
-import { ReviewReportDialog } from './reviwe-report-dialog';
+import { ReviewReportDialog } from './review-report-dialog';
 
 export type ReportsTableProps = {
   data: Report[];
