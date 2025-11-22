@@ -7,6 +7,7 @@ import { useReports } from '@/hooks/use-reports';
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { isAdminUser } = useAuth();
+  const { isMunicipalPrOfficer } = useAuth();
   const { data: municipalityUsers = [] } = useMunicipalityUsers();
   const { data: reports = [] } = useReports();
 
@@ -77,6 +78,16 @@ const DashboardPage = () => {
               }
             >
               Create new user
+            </Button>
+          )}
+
+          {isMunicipalPrOfficer && (
+            <Button
+              onClick={() =>
+                navigate('/app/municipality-pr-officer')
+              }
+            >
+              View reports
             </Button>
           )}
         </div>
