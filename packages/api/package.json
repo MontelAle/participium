@@ -16,14 +16,8 @@
     "access": "public"
   },
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    },
-    "./*": {
-      "import": "./dist/*.js",
-      "require": "./dist/*.js"
-    }
+    ".": "./dist/index.js",
+    "./*": "./dist/index.js"
   },
   "dependencies": {
     "typeorm": "^0.3.27"
