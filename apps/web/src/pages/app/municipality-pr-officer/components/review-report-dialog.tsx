@@ -12,21 +12,35 @@ type ReviewReportDialogProps = {
   onClose: () => void;
 };
 
+enum ReportStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress',
+  RESOLVED = 'resolved',
+  REJECTED = 'rejected',
+  ASSIGNED = 'assigned',
+}
+
 export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialogProps) {
   const { data: categories = [] } = useCategories();
 
-  // Imposta la categoria iniziale del report
   const [selectedCategory, setSelectedCategory] = React.useState<string>(report.category?.id ?? '');
+  const [selectedStatus, setSelectedStatus] = React.useState<string>(report.status);
+  const [explanation, setExplanation] = React.useState<string>('');
 
-  // Aggiorna la categoria quando cambia il report
   React.useEffect(() => {
     setSelectedCategory(report.category?.id ?? '');
+    setSelectedStatus(report.status);
+    setExplanation('');
   }, [report]);
 
   const latitude = report.location.coordinates[1];
   const longitude = report.location.coordinates[0];
 
-  const isPending = report.status === 'pending';
+  const isPending = report.status === ReportStatus.PENDING;
+  const isRejected = selectedStatus === ReportStatus.REJECTED;
+
+  // Conferma disabilitata se lo status è rejected e explanation è vuoto
+  const canConfirm = isPending && (!isRejected || explanation.trim() !== '');
 
   return (
     <Dialog.Root open={open} onOpenChange={onClose}>
@@ -98,27 +112,36 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
               </div>
             </div>
 
-            {/* Categoria modificabile */}
+            {/* Categoria */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Category</label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-full mt-1">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isPending ? (
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <input
+                  type="text"
+                  value={report.category?.name ?? ''}
+                  readOnly
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
+                />
+              )}
             </div>
 
             {/* Immagini */}
             {report.images && report.images.length > 0 && (
               <div className="mb-4">
-                <strong>Images:</strong>
+                Images:
                 <div className="mt-2 flex gap-2 overflow-x-auto">
                   {report.images.map((img, index) => (
                     <Dialog.Root key={index}>
@@ -153,13 +176,38 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
             {/* Status */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Status</label>
-              <input
-                type="text"
-                value={report.status.replace('_', ' ')}
-                readOnly
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
-              />
+              {isPending ? (
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ReportStatus.ASSIGNED}>Assigned</SelectItem>
+                    <SelectItem value={ReportStatus.REJECTED}>Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <input
+                  type="text"
+                  value={report.status.replace('_', ' ')}
+                  readOnly
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
+                />
+              )}
             </div>
+
+            {/* Explanation solo se rejected */}
+            {isPending && isRejected && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Explanation</label>
+                <textarea
+                  value={explanation}
+                  onChange={(e) => setExplanation(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900"
+                  rows={3}
+                />
+              </div>
+            )}
 
             {/* Pulsanti chiudi e conferma */}
             <div className="flex justify-end mt-4 gap-3">
@@ -168,9 +216,12 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
               </Dialog.Close>
 
               {isPending && (
-                <Dialog.Close asChild>
-                  <Button className="bg-black text-white hover:bg-gray-800">Confirm</Button>
-                </Dialog.Close>
+                <Button
+                  className="bg-black text-white hover:bg-gray-800"
+                  disabled={!canConfirm}
+                >
+                  Confirm
+                </Button>
               )}
             </div>
           </form>
