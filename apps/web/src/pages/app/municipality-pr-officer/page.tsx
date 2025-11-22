@@ -8,12 +8,12 @@ const MunicipalityPrOfficerPage = () => {
   const { data: reports = [] } = useReports();
   const navigate = useNavigate();
 
-  // Stato della ricerca e dei filtri
+ 
   const [query, setQuery] = React.useState('');
   const [selectedStatuses, setSelectedStatuses] = React.useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = React.useState<string[]>([]);
 
-  // Recupero valori unici per i filtri
+ 
   const availableStatuses = React.useMemo(() => {
     const setStatus = new Set<string>();
     for (const r of reports) {
@@ -30,7 +30,6 @@ const MunicipalityPrOfficerPage = () => {
     return Array.from(setCategories).sort();
   }, [reports]);
 
-  // Filtro dei dati
   const filteredReports = React.useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 

@@ -96,7 +96,7 @@ export function ReviewReportDialog({
           </div>
 
           <form className="flex flex-col gap-4">
-            {/* Title */}
+         
             <div>
               <label className="block text-sm font-medium text-gray-700">Title</label>
               <input
@@ -107,7 +107,7 @@ export function ReviewReportDialog({
               />
             </div>
 
-            {/* Description */}
+          
             <div>
               <label className="block text-sm font-medium text-gray-700">Description</label>
               <textarea
@@ -118,7 +118,7 @@ export function ReviewReportDialog({
               />
             </div>
 
-            {/* Address */}
+          
             <div>
               <label className="block text-sm font-medium text-gray-700">Address</label>
               <input
@@ -129,7 +129,6 @@ export function ReviewReportDialog({
               />
             </div>
 
-            {/* Coordinates */}
             <div className="flex gap-2">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700">Latitude</label>
@@ -151,7 +150,7 @@ export function ReviewReportDialog({
               </div>
             </div>
 
-            {/* Category */}
+           
             <div>
               <label className="block text-sm font-medium text-gray-700">Category</label>
               {isPending ? (
@@ -181,7 +180,7 @@ export function ReviewReportDialog({
               )}
             </div>
 
-            {/* Images */}
+        
             {report.images && report.images.length > 0 && (
               <div className="mb-4">
                 Images:
@@ -216,7 +215,7 @@ export function ReviewReportDialog({
               </div>
             )}
 
-            {/* Status */}
+          
             <div>
               <label className="block text-sm font-medium text-gray-700">Status</label>
               {isPending ? (
@@ -243,7 +242,6 @@ export function ReviewReportDialog({
               )}
             </div>
 
-            {/* Explanation (correct) */}
             {(isPending && selectedStatus === ReportStatus.REJECTED) ||
             (!isPending && report.status === ReportStatus.REJECTED) ? (
               <div>
@@ -259,7 +257,7 @@ export function ReviewReportDialog({
               </div>
             ) : null}
 
-            {/* Buttons */}
+            
             <div className="flex justify-end mt-4 gap-3">
               <Dialog.Close asChild>
                 <Button variant="outline" disabled={isLoading}>

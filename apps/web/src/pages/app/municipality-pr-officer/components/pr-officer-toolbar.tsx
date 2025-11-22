@@ -82,7 +82,7 @@ export function PrOfficerToolbar({
         className
       )}
     >
-      {/* Search input */}
+     
       <div className="flex-1">
         <Input
           value={query}
@@ -93,7 +93,6 @@ export function PrOfficerToolbar({
         />
       </div>
 
-      {/* Status filter */}
       <div className="flex items-center gap-2">
         <Popover open={openStatus} onOpenChange={setOpenStatus}>
           <PopoverTrigger asChild>
@@ -148,7 +147,6 @@ export function PrOfficerToolbar({
         )}
       </div>
 
-      {/* Category filter */}
       <div className="flex items-center gap-2">
         <Popover open={openCategory} onOpenChange={setOpenCategory}>
           <PopoverTrigger asChild>
