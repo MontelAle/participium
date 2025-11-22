@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
-import type { Report } from '@repo/api';
+import type { Report, UpdateReportDto } from '@repo/api';
 import { ReportStatus } from '@repo/api';
 import { XIcon } from 'lucide-react';
 import {
@@ -12,10 +12,12 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { useCategories } from '@/hooks/use-categories';
+import { toast } from 'sonner';
+import { useUpdateReport } from '@/hooks/use-reports';
 
 type ReviewReportDialogProps = {
   report: Report;
-  open: boolean;
+  open: boolean; 
   onClose: () => void;
 };
 
@@ -25,6 +27,7 @@ export function ReviewReportDialog({
   onClose,
 }: ReviewReportDialogProps) {
   const { data: categories = [] } = useCategories();
+  const updateReportMutation = useUpdateReport();
 
   const [selectedCategory, setSelectedCategory] = React.useState<string>(
     report.category?.id ?? '',
@@ -46,8 +49,32 @@ export function ReviewReportDialog({
   const isPending = report.status === ReportStatus.PENDING;
   const isRejected = selectedStatus === ReportStatus.REJECTED;
 
+  const isLoading = updateReportMutation.status === 'pending';
+
   // Conferma disabilitata se lo status è rejected e explanation è vuoto
   const canConfirm = isPending && (!isRejected || explanation.trim() !== '');
+
+  const handleConfirm = async () => {
+    if (!canConfirm) return;
+
+    const updateData: UpdateReportDto = {
+      status: selectedStatus as ReportStatus,
+      categoryId: selectedCategory,
+      ...(isRejected && { description: explanation }),
+    };
+
+    try {
+      await updateReportMutation.mutateAsync({
+        reportId: report.id,
+        data: updateData,
+      });
+      toast.success('Report updated successfully');
+      onClose();
+    } catch (err) {
+      toast.error('Failed to update report');
+      console.error(err);
+    }
+  };
 
   return (
     <Dialog.Root open={open} onOpenChange={onClose}>
@@ -62,6 +89,7 @@ export function ReviewReportDialog({
               <button
                 aria-label="Close"
                 className="p-1 rounded hover:bg-black/5"
+                disabled={isLoading}
               >
                 <XIcon className="w-5 h-5" />
               </button>
@@ -143,6 +171,7 @@ export function ReviewReportDialog({
                 <Select
                   value={selectedCategory}
                   onValueChange={setSelectedCategory}
+                  disabled={isLoading}
                 >
                   <SelectTrigger className="w-full mt-1">
                     <SelectValue placeholder="Select category" />
@@ -209,6 +238,7 @@ export function ReviewReportDialog({
                 <Select
                   value={selectedStatus}
                   onValueChange={setSelectedStatus}
+                  disabled={isLoading}
                 >
                   <SelectTrigger className="w-full mt-1">
                     <SelectValue placeholder="Select status" />
@@ -243,6 +273,7 @@ export function ReviewReportDialog({
                   onChange={(e) => setExplanation(e.target.value)}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900"
                   rows={3}
+                  disabled={isLoading}
                 />
               </div>
             )}
@@ -250,15 +281,18 @@ export function ReviewReportDialog({
             {/* Pulsanti chiudi e conferma */}
             <div className="flex justify-end mt-4 gap-3">
               <Dialog.Close asChild>
-                <Button variant="outline">Close</Button>
+                <Button variant="outline" disabled={isLoading}>
+                  Close
+                </Button>
               </Dialog.Close>
 
               {isPending && (
                 <Button
                   className="bg-black text-white hover:bg-gray-800"
-                  disabled={!canConfirm}
+                  disabled={!canConfirm || isLoading}
+                  onClick={handleConfirm}
                 >
-                  Confirm
+                  {isLoading ? 'Saving...' : 'Confirm'}
                 </Button>
               )}
             </div>
