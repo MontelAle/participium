@@ -1,3 +1,165 @@
+/*
+import * as React from 'react';
+import { useState, useEffect } from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
+import { Button } from '@/components/ui/button';
+import type { Report, UpdateReportDto } from '@repo/api';
+import { XIcon } from 'lucide-react';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { useCategories } from '@/hooks/use-categories';
+import { useUpdateReport } from '@/hooks/use-reports';
+import { ReportStatus } from '@repo/api';
+import { toast } from 'sonner';
+
+type ReviewReportDialogProps = {
+  report: Report;
+  open: boolean;
+  onClose: () => void;
+};
+
+export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialogProps) {
+  const { data: categories = [] } = useCategories();
+  const { mutateAsync: updateReport } = useUpdateReport();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(report.category?.id ?? '');
+  const [selectedStatus, setSelectedStatus] = useState<ReportStatus>(report.status);
+  const [explanation, setExplanation] = useState('');
+
+  useEffect(() => {
+    setSelectedCategory(report.category?.id ?? '');
+    setSelectedStatus(report.status);
+    setExplanation('');
+  }, [report]);
+
+  const latitude = report.location.coordinates[1];
+  const longitude = report.location.coordinates[0];
+
+  const isPending = report.status === ReportStatus.PENDING;
+  const isRejected = selectedStatus === ReportStatus.REJECTED;
+  const canConfirm = isPending && (!isRejected || explanation.trim() !== '');
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isLoading) return;
+
+    setIsLoading(true);
+
+    const updateData: UpdateReportDto = {
+      categoryId: selectedCategory,
+      status: selectedStatus,
+    };
+
+    try {
+      await updateReport({ reportId: report.id, data: updateData });
+      toast.success('Report updated successfully!');
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.message ?? 'Failed to update report');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog.Root open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg w-full max-w-md shadow-lg z-50 overflow-y-auto max-h-[80vh]">
+          <div className="flex items-center justify-between mb-4">
+            <Dialog.Title className="text-xl font-bold">Report Details</Dialog.Title>
+            <Dialog.Close asChild>
+              <button aria-label="Close" className="p-1 rounded hover:bg-black/5">
+                <XIcon className="w-5 h-5" />
+              </button>
+            </Dialog.Close>
+          </div>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Title</label>
+              <input type="text" value={report.title} readOnly className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Description</label>
+              <textarea value={report.description ?? ''} readOnly className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100" rows={3} />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Address</label>
+              <input type="text" value={report.address ?? ''} readOnly className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100" />
+            </div>
+
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700">Latitude</label>
+                <input type="number" value={latitude} readOnly className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700">Longitude</label>
+                <input type="number" value={longitude} readOnly className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Category</label>
+              {isPending ? (
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <input type="text" value={report.category?.name ?? ''} readOnly className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100" />
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Status</label>
+              {isPending ? (
+                <Select value={selectedStatus} onValueChange={(val) => setSelectedStatus(val as ReportStatus)}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ReportStatus.ASSIGNED}>Assigned</SelectItem>
+                    <SelectItem value={ReportStatus.REJECTED}>Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <input type="text" value={report.status.replace('_', ' ')} readOnly className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100" />
+              )}
+            </div>
+
+            {isPending && isRejected && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Explanation</label>
+                <textarea value={explanation} onChange={(e) => setExplanation(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900" rows={3} />
+              </div>
+            )}
+
+            <div className="flex justify-end mt-4 gap-3">
+              <Dialog.Close asChild>
+                <Button type="button" variant="outline">Cancel</Button>
+              </Dialog.Close>
+              {isPending && (
+                <Button type="submit" disabled={!canConfirm || isLoading}>
+                  {isLoading ? 'Updating...' : 'Confirm'}
+                </Button>
+              )}
+            </div>
+          </form>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+}
+*/
 import * as React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
