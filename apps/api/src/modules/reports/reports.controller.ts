@@ -199,7 +199,7 @@ export class ReportsController {
    */
   @Patch(':id')
   @UseGuards(SessionGuard, RolesGuard)
-  @Roles('officier', 'user', 'municipal_pr_officer')
+  @Roles('pr_officer', 'admin', 'user')
   async update(
     @Param('id') id: string,
     @Body() updateReportDto: UpdateReportDto,
@@ -217,7 +217,7 @@ export class ReportsController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Roles('Officier')
+  @Roles('pr_officer')
   async remove(@Param('id') id: string) {
     await this.reportsService.remove(id);
   }

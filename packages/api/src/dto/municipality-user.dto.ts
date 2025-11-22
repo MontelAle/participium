@@ -7,6 +7,7 @@ export interface UpdateMunicipalityUserDto {
   firstName?: string;
   lastName?: string;
   roleId?: string;
+  officeId?: string;
 }
 
 export interface CreateMunicipalityUserDto {
@@ -16,6 +17,7 @@ export interface CreateMunicipalityUserDto {
   lastName: string;
   password: string;
   roleId: string;
+  officeId?: string;
 }
 
 export interface MunicipalityUserResponseDto extends ResponseDto {

@@ -6,6 +6,7 @@ import { User } from '../../common/entities/user.entity';
 import { Account } from '../../common/entities/account.entity';
 import { Role } from '../../common/entities/role.entity';
 import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
+import { Office } from '../../common/entities/office.entity';
 
 import { Repository } from 'typeorm';
 import { ConflictException, NotFoundException } from '@nestjs/common';
@@ -43,6 +44,10 @@ describe('UsersService', () => {
           provide: getRepositoryToken(Role),
           useValue: { findOne: jest.fn() },
         },
+        {
+          provide: getRepositoryToken(Office),
+          useValue: { findOne: jest.fn(), find: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -66,7 +71,7 @@ describe('UsersService', () => {
 
       expect(userRepository.find).toHaveBeenCalledWith(
         expect.objectContaining({
-          relations: ['role'],
+          relations: ['role', 'office'],
           where: { role: { isMunicipal: true } },
         }),
       );
@@ -92,7 +97,7 @@ describe('UsersService', () => {
 
       expect(userRepository.findOne).toHaveBeenCalledWith(
         expect.objectContaining({
-          relations: ['role'],
+          relations: ['role', 'office'],
           where: { id: '1', role: { isMunicipal: true } },
         }),
       );
@@ -108,7 +113,7 @@ describe('UsersService', () => {
 
       expect(userRepository.findOne).toHaveBeenCalledWith(
         expect.objectContaining({
-          relations: ['role'],
+          relations: ['role', 'office'],
           where: { id: 'missing', role: { isMunicipal: true } },
         }),
       );
@@ -230,6 +235,7 @@ describe('UsersService', () => {
         firstName: dto.firstName,
         lastName: dto.lastName,
         role: { id: 'role-id', name: 'municipal_pr_officer' },
+        office: null,
       });
     });
   });

@@ -17,6 +17,7 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { useRoles } from '@/hooks/use-roles';
+import { useOffices } from '@/hooks/use-offices';
 import { useCreateMunicipalityUser } from '@/hooks/use-municipality-users';
 import type { CreateMunicipalityUserDto } from '@repo/api';
 import { useEffect } from 'react';
@@ -28,6 +29,7 @@ export function CreateMunicipalityUserDialog({
 }) {
   const { mutateAsync: createMunicipalityUser } = useCreateMunicipalityUser();
   const { data: roles = [] } = useRoles();
+  const { data: offices = [] } = useOffices();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -41,6 +43,7 @@ export function CreateMunicipalityUserDialog({
     firstName: '',
     lastName: '',
     roleId: '',
+    officeId: '',
     password: '',
   };
   const [form, setForm] = useState<CreateMunicipalityUserDto>(emptyForm);
@@ -51,6 +54,10 @@ export function CreateMunicipalityUserDialog({
 
   const handleRoleChange = (value: string) => {
     setForm({ ...form, roleId: value });
+  };
+
+  const handleOfficeChange = (value: string) => {
+    setForm({ ...form, officeId: value });
   };
 
   const handleOpenChange = (next: boolean) => {
@@ -190,6 +197,21 @@ export function CreateMunicipalityUserDialog({
             </Field>
 
             <Field>
+              <Select value={form.officeId} onValueChange={handleOfficeChange}>
+                <SelectTrigger className="InputGroupInput">
+                  <SelectValue placeholder="Select office" />
+                </SelectTrigger>
+                <SelectContent>
+                  {offices.map((office) => (
+                    <SelectItem key={office.id} value={office.id}>
+                      {office.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field>
               <InputGroup>
                 <InputGroupInput
                   type="password"
@@ -212,7 +234,7 @@ export function CreateMunicipalityUserDialog({
                 </Button>
               </Dialog.Close>
 
-              <Button type="submit" disabled={isLoading || !form.roleId}>
+              <Button type="submit" disabled={isLoading || !form.roleId || !form.officeId}>
                 {isLoading ? 'Creating...' : 'Create User'}
               </Button>
             </div>

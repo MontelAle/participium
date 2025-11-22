@@ -1,8 +1,8 @@
 import { Entity, PrimaryColumn, Column } from 'typeorm';
-import { Role as RoleInterface } from '@repo/api';
+import { Office as OfficeInterface } from '@repo/api';
 
-@Entity('role')
-export class Role implements RoleInterface {
+@Entity('office')
+export class Office implements OfficeInterface {
   @PrimaryColumn('varchar')
   id: string;
 
@@ -11,7 +11,4 @@ export class Role implements RoleInterface {
 
   @Column('varchar')
   label: string;
-
-  @Column('boolean', { default: false })
-  isMunicipal: boolean;
 }
