@@ -24,4 +24,5 @@ export interface Report {
   category: Category;
   createdAt: Date;
   updatedAt: Date;
+  explanation?: string;
 }

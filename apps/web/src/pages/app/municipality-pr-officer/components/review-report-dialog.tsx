@@ -247,19 +247,21 @@ export function ReviewReportDialog({
               )}
             </div>
 
-            {/* Explanation solo se rejected */}
-            {isPending && isRejected && (
+            {/* Explanation */}
+            {(isPending && selectedStatus === ReportStatus.REJECTED) ||
+            (!isPending && report.status === ReportStatus.REJECTED) ? (
               <div>
                 <label className="block text-sm font-medium text-gray-700">Explanation</label>
                 <textarea
-                  value={explanation}
-                  onChange={(e) => setExplanation(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900"
+                  value={isPending ? explanation : report.description ?? ''}
+                  onChange={isPending ? (e) => setExplanation(e.target.value) : undefined}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
                   rows={3}
+                  readOnly={!isPending}
                   disabled={isLoading}
                 />
               </div>
-            )}
+            ) : null}
 
             {/* Pulsanti chiudi e conferma */}
             <div className="flex justify-end mt-4 gap-3">

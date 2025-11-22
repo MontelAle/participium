@@ -70,4 +70,7 @@ export class Report implements ReportInterface {
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
+
+  @Column('text', { nullable: true })
+  explanation: string;
 }
