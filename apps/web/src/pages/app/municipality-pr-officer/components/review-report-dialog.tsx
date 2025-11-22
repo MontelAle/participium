@@ -1,11 +1,10 @@
 import * as React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
-import type { Report , UpdateReportDto } from '@repo/api';
+import type { Report } from '@repo/api';
 import { XIcon } from 'lucide-react';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { useCategories } from '@/hooks/use-categories';
-import { ReportStatus } from '@repo/api';
 
 type ReviewReportDialogProps = {
   report: Report;
@@ -15,15 +14,19 @@ type ReviewReportDialogProps = {
 
 export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialogProps) {
   const { data: categories = [] } = useCategories();
-  const [selectedCategory, setSelectedCategory] = React.useState<string>('');
 
-  // Aggiorna la categoria selezionata quando cambia il report
+  // Imposta la categoria iniziale del report
+  const [selectedCategory, setSelectedCategory] = React.useState<string>(report.category?.id ?? '');
+
+  // Aggiorna la categoria quando cambia il report
   React.useEffect(() => {
     setSelectedCategory(report.category?.id ?? '');
   }, [report]);
 
   const latitude = report.location.coordinates[1];
   const longitude = report.location.coordinates[0];
+
+  const isPending = report.status === 'pending';
 
   return (
     <Dialog.Root open={open} onOpenChange={onClose}>
@@ -164,8 +167,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                 <Button variant="outline">Close</Button>
               </Dialog.Close>
 
-              {/* Show Confirm only if status is pending */}
-              {report.status === 'pending' && (
+              {isPending && (
                 <Dialog.Close asChild>
                   <Button className="bg-black text-white hover:bg-gray-800">Confirm</Button>
                 </Dialog.Close>
