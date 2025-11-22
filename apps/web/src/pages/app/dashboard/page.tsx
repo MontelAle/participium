@@ -63,6 +63,48 @@ const DashboardPage = () => {
             </p>
           </div>
         </div>
+
+        <div className="rounded-lg border bg-card p-6">
+          <div className="flex flex-col space-y-1.5">
+            <h3 className="font-semibold">Assigned Reports</h3>
+
+            <p className="text-3xl font-bold">
+              {
+                reports.filter((report) => {
+                  return report.status === 'assigned';
+                }).length
+              }
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-card p-6">
+          <div className="flex flex-col space-y-1.5">
+            <h3 className="font-semibold">Rejected Reports</h3>
+
+            <p className="text-3xl font-bold">
+              {
+                reports.filter((report) => {
+                  return report.status === 'rejected';
+                }).length
+              }
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-card p-6">
+          <div className="flex flex-col space-y-1.5">
+            <h3 className="font-semibold">Resolved Reports</h3>
+
+            <p className="text-3xl font-bold">
+              {
+                reports.filter((report) => {
+                  return report.status === 'resolved';
+                }).length
+              }
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="rounded-lg border bg-card p-6">

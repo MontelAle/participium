@@ -17,7 +17,7 @@ import { useUpdateReport } from '@/hooks/use-reports';
 
 type ReviewReportDialogProps = {
   report: Report;
-  open: boolean; 
+  open: boolean;
   onClose: () => void;
 };
 
@@ -30,10 +30,10 @@ export function ReviewReportDialog({
   const updateReportMutation = useUpdateReport();
 
   const [selectedCategory, setSelectedCategory] = React.useState<string>(
-    report.category?.id ?? '',
+    report.category?.id ?? ''
   );
   const [selectedStatus, setSelectedStatus] = React.useState<string>(
-    report.status,
+    report.status
   );
   const [explanation, setExplanation] = React.useState<string>('');
 
@@ -48,11 +48,16 @@ export function ReviewReportDialog({
 
   const isPending = report.status === ReportStatus.PENDING;
   const isRejected = selectedStatus === ReportStatus.REJECTED;
-
   const isLoading = updateReportMutation.status === 'pending';
 
-  // Conferma disabilitata se lo status è rejected e explanation è vuoto
-  const canConfirm = isPending && (!isRejected || explanation.trim() !== '');
+  // Conferma abilitata solo se:
+  // - report pending
+  // - è stato selezionato uno status diverso da quello iniziale
+  // - se lo status è rejected, l'explanation non è vuota
+  const canConfirm =
+    isPending &&
+    selectedStatus !== report.status &&
+    (!isRejected || explanation.trim() !== '');
 
   const handleConfirm = async () => {
     if (!canConfirm) return;
@@ -82,9 +87,7 @@ export function ReviewReportDialog({
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
         <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg w-full max-w-md shadow-lg z-50 overflow-y-auto max-h-[80vh]">
           <div className="flex items-center justify-between mb-4">
-            <Dialog.Title className="text-xl font-bold">
-              Report Details
-            </Dialog.Title>
+            <Dialog.Title className="text-xl font-bold">Report Details</Dialog.Title>
             <Dialog.Close asChild>
               <button
                 aria-label="Close"
@@ -99,9 +102,7 @@ export function ReviewReportDialog({
           <form className="flex flex-col gap-4">
             {/* Titolo */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Title
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Title</label>
               <input
                 type="text"
                 value={report.title}
@@ -112,9 +113,7 @@ export function ReviewReportDialog({
 
             {/* Descrizione */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Description
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Description</label>
               <textarea
                 value={report.description ?? ''}
                 readOnly
@@ -125,9 +124,7 @@ export function ReviewReportDialog({
 
             {/* Indirizzo */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Address
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Address</label>
               <input
                 type="text"
                 value={report.address ?? ''}
@@ -139,9 +136,7 @@ export function ReviewReportDialog({
             {/* Coordinate */}
             <div className="flex gap-2">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  Latitude
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Latitude</label>
                 <input
                   type="number"
                   value={latitude}
@@ -150,9 +145,7 @@ export function ReviewReportDialog({
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  Longitude
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Longitude</label>
                 <input
                   type="number"
                   value={longitude}
@@ -164,9 +157,7 @@ export function ReviewReportDialog({
 
             {/* Categoria */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Category
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Category</label>
               {isPending ? (
                 <Select
                   value={selectedCategory}
@@ -231,9 +222,7 @@ export function ReviewReportDialog({
 
             {/* Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Status
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Status</label>
               {isPending ? (
                 <Select
                   value={selectedStatus}
@@ -244,12 +233,8 @@ export function ReviewReportDialog({
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={ReportStatus.ASSIGNED}>
-                      Assigned
-                    </SelectItem>
-                    <SelectItem value={ReportStatus.REJECTED}>
-                      Rejected
-                    </SelectItem>
+                    <SelectItem value={ReportStatus.ASSIGNED}>Assigned</SelectItem>
+                    <SelectItem value={ReportStatus.REJECTED}>Rejected</SelectItem>
                   </SelectContent>
                 </Select>
               ) : (
@@ -265,9 +250,7 @@ export function ReviewReportDialog({
             {/* Explanation solo se rejected */}
             {isPending && isRejected && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Explanation
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Explanation</label>
                 <textarea
                   value={explanation}
                   onChange={(e) => setExplanation(e.target.value)}
