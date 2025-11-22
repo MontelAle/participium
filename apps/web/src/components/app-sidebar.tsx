@@ -7,6 +7,7 @@ import {
   ChevronsUpDown,
   Map,
   Plus,
+  FileText,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -39,6 +40,7 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
     isCitizenUser,
     isGuestUser,
     isMunicipalityUser,
+    isMunicipalPrOfficer, /// aggiunta: flag per municipal_pr_officer
   } = useAuth();
 
   const { locationData } = useActiveReportStore();
@@ -67,28 +69,38 @@ export function AppSidebar({ isOpen, onToggle }: SidebarProps) {
     },
   ];
 
+  const municipalPrOfficerMenuItems = [ /// aggiunta: menu per municipal_pr_officer
+    {
+      title: 'View Reports',
+      href: '/app/municipality-pr-officer',
+      icon: FileText, // puoi cambiare icona se vuoi
+    },
+  ];
+
   const menuItems = municipalMenuItems;
 
   if (isAdminUser) {
     menuItems.push(...adminMenuItems);
+  } 
+  if (isMunicipalPrOfficer) { /// aggiunta: inserisce solo il menu item per PR officer
+    menuItems.push(...municipalPrOfficerMenuItems);
   }
 
-const handleAddReport = () => {
-  console.log('locationData:', locationData);
-  if (!locationData) {
-    toast.warning('Select a location on the map before creating a report.');
-    return;
-  }
+  const handleAddReport = () => {
+    console.log('locationData:', locationData);
+    if (!locationData) {
+      toast.warning('Select a location on the map before creating a report.');
+      return;
+    }
 
-  navigate('/report', {
-    state: {
-      latitude: locationData.latitude,
-      longitude: locationData.longitude,
-      address: locationData.address,
-    },
-  });
-};
-
+    navigate('/report', {
+      state: {
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+        address: locationData.address,
+      },
+    });
+  };
 
   const handleLogout = async () => {
     await logout();

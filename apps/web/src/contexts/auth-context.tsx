@@ -19,6 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isMunicipalityUser = user?.role?.isMunicipal || false;
   const isAdminUser = user?.role?.name === 'admin';
   const isCitizenUser = user?.role?.name === 'user';
+  const isMunicipalPrOfficer = user?.role?.name === 'municipal_pr_officer'; 
   const isGuestUser = isAuthenticated === false;
   const isLoading =
     loginMutation.isPending ||
@@ -76,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isCitizenUser,
         isGuestUser,
         isMunicipalityUser,
+        isMunicipalPrOfficer,
       }}
     >
       {children}

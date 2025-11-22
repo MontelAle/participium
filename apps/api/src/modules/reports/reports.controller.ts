@@ -199,7 +199,7 @@ export class ReportsController {
    */
   @Patch(':id')
   @UseGuards(SessionGuard, RolesGuard)
-  @Roles('officier', 'user')
+  @Roles('officier', 'user', 'municipal_pr_officer')
   async update(
     @Param('id') id: string,
     @Body() updateReportDto: UpdateReportDto,
