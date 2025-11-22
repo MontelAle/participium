@@ -50,10 +50,6 @@ export function ReviewReportDialog({
   const isRejected = selectedStatus === ReportStatus.REJECTED;
   const isLoading = updateReportMutation.status === 'pending';
 
-  // Conferma abilitata solo se:
-  // - report pending
-  // - è stato selezionato uno status diverso da quello iniziale
-  // - se lo status è rejected, l'explanation non è vuota
   const canConfirm =
     isPending &&
     selectedStatus !== report.status &&
@@ -65,7 +61,7 @@ export function ReviewReportDialog({
     const updateData: UpdateReportDto = {
       status: selectedStatus as ReportStatus,
       categoryId: selectedCategory,
-      ...(isRejected && { description: explanation }),
+      ...(isRejected && { explanation: explanation }),
     };
 
     try {
@@ -100,7 +96,7 @@ export function ReviewReportDialog({
           </div>
 
           <form className="flex flex-col gap-4">
-            {/* Titolo */}
+            {/* Title */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Title</label>
               <input
@@ -111,7 +107,7 @@ export function ReviewReportDialog({
               />
             </div>
 
-            {/* Descrizione */}
+            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Description</label>
               <textarea
@@ -122,7 +118,7 @@ export function ReviewReportDialog({
               />
             </div>
 
-            {/* Indirizzo */}
+            {/* Address */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Address</label>
               <input
@@ -133,7 +129,7 @@ export function ReviewReportDialog({
               />
             </div>
 
-            {/* Coordinate */}
+            {/* Coordinates */}
             <div className="flex gap-2">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700">Latitude</label>
@@ -155,7 +151,7 @@ export function ReviewReportDialog({
               </div>
             </div>
 
-            {/* Categoria */}
+            {/* Category */}
             <div>
               <label className="block text-sm font-medium text-gray-700">Category</label>
               {isPending ? (
@@ -185,7 +181,7 @@ export function ReviewReportDialog({
               )}
             </div>
 
-            {/* Immagini */}
+            {/* Images */}
             {report.images && report.images.length > 0 && (
               <div className="mb-4">
                 Images:
@@ -247,13 +243,13 @@ export function ReviewReportDialog({
               )}
             </div>
 
-            {/* Explanation */}
+            {/* Explanation (correct) */}
             {(isPending && selectedStatus === ReportStatus.REJECTED) ||
             (!isPending && report.status === ReportStatus.REJECTED) ? (
               <div>
                 <label className="block text-sm font-medium text-gray-700">Explanation</label>
                 <textarea
-                  value={isPending ? explanation : report.description ?? ''}
+                  value={isPending ? explanation : report.explanation ?? ''}
                   onChange={isPending ? (e) => setExplanation(e.target.value) : undefined}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
                   rows={3}
@@ -263,7 +259,7 @@ export function ReviewReportDialog({
               </div>
             ) : null}
 
-            {/* Pulsanti chiudi e conferma */}
+            {/* Buttons */}
             <div className="flex justify-end mt-4 gap-3">
               <Dialog.Close asChild>
                 <Button variant="outline" disabled={isLoading}>
