@@ -623,4 +623,196 @@ describe('AppController (e2e)', () => {
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(204);
   });
+
+  it('GET /reports with status filter', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports?status=pending')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('GET /reports with categoryId filter', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports?categoryId=cat_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('GET /reports with userId filter', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports?userId=user_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('GET /reports with bounding box filter', async () => {
+    const res = await request(app.getHttpServer())
+      .get(
+        '/reports?minLongitude=7.0&maxLongitude=8.0&minLatitude=45.0&maxLatitude=46.0',
+      )
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('GET /reports with radius search', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports?searchLongitude=7.6869&searchLatitude=45.0703&radiusMeters=5000')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('GET /categories returns all categories', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/categories')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('GET /offices returns all offices', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/offices')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('POST /auth/refresh refreshes session', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body).toEqual(
+      expect.objectContaining({
+        success: true,
+        data: expect.objectContaining({
+          user: expect.objectContaining({
+            id: expect.any(String),
+          }),
+          session: expect.objectContaining({
+            id: expect.any(String),
+          }),
+        }),
+      }),
+    );
+  });
+
+  it('PATCH /reports/:id with invalid status returns 400', async () => {
+    await request(app.getHttpServer())
+      .patch('/reports/report_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        status: 'invalid_status',
+      })
+      .expect(400);
+  });
+
+  it('POST /users/municipality with invalid email returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/users/municipality')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        email: 'invalid-email',
+        username: 'testuser',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'TestPass123',
+        roleId: 'role_1',
+      })
+      .expect(400);
+  });
+
+  it('POST /users/municipality with weak password returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/users/municipality')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        email: 'test@example.com',
+        username: 'testuser',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'weak',
+        roleId: 'role_1',
+      })
+      .expect(400);
+  });
+
+  it('POST /auth/register with duplicate username returns 409', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email: 'unique@example.com',
+        username: 'john',
+        firstName: 'John',
+        lastName: 'Doe',
+        password: 'StrongP@ssw0rd',
+      })
+      .expect(409);
+  });
+
+  it('POST /reports with missing required fields returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Incomplete report')
+      .attach('images', Buffer.from('fake-image-data'), 'test.jpg')
+      .expect(400);
+  });
+
+  it('GET /users/municipality/user/:id with non-existent ID returns 404', async () => {
+    await request(app.getHttpServer())
+      .get('/users/municipality/user/non-existent-id')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(404);
+  });
+
+  it('POST /users/municipality/user/:id with non-existent ID returns 404', async () => {
+    await request(app.getHttpServer())
+      .post('/users/municipality/user/non-existent-id')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ firstName: 'Updated' })
+      .expect(404);
+  });
+
+  it('DELETE /users/municipality/user/:id with non-existent ID returns 404', async () => {
+    await request(app.getHttpServer())
+      .delete('/users/municipality/user/non-existent-id')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(404);
+  });
+
+  it('PATCH /reports/:id with non-existent ID returns 404', async () => {
+    await request(app.getHttpServer())
+      .patch('/reports/non-existent-id')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ status: 'resolved' })
+      .expect(404);
+  });
+
+  it('DELETE /reports/:id with non-existent ID returns 404', async () => {
+    await request(app.getHttpServer())
+      .delete('/reports/non-existent-id')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(404);
+  });
 });
