@@ -1,3 +1,5 @@
+import { DateRange } from 'react-day-picker';
+
 export type ReportData = {
   title: string;
   description: string;
@@ -8,6 +10,9 @@ export type ReportData = {
   photos: File[];
 };
 
+export type ReportsListProps = {
+  onlyMyReports?: boolean;
+};
 
 export type CreateReportFormData = (reportData: ReportData) => FormData;
 
