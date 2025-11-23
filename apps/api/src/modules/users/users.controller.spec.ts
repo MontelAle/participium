@@ -6,7 +6,11 @@ import {
   CreateMunicipalityUserDto,
   UpdateMunicipalityUserDto,
 } from '../../common/dto/municipality-user.dto';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
@@ -65,6 +69,7 @@ describe('UsersController', () => {
         role: {
           id: 'role-id',
           name: 'municipal_pr_officer',
+          label: 'Municipal PR Officer',
           isMunicipal: true,
         },
       };
@@ -274,6 +279,20 @@ describe('UsersController', () => {
       } as Express.Multer.File;
 
       await expect(controller.updateProfile(req, dto, file)).rejects.toThrow();
+    });
+
+    it('should throw ForbiddenException for municipality users', async () => {
+      const req = {
+        user: {
+          id: 'user-1',
+          role: { isMunicipal: true, name: 'officer' },
+        },
+      } as any;
+      const dto = { telegramUsername: '@newusername' };
+
+      await expect(controller.updateProfile(req, dto)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 });

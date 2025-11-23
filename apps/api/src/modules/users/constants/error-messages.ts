@@ -8,6 +8,8 @@ export const USER_ERROR_MESSAGES = {
   INVALID_PROFILE_PICTURE_TYPE: (mimetype: string) =>
     `Invalid file type: ${mimetype}. Allowed types: JPEG, PNG, WebP`,
   PROFILE_PICTURE_SIZE_EXCEEDED: 'File size must not exceed 5MB',
+  MUNICIPALITY_USER_CANNOT_EDIT_PROFILE:
+    'Municipality users cannot edit their profile through this endpoint',
 } as const;
 
 export const ALLOWED_PROFILE_PICTURE_MIMETYPES = [

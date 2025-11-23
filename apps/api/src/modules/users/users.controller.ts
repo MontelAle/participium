@@ -13,6 +13,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiCookieAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
@@ -159,6 +160,13 @@ export class UsersController {
     @Body() dto: UpdateProfileDto,
     @UploadedFile() file?: Express.Multer.File,
   ): Promise<UpdateProfileResponseDto> {
+    // Only regular users (not municipality users) can edit their profile
+    if (req.user.role?.isMunicipal) {
+      throw new ForbiddenException(
+        USER_ERROR_MESSAGES.MUNICIPALITY_USER_CANNOT_EDIT_PROFILE,
+      );
+    }
+
     if (file) {
       if (!ALLOWED_PROFILE_PICTURE_MIMETYPES.includes(file.mimetype as any)) {
         throw new BadRequestException(
