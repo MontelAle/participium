@@ -6,12 +6,15 @@ import { User } from '../../common/entities/user.entity';
 import { Account } from '../../common/entities/account.entity';
 import { Role } from '../../common/entities/role.entity';
 import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
+import { UpdateProfileDto } from '../../common/dto/user.dto';
 import { Office } from '../../common/entities/office.entity';
 
 import { Repository } from 'typeorm';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
+import { MinioProvider } from '../../providers/minio/minio.provider';
+import { USER_ERROR_MESSAGES } from './constants/error-messages';
 
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
@@ -21,6 +24,7 @@ describe('UsersService', () => {
   let accountRepository: jest.Mocked<Repository<Account>>;
   let roleRepository: jest.Mocked<Repository<Role>>;
   let officeRepository: jest.Mocked<Repository<Office>>;
+  let minioProvider: jest.Mocked<MinioProvider>;
 
   beforeEach(async () => {
     const mockTransaction = jest.fn();
@@ -49,6 +53,13 @@ describe('UsersService', () => {
           provide: getRepositoryToken(Office),
           useValue: { findOne: jest.fn(), find: jest.fn() },
         },
+        {
+          provide: MinioProvider,
+          useValue: {
+            uploadFile: jest.fn(),
+            deleteFile: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -57,6 +68,7 @@ describe('UsersService', () => {
     accountRepository = module.get(getRepositoryToken(Account));
     roleRepository = module.get(getRepositoryToken(Role));
     officeRepository = module.get(getRepositoryToken(Office));
+    minioProvider = module.get(MinioProvider);
 
     (userRepository.manager.transaction as unknown as jest.Mock) =
       mockTransaction;
@@ -720,6 +732,146 @@ describe('UsersService', () => {
         lastName: dto.lastName,
         role: { id: 'role-id', name: 'municipal_pr_officer' },
         office: mockOffice,
+      });
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('should update telegram username', async () => {
+      const userId = 'user-id';
+      const dto: UpdateProfileDto = {
+        telegramUsername: '@newusername',
+      };
+
+      const mockUser = {
+        id: userId,
+        telegramUsername: null,
+        emailNotificationsEnabled: false,
+        profilePictureUrl: null,
+      } as User;
+
+      userRepository.findOne.mockResolvedValue(mockUser);
+      userRepository.save.mockResolvedValue({
+        ...mockUser,
+        telegramUsername: dto.telegramUsername,
+      } as User);
+
+      const result = await service.updateProfile(userId, dto);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { id: userId },
+      });
+      expect(userRepository.save).toHaveBeenCalledWith({
+        ...mockUser,
+        telegramUsername: dto.telegramUsername,
+      });
+      expect(result.telegramUsername).toBe(dto.telegramUsername);
+    });
+
+    it('should update email notifications setting', async () => {
+      const userId = 'user-id';
+      const dto: UpdateProfileDto = {
+        emailNotificationsEnabled: true,
+      };
+
+      const mockUser = {
+        id: userId,
+        telegramUsername: null,
+        emailNotificationsEnabled: false,
+        profilePictureUrl: null,
+      } as User;
+
+      userRepository.findOne.mockResolvedValue(mockUser);
+      userRepository.save.mockResolvedValue({
+        ...mockUser,
+        emailNotificationsEnabled: true,
+      } as User);
+
+      const result = await service.updateProfile(userId, dto);
+
+      expect(result.emailNotificationsEnabled).toBe(true);
+    });
+
+    it('should upload profile picture and delete old one', async () => {
+      const userId = 'user-id';
+      const dto: UpdateProfileDto = {};
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        originalname: 'profile.jpg',
+        mimetype: 'image/jpeg',
+      } as Express.Multer.File;
+
+      const mockUser = {
+        id: userId,
+        telegramUsername: null,
+        emailNotificationsEnabled: false,
+        profilePictureUrl: 'http://minio.test/old-file.jpg',
+      } as User;
+
+      userRepository.findOne.mockResolvedValue(mockUser);
+      minioProvider.uploadFile.mockResolvedValue('http://minio.test/new-file.jpg');
+      minioProvider.deleteFile.mockResolvedValue(undefined);
+      userRepository.save.mockResolvedValue({
+        ...mockUser,
+        profilePictureUrl: 'http://minio.test/new-file.jpg',
+      } as User);
+
+      const result = await service.updateProfile(userId, dto, mockFile);
+
+      expect(minioProvider.uploadFile).toHaveBeenCalledWith(
+        `profile-pictures/${userId}/mocked-id-${mockFile.originalname}`,
+        mockFile.buffer,
+        mockFile.mimetype,
+      );
+      expect(minioProvider.deleteFile).toHaveBeenCalledWith(
+        `profile-pictures/${userId}/old-file.jpg`,
+      );
+      expect(result.profilePictureUrl).toBeDefined();
+      expect(result.profilePictureUrl).not.toBeNull();
+    });
+
+    it('should upload profile picture without deleting when no old picture exists', async () => {
+      const userId = 'user-id';
+      const dto: UpdateProfileDto = {};
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        originalname: 'profile.jpg',
+        mimetype: 'image/jpeg',
+      } as Express.Multer.File;
+
+      const mockUser = {
+        id: userId,
+        telegramUsername: null,
+        emailNotificationsEnabled: false,
+        profilePictureUrl: null,
+      } as User;
+
+      userRepository.findOne.mockResolvedValue(mockUser);
+      minioProvider.uploadFile.mockResolvedValue('http://minio.test/new-file.jpg');
+      userRepository.save.mockResolvedValue({
+        ...mockUser,
+        profilePictureUrl: 'http://minio.test/new-file.jpg',
+      } as User);
+
+      const result = await service.updateProfile(userId, dto, mockFile);
+
+      expect(minioProvider.uploadFile).toHaveBeenCalled();
+      expect(minioProvider.deleteFile).not.toHaveBeenCalled();
+      expect(result.profilePictureUrl).toBeDefined();
+      expect(result.profilePictureUrl).not.toBeNull();
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      const userId = 'non-existent-id';
+      const dto: UpdateProfileDto = {};
+
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.updateProfile(userId, dto)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { id: userId },
       });
     });
   });
