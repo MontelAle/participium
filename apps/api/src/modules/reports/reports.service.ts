@@ -15,6 +15,7 @@ import { nanoid } from 'nanoid';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 import { Category } from '../../common/entities/category.entity';
+import { User } from '../../common/entities/user.entity';
 
 @Injectable()
 export class ReportsService {
@@ -23,6 +24,8 @@ export class ReportsService {
     private readonly reportRepository: Repository<Report>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly minioProvider: MinioProvider,
   ) {}
 
@@ -161,6 +164,7 @@ export class ReportsService {
       images,
       categoryId,
       explanation,
+      assignedOfficerId,
     } = updateReportDto;
 
     if (longitude !== undefined && latitude !== undefined) {
@@ -173,6 +177,14 @@ export class ReportsService {
       });
 
       report.category = category;
+    }
+
+    if (assignedOfficerId !== undefined) {
+      const officer = await this.userRepository.findOne({
+        where: { id: assignedOfficerId },
+      });
+
+      report.assignedOfficer = officer;
     }
 
     Object.entries({
@@ -244,5 +256,14 @@ export class ReportsService {
       ...entity,
       distance: parseFloat(reports.raw[index].distance),
     }));
+  }
+
+  async findByUserId(officerId: string): Promise<Report[]> {
+    const reports = await this.reportRepository.find({
+      where: { assignedOfficerId: officerId },
+      relations: ['user', 'category'],
+      order: { createdAt: 'DESC' },
+    });
+    return reports;
   }
 }
