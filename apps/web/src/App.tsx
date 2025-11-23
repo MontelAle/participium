@@ -6,7 +6,7 @@ import { MunicipalGuard } from '@/components/municipal-guard';
 import { CitizenGuard } from '@/components/citizen-guard';
 import LoginPage from '@/pages/auth/login/page';
 import RegistrationPage from '@/pages/auth/registration/page';
-import MapPage from '@/pages/map/page';
+import MapPage from '@/pages/report-map/page';
 import ReportPage from '@/pages/report/page';
 import DashboardPage from '@/pages/app/dashboard/page';
 import MunicipalityUsersPage from '@/pages/app/municipality-users/page';

@@ -11,14 +11,7 @@ export type ReportData = {
 };
 
 export type ReportsListProps = {
-  searchTerm?: string;
   onlyMyReports?: boolean;
-  advancedFilters?: {
-    status: string | null;
-    category: string | null;
-    dateRange: string | null;
-    customDate: DateRange | undefined;
-  };
 };
 
 export type CreateReportFormData = (reportData: ReportData) => FormData;

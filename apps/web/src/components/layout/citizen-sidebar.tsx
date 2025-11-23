@@ -8,11 +8,11 @@ import { Switch } from '@/components/ui/switch';
 import { ReportsList } from '@/components/reports-list';
 import { FilterDialog } from './filter-dialog';
 import { useActiveReportStore } from '@/store/activeReportStore';
+import { useFilterStore } from '@/store/filterStore';
 import { useReports } from '@/hooks/use-reports';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { DateRange } from 'react-day-picker';
 import { CitizenSidebarProps } from '@/types/ui';
 
 export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
@@ -21,15 +21,10 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
   const { locationData, clearLocation } = useActiveReportStore();
   const { data: reports = [] } = useReports();
 
+  const { searchTerm, setSearchTerm, filters, setFilters } = useFilterStore();
+
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const [showMyReports, setShowMyReports] = useState(false);
-  const [filters, setFilters] = useState<{
-    status: string | null;
-    category: string | null;
-    dateRange: string | null;
-    customDate: DateRange | undefined;
-  }>({ status: null, category: null, dateRange: null, customDate: undefined });
 
   const categories = useMemo(() => {
     const cats = new Set(reports.map((r) => r.category.name));
@@ -120,25 +115,6 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
           )}
         </div>
 
-        {locationData && (
-          <div className="px-4 py-2 bg-red-500/20 border-b flex items-center justify-between gap-2 text-primary text-sm font-medium shrink-0 animate-in slide-in-from-top-2">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <MapPin className="size-4 shrink-0" />
-              <span className="truncate">
-                {locationData.address || 'Address not available'}
-              </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 rounded-full hover:bg-primary/10 cursor-pointer"
-              onClick={clearLocation}
-            >
-              <X className="size-3.5" />
-            </Button>
-          </div>
-        )}
-
         <div
           className={cn(
             'flex-1 overflow-y-auto bg-slate-50/50 p-0 transition-opacity duration-300 min-h-0',
@@ -146,11 +122,7 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
               'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto hidden md:block',
           )}
         >
-          <ReportsList
-            searchTerm={searchTerm}
-            onlyMyReports={showMyReports}
-            advancedFilters={filters}
-          />
+          <ReportsList onlyMyReports={showMyReports} />
           <div className="h-24 md:h-20" />
         </div>
 

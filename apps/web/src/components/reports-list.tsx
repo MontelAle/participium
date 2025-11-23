@@ -1,5 +1,6 @@
 import { useReports } from '@/hooks/use-reports';
 import { useActiveReportStore } from '@/store/activeReportStore';
+import { useFilterStore } from '@/store/filterStore';
 import { useAuth } from '@/contexts/auth-context';
 import type { Report } from '@repo/api';
 import { Badge } from '@/components/ui/badge';
@@ -7,17 +8,15 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getStatusConfig } from '@/lib/utils';
 import { MapPin, CalendarDays } from 'lucide-react';
-import { isSameDay, subWeeks, subMonths, parseISO, isAfter } from 'date-fns';
+import { isSameDay, subWeeks, subMonths, isAfter } from 'date-fns';
 import { ReportsListProps } from '@/types/report';
 
-export function ReportsList({
-  searchTerm = '',
-  onlyMyReports = false,
-  advancedFilters,
-}: ReportsListProps) {
+export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
   const { data: reports = [] } = useReports();
   const { user } = useAuth();
   const setLocation = useActiveReportStore((state) => state.setLocation);
+  const { searchTerm, filters } = useFilterStore();
+
   const filteredReports = reports.filter((report) => {
     if (onlyMyReports && user) {
       const reportUserId = report.userId;
@@ -33,32 +32,27 @@ export function ReportsList({
       if (!matches) return false;
     }
 
-    if (advancedFilters) {
-      if (advancedFilters.status && report.status !== advancedFilters.status)
-        return false;
+    if (filters) {
+      if (filters.status && report.status !== filters.status) return false;
 
-      if (
-        advancedFilters.category &&
-        report.category.name !== advancedFilters.category
-      )
+      if (filters.category && report.category.name !== filters.category)
         return false;
 
       const reportDate = new Date(report.createdAt);
       const today = new Date();
-      if (advancedFilters.dateRange) {
-        if (advancedFilters.dateRange) {
-          if (advancedFilters.dateRange === 'Today') {
-            if (!isSameDay(reportDate, today)) return false;
-          } else if (advancedFilters.dateRange === 'Last Week') {
-            if (!isAfter(reportDate, subWeeks(today, 1))) return false;
-          } else if (advancedFilters.dateRange === 'This Month') {
-            if (!isAfter(reportDate, subMonths(today, 1))) return false;
-          }
+
+      if (filters.dateRange) {
+        if (filters.dateRange === 'Today') {
+          if (!isSameDay(reportDate, today)) return false;
+        } else if (filters.dateRange === 'Last Week') {
+          if (!isAfter(reportDate, subWeeks(today, 1))) return false;
+        } else if (filters.dateRange === 'This Month') {
+          if (!isAfter(reportDate, subMonths(today, 1))) return false;
         }
       }
-      if (advancedFilters.customDate?.from) {
-        const { from, to } = advancedFilters.customDate;
 
+      if (filters.customDate?.from) {
+        const { from, to } = filters.customDate;
         const cleanFrom = new Date(from);
         cleanFrom.setHours(0, 0, 0, 0);
         const cleanReportDate = new Date(reportDate);
@@ -97,7 +91,6 @@ export function ReportsList({
 
   return (
     <div className="flex flex-col gap-3 p-4 pb-24">
-      {' '}
       <p className="text-sm font-semibold text-muted-foreground text-right">
         {filteredReports.length} reports found
       </p>
