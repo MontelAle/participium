@@ -19,6 +19,7 @@ export interface UpdateReportDto {
   address?: string;
   images?: string[];
   categoryId?: string;
+  explanation?: string;
 }
 
 export interface FilterReportsDto {

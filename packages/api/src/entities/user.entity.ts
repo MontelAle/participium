@@ -1,7 +1,7 @@
 import { Role } from './role.entity';
 import { Office } from './office.entity';
 
-export declare class User {
+export interface User {
   id: string;
   email: string;
   username: string;

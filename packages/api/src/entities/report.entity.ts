@@ -7,6 +7,7 @@ export enum ReportStatus {
   IN_PROGRESS = 'in_progress',
   RESOLVED = 'resolved',
   REJECTED = 'rejected',
+  ASSIGNED = 'assigned',
 }
 
 export interface Report {
@@ -23,4 +24,5 @@ export interface Report {
   category: Category;
   createdAt: Date;
   updatedAt: Date;
+  explanation?: string;
 }

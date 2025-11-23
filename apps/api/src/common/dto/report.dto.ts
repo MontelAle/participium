@@ -100,6 +100,10 @@ export class UpdateReportDto implements UpdateReportDtoInterface {
   @IsString()
   @IsOptional()
   categoryId?: string;
+
+  @IsString()
+  @IsOptional()
+  explanation?: string;
 }
 
 export class FilterReportsDto implements FilterReportsDtoInterface {

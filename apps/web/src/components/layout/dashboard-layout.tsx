@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 
 export function DashboardLayout() {
-  const { isMunicipalityUser, isAdminUser, isCitizenUser, isGuestUser } =
+  const { isMunicipalityUser, isAdminUser, isCitizenUser, isGuestUser, isMunicipalPrOfficer } =
     useAuth();
   const [municipalSidebarOpen, setMunicipalSidebarOpen] = useState(true);
   const location = useLocation();

@@ -1,7 +1,8 @@
 import { apiFetch } from '../client';
 import type { Report } from '@repo/api';
-import type { ReportResponseDto, ReportsResponseDto } from '@repo/api';
+import type { ReportsResponseDto } from '@repo/api';
 import { ReportData, createReportFormData } from '@/types/report';
+import { UpdateReportDto, ReportResponseDto } from '@repo/api';
 
 export async function getReports(): Promise<Report[]> {
   const response = await apiFetch<ReportsResponseDto>('/reports/', {
@@ -28,4 +29,31 @@ export async function postReportWithImages(reportData: ReportData) {
   }
 
   return res.json();
+}
+
+
+export async function updateReport(
+  reportId: string,
+  data: UpdateReportDto,
+): Promise<ReportResponseDto> {
+  const response = await apiFetch<ReportResponseDto>(
+    `/reports/${reportId}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    },
+  );
+
+  return response;
+}
+
+export async function getReport(reportId: string): Promise<Report> {
+  const response = await apiFetch<ReportResponseDto>(`/reports/${reportId}`, {
+    method: 'GET',
+  });
+
+  return response.data;
 }

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ReportsService } from './reports.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Report, ReportStatus } from '../../common/entities/report.entity';
+import { Category } from '../../common/entities/category.entity';
 import {
   CreateReportDto,
   UpdateReportDto,
@@ -52,6 +53,12 @@ describe('ReportsService', () => {
             findOne: jest.fn(),
             remove: jest.fn(),
             createQueryBuilder: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(Category),
+          useValue: {
+            findOne: jest.fn(),
           },
         },
         {

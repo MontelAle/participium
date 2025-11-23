@@ -37,7 +37,7 @@ export {
   type LoginResponseDto,
   type LogoutResponseDto,
   type RegisterDto,
-  User,
+  type User,
   type Account,
   type Session,
   type LoginDto,
