@@ -830,6 +830,40 @@ describe('UsersService', () => {
       expect(result.profilePictureUrl).not.toBeNull();
     });
 
+    it('should ignore error when deleting old profile picture fails', async () => {
+      const userId = 'user-id';
+      const dto: UpdateProfileDto = {};
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        originalname: 'profile.jpg',
+        mimetype: 'image/jpeg',
+      } as Express.Multer.File;
+
+      const mockUser = {
+        id: userId,
+        telegramUsername: null,
+        emailNotificationsEnabled: false,
+        profilePictureUrl: 'http://minio.test/old-file.jpg',
+      } as User;
+
+      const savedUser = {
+        ...mockUser,
+        profilePictureUrl: 'http://minio.test/new-file.jpg',
+      };
+
+      userRepository.findOne.mockResolvedValue(mockUser);
+      minioProvider.uploadFile.mockResolvedValue('http://minio.test/new-file.jpg');
+      minioProvider.deleteFile.mockRejectedValue(new Error('File not found'));
+      userRepository.save.mockResolvedValue(savedUser);
+
+      const result = await service.updateProfile(userId, dto, mockFile);
+
+      expect(minioProvider.deleteFile).toHaveBeenCalledWith(
+        `profile-pictures/${userId}/old-file.jpg`,
+      );
+      expect(result.profilePictureUrl).toBe('http://minio.test/new-file.jpg');
+    });
+
     it('should upload profile picture without deleting when no old picture exists', async () => {
       const userId = 'user-id';
       const dto: UpdateProfileDto = {};
