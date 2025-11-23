@@ -11,7 +11,7 @@ export function DashboardLayout() {
     useAuth();
   const [municipalSidebarOpen, setMunicipalSidebarOpen] = useState(true);
   const location = useLocation();
-  const isReportPage = location.pathname === '/report';
+  const isReportPage = location.pathname === '/new-report' || location.pathname.startsWith('/report/');
   const isMapPage = location.pathname === '/report-map';
   const RIGHT_SIDEBAR_WIDTH = '400px';
 

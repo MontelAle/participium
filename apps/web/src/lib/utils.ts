@@ -34,7 +34,8 @@ export const getStatusConfig = (status: ReportStatus) => {
     case ReportStatus.ASSIGNED:
       return {
         label: 'Assigned',
-        color: 'bg-red-500/15 text-purple-700 hover:bg-purple-500/25 border-purple-200',
+        color:
+          'bg-red-500/15 text-purple-700 hover:bg-purple-500/25 border-purple-200',
       };
     default:
       return { label: status, color: 'bg-gray-100 text-gray-700' };
@@ -43,7 +44,7 @@ export const getStatusConfig = (status: ReportStatus) => {
 
 export const prettifyRole = (name: string) =>
   name
-    .replace(/_/g, ' ')
+    .replaceAll(/_/g, ' ')
     .split(' ')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(' ');
