@@ -276,7 +276,7 @@ export default function ReportsMap() {
           btn.parentNode?.replaceChild(newBtn, btn);
           (newBtn as HTMLElement).addEventListener('click', (e) => {
             e.stopPropagation();
-            navigate('/report', { state: location });
+            navigate('/new-report', { state: location });
           });
         }
       }

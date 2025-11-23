@@ -10,10 +10,12 @@ import { getStatusConfig } from '@/lib/utils';
 import { MapPin, CalendarDays, Tag } from 'lucide-react';
 import { isSameDay, subWeeks, subMonths, isAfter } from 'date-fns';
 import { ReportsListProps } from '@/types/report';
+import { useNavigate } from 'react-router-dom';
 
 export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
   const { data: reports = [] } = useReports();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const setLocation = useActiveReportStore((state) => state.setLocation);
   const { searchTerm, filters } = useFilterStore();
 
@@ -78,6 +80,10 @@ export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
       address: report.address,
       city: 'Unavailable Zone',
     });
+  };
+
+  const handleShowDetails = (reportId: string) => {
+    navigate(`/report/${reportId}`);
   };
 
   if (filteredReports.length === 0) {
@@ -147,14 +153,21 @@ export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
               </div>
             </div>
 
-            <div className="flex items-center justify-end mt-3 pt-3 border-t border-dashed">
+            <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-dashed">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-base rounded-md border-primary/20 text-primary hover:bg-primary/5 hover:text-primary"
+                className="h-7 text-base rounded-md border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                 onClick={() => handleReportClick(report)}
               >
                 Show on Map
+              </Button>
+              <Button
+                size="sm"
+                className="h-7 text-base rounded-md bg-slate-900 text-white hover:bg-slate-800"
+                onClick={() => handleShowDetails(report.id)}
+              >
+                Show Details
               </Button>
             </div>
           </div>
