@@ -14,12 +14,15 @@ import { Report } from '../../common/entities/report.entity';
 import { nanoid } from 'nanoid';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
+import { Category } from '../../common/entities/category.entity';
 
 @Injectable()
 export class ReportsService {
   constructor(
     @InjectRepository(Report)
     private readonly reportRepository: Repository<Report>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
     private readonly minioProvider: MinioProvider,
   ) {}
 
@@ -148,13 +151,42 @@ export class ReportsService {
   async update(id: string, updateReportDto: UpdateReportDto): Promise<Report> {
     const report = await this.findOne(id);
 
-    const { longitude, latitude, ...updateData } = updateReportDto;
+    const {
+      longitude,
+      latitude,
+      title,
+      description,
+      status,
+      address,
+      images,
+      categoryId,
+      explanation,
+    } = updateReportDto;
 
     if (longitude !== undefined && latitude !== undefined) {
       report.location = this.createPointGeometry(longitude, latitude);
     }
 
-    Object.assign(report, updateData);
+    if (categoryId !== undefined) {
+      const category = await this.categoryRepository.findOne({
+        where: { id: updateReportDto.categoryId },
+      });
+
+      report.category = category;
+    }
+
+    Object.entries({
+      title,
+      description,
+      status,
+      address,
+      images,
+      explanation,
+    }).forEach(([key, value]) => {
+      if (value !== undefined) {
+        (report as any)[key] = value;
+      }
+    });
 
     return await this.reportRepository.save(report);
   }
