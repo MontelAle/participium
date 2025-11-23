@@ -1,6 +1,5 @@
-import { lazy, Suspense } from 'react';
-
-import ReportsMap from '@/pages/report-map/components/report-map';
+import ReportsMap from '@/components/report-map/report-map';
+import { Suspense } from 'react';
 
 export default function MapPage() {
   return (

@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
 import { useReports } from '@/hooks/use-reports';
 import { Users, FileText, Timer, AlertCircle, Plus } from 'lucide-react';
-import { StatCard } from './components/stat-card';
+import { StatCard } from '@/components/dashboard/stat-card';
 
 const DashboardPage = () => {
   const navigate = useNavigate();

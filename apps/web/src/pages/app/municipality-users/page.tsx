@@ -1,9 +1,9 @@
-import { MunicipalityUsersTable } from './components/municipality-users-table';
-import { CreateMunicipalityUserDialog } from './components/create-municipality-user-dialog';
 import { useLocation } from 'react-router-dom';
 import * as React from 'react';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
-import { UsersToolbar } from './components/user-toolbar';
+import { CreateMunicipalityUserDialog } from '@/components/municipality-users/create-municipality-user-dialog';
+import { UsersToolbar } from '@/components/municipality-users/user-toolbar';
+import { MunicipalityUsersTable } from '@/components/municipality-users/municipality-users-table';
 
 const MunicipalityUsersPage = () => {
   const location = useLocation();
