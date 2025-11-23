@@ -31,6 +31,11 @@ export const getStatusConfig = (status: ReportStatus) => {
         label: 'Rejected',
         color: 'bg-red-500/15 text-red-700 hover:bg-red-500/25 border-red-200',
       };
+    case ReportStatus.ASSIGNED:
+      return {
+        label: 'Assigned',
+        color: 'bg-red-500/15 text-purple-700 hover:bg-purple-500/25 border-purple-200',
+      };
     default:
       return { label: status, color: 'bg-gray-100 text-gray-700' };
   }
