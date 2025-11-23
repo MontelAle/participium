@@ -20,6 +20,7 @@ describe('UsersService', () => {
   let userRepository: jest.Mocked<Repository<User>>;
   let accountRepository: jest.Mocked<Repository<Account>>;
   let roleRepository: jest.Mocked<Repository<Role>>;
+  let officeRepository: jest.Mocked<Repository<Office>>;
 
   beforeEach(async () => {
     const mockTransaction = jest.fn();
@@ -55,6 +56,7 @@ describe('UsersService', () => {
     userRepository = module.get(getRepositoryToken(User));
     accountRepository = module.get(getRepositoryToken(Account));
     roleRepository = module.get(getRepositoryToken(Role));
+    officeRepository = module.get(getRepositoryToken(Office));
 
     (userRepository.manager.transaction as unknown as jest.Mock) =
       mockTransaction;
@@ -574,6 +576,150 @@ describe('UsersService', () => {
       expect(mockAccountRepo.save).toHaveBeenCalledWith({
         ...mockAccount,
         accountId: 'newusername',
+      });
+    });
+
+    it('should update office when officeId is provided', async () => {
+      const mockUser = {
+        id: '1',
+        email: 'user@example.com',
+        username: 'username',
+        officeId: 'old-office-id',
+      } as User;
+
+      const mockOffice = {
+        id: 'new-office-id',
+        name: 'New Office',
+      } as Office;
+
+      userRepository.findOne.mockResolvedValue(mockUser);
+      officeRepository.findOne.mockResolvedValue(mockOffice);
+
+      const mockManager = {
+        getRepository: jest.fn((entity) => {
+          if (entity === User) {
+            return {
+              save: jest.fn().mockResolvedValue({
+                ...mockUser,
+                officeId: mockOffice.id,
+              }),
+            };
+          }
+          if (entity === Account) {
+            return {
+              findOne: jest.fn().mockResolvedValue(null),
+              save: jest.fn(),
+            };
+          }
+        }),
+      };
+
+      (userRepository.manager.transaction as jest.Mock).mockImplementation(
+        async (cb) => cb(mockManager),
+      );
+
+      await service.updateMunicipalityUserById('1', {
+        officeId: 'new-office-id',
+      });
+
+      expect(officeRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'new-office-id' },
+      });
+    });
+
+    it('should set office to null when officeId is provided but office not found', async () => {
+      const mockUser = {
+        id: '1',
+        email: 'user@example.com',
+        username: 'username',
+        officeId: 'old-office-id',
+      } as User;
+
+      userRepository.findOne.mockResolvedValue(mockUser);
+      officeRepository.findOne.mockResolvedValue(null);
+
+      const mockManager = {
+        getRepository: jest.fn((entity) => {
+          if (entity === User) {
+            return {
+              save: jest.fn().mockResolvedValue({
+                ...mockUser,
+                officeId: null,
+              }),
+            };
+          }
+          if (entity === Account) {
+            return {
+              findOne: jest.fn().mockResolvedValue(null),
+              save: jest.fn(),
+            };
+          }
+        }),
+      };
+
+      (userRepository.manager.transaction as jest.Mock).mockImplementation(
+        async (cb) => cb(mockManager),
+      );
+
+      await service.updateMunicipalityUserById('1', {
+        officeId: 'non-existent-office-id',
+      });
+
+      expect(officeRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'non-existent-office-id' },
+      });
+    });
+  });
+
+  describe('createMunicipalityUser with office', () => {
+    it('should create a municipality user with an office', async () => {
+      const dto = {
+        email: 'test@example.com',
+        username: 'testuser',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'password123',
+        roleId: 'role-id',
+        officeId: 'office-id',
+      };
+
+      const mockOffice = {
+        id: 'office-id',
+        name: 'Test Office',
+      } as Office;
+
+      (userRepository.manager.transaction as jest.Mock).mockImplementation(
+        async (fn) =>
+          fn({
+            getRepository: (entity) => ({
+              findOne: async (options) => {
+                if (entity === Role) {
+                  return { id: 'role-id', name: 'municipal_pr_officer' };
+                }
+                if (entity === Office) {
+                  return mockOffice;
+                }
+                if (entity === User) {
+                  return null;
+                }
+                return null;
+              },
+              create: (data) => data,
+              save: async (data) => data,
+            }),
+          }),
+      );
+
+      const user = await service.createMunicipalityUser(dto);
+
+      expect(user).toEqual({
+        id: 'mocked-id',
+        email: dto.email,
+        username: dto.username,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        role: { id: 'role-id', name: 'municipal_pr_officer' },
+        office: mockOffice,
       });
     });
   });
