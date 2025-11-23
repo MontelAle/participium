@@ -1,8 +1,16 @@
 import * as React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Check, ChevronsUpDown, X } from 'lucide-react';
+import {
+  Check,
+  ChevronsUpDown,
+  Search,
+  X,
+  Filter,
+  Building2,
+  RotateCcw,
+  Briefcase,
+} from 'lucide-react';
 import {
   Command,
   CommandEmpty,
@@ -16,16 +24,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-
-export type UsersToolbarProps = {
-  query: string;
-  onQueryChange: (value: string) => void;
-  selectedRoles: string[];
-  onRolesChange: (roles: string[]) => void;
-  availableRoles: string[];
-  className?: string;
-};
+import { cn, prettifyRole } from '@/lib/utils';
+import { UsersToolbarProps } from '@/types/ui';
 
 export function UsersToolbar({
   query,
@@ -33,9 +33,13 @@ export function UsersToolbar({
   selectedRoles,
   onRolesChange,
   availableRoles,
+  selectedOffices,
+  onOfficesChange,
+  availableOffices,
   className,
 }: UsersToolbarProps) {
-  const [open, setOpen] = React.useState(false);
+  const [openRoles, setOpenRoles] = React.useState(false);
+  const [openOffices, setOpenOffices] = React.useState(false);
 
   const toggleRole = React.useCallback(
     (role: string) => {
@@ -48,93 +52,172 @@ export function UsersToolbar({
     [onRolesChange, selectedRoles],
   );
 
-  const clearRoles = React.useCallback(
-    () => onRolesChange([]),
-    [onRolesChange],
+  const toggleOffice = React.useCallback(
+    (office: string) => {
+      onOfficesChange(
+        selectedOffices.includes(office)
+          ? selectedOffices.filter((o) => o !== office)
+          : [...selectedOffices, office],
+      );
+    },
+    [onOfficesChange, selectedOffices],
   );
 
+  const clearAll = React.useCallback(() => {
+    onRolesChange([]);
+    onOfficesChange([]);
+  }, [onRolesChange, onOfficesChange]);
+
+  const hasFilters = selectedRoles.length > 0 || selectedOffices.length > 0;
+
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-3 md:flex-row md:items-center',
-        className,
-      )}
-    >
-      <div className="flex-1">
-        <Input
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="Search by username…"
-          className="h-9"
-          aria-label="Search by username"
-        />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="h-9 min-w-[180px] justify-between"
+    <div className={cn('flex flex-col gap-4 w-full', className)}>
+      <div className="flex flex-col xl:flex-row gap-4 w-full">
+        <div className="relative w-full xl:flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+          <Input
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            placeholder="Search users..."
+            className="h-12 pl-10 text-base w-full"
+          />
+          {query && (
+            <button
+              onClick={() => onQueryChange('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-2"
             >
-              {selectedRoles.length > 0
-                ? `${selectedRoles.length} role(s)`
-                : 'Filter by role'}
-              <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+              <X className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-3 w-full xl:w-auto">
+          <Popover open={openRoles} onOpenChange={setOpenRoles}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                className="h-12 w-full lg:w-[200px] justify-between text-base border-slate-200 shadow-sm px-3"
+              >
+                <div className="flex items-center gap-2 truncate mr-2">
+                  <Briefcase className="h-4 w-4 shrink-0 opacity-50" />
+                  <span className="truncate">
+                    {selectedRoles.length > 0
+                      ? `${selectedRoles.length} role${selectedRoles.length > 1 ? 's' : ''}`
+                      : 'Filter by role'}
+                  </span>
+                </div>
+                <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-(--radix-popover-trigger-width) min-w-[200px] p-0"
+              align="start"
+            >
+              <Command>
+                <CommandInput
+                  placeholder="Search role..."
+                  className="h-10 text-base"
+                />
+                <CommandList>
+                  <CommandEmpty>No roles found</CommandEmpty>
+                  <CommandGroup>
+                    {availableRoles.map((role) => {
+                      const checked = selectedRoles.includes(role);
+                      return (
+                        <CommandItem
+                          key={role}
+                          onSelect={() => toggleRole(role)}
+                          className="cursor-pointer py-3 text-base"
+                        >
+                          <div
+                            className={cn(
+                              'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary shrink-0',
+                              checked
+                                ? 'bg-primary text-primary-foreground'
+                                : 'opacity-50 [&_svg]:invisible',
+                            )}
+                          >
+                            <Check className="h-3 w-3" />
+                          </div>
+                          <span className="truncate">{prettifyRole(role)}</span>
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          <Popover open={openOffices} onOpenChange={setOpenOffices}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                className="h-12 w-full lg:w-[220px] justify-between text-base border-slate-200 shadow-sm px-3"
+              >
+                <div className="flex items-center gap-2 truncate mr-2">
+                  <Building2 className="h-4 w-4 shrink-0 opacity-50" />
+                  <span className="truncate">
+                    {selectedOffices.length > 0
+                      ? `${selectedOffices.length} office${selectedOffices.length > 1 ? 's' : ''}`
+                      : 'Filter by office'}
+                  </span>
+                </div>
+                <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-(--radix-popover-trigger-width) min-w-[220px] p-0"
+              align="start"
+            >
+              <Command>
+                <CommandInput
+                  placeholder="Search office..."
+                  className="h-10 text-base"
+                />
+                <CommandList>
+                  <CommandEmpty>No offices found</CommandEmpty>
+                  <CommandGroup>
+                    {availableOffices.map((officeLabel) => {
+                      const checked = selectedOffices.includes(officeLabel);
+                      return (
+                        <CommandItem
+                          key={officeLabel}
+                          onSelect={() => toggleOffice(officeLabel)}
+                          className="cursor-pointer py-3 text-base"
+                        >
+                          <div
+                            className={cn(
+                              'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary shrink-0',
+                              checked
+                                ? 'bg-primary text-primary-foreground'
+                                : 'opacity-50 [&_svg]:invisible',
+                            )}
+                          >
+                            <Check className="h-3 w-3" />
+                          </div>
+                          <span className="truncate">{officeLabel}</span>
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          {hasFilters && (
+            <Button
+              variant="ghost"
+              size="lg"
+              className="h-12 px-4 text-base text-muted-foreground hover:text-destructive w-full lg:w-auto col-span-1 sm:col-span-2 lg:col-span-1"
+              onClick={clearAll}
+            >
+              <RotateCcw className="h-4 w-4 mr-2 sm:hidden" />
+              <span className="sm:hidden">Reset Filters</span>
+              <span className="hidden sm:inline">Clear</span>
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="p-0" align="end">
-            <Command>
-              <CommandInput placeholder="Search role…" />
-              <CommandList>
-                <CommandEmpty>No roles found.</CommandEmpty>
-                <CommandGroup>
-                  {availableRoles.map((role) => {
-                    const checked = selectedRoles.includes(role);
-                    return (
-                      <CommandItem
-                        key={role}
-                        onSelect={() => toggleRole(role)}
-                        className="cursor-pointer"
-                        aria-checked={checked}
-                        role="checkbox"
-                      >
-                        <Check
-                          className={cn(
-                            'mr-2 h-4 w-4',
-                            checked ? 'opacity-100' : 'opacity-0',
-                          )}
-                        />
-                        {role
-                          .replace(/_/g, ' ')
-                          .split(' ')
-                          .map(
-                            (w) =>
-                              w.charAt(0).toUpperCase() +
-                              w.slice(1).toLowerCase(),
-                          )
-                          .join(' ')}
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-
-        {selectedRoles.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2"
-            onClick={clearRoles}
-          >
-            Clear
-          </Button>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

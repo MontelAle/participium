@@ -3,7 +3,14 @@ import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
 import type { User, UpdateMunicipalityUserDto } from '@repo/api';
-import { Pencil, XIcon, MailIcon, UserIcon } from 'lucide-react';
+import {
+  Pencil,
+  XIcon,
+  MailIcon,
+  UserIcon,
+  Briefcase,
+  Building2,
+} from 'lucide-react';
 import { useRoles } from '@/hooks/use-roles';
 import { useOffices } from '@/hooks/use-offices';
 import { useUpdateMunicipalityUser } from '@/hooks/use-municipality-users';
@@ -21,6 +28,7 @@ import {
   InputGroupInput,
 } from '@/components/ui/input-group';
 import { toast } from 'sonner';
+import { prettifyRole } from '@/lib/utils';
 
 export function EditMunicipalityUserDialog({ user }: { user: User }) {
   const { data: roles = [] } = useRoles();
@@ -57,14 +65,6 @@ export function EditMunicipalityUserDialog({ user }: { user: User }) {
     setOpen(next);
     if (!next) {
       setIsLoading(false);
-      setForm({
-        username: user.username ?? '',
-        email: user.email ?? '',
-        firstName: user.firstName ?? '',
-        lastName: user.lastName ?? '',
-        roleId: user.role?.id ?? '',
-        officeId: user.office?.id ?? '',
-      });
     }
   };
 
@@ -75,7 +75,7 @@ export function EditMunicipalityUserDialog({ user }: { user: User }) {
 
     try {
       await updateMunicipalityUser({ userId: user.id, data: form });
-      toast.success(`User "${form.username}" updated successfully!`);
+      toast.success(`User updated successfully!`);
       setOpen(false);
     } catch (error: any) {
       const errorMessage = error?.message ?? 'Failed to update user';
@@ -88,44 +88,82 @@ export function EditMunicipalityUserDialog({ user }: { user: User }) {
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Trigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Edit user">
-          <Pencil className="h-4 w-4" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 text-muted-foreground hover:text-primary"
+        >
+          <Pencil className="h-5 w-5" />
         </Button>
       </Dialog.Trigger>
-
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg w-full max-w-lg shadow-lg z-50">
-          <div className="flex items-center justify-between mb-4">
-            <Dialog.Title className="text-xl font-bold">Edit User</Dialog.Title>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <Dialog.Content className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-xl translate-x-[-50%] translate-y-[-50%] gap-6 border bg-background p-8 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-2xl">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Dialog.Title className="text-2xl font-bold tracking-tight">
+                Edit User
+              </Dialog.Title>
+              <Dialog.Description className="text-base text-muted-foreground">
+                Update user details and permissions.
+              </Dialog.Description>
+            </div>
             <Dialog.Close asChild>
-              <button
-                aria-label="Close"
-                className="p-1 rounded hover:bg-black/5"
-              >
-                <XIcon className="w-5 h-5" />
+              <button className="rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:bg-muted hover:opacity-100">
+                <XIcon className="size-5" />
               </button>
             </Dialog.Close>
           </div>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div className="grid grid-cols-2 gap-4">
+              <Field>
+                <InputGroup className="h-12">
+                  <InputGroupInput
+                    name="firstName"
+                    placeholder="First Name"
+                    required
+                    value={form.firstName}
+                    onChange={handleChange}
+                    className="text-base"
+                  />
+                  <InputGroupAddon>
+                    <UserIcon className="size-5" />
+                  </InputGroupAddon>
+                </InputGroup>
+              </Field>
+              <Field>
+                <InputGroup className="h-12">
+                  <InputGroupInput
+                    name="lastName"
+                    placeholder="Last Name"
+                    required
+                    value={form.lastName}
+                    onChange={handleChange}
+                    className="text-base"
+                  />
+                  <InputGroupAddon>
+                    <UserIcon className="size-5" />
+                  </InputGroupAddon>
+                </InputGroup>
+              </Field>
+            </div>
             <Field>
-              <InputGroup>
+              <InputGroup className="h-12">
                 <InputGroupInput
                   name="username"
                   placeholder="Username"
                   required
                   value={form.username}
                   onChange={handleChange}
+                  className="text-base"
                 />
                 <InputGroupAddon>
-                  <UserIcon />
+                  <UserIcon className="size-5" />
                 </InputGroupAddon>
               </InputGroup>
             </Field>
-
             <Field>
-              <InputGroup>
+              <InputGroup className="h-12">
                 <InputGroupInput
                   type="email"
                   name="email"
@@ -133,91 +171,84 @@ export function EditMunicipalityUserDialog({ user }: { user: User }) {
                   required
                   value={form.email}
                   onChange={handleChange}
+                  className="text-base"
                 />
                 <InputGroupAddon>
-                  <MailIcon />
+                  <MailIcon className="size-5" />
                 </InputGroupAddon>
               </InputGroup>
             </Field>
-
-            <Field>
-              <InputGroup>
-                <InputGroupInput
-                  name="firstName"
-                  placeholder="First Name"
-                  required
-                  value={form.firstName}
-                  onChange={handleChange}
-                />
-                <InputGroupAddon>
-                  <UserIcon />
-                </InputGroupAddon>
-              </InputGroup>
-            </Field>
-
-            <Field>
-              <InputGroup>
-                <InputGroupInput
-                  name="lastName"
-                  placeholder="Last Name"
-                  required
-                  value={form.lastName}
-                  onChange={handleChange}
-                />
-                <InputGroupAddon>
-                  <UserIcon />
-                </InputGroupAddon>
-              </InputGroup>
-            </Field>
-
-            <Field>
-              <Select value={form.roleId} onValueChange={handleRoleChange}>
-                <SelectTrigger className="InputGroupInput">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles
-                    .filter((role) => role.name !== 'admin')
-                    .map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name
-                          .replace(/_/g, ' ')
-                          .split(' ')
-                          .map(
-                            (w) =>
-                              w.charAt(0).toUpperCase() +
-                              w.slice(1).toLowerCase(),
-                          )
-                          .join(' ')}{' '}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Field>
-              <Select value={form.officeId} onValueChange={handleOfficeChange}>
-                <SelectTrigger className="InputGroupInput">
-                  <SelectValue placeholder="Select office" />
-                </SelectTrigger>
-                <SelectContent>
-                  {offices.map((office) => (
-                    <SelectItem key={office.id} value={office.id}>
-                      {office.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <div className="flex gap-2 justify-end">
+            <div className="grid grid-cols-2 gap-4">
+              <Field>
+                <InputGroup className="h-12">
+                  <Select value={form.roleId} onValueChange={handleRoleChange}>
+                    <SelectTrigger className="h-full w-full border-0 bg-transparent shadow-none focus:ring-0 text-base px-3">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles
+                        .filter((r) => r.name !== 'admin')
+                        .map((role) => (
+                          <SelectItem
+                            key={role.id}
+                            value={role.id}
+                            className="text-base py-3"
+                          >
+                            {prettifyRole(role.name)}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <InputGroupAddon>
+                    <Briefcase className="size-5" />
+                  </InputGroupAddon>
+                </InputGroup>
+              </Field>
+              <Field>
+                <InputGroup className="h-12">
+                  <Select
+                    value={form.officeId}
+                    onValueChange={handleOfficeChange}
+                  >
+                    <SelectTrigger className="h-full w-full border-0 bg-transparent shadow-none focus:ring-0 text-base px-3">
+                      <SelectValue placeholder="Select office" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {offices.map((office) => (
+                        <SelectItem
+                          key={office.id}
+                          value={office.id}
+                          className="text-base py-3"
+                        >
+                          {office.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <InputGroupAddon>
+                    <Building2 className="size-5" />
+                  </InputGroupAddon>
+                </InputGroup>
+              </Field>
+            </div>
+            <div className="mt-4 flex gap-3 justify-end">
               <Dialog.Close asChild>
-                <Button type="button" variant="outline">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="text-base px-6"
+                >
                   Cancel
                 </Button>
               </Dialog.Close>
-              <Button type="submit" disabled={isLoading || !form.roleId || !form.officeId}>
-                {isLoading ? 'Updating...' : 'Confirm'}
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isLoading}
+                className="text-base px-8"
+              >
+                {isLoading ? 'Updating...' : 'Save Changes'}
               </Button>
             </div>
           </form>

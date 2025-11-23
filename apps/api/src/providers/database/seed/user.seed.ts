@@ -129,7 +129,7 @@ export async function seedDatabase(dataSource: DataSource) {
   const adminUser = await createUser(
     'admin',
     'admin',
-    'Super',
+    'System',
     'Admin',
     'administration',
   );
