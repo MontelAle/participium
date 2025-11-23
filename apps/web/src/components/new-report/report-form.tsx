@@ -23,7 +23,7 @@ import { useCreateReport } from '@/hooks/use-reports';
 import { toast } from 'sonner';
 import { ReportData as FormData } from '@/types/report';
 import { PhotoUploader } from './photoUploader.js';
-import { MiniMap } from '@/components/mini-map'; // Path corretto
+import { MiniMap } from '@/components/mini-map';
 
 export function ReportForm() {
   const navigate = useNavigate();
@@ -44,13 +44,13 @@ export function ReportForm() {
   });
 
   useEffect(() => {
-    if (!location.state?.latitude) {
-      toast.warning('Please select a location on the map first.');
-      navigate('/report-map');
-    } else {
+    if (location.state?.latitude) {
       setValue('latitude', location.state.latitude);
       setValue('longitude', location.state.longitude);
       setValue('address', location.state.address);
+    } else {
+      toast.warning('Please select a location on the map first');
+      navigate('/report-map');
     }
   }, [location.state, setValue, navigate]);
 
@@ -120,7 +120,7 @@ export function ReportForm() {
                       value={cat.id}
                       className="text-base py-3 cursor-pointer"
                     >
-                      {cat.name.replace(/_/g, ' ')}
+                      {cat.name.replaceAll(/_/g, ' ')}
                     </SelectItem>
                   ))}
                 </SelectContent>

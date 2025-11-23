@@ -48,10 +48,10 @@ export function PrOfficerToolbar({
       onStatusesChange(
         selectedStatuses.includes(status)
           ? selectedStatuses.filter((s) => s !== status)
-          : [...selectedStatuses, status]
+          : [...selectedStatuses, status],
       );
     },
-    [onStatusesChange, selectedStatuses]
+    [onStatusesChange, selectedStatuses],
   );
 
   const toggleCategory = React.useCallback(
@@ -59,30 +59,29 @@ export function PrOfficerToolbar({
       onCategoriesChange(
         selectedCategories.includes(category)
           ? selectedCategories.filter((c) => c !== category)
-          : [...selectedCategories, category]
+          : [...selectedCategories, category],
       );
     },
-    [onCategoriesChange, selectedCategories]
+    [onCategoriesChange, selectedCategories],
   );
 
   const clearStatuses = React.useCallback(
     () => onStatusesChange([]),
-    [onStatusesChange]
+    [onStatusesChange],
   );
 
   const clearCategories = React.useCallback(
     () => onCategoriesChange([]),
-    [onCategoriesChange]
+    [onCategoriesChange],
   );
 
   return (
     <div
       className={cn(
         'flex flex-col gap-3 md:flex-row md:items-center',
-        className
+        className,
       )}
     >
-     
       <div className="flex-1">
         <Input
           value={query}
@@ -127,10 +126,10 @@ export function PrOfficerToolbar({
                         <Check
                           className={cn(
                             'mr-2 h-4 w-4',
-                            checked ? 'opacity-100' : 'opacity-0'
+                            checked ? 'opacity-100' : 'opacity-0',
                           )}
                         />
-                        {status.replace(/_/g, ' ')}
+                        {status.replaceAll(/_/g, ' ')}
                       </CommandItem>
                     );
                   })}
@@ -141,7 +140,12 @@ export function PrOfficerToolbar({
         </Popover>
 
         {selectedStatuses.length > 0 && (
-          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={clearStatuses}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2"
+            onClick={clearStatuses}
+          >
             Clear
           </Button>
         )}
@@ -181,7 +185,7 @@ export function PrOfficerToolbar({
                         <Check
                           className={cn(
                             'mr-2 h-4 w-4',
-                            checked ? 'opacity-100' : 'opacity-0'
+                            checked ? 'opacity-100' : 'opacity-0',
                           )}
                         />
                         {category}
@@ -195,7 +199,12 @@ export function PrOfficerToolbar({
         </Popover>
 
         {selectedCategories.length > 0 && (
-          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={clearCategories}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2"
+            onClick={clearCategories}
+          >
             Clear
           </Button>
         )}

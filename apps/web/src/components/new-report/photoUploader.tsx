@@ -86,6 +86,13 @@ export function PhotoUploader({
     onChange(photos.filter((_, i) => i !== index));
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      triggerInput();
+    }
+  };
+
   const triggerInput = () => inputRef.current?.click();
 
   return (
@@ -117,8 +124,11 @@ export function PhotoUploader({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            role="button"
+            tabIndex={0}
+            onKeyDown={handleKeyDown}
             className={cn(
-              'aspect-4/3 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 ease-out flex flex-col items-center justify-center gap-3 p-4',
+              'aspect-4/3 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 ease-out flex flex-col items-center justify-center gap-3 p-4 outline-none focus-visible:ring-2 focus-visible:ring-primary',
               isDragging
                 ? 'border-primary bg-primary/10 scale-[0.98]'
                 : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5 bg-white/50',

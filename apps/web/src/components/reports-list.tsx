@@ -116,7 +116,15 @@ export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
           <div
             key={report.id}
             onClick={() => handleShowDetails(report.id)}
-            className="group relative w-full rounded-lg border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/50 bg-white cursor-pointer"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleShowDetails(report.id);
+              }
+            }}
+            className="group relative w-full rounded-lg border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/50 bg-white cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <div className="flex items-start justify-between mb-2">
               <div className="text-sm text-muted-foreground uppercase font-semibold tracking-wider">

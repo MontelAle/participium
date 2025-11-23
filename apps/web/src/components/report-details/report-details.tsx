@@ -128,11 +128,19 @@ export function ReportDetails({ report }: ReportDetailsProps) {
                   <div
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
-                    className="group relative aspect-4/3 rounded-lg border bg-background overflow-hidden shadow-sm cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedImageIndex(index);
+                      }
+                    }}
+                    className="group relative aspect-4/3 rounded-lg border bg-background overflow-hidden shadow-sm cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <img
                       src={imgUrl}
-                      alt="Evidence"
+                      alt={`Evidence ${index + 1}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
@@ -149,18 +157,31 @@ export function ReportDetails({ report }: ReportDetailsProps) {
       {selectedImageIndex !== null && reportImages.length > 0 && (
         <div
           className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
-          onClick={() => setSelectedImageIndex(null)}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedImageIndex(null);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Close preview"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setSelectedImageIndex(null);
+            }
+          }}
         >
           <button
             onClick={() => setSelectedImageIndex(null)}
-            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full"
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full focus:outline-none focus:ring-2 focus:ring-white"
           >
             <X className="size-8" />
           </button>
           <img
             src={reportImages[selectedImageIndex]}
+            alt="Enlarged evidence view"
             className="max-w-full max-h-[85vh] object-contain rounded shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
