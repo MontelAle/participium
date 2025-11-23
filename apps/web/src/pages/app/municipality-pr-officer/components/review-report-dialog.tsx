@@ -3,7 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
 import type { Report, UpdateReportDto } from '@repo/api';
 import { ReportStatus } from '@repo/api';
-import { XIcon } from 'lucide-react';
+import { XIcon, UserIcon } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -11,9 +11,18 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
+import { Field } from '@/components/ui/field';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '@/components/ui/input-group';
+import { Input } from '@/components/ui/input';
 import { useCategories } from '@/hooks/use-categories';
 import { toast } from 'sonner';
 import { useUpdateReport } from '@/hooks/use-reports';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 type ReviewReportDialogProps = {
   report: Report;
@@ -30,10 +39,10 @@ export function ReviewReportDialog({
   const updateReportMutation = useUpdateReport();
 
   const [selectedCategory, setSelectedCategory] = React.useState<string>(
-    report.category?.id ?? ''
+    report.category?.id ?? '',
   );
   const [selectedStatus, setSelectedStatus] = React.useState<string>(
-    report.status
+    report.status,
   );
   const [explanation, setExplanation] = React.useState<string>('');
 
@@ -83,7 +92,9 @@ export function ReviewReportDialog({
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
         <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg w-full max-w-md shadow-lg z-50 overflow-y-auto max-h-[80vh]">
           <div className="flex items-center justify-between mb-4">
-            <Dialog.Title className="text-xl font-bold">Report Details</Dialog.Title>
+            <Dialog.Title className="text-xl font-bold">
+              Report Details
+            </Dialog.Title>
             <Dialog.Close asChild>
               <button
                 aria-label="Close"
@@ -95,95 +106,88 @@ export function ReviewReportDialog({
             </Dialog.Close>
           </div>
 
-          <form className="flex flex-col gap-4">
-         
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Title</label>
-              <input
-                type="text"
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleConfirm();
+            }}
+          >
+            <Field>
+              <Label htmlFor="title">Title</Label>
+              <Input
+                name="title"
+                placeholder="Title"
+                disabled
                 value={report.title}
-                readOnly
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
               />
-            </div>
-
-          
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Description</label>
-              <textarea
+            </Field>
+            <Field>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                name="description"
+                placeholder="Description"
+                required
+                disabled
                 value={report.description ?? ''}
-                readOnly
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
-                rows={3}
               />
-            </div>
-
-          
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Address</label>
-              <input
-                type="text"
+            </Field>
+            <Field>
+              <Label htmlFor="address">Address</Label>
+              <Input
+                name="address"
+                placeholder="Address"
+                required
                 value={report.address ?? ''}
-                readOnly
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
+                disabled
               />
-            </div>
+            </Field>
+            <Field>
+              <Label htmlFor="latitude">Latitude</Label>
+              <Input
+                name="latitude"
+                placeholder="Latitude"
+                required
+                value={latitude}
+                disabled
+              />
+            </Field>
+            <Field>
+              <Label htmlFor="longitude">Longitude</Label>
+              <Input
+                name="longitude"
+                placeholder="Longitude"
+                required
+                value={longitude}
+                disabled
+              />
+            </Field>
 
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700">Latitude</label>
-                <input
-                  type="number"
-                  value={latitude}
-                  readOnly
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700">Longitude</label>
-                <input
-                  type="number"
-                  value={longitude}
-                  readOnly
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
-                />
-              </div>
-            </div>
+            <Field>
+              <Label htmlFor="category">Category</Label>
+              <Select
+                value={
+                  isPending ? selectedCategory : (report.category?.id ?? '')
+                }
+                onValueChange={setSelectedCategory}
+                disabled={!isPending || isLoading}
+              >
+                <SelectTrigger className="w-full mt-1">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
 
-           
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Category</label>
-              {isPending ? (
-                <Select
-                  value={selectedCategory}
-                  onValueChange={setSelectedCategory}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger className="w-full mt-1">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <input
-                  type="text"
-                  value={report.category?.name ?? ''}
-                  readOnly
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
-                />
-              )}
-            </div>
-
-        
             {report.images && report.images.length > 0 && (
               <div className="mb-4">
-                Images:
+                <Label>Images</Label>
                 <div className="mt-2 flex gap-2 overflow-x-auto">
                   {report.images.map((img, index) => (
                     <Dialog.Root key={index}>
@@ -215,49 +219,47 @@ export function ReviewReportDialog({
               </div>
             )}
 
-          
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Status</label>
-              {isPending ? (
-                <Select
-                  value={selectedStatus}
-                  onValueChange={setSelectedStatus}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger className="w-full mt-1">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ReportStatus.ASSIGNED}>Assigned</SelectItem>
-                    <SelectItem value={ReportStatus.REJECTED}>Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <input
-                  type="text"
-                  value={report.status.replace('_', ' ')}
-                  readOnly
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
-                />
-              )}
-            </div>
+            <Field>
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={isPending ? selectedStatus : report.status}
+                onValueChange={setSelectedStatus}
+                disabled={!isPending || isLoading}
+              >
+                <SelectTrigger className="w-full mt-1">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ReportStatus.ASSIGNED}>
+                    Assigned
+                  </SelectItem>
+                  <SelectItem value={ReportStatus.REJECTED}>
+                    Rejected
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
 
             {(isPending && selectedStatus === ReportStatus.REJECTED) ||
             (!isPending && report.status === ReportStatus.REJECTED) ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Explanation</label>
-                <textarea
-                  value={isPending ? explanation : report.explanation ?? ''}
-                  onChange={isPending ? (e) => setExplanation(e.target.value) : undefined}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-900 bg-gray-100"
+              <Field>
+                <Label htmlFor="explanation">Explanation</Label>
+                <Textarea
+                  id="explanation"
+                  name="explanation"
+                  placeholder="Explanation"
+                  value={isPending ? explanation : (report.explanation ?? '')}
+                  onChange={
+                    isPending
+                      ? (e) => setExplanation(e.target.value)
+                      : undefined
+                  }
+                  disabled={!isPending || isLoading}
                   rows={3}
-                  readOnly={!isPending}
-                  disabled={isLoading}
                 />
-              </div>
+              </Field>
             ) : null}
 
-            
             <div className="flex justify-end mt-4 gap-3">
               <Dialog.Close asChild>
                 <Button variant="outline" disabled={isLoading}>
@@ -269,7 +271,7 @@ export function ReviewReportDialog({
                 <Button
                   className="bg-black text-white hover:bg-gray-800"
                   disabled={!canConfirm || isLoading}
-                  onClick={handleConfirm}
+                  type="submit"
                 >
                   {isLoading ? 'Saving...' : 'Confirm'}
                 </Button>
