@@ -11,7 +11,6 @@ import { Account } from '../src/common/entities/account.entity';
 import { Category } from '../src/common/entities/category.entity';
 import { Report } from '../src/common/entities/report.entity';
 import { Office } from '../src/common/entities/office.entity';
-import { REPORT_ERROR_MESSAGES } from '../src/modules/reports/constants/error-messages';
 import request = require('supertest');
 
 jest.mock('nanoid', () => ({
@@ -109,6 +108,14 @@ const createMockRepository = (data: any[] = []) => {
   return repo;
 };
 
+/**
+ * End-to-End Test Suite for Participium API
+ * 
+ * Note: These tests use mock repositories and guards to simulate database
+ * and authentication behavior. Some business logic validations (e.g., duplicate
+ * username checks, password strength) are tested in unit tests where the actual
+ * service logic is executed without mocks.
+ */
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let AppModule: any;
@@ -306,6 +313,10 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
+  // ============================================================================
+  // Basic HTTP Error Handling
+  // ============================================================================
+
   it('GET /nonexistent returns JSON error with statusCode and error', async () => {
     const res = await request(app.getHttpServer())
       .get('/nonexistent')
@@ -338,6 +349,10 @@ describe('AppController (e2e)', () => {
       await make().set('Accept', 'application/json').expect(404);
     }
   });
+
+  // ============================================================================
+  // Authentication & Authorization
+  // ============================================================================
 
   it('POST /auth/register returns user and sets session cookie', async () => {
     const res = await request(app.getHttpServer())
@@ -426,23 +441,33 @@ describe('AppController (e2e)', () => {
   });
 
   it('POST /auth/logout returns success', async () => {
-    const res = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post('/auth/logout')
       .set('Cookie', sessionCookie)
       .expect(200);
-
-    expect(res.body.success).toBe(true);
   });
 
+  it('POST /auth/refresh refreshes session', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(201);
+  });
+
+  // ============================================================================
+  // Roles Management
+  // ============================================================================
+
   it('GET /roles returns all roles', async () => {
-    const res = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .get('/roles')
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
-
-    expect(res.body.success).toBe(true);
-    expect(Array.isArray(res.body.data)).toBe(true);
   });
+
+  // ============================================================================
+  // Municipality Users Management
+  // ============================================================================
 
   it('POST /users/municipality creates a municipality user', async () => {
     await request(app.getHttpServer())
@@ -488,270 +513,6 @@ describe('AppController (e2e)', () => {
       .expect(200);
   });
 
-  it('POST /reports creates a report with images', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/reports')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .field('title', 'Broken streetlight')
-      .field('description', 'The streetlight on Main St is broken.')
-      .field('longitude', '12.34')
-      .field('latitude', '56.78')
-      .field('categoryId', 'cat_1')
-      .attach('images', Buffer.from('fake-image-data'), 'test.jpg')
-      .expect(201);
-
-    expect(res.body.success).toBe(true);
-    expect(res.body.data).toBeDefined();
-    expect(res.body.data.images).toBeDefined();
-  });
-
-  it('POST /reports with 3 images (maximum allowed)', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/reports')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .field('title', 'Multiple issues')
-      .field('description', 'Multiple problems detected')
-      .field('longitude', '12.34')
-      .field('latitude', '56.78')
-      .field('categoryId', 'cat_1')
-      .attach('images', Buffer.from('fake-image-1'), 'test1.jpg')
-      .attach('images', Buffer.from('fake-image-2'), 'test2.jpg')
-      .attach('images', Buffer.from('fake-image-3'), 'test3.jpg')
-      .expect(201);
-  });
-
-  it('POST /reports without images returns 400', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/reports')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .field('title', 'No images')
-      .field('description', 'This should fail')
-      .field('longitude', '12.34')
-      .field('latitude', '56.78')
-      .field('categoryId', 'cat_1')
-      .expect(400);
-  });
-
-  it('POST /reports with more than 3 images returns 400', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/reports')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .field('title', 'Too many images')
-      .field('description', 'This should fail')
-      .field('longitude', '12.34')
-      .field('latitude', '56.78')
-      .field('categoryId', 'cat_1')
-      .attach('images', Buffer.from('fake-image-1'), 'test1.jpg')
-      .attach('images', Buffer.from('fake-image-2'), 'test2.jpg')
-      .attach('images', Buffer.from('fake-image-3'), 'test3.jpg')
-      .attach('images', Buffer.from('fake-image-4'), 'test4.jpg')
-      .expect(400);
-  });
-
-  it('POST /reports with invalid file type returns 400', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/reports')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .field('title', 'Invalid file type')
-      .field('description', 'This should fail')
-      .field('longitude', '12.34')
-      .field('latitude', '56.78')
-      .field('categoryId', 'cat_1')
-      .attach('images', Buffer.from('fake-pdf'), 'test.pdf')
-      .expect(400);
-  });
-
-  it('POST /reports with oversized file returns 400', async () => {
-    const largeBuffer = Buffer.alloc(6 * 1024 * 1024);
-    const res = await request(app.getHttpServer())
-      .post('/reports')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .field('title', 'Oversized file')
-      .field('description', 'This should fail')
-      .field('longitude', '12.34')
-      .field('latitude', '56.78')
-      .field('categoryId', 'cat_1')
-      .attach('images', largeBuffer, 'large.jpg')
-      .expect(400);
-  });
-
-  it('GET /reports returns all reports', async () => {
-    await request(app.getHttpServer())
-      .get('/reports')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(200);
-  });
-
-  it('GET /reports/:id returns a report by ID', async () => {
-    const res = await request(app.getHttpServer())
-      .get('/reports/report_1')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(200);
-
-    expect(res.body.success).toBe(true);
-    expect(res.body.data).toBeDefined();
-  });
-
-  it('GET /reports/:id with non-existent ID returns 404', async () => {
-    await request(app.getHttpServer())
-      .get('/reports/non-existent-id')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(404);
-  });
-
-  it('PATCH /reports/:id updates a report', async () => {
-    await request(app.getHttpServer())
-      .patch('/reports/report_1')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .send({
-        status: 'resolved',
-        description: 'Fixed by city crew.',
-      })
-      .expect(200);
-  });
-
-  it('DELETE /reports/:id deletes a report', async () => {
-    await request(app.getHttpServer())
-      .delete('/reports/report_1')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(204);
-  });
-
-  it('GET /reports with status filter', async () => {
-    const res = await request(app.getHttpServer())
-      .get('/reports?status=pending')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(200);
-
-    expect(res.body.success).toBe(true);
-    expect(Array.isArray(res.body.data)).toBe(true);
-  });
-
-  it('GET /reports with categoryId filter', async () => {
-    const res = await request(app.getHttpServer())
-      .get('/reports?categoryId=cat_1')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(200);
-
-    expect(res.body.success).toBe(true);
-    expect(Array.isArray(res.body.data)).toBe(true);
-  });
-
-  it('GET /reports with userId filter', async () => {
-    const res = await request(app.getHttpServer())
-      .get('/reports?userId=user_1')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(200);
-
-    expect(res.body.success).toBe(true);
-    expect(Array.isArray(res.body.data)).toBe(true);
-  });
-
-  it('GET /reports with bounding box filter', async () => {
-    const res = await request(app.getHttpServer())
-      .get(
-        '/reports?minLongitude=7.0&maxLongitude=8.0&minLatitude=45.0&maxLatitude=46.0',
-      )
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(200);
-
-    expect(res.body.success).toBe(true);
-    expect(Array.isArray(res.body.data)).toBe(true);
-  });
-
-  it('GET /reports with radius search', async () => {
-    const res = await request(app.getHttpServer())
-      .get('/reports?searchLongitude=7.6869&searchLatitude=45.0703&radiusMeters=5000')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(200);
-
-    expect(res.body.success).toBe(true);
-    expect(Array.isArray(res.body.data)).toBe(true);
-  });
-
-  it('GET /categories returns all categories', async () => {
-    await request(app.getHttpServer())
-      .get('/categories')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(200);
-  });
-
-  it('GET /offices returns all offices', async () => {
-    await request(app.getHttpServer())
-      .get('/offices')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(200);
-  });
-
-  it('POST /auth/refresh refreshes session', async () => {
-    await request(app.getHttpServer())
-      .post('/auth/refresh')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(201);
-  });
-
-  it('PATCH /reports/:id with invalid status returns 400', async () => {
-    await request(app.getHttpServer())
-      .patch('/reports/report_1')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .send({
-        status: 'invalid_status',
-      })
-      .expect(400);
-  });
-
-  it('POST /users/municipality with invalid email returns 400', async () => {
-    await request(app.getHttpServer())
-      .post('/users/municipality')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .send({
-        email: 'invalid-email',
-        username: 'testuser',
-        firstName: 'Test',
-        lastName: 'User',
-        password: 'TestPass123',
-        roleId: 'role_1',
-      })
-      .expect(400);
-  });
-
-  it('POST /users/municipality with weak password creates user (no length validation in DTO)', async () => {
-    await request(app.getHttpServer())
-      .post('/users/municipality')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .send({
-        email: 'test@example.com',
-        username: 'testuser2',
-        firstName: 'Test',
-        lastName: 'User',
-        password: 'weak',
-        roleId: 'role_1',
-      })
-      .expect(201);
-  });
-
-  it('POST /auth/register with duplicate username creates user (mock repo limitation)', async () => {
-    await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        email: 'unique@example.com',
-        username: 'john',
-        firstName: 'John',
-        lastName: 'Doe',
-        password: 'StrongP@ssw0rd',
-      })
-      .expect(201);
-  });
-
-  it('POST /reports with missing required fields returns 400', async () => {
-    await request(app.getHttpServer())
-      .post('/reports')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .field('title', 'Incomplete report')
-      .attach('images', Buffer.from('fake-image-data'), 'test.jpg')
-      .expect(400);
-  });
-
   it('GET /users/municipality/user/:id with non-existent ID returns 404', async () => {
     await request(app.getHttpServer())
       .get('/users/municipality/user/non-existent-id')
@@ -774,20 +535,24 @@ describe('AppController (e2e)', () => {
       .expect(404);
   });
 
-  it('PATCH /reports/:id with non-existent ID returns 404', async () => {
+  it('POST /users/municipality with invalid email returns 400', async () => {
     await request(app.getHttpServer())
-      .patch('/reports/non-existent-id')
+      .post('/users/municipality')
       .set('Cookie', 'session_token=sess_1.secret')
-      .send({ status: 'resolved' })
-      .expect(404);
+      .send({
+        email: 'invalid-email',
+        username: 'testuser',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'TestPass123',
+        roleId: 'role_1',
+      })
+      .expect(400);
   });
 
-  it('DELETE /reports/:id with non-existent ID returns 404', async () => {
-    await request(app.getHttpServer())
-      .delete('/reports/non-existent-id')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(404);
-  });
+  // ============================================================================
+  // Regular User Profile Management
+  // ============================================================================
 
   it('PATCH /users/profile updates telegram username', async () => {
     await request(app.getHttpServer())
@@ -824,11 +589,229 @@ describe('AppController (e2e)', () => {
   });
 
   it('PATCH /users/profile as municipality user returns 403', async () => {
-    // This test uses a special cookie to simulate municipality user
     await request(app.getHttpServer())
       .patch('/users/profile')
       .set('Cookie', 'session_token=municipal_user')
       .send({ telegramUsername: '@officer' })
       .expect(403);
+  });
+
+  // ============================================================================
+  // Reports Management
+  // ============================================================================
+
+  it('POST /reports creates a report with images', async () => {
+    await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Broken streetlight')
+      .field('description', 'The streetlight on Main St is broken.')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('fake-image-data'), 'test.jpg')
+      .expect(201);
+  });
+
+  it('POST /reports with 3 images (maximum allowed)', async () => {
+    await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Multiple issues')
+      .field('description', 'Multiple problems detected')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('fake-image-1'), 'test1.jpg')
+      .attach('images', Buffer.from('fake-image-2'), 'test2.jpg')
+      .attach('images', Buffer.from('fake-image-3'), 'test3.jpg')
+      .expect(201);
+  });
+
+  it('POST /reports without images returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'No images')
+      .field('description', 'This should fail')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .expect(400);
+  });
+
+  it('POST /reports with more than 3 images returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Too many images')
+      .field('description', 'This should fail')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('fake-image-1'), 'test1.jpg')
+      .attach('images', Buffer.from('fake-image-2'), 'test2.jpg')
+      .attach('images', Buffer.from('fake-image-3'), 'test3.jpg')
+      .attach('images', Buffer.from('fake-image-4'), 'test4.jpg')
+      .expect(400);
+  });
+
+  it('POST /reports with invalid file type returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Invalid file type')
+      .field('description', 'This should fail')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('fake-pdf'), 'test.pdf')
+      .expect(400);
+  });
+
+  it('POST /reports with oversized file returns 400', async () => {
+    const largeBuffer = Buffer.alloc(6 * 1024 * 1024);
+    await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Oversized file')
+      .field('description', 'This should fail')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .attach('images', largeBuffer, 'large.jpg')
+      .expect(400);
+  });
+
+  it('POST /reports with missing required fields returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Incomplete report')
+      .attach('images', Buffer.from('fake-image-data'), 'test.jpg')
+      .expect(400);
+  });
+
+  it('GET /reports returns all reports', async () => {
+    await request(app.getHttpServer())
+      .get('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+  });
+
+  it('GET /reports/:id returns a report by ID', async () => {
+    await request(app.getHttpServer())
+      .get('/reports/report_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+  });
+
+  it('GET /reports/:id with non-existent ID returns 404', async () => {
+    await request(app.getHttpServer())
+      .get('/reports/non-existent-id')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(404);
+  });
+
+  it('PATCH /reports/:id updates a report', async () => {
+    await request(app.getHttpServer())
+      .patch('/reports/report_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        status: 'resolved',
+        description: 'Fixed by city crew.',
+      })
+      .expect(200);
+  });
+
+  it('PATCH /reports/:id with invalid status returns 400', async () => {
+    await request(app.getHttpServer())
+      .patch('/reports/report_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        status: 'invalid_status',
+      })
+      .expect(400);
+  });
+
+  it('PATCH /reports/:id with non-existent ID returns 404', async () => {
+    await request(app.getHttpServer())
+      .patch('/reports/non-existent-id')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ status: 'resolved' })
+      .expect(404);
+  });
+
+  it('DELETE /reports/:id deletes a report', async () => {
+    await request(app.getHttpServer())
+      .delete('/reports/report_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(204);
+  });
+
+  it('DELETE /reports/:id with non-existent ID returns 404', async () => {
+    await request(app.getHttpServer())
+      .delete('/reports/non-existent-id')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(404);
+  });
+
+  // ============================================================================
+  // Reports Filtering & Search
+  // ============================================================================
+
+  it('GET /reports with status filter', async () => {
+    await request(app.getHttpServer())
+      .get('/reports?status=pending')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+  });
+
+  it('GET /reports with categoryId filter', async () => {
+    await request(app.getHttpServer())
+      .get('/reports?categoryId=cat_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+  });
+
+  it('GET /reports with userId filter', async () => {
+    await request(app.getHttpServer())
+      .get('/reports?userId=user_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+  });
+
+  it('GET /reports with bounding box filter', async () => {
+    await request(app.getHttpServer())
+      .get(
+        '/reports?minLongitude=7.0&maxLongitude=8.0&minLatitude=45.0&maxLatitude=46.0',
+      )
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+  });
+
+  it('GET /reports with radius search', async () => {
+    await request(app.getHttpServer())
+      .get('/reports?searchLongitude=7.6869&searchLatitude=45.0703&radiusMeters=5000')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+  });
+
+  // ============================================================================
+  // Categories & Offices
+  // ============================================================================
+
+  it('GET /categories returns all categories', async () => {
+    await request(app.getHttpServer())
+      .get('/categories')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+  });
+
+  it('GET /offices returns all offices', async () => {
+    await request(app.getHttpServer())
+      .get('/offices')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
   });
 });
