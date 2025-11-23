@@ -12,7 +12,7 @@ export function DashboardLayout() {
   const [municipalSidebarOpen, setMunicipalSidebarOpen] = useState(true);
   const location = useLocation();
   const isReportPage = location.pathname === '/report';
-  const isMapPage = location.pathname === '/map';
+  const isMapPage = location.pathname === '/report-map';
   const RIGHT_SIDEBAR_WIDTH = '400px';
 
   const showLeftSidebar = isMunicipalityUser || isAdminUser;

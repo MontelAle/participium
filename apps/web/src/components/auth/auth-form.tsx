@@ -34,7 +34,7 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
       if (result.success) {
         toast.success('Login successful! Welcome back!');
         if (result.data?.role.name === 'user') {
-          navigate('/map');
+          navigate('/report-map');
         } else {
           navigate('/app/dashboard');
         }
@@ -51,7 +51,7 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
       });
       if (result.success) {
         toast.success('Registration successful! Welcome!');
-        navigate('/map');
+        navigate('/report-map');
       } else {
         toast.error(result.error || 'Registration failed. Please try again.');
       }

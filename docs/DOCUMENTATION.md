@@ -262,7 +262,7 @@ File: `src/config/app.config.ts`
 
 ```typescript
 /                      → HomePage
-/map                   → MapPage
+/report-map            → MapPage
 /login                 → LoginPage
 /register              → RegistrationPage
 /users-municipality    → (configurable)

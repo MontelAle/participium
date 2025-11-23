@@ -19,9 +19,9 @@ const App = () => {
         <Toaster position="top-center" richColors />
         <Routes>
           <Route element={<DashboardLayout />}>
-            <Route index element={<Navigate to="/map" replace />} />
+            <Route index element={<Navigate to="/report-map" replace />} />
             <Route
-              path="/map"
+              path="/report-map"
               element={
                 <CitizenGuard>
                   <MapPage />
