@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getStatusConfig } from '@/lib/utils';
-import { MapPin, CalendarDays, Tag } from 'lucide-react';
+import { MapPin, CalendarDays, Tag, User } from 'lucide-react';
 import { isSameDay, subWeeks, subMonths, isAfter } from 'date-fns';
 import { ReportsListProps } from '@/types/report';
 import { useNavigate } from 'react-router-dom';
@@ -150,6 +150,12 @@ export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
               <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                 <CalendarDays className="size-3" />
                 <span className="capitalize">{formattedDate}</span>
+              </div>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                <User className="size-3" />
+                <span className="capitalize">
+                  {report.user?.firstName} {report.user?.lastName}
+                </span>
               </div>
             </div>
 
