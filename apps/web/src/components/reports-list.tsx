@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { getStatusConfig } from '@/lib/utils';
-import { MapPin, CalendarDays } from 'lucide-react';
+import { MapPin, CalendarDays, Tag } from 'lucide-react';
 import { isSameDay, subWeeks, subMonths, isAfter } from 'date-fns';
 import { ReportsListProps } from '@/types/report';
 
@@ -129,9 +129,12 @@ export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
               <h3 className="font-bold text-xl leading-tight text-foreground mb-1">
                 {report.title}
               </h3>
-              <p className="text-sm font-medium text-muted-foreground mb-2">
-                {report.category.name}
-              </p>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground mt-4 mb-2">
+                <Tag className="size-3" />
+                <span className="truncate max-w-[250px] text-sm font-medium">
+                  {report.category.name}
+                </span>
+              </div>
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                 <MapPin className="size-3" />
                 <span className="truncate max-w-[250px]">

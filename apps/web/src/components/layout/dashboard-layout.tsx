@@ -11,11 +11,12 @@ export function DashboardLayout() {
     useAuth();
   const [municipalSidebarOpen, setMunicipalSidebarOpen] = useState(true);
   const location = useLocation();
-
-  const showLeftSidebar = isMunicipalityUser || isAdminUser;
-  const showRightSidebar = isCitizenUser || isGuestUser;
+  const isReportPage = location.pathname === '/report';
   const isMapPage = location.pathname === '/map';
   const RIGHT_SIDEBAR_WIDTH = '400px';
+
+  const showLeftSidebar = isMunicipalityUser || isAdminUser;
+  const showRightSidebar = (isCitizenUser || isGuestUser) && !isReportPage;
 
   return (
     <div className="h-screen bg-background flex flex-col font-sans text-base antialiased overflow-hidden">
