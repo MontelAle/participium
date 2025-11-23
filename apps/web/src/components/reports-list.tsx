@@ -73,7 +73,8 @@ export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
     return true;
   });
 
-  const handleReportClick = (report: Report) => {
+  const handleReportClick = (e: React.MouseEvent, report: Report) => {
+    e.stopPropagation();
     setLocation({
       latitude: report.location.coordinates[1] ?? 0,
       longitude: report.location.coordinates[0] ?? 0,
@@ -114,7 +115,8 @@ export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
         return (
           <div
             key={report.id}
-            className="group relative w-full rounded-lg border p-4 shadow-sm transition-all hover:shadow-md bg-white"
+            onClick={() => handleShowDetails(report.id)}
+            className="group relative w-full rounded-lg border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/50 bg-white cursor-pointer"
           >
             <div className="flex items-start justify-between mb-2">
               <div className="text-sm text-muted-foreground uppercase font-semibold tracking-wider">
@@ -132,7 +134,7 @@ export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
             </div>
 
             <div className="mb-3">
-              <h3 className="font-bold text-xl leading-tight text-foreground mb-1">
+              <h3 className="font-bold text-xl leading-tight text-foreground mb-1 group-hover:text-primary transition-colors">
                 {report.title}
               </h3>
               <div className="flex items-center gap-1 text-sm text-muted-foreground mt-4 mb-2">
@@ -159,21 +161,14 @@ export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-dashed">
+            <div className="flex items-center justify-end pt-3 border-t border-dashed">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-base rounded-md border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                onClick={() => handleReportClick(report)}
+                className="h-7 text-base rounded-md border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 z-10"
+                onClick={(e) => handleReportClick(e, report)}
               >
                 Show on Map
-              </Button>
-              <Button
-                size="sm"
-                className="h-7 text-base rounded-md bg-slate-900 text-white hover:bg-slate-800"
-                onClick={() => handleShowDetails(report.id)}
-              >
-                Show Details
               </Button>
             </div>
           </div>

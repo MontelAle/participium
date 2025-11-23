@@ -204,91 +204,6 @@ export default function ReportsMap() {
 
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || !location) {
-      if (markerRef.current) {
-        markerRef.current.remove();
-        markerRef.current = null;
-      }
-      return;
-    }
-
-    const existingReport = reports.find(
-      (r) =>
-        Math.abs((r.location?.coordinates[1] ?? 0) - location.latitude) <
-          0.00001 &&
-        Math.abs((r.location?.coordinates[0] ?? 0) - location.longitude) <
-          0.00001,
-    );
-
-    if (existingReport) {
-      if (markerRef.current) markerRef.current.remove();
-      markerRef.current = null;
-
-      const existingMarker = markersMapRef.current.get(existingReport.id);
-      const clusterGroup = markerClusterGroupRef.current;
-
-      if (existingMarker && clusterGroup) {
-        clusterGroup.zoomToShowLayer(existingMarker, () => {
-          existingMarker.setIcon(
-            smallDivIcon({ status: existingReport.status, isSelected: true }),
-          );
-          existingMarker.openPopup();
-
-          existingMarker.once('popupclose', () => {
-            existingMarker.setIcon(
-              smallDivIcon({
-                status: existingReport.status,
-                isSelected: false,
-              }),
-            );
-          });
-        });
-      }
-      return;
-    }
-
-    if (markerRef.current) markerRef.current.remove();
-
-    const buttonHTML = isCitizenUser
-      ? `<button id="popup-add-report-btn" class="popup-btn-action">ADD REPORT</button>`
-      : `<div class="text-xs text-center text-slate-400 mt-3 italic">Log in to add a report</div>`;
-
-    const popupHTML = `
-      <div class="font-sans p-4 min-w-[260px]">
-        <p class="text-xs font-bold text-blue-500 uppercase mb-1">Selected Location</p>
-        <h3 class="text-lg font-bold text-slate-900 leading-tight mb-3">${escapeHtml(location.address || '')}</h3>
-        ${buttonHTML}
-      </div>
-    `;
-
-    const marker = L.marker([location.latitude, location.longitude], {
-      icon: modernDivIcon(),
-      zIndexOffset: 1000,
-    })
-      .addTo(map)
-      .bindPopup(popupHTML, { className: 'my-popup', maxWidth: 320 });
-
-    marker.on('popupopen', () => {
-      if (isCitizenUser) {
-        const btn = document.getElementById('popup-add-report-btn');
-        if (btn) {
-          const newBtn = btn.cloneNode(true);
-          btn.parentNode?.replaceChild(newBtn, btn);
-          (newBtn as HTMLElement).addEventListener('click', (e) => {
-            e.stopPropagation();
-            navigate('/new-report', { state: location });
-          });
-        }
-      }
-    });
-
-    map.flyTo([location.latitude, location.longitude], 16, { duration: 1.2 });
-    setTimeout(() => marker.openPopup(), 300);
-    markerRef.current = marker;
-  }, [location, navigate, isCitizenUser, reports]);
-
-  useEffect(() => {
-    const map = mapInstanceRef.current;
     if (!map) return;
 
     if (!markerClusterGroupRef.current) {
@@ -335,61 +250,162 @@ export default function ReportsMap() {
 
       const formattedDate = new Date(report.createdAt).toLocaleDateString(
         'en-En',
-        {
-          weekday: 'long',
-          hour: '2-digit',
-          minute: '2-digit',
-        },
+        { weekday: 'long', hour: '2-digit', minute: '2-digit' },
       );
       const idShort = report.id.slice(-6);
       const statusBadge = getStatusBadgeHTML(report.status as ReportStatus);
 
-      const popupHTML = `
-         <div class="font-sans bg-white min-w-[260px] p-4">
-           <div class="flex items-start justify-between mb-2 pr-6">
-             <div class="text-xs text-slate-500 uppercase font-bold tracking-wider pt-1">
-               Report #${idShort}
-             </div>
-             ${statusBadge}
-           </div>
-           
-           <div class="mb-1">
-             <h3 class="font-bold text-lg leading-tight text-slate-900 mb-0.5">
-               ${escapeHtml(report.title)}
-             </h3>
-             <p class="text-sm font-medium text-slate-500">
-               ${escapeHtml(report.category.name)}
-             </p>
-           </div>
+      const popupDiv = document.createElement('div');
+      popupDiv.className = 'font-sans bg-white min-w-[260px] p-4';
 
-           <div class="flex items-center gap-2 text-sm text-slate-600 mt-2">
-             ${getSvgIcon('pin')}
-             <span class="truncate max-w-[200px] block leading-tight">
-               ${escapeHtml(report.address || 'No address')}
-             </span>
-           </div>
-           <div class="flex items-center gap-2 text-sm text-slate-500 mt-1">
-             ${getSvgIcon('calendar')}
-             <span class="capitalize">${formattedDate}</span>
-           </div>
-         </div>
-       `;
+      popupDiv.innerHTML = `
+        <div class="flex items-start justify-between mb-2 pr-6">
+          <div class="text-xs text-slate-500 uppercase font-bold tracking-wider pt-1">
+            Report #${idShort}
+          </div>
+          ${statusBadge}
+        </div>
+        <div class="mb-1">
+          <h3 class="font-bold text-lg leading-tight text-slate-900 mb-0.5">
+            ${escapeHtml(report.title)}
+          </h3>
+          <p class="text-sm font-medium text-slate-500">
+            ${escapeHtml(report.category.name)}
+          </p>
+        </div>
+        <div class="flex items-center gap-2 text-sm text-slate-600 mt-2">
+          ${getSvgIcon('pin')}
+          <span class="truncate max-w-[200px] block leading-tight">
+            ${escapeHtml(report.address || 'No address')}
+          </span>
+        </div>
+        <div class="flex items-center gap-2 text-sm text-slate-500 mt-1">
+          ${getSvgIcon('calendar')}
+          <span class="capitalize">${formattedDate}</span>
+        </div>
+      `;
+
+      const detailsBtn = document.createElement('button');
+      detailsBtn.className = 'popup-btn-action mt-3';
+      detailsBtn.textContent = 'SHOW DETAILS';
+      detailsBtn.onclick = (e) => {
+        e.stopPropagation();
+        navigate(`/report/${report.id}`);
+      };
+
+      popupDiv.appendChild(detailsBtn);
 
       const m = L.marker([lat, lng], {
         icon: smallDivIcon({ status: report.status }),
         status: report.status,
-        title: report.address,
+        title: report.title,
       } as any);
 
-      m.bindPopup(popupHTML, { className: 'my-popup', maxWidth: 320 });
+      m.bindPopup(popupDiv, { className: 'my-popup', maxWidth: 320 });
 
-      m.on('click', () => handleLocationSelect(lat, lng, undefined, true));
+      m.on('click', () => {
+        handleLocationSelect(lat, lng, undefined, true);
+      });
+
+      m.on('popupclose', () => {
+        clearLocation();
+      });
 
       markersMapRef.current.set(report.id, m);
-
       clusterGroup.addLayer(m);
     });
-  }, [reports, debouncedSearchTerm, filters]);
+  }, [reports, debouncedSearchTerm, filters, navigate]);
+
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !location) {
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
+      return;
+    }
+
+    const existingReport = reports.find(
+      (r) =>
+        Math.abs((r.location?.coordinates[1] ?? 0) - location.latitude) <
+          0.00001 &&
+        Math.abs((r.location?.coordinates[0] ?? 0) - location.longitude) <
+          0.00001,
+    );
+
+    if (existingReport) {
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
+
+      const existingMarker = markersMapRef.current.get(existingReport.id);
+      const clusterGroup = markerClusterGroupRef.current;
+
+      if (existingMarker && clusterGroup) {
+        clusterGroup.zoomToShowLayer(existingMarker, () => {
+          existingMarker.setIcon(
+            smallDivIcon({ status: existingReport.status, isSelected: true }),
+          );
+
+          existingMarker.openPopup();
+
+          existingMarker.once('popupclose', () => {
+            existingMarker.setIcon(
+              smallDivIcon({
+                status: existingReport.status,
+                isSelected: false,
+              }),
+            );
+            clearLocation();
+          });
+        });
+      }
+      return;
+    }
+
+    if (markerRef.current) markerRef.current.remove();
+
+    const popupDiv = document.createElement('div');
+    popupDiv.className = 'font-sans p-4 min-w-[260px]';
+
+    popupDiv.innerHTML = `
+      <p class="text-xs font-bold text-blue-500 uppercase mb-1">Selected Location</p>
+      <h3 class="text-lg font-bold text-slate-900 leading-tight mb-3">${escapeHtml(location.address || '')}</h3>
+    `;
+
+    if (isCitizenUser) {
+      const addBtn = document.createElement('button');
+      addBtn.className = 'popup-btn-action';
+      addBtn.textContent = 'ADD REPORT';
+      addBtn.onclick = (e) => {
+        e.stopPropagation();
+        navigate('/new-report', { state: location });
+      };
+      popupDiv.appendChild(addBtn);
+    } else {
+      const msg = document.createElement('div');
+      msg.className = 'text-xs text-center text-slate-400 mt-3 italic';
+      msg.textContent = 'Log in to add a report';
+      popupDiv.appendChild(msg);
+    }
+
+    const marker = L.marker([location.latitude, location.longitude], {
+      icon: modernDivIcon(),
+      zIndexOffset: 1000,
+    })
+      .addTo(map)
+      .bindPopup(popupDiv, { className: 'my-popup', maxWidth: 320 });
+
+    marker.on('popupclose', () => {
+      clearLocation();
+    });
+
+    map.flyTo([location.latitude, location.longitude], 16, { duration: 1.2 });
+    setTimeout(() => marker.openPopup(), 300);
+    markerRef.current = marker;
+  }, [location, navigate, isCitizenUser, reports, clearLocation]);
 
   useEffect(() => {
     return () => clearLocation();
