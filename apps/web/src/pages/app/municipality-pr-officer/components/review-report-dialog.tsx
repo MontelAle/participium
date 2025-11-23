@@ -220,24 +220,24 @@ export function ReviewReportDialog({
             )}
 
             <Field>
-              <Label htmlFor="status">Status</Label>
+             <Label>Status</Label>
+            {isPending ? (
               <Select
-                value={isPending ? selectedStatus : report.status}
+                value={selectedStatus}
                 onValueChange={setSelectedStatus}
-                disabled={!isPending || isLoading}
+                disabled={isLoading}
               >
                 <SelectTrigger className="w-full mt-1">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ReportStatus.ASSIGNED}>
-                    Assigned
-                  </SelectItem>
-                  <SelectItem value={ReportStatus.REJECTED}>
-                    Rejected
-                  </SelectItem>
+                  <SelectItem value={ReportStatus.ASSIGNED}>Assigned</SelectItem>
+                  <SelectItem value={ReportStatus.REJECTED}>Rejected</SelectItem>
                 </SelectContent>
               </Select>
+            ) : (
+              <span className="block mt-1">{report.status}</span> // mostra qualsiasi valore
+            )}
             </Field>
 
             {(isPending && selectedStatus === ReportStatus.REJECTED) ||

@@ -18,7 +18,7 @@ export function Navbar() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/map');
+    navigate('/report-map');
   };
 
   const getUserInitials = () => {

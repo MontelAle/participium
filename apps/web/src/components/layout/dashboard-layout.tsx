@@ -7,12 +7,12 @@ import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 
 export function DashboardLayout() {
-  const { isMunicipalityUser, isAdminUser, isCitizenUser, isGuestUser } =
+  const { isMunicipalityUser, isAdminUser, isCitizenUser, isGuestUser, isMunicipalPrOfficer } =
     useAuth();
   const [municipalSidebarOpen, setMunicipalSidebarOpen] = useState(true);
   const location = useLocation();
   const isReportPage = location.pathname === '/report';
-  const isMapPage = location.pathname === '/map';
+  const isMapPage = location.pathname === '/report-map';
   const RIGHT_SIDEBAR_WIDTH = '400px';
 
   const showLeftSidebar = isMunicipalityUser || isAdminUser;

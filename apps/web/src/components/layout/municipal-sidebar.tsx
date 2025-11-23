@@ -1,4 +1,4 @@
-import { Home, Users, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Home, Users, ChevronRight, ChevronLeft ,FileText } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -7,7 +7,7 @@ import { MunicipalSidebarProps } from '@/types/ui';
 
 export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
   const location = useLocation();
-  const { isAdminUser } = useAuth();
+  const { isAdminUser , isMunicipalPrOfficer } = useAuth();
 
   const menuItems = [
     { title: 'Dashboard', href: '/app/dashboard', icon: Home },
@@ -21,6 +21,13 @@ export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
     });
   }
 
+  if (isMunicipalPrOfficer) {
+    menuItems.push({
+      title: 'View Reports',
+      href: '/app/municipality-pr-officer',
+      icon: FileText,
+    });
+  }
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-20 items-center justify-around border-t bg-background px-2 pb-safe shadow-[0_-5px_15px_rgba(0,0,0,0.05)] md:hidden">

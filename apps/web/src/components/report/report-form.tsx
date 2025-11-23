@@ -46,7 +46,7 @@ export function ReportForm() {
   useEffect(() => {
     if (!location.state?.latitude) {
       toast.warning('Please select a location on the map first.');
-      navigate('/map');
+      navigate('/report-map');
     } else {
       setValue('latitude', location.state.latitude);
       setValue('longitude', location.state.longitude);

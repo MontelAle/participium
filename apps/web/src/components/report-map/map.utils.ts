@@ -27,6 +27,12 @@ export const STATUS_COLORS = {
     class: 'cluster-rejected',
     badgeClass: 'bg-red-500/15 text-red-700 border-red-200',
   },
+    [ReportStatus.ASSIGNED]: {
+    hex: '#8112b5ff',
+    label: 'Assigned',
+    class: 'cluster-assigned',
+    badgeClass: 'bg-purple-500/15 text-purple-700 border-purple-200',
+  },
 };
 
 export const DEFAULT_COLOR = {

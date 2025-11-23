@@ -3,19 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
 import { useReports } from '@/hooks/use-reports';
-import { Users, FileText, Timer, AlertCircle, Plus } from 'lucide-react';
+import { Users, FileText, Timer, AlertCircle, Plus , CheckCircle , XCircle , UserCheck } from 'lucide-react';
 import { StatCard } from '@/components/dashboard/stat-card';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const { isAdminUser, user } = useAuth();
+  const { isAdminUser, user , isMunicipalPrOfficer } = useAuth();
   const { data: municipalityUsers = [] } = useMunicipalityUsers();
   const { data: reports = [] } = useReports();
 
-  const inProgressCount = reports.filter(
-    (r) => r.status === 'in_progress',
-  ).length;
+  const inProgressCount = reports.filter((r) => r.status === 'in_progress',).length;
   const pendingCount = reports.filter((r) => r.status === 'pending').length;
+  const assignedCount = reports.filter((r) => r.status === 'assigned').length;
+  const rejectedCount = reports.filter((r) => r.status === 'rejected').length;
+  const resolvedCount = reports.filter((r) => r.status === 'resolved').length;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -62,6 +63,31 @@ const DashboardPage = () => {
           color="text-rose-600"
           bgColor="bg-rose-500/10"
         />
+
+        <StatCard
+          title="Assigned"
+          value={assignedCount}
+          icon={UserCheck}
+          color="text-purple-600"
+          bgColor="bg-purple-500/10"
+        />
+        
+        <StatCard
+          title="Rejected"
+          value={rejectedCount}
+          icon={XCircle}
+          color="text-red-600"
+          bgColor="bg-red-500/10"
+        />
+
+        <StatCard
+          title="Resolved"
+          value={resolvedCount}
+          icon={CheckCircle}
+          color="text-green-600"
+          bgColor="bg-green-500/10"
+        />
+        
       </div>
 
       <div className="rounded-xl border bg-linear-to-br from-card to-muted/30 p-8 shadow-sm">
@@ -87,6 +113,18 @@ const DashboardPage = () => {
             >
               <Plus className="mr-2 h-5 w-5" />
               Create New User
+            </Button>
+          )}
+          {isMunicipalPrOfficer && (
+            <Button
+              size="lg"
+              className="h-12 rounded-lg shadow-md transition-transform active:scale-95 cursor-pointer"
+              onClick={() =>
+                navigate('/app/municipality-pr-officer')
+              }
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              View Reports
             </Button>
           )}
         </div>
