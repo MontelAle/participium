@@ -3,6 +3,7 @@ import { ReportsService } from './reports.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Report, ReportStatus } from '../../common/entities/report.entity';
 import { Category } from '../../common/entities/category.entity';
+import { User } from '../../common/entities/user.entity';
 import {
   CreateReportDto,
   UpdateReportDto,
@@ -57,6 +58,12 @@ describe('ReportsService', () => {
         },
         {
           provide: getRepositoryToken(Category),
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(User),
           useValue: {
             findOne: jest.fn(),
           },

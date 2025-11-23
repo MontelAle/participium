@@ -25,4 +25,6 @@ export interface Report {
   createdAt: Date;
   updatedAt: Date;
   explanation?: string;
+  assignedOfficerId?: string;
+  assignedOfficer?: User;
 }

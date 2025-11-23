@@ -47,6 +47,48 @@ export async function seedDatabase(dataSource: DataSource) {
     officesMap.set(o.name, office);
   }
 
+  const categoriesData = [
+    {
+      name: 'Road Maintenance',
+      description: 'Potholes, damaged asphalt',
+      office: 'road',
+    },
+    {
+      name: 'Waste Management',
+      description: 'Overflowing bins, abandoned waste',
+      office: 'waste',
+    },
+    {
+      name: 'Public Lighting',
+      description: 'Broken street lamps',
+      office: 'public-lighting',
+    },
+    {
+      name: 'Vandalism',
+      description: 'Graffiti, broken benches',
+      office: 'road',
+    },
+    {
+      name: 'Green Areas',
+      description: 'Uncut grass, fallen trees',
+      office: 'parks',
+    },
+  ];
+
+  const categories: Category[] = [];
+  for (const c of categoriesData) {
+    let category = await categoryRepo.findOne({ where: { name: c.name } });
+    if (!category) {
+      category = categoryRepo.create({
+        id: nanoid(),
+        name: c.name,
+        office: officesMap.get(c.office),
+      });
+      await categoryRepo.save(category);
+    }
+    categories.push(category);
+  }
+
   const rolesData = [
     { name: 'user', label: 'User', isMunicipal: false },
     { name: 'admin', label: 'Admin', isMunicipal: true },
@@ -68,30 +110,6 @@ export async function seedDatabase(dataSource: DataSource) {
       await roleRepo.save(role);
     }
     rolesMap.set(r.name, role);
-  }
-
-  const categoriesData = [
-    { name: 'Road Maintenance', description: 'Potholes, damaged asphalt' },
-    {
-      name: 'Waste Management',
-      description: 'Overflowing bins, abandoned waste',
-    },
-    { name: 'Public Lighting', description: 'Broken street lamps' },
-    { name: 'Vandalism', description: 'Graffiti, broken benches' },
-    { name: 'Green Areas', description: 'Uncut grass, fallen trees' },
-  ];
-
-  const categories: Category[] = [];
-  for (const c of categoriesData) {
-    let category = await categoryRepo.findOne({ where: { name: c.name } });
-    if (!category) {
-      category = categoryRepo.create({
-        id: nanoid(),
-        name: c.name,
-      });
-      await categoryRepo.save(category);
-    }
-    categories.push(category);
   }
 
   const createUser = async (
@@ -139,6 +157,13 @@ export async function seedDatabase(dataSource: DataSource) {
     'pr_officer',
     'Luigi',
     'Verdi',
+    'administration',
+  );
+  const roadOfficer = await createUser(
+    'road_officer',
+    'officer',
+    'Giovanni',
+    'Bianchi',
     'road',
   );
 

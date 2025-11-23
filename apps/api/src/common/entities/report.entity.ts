@@ -73,4 +73,11 @@ export class Report implements ReportInterface {
 
   @Column('text', { nullable: true })
   explanation: string;
+
+  @Column('varchar', { nullable: true })
+  assignedOfficerId?: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'assignedOfficerId' })
+  assignedOfficer?: User;
 }

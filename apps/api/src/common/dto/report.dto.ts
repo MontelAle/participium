@@ -104,6 +104,10 @@ export class UpdateReportDto implements UpdateReportDtoInterface {
   @IsString()
   @IsOptional()
   explanation?: string;
+
+  @IsString()
+  @IsOptional()
+  assignedOfficerId?: string;
 }
 
 export class FilterReportsDto implements FilterReportsDtoInterface {
