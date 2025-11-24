@@ -14,7 +14,6 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { MinioProvider } from '../../providers/minio/minio.provider';
-import { USER_ERROR_MESSAGES } from './constants/error-messages';
 
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
