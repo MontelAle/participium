@@ -22,6 +22,7 @@ jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 describe('ReportsService', () => {
   let service: ReportsService;
   let reportRepository: jest.Mocked<Repository<Report>>;
+  let categoryRepository: jest.Mocked<Repository<Category>>;
   let minioProvider: jest.Mocked<MinioProvider>;
 
   const mockReport: Partial<Report> = {
@@ -84,6 +85,7 @@ describe('ReportsService', () => {
 
     service = module.get<ReportsService>(ReportsService);
     reportRepository = module.get(getRepositoryToken(Report));
+    categoryRepository = module.get(getRepositoryToken(Category));
     minioProvider = module.get(MinioProvider);
   });
 
@@ -712,6 +714,31 @@ describe('ReportsService', () => {
         type: 'Point',
         coordinates: [8.0, 46.0],
       });
+    });
+
+    it('should update categoryId when provided', async () => {
+      const mockCategory = {
+        id: 'cat-456',
+        name: 'New Category',
+      } as Category;
+
+      const updateDto: UpdateReportDto = {
+        categoryId: 'cat-456',
+      };
+
+      reportRepository.findOne.mockResolvedValue(mockReport as Report);
+      categoryRepository.findOne.mockResolvedValue(mockCategory);
+      reportRepository.save.mockResolvedValue({
+        ...mockReport,
+        category: mockCategory,
+      } as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(categoryRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'cat-456' },
+      });
+      expect(reportRepository.save).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if report not found', async () => {

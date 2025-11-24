@@ -12,6 +12,7 @@ const config: Config = {
     '!<rootDir>/**/*.type.ts',
     '!<rootDir>/common/dto/**/*.ts',
     '!<rootDir>/common/entities/**/*.ts',
+    '!<rootDir>/**/constants/error-messages.ts',
   ],
 };
 
