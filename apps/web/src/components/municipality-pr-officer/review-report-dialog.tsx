@@ -54,11 +54,17 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
     setExplanation(report.explanation ?? '');
   }, [report, setValue]);
 
+  /*
   const canConfirm =
     isPending &&
     (watchedStatus !== report.status || (watchedStatus === ReportStatus.REJECTED && explanation.trim() !== ''));
-
-  const handleConfirm = async (data: FormData) => {
+*/
+  const canConfirm =
+    isPending &&
+    ((watchedStatus === ReportStatus.REJECTED && explanation.trim() !== '') ||
+    (watchedStatus !== ReportStatus.REJECTED && watchedStatus !== report.status));
+  
+   const handleConfirm = async (data: FormData) => {
     if (!canConfirm) return;
 
     const updateData: UpdateReportDto = {
@@ -133,12 +139,13 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                   )}
                 </div>
 
-                <div className="flex-1">
+               <div>
                   <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Description</h4>
-                  <div className="bg-gray-50/50 rounded-lg p-4 border text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words min-h-[100px]">
-                    {report.description}
-                  </div>
+                    <div className="bg-gray-50/50 rounded-lg p-4 border text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words min-h-[100px]">
+                      {report.description}
+                    </div>
                 </div>
+
 
                 {/* Explanation sotto Description */}
                 {((isPending && watchedStatus === ReportStatus.REJECTED) || report.status === ReportStatus.REJECTED) && (
