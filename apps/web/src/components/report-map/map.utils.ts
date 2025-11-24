@@ -27,7 +27,7 @@ export const STATUS_COLORS = {
     class: 'cluster-rejected',
     badgeClass: 'bg-red-500/15 text-red-700 border-red-200',
   },
-    [ReportStatus.ASSIGNED]: {
+  [ReportStatus.ASSIGNED]: {
     hex: '#8112b5ff',
     label: 'Assigned',
     class: 'cluster-assigned',
@@ -199,11 +199,11 @@ export function isPointInGeoJSON(lat: number, lng: number, geoJson: any) {
 
 export function escapeHtml(str: string) {
   return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replaceAll(/&/g, '&amp;')
+    .replaceAll(/</g, '&lt;')
+    .replaceAll(/>/g, '&gt;')
+    .replaceAll(/"/g, '&quot;')
+    .replaceAll(/'/g, '&#039;');
 }
 
 export function formatShortAddress(addr: any, raw: string) {

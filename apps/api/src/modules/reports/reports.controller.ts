@@ -62,64 +62,6 @@ export class ReportsController {
   @UseGuards(SessionGuard, RolesGuard)
   @UseInterceptors(FilesInterceptor('images', 3))
   @HttpCode(HttpStatus.CREATED)
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({
-    summary: 'Create a new report with images',
-    description: `Create a new report with geolocation data and up to 3 images (min 1, max 3).
-      **Access:** Any authenticated user can create a report.
-      **Images:** Must be JPEG, PNG, or WebP. Max 5MB per image.`,
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      required: ['longitude', 'latitude', 'images'],
-      properties: {
-        title: { type: 'string', example: 'Broken streetlight on Main Street' },
-        description: {
-          type: 'string',
-          example:
-            'The streetlight in front of building number 42 has been broken for 3 days',
-        },
-        longitude: { type: 'number', example: 7.686864 },
-        latitude: { type: 'number', example: 45.070312 },
-        address: { type: 'string', example: 'Via Roma 42, 10100 Torino' },
-        categoryId: { type: 'string', example: 'cat_streetlight' },
-        images: {
-          type: 'array',
-          items: { type: 'string', format: 'binary' },
-          minItems: 1,
-          maxItems: 3,
-          description: 'Images (min 1, max 3)',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Report created successfully',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad Request - Invalid data or missing images',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: 'You must upload between 1 and 3 images',
-        error: 'Bad Request',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing session',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'No session token',
-        error: 'Unauthorized',
-      },
-    },
-  })
   async create(
     @Body() createReportDto: CreateReportDto,
     @UploadedFiles() images: Express.Multer.File[],
@@ -220,5 +162,20 @@ export class ReportsController {
   @Roles('pr_officer')
   async remove(@Param('id') id: string) {
     await this.reportsService.remove(id);
+  }
+
+  /**
+   * Finds reports assigned to a specific user (officer).
+   *
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Insufficient permissions (admin, pr_officer, or officer role required)
+   * */
+  @Get('/user/:userId')
+  @Roles('admin', 'pr_officer', 'officer')
+  async findByUserId(
+    @Param('userId') userId: string,
+  ): Promise<ReportsResponseDto> {
+    const reports = await this.reportsService.findByUserId(userId);
+    return { success: true, data: reports };
   }
 }

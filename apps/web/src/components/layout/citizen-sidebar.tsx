@@ -38,7 +38,7 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
       );
       return;
     }
-    navigate('/report', { state: { ...locationData } });
+    navigate('/new-report', { state: { ...locationData } });
   };
 
   return (
@@ -125,26 +125,6 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
           <ReportsList onlyMyReports={showMyReports} />
           <div className="h-24 md:h-20" />
         </div>
-
-        {isCitizenUser && (
-          <div
-            className={cn(
-              'absolute left-1/2 -translate-x-1/2 z-50 transition-all duration-300',
-              isMobileExpanded
-                ? 'bottom-6'
-                : 'bottom-[calc(100%+10px)] md:bottom-6',
-            )}
-          >
-            <Button
-              onClick={handleAddReport}
-              size="lg"
-              className="rounded-full shadow-xl h-11 px-6 font-semibold bg-primary hover:bg-primary/90 gap-2"
-            >
-              <Plus className="size-5" />
-              <span>Add new report</span>
-            </Button>
-          </div>
-        )}
       </aside>
     </>
   );

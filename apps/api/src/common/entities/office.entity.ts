@@ -1,5 +1,6 @@
-import { Entity, PrimaryColumn, Column } from 'typeorm';
+import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
 import { Office as OfficeInterface } from '@repo/api';
+import { Category } from './category.entity';
 
 @Entity('office')
 export class Office implements OfficeInterface {
@@ -11,4 +12,7 @@ export class Office implements OfficeInterface {
 
   @Column('varchar')
   label: string;
+
+  @OneToMany(() => Category, (category) => category.office)
+  categories: Category[];
 }

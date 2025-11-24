@@ -7,7 +7,8 @@ import { CitizenGuard } from '@/components/citizen-guard';
 import LoginPage from '@/pages/auth/login/page';
 import RegistrationPage from '@/pages/auth/registration/page';
 import MapPage from '@/pages/report-map/page';
-import ReportPage from '@/pages/report/page';
+import ReportPage from '@/pages/new-report/page';
+import ReportDetailsPage from '@/pages/report-details/page';
 import DashboardPage from '@/pages/app/dashboard/page';
 import MunicipalityUsersPage from '@/pages/app/municipality-users/page';
 import MunicipalityPrOfficerPage from '@/pages/app/municipality-pr-officer/page';
@@ -29,10 +30,18 @@ const App = () => {
               }
             />
             <Route
-              path="/report"
+              path="/new-report"
               element={
                 <CitizenGuard>
                   <ReportPage />
+                </CitizenGuard>
+              }
+            />
+            <Route
+              path="/report/:id"
+              element={
+                <CitizenGuard>
+                  <ReportDetailsPage />
                 </CitizenGuard>
               }
             />

@@ -29,7 +29,7 @@ export const StatCard = ({
     <div
       className={cn(
         'absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-10 blur-2xl',
-        color.replace('text-', 'bg-'),
+        color.replaceAll('text-', 'bg-'),
       )}
     />
   </div>

@@ -1,19 +1,19 @@
 import * as React from 'react';
-import { ReportsTable } from './components/report-list-table';
 import { useReports } from '@/hooks/use-reports';
 import { useNavigate } from 'react-router-dom';
-import { PrOfficerToolbar } from './components/pr-officer-toolbar'; // Toolbar aggiornata
+import { PrOfficerToolbar } from '@/components/municipality-pr-officer/pr-officer-toolbar';
+import { ReportsTable } from '@/components/municipality-pr-officer/report-list-table';
 
 const MunicipalityPrOfficerPage = () => {
   const { data: reports = [] } = useReports();
   const navigate = useNavigate();
 
- 
   const [query, setQuery] = React.useState('');
   const [selectedStatuses, setSelectedStatuses] = React.useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = React.useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = React.useState<string[]>(
+    [],
+  );
 
- 
   const availableStatuses = React.useMemo(() => {
     const setStatus = new Set<string>();
     for (const r of reports) {
@@ -36,7 +36,9 @@ const MunicipalityPrOfficerPage = () => {
     return reports.filter((r) => {
       const matchesQuery =
         !normalizedQuery ||
-        String(r.title ?? '').toLowerCase().includes(normalizedQuery);
+        String(r.title ?? '')
+          .toLowerCase()
+          .includes(normalizedQuery);
 
       const matchesStatus =
         selectedStatuses.length === 0 || selectedStatuses.includes(r.status);
@@ -74,7 +76,7 @@ const MunicipalityPrOfficerPage = () => {
         />
       </div>
 
-      <ReportsTable data={filteredReports}  />
+      <ReportsTable data={filteredReports} />
     </div>
   );
 };

@@ -178,7 +178,7 @@ export function FilterDialog({
                     }))
                   }
                 >
-                  {status.replace(/_/g, ' ').toLowerCase()}
+                  {status.replaceAll(/_/g, ' ').toLowerCase()}
                 </Button>
               ))}
             </div>

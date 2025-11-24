@@ -17,7 +17,9 @@ export type ReportsTableProps = {
 };
 
 export function ReportsTable({ data }: ReportsTableProps) {
-  const [selectedReport, setSelectedReport] = React.useState<Report | null>(null);
+  const [selectedReport, setSelectedReport] = React.useState<Report | null>(
+    null,
+  );
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
   const openDialog = (report: Report) => {
@@ -53,14 +55,19 @@ export function ReportsTable({ data }: ReportsTableProps) {
           const status = getValue();
           let bgColor = 'bg-gray-100 text-gray-700';
           if (status === 'pending') bgColor = 'bg-yellow-100 text-yellow-800';
-          else if (status === 'in_progress') bgColor = 'bg-blue-100 text-blue-800';
-          else if (status === 'closed' || status === 'resolved') bgColor = 'bg-green-100 text-green-800';
+          else if (status === 'in_progress')
+            bgColor = 'bg-blue-100 text-blue-800';
+          else if (status === 'closed' || status === 'resolved')
+            bgColor = 'bg-green-100 text-green-800';
           else if (status === 'rejected') bgColor = 'bg-red-100 text-red-800';
-          else if (status === 'assigned') bgColor = 'bg-purple-100 text-purple-800';
+          else if (status === 'assigned')
+            bgColor = 'bg-purple-100 text-purple-800';
 
           return (
-            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${bgColor}`}>
-              {status.replace('_', ' ')}
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${bgColor}`}
+            >
+              {status.replaceAll('_', ' ')}
             </span>
           );
         },
@@ -78,7 +85,7 @@ export function ReportsTable({ data }: ReportsTableProps) {
         },
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -100,10 +107,8 @@ export function ReportsTable({ data }: ReportsTableProps) {
 
         <TableBody>
           {({ row }) => (
-            <TableRow key={row.id} row={row}> 
-              {({ cell }) => (
-                <TableCell key={cell.id} cell={cell} /> 
-              )}
+            <TableRow key={row.id} row={row}>
+              {({ cell }) => <TableCell key={cell.id} cell={cell} />}
             </TableRow>
           )}
         </TableBody>
@@ -119,4 +124,3 @@ export function ReportsTable({ data }: ReportsTableProps) {
     </>
   );
 }
- 
