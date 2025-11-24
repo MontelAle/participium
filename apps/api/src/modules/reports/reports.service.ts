@@ -13,6 +13,7 @@ import {
 import { Report } from '../../common/entities/report.entity';
 import { nanoid } from 'nanoid';
 import { MinioProvider } from '../../providers/minio/minio.provider';
+import path from 'path';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 import { Category } from '../../common/entities/category.entity';
 
@@ -45,7 +46,10 @@ export class ReportsService {
     try {
       for (const image of images) {
         const timestamp = Date.now();
-        const fileName = `reports/${reportId}/${timestamp}-${image.originalname}`;
+        const sanitizedFilename = path
+          .basename(image.originalname)
+          .replace(/[^a-zA-Z0-9.-]/g, '_');
+        const fileName = `reports/${reportId}/${timestamp}-${sanitizedFilename}`;
 
         const imageUrl = await this.minioProvider.uploadFile(
           fileName,

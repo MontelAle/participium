@@ -12,6 +12,7 @@ import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dt
 import { UpdateProfileDto } from '../../common/dto/user.dto';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
+import path from 'path';
 import { Office } from '../../common/entities/office.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { USER_ERROR_MESSAGES } from './constants/error-messages';
@@ -240,7 +241,10 @@ export class UsersService {
     }
 
     if (file) {
-      const fileName = `profile-pictures/${userId}/${nanoid()}-${file.originalname}`;
+      const sanitizedFilename = path
+        .basename(file.originalname)
+        .replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `profile-pictures/${userId}/${nanoid()}-${sanitizedFilename}`;
       const fileUrl = await this.minioProvider.uploadFile(
         fileName,
         file.buffer,
