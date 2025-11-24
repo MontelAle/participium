@@ -267,8 +267,8 @@ describe('AppController (e2e)', () => {
           const path = req.path;
           const cookieValue = req.cookies.session_token;
           
-          // Special case for testing municipality user restriction
-          if (cookieValue === 'municipal_user') {
+          // Special case for testing municipality user restriction on /users/profile
+          if (cookieValue === 'sess_muni.secret' && path === '/users/profile') {
             req.user = mockUsers[0]; // john - admin (municipal user)
             req.session = mockSession;
             return true;
@@ -591,9 +591,49 @@ describe('AppController (e2e)', () => {
   it('PATCH /users/profile as municipality user returns 403', async () => {
     await request(app.getHttpServer())
       .patch('/users/profile')
-      .set('Cookie', 'session_token=municipal_user')
-      .send({ telegramUsername: '@officer' })
+      .set('Cookie', 'session_token=sess_muni.secret')
+      .send({ telegramUsername: '@username' })
       .expect(403);
+  });
+
+  it('PATCH /users/profile with invalid telegram username format returns 400', async () => {
+    await request(app.getHttpServer())
+      .patch('/users/profile')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ telegramUsername: 'invalid' })
+      .expect(400);
+  });
+
+  it('PATCH /users/profile with telegram username too short returns 400', async () => {
+    await request(app.getHttpServer())
+      .patch('/users/profile')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ telegramUsername: '@abc' })
+      .expect(400);
+  });
+
+  it('PATCH /users/profile with telegram username too long returns 400', async () => {
+    await request(app.getHttpServer())
+      .patch('/users/profile')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ telegramUsername: '@' + 'a'.repeat(32) })
+      .expect(400);
+  });
+
+  it('PATCH /users/profile with valid telegram username returns 200', async () => {
+    await request(app.getHttpServer())
+      .patch('/users/profile')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ telegramUsername: '@valid_username' })
+      .expect(200);
+  });
+
+  it('PATCH /users/profile removes telegram username with empty string', async () => {
+    await request(app.getHttpServer())
+      .patch('/users/profile')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ telegramUsername: '' })
+      .expect(200);
   });
 
   // ============================================================================

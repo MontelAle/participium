@@ -57,6 +57,7 @@ describe('UsersService', () => {
           useValue: {
             uploadFile: jest.fn(),
             deleteFile: jest.fn(),
+            extractFileNameFromUrl: jest.fn(),
           },
         },
       ],
@@ -809,6 +810,7 @@ describe('UsersService', () => {
 
       userRepository.findOne.mockResolvedValue(mockUser);
       minioProvider.uploadFile.mockResolvedValue('http://minio.test/new-file.jpg');
+      minioProvider.extractFileNameFromUrl.mockReturnValue('profile-pictures/user-id/old-file.jpg');
       minioProvider.deleteFile.mockResolvedValue(undefined);
       userRepository.save.mockResolvedValue({
         ...mockUser,
@@ -818,12 +820,15 @@ describe('UsersService', () => {
       const result = await service.updateProfile(userId, dto, mockFile);
 
       expect(minioProvider.uploadFile).toHaveBeenCalledWith(
-        `profile-pictures/${userId}/mocked-id-${mockFile.originalname}`,
+        `profile-pictures/${userId}/mocked-id-profile.jpg`,
         mockFile.buffer,
         mockFile.mimetype,
       );
+      expect(minioProvider.extractFileNameFromUrl).toHaveBeenCalledWith(
+        'http://minio.test/old-file.jpg',
+      );
       expect(minioProvider.deleteFile).toHaveBeenCalledWith(
-        `profile-pictures/${userId}/old-file.jpg`,
+        'profile-pictures/user-id/old-file.jpg',
       );
       expect(result.profilePictureUrl).toBeDefined();
       expect(result.profilePictureUrl).not.toBeNull();
@@ -852,13 +857,17 @@ describe('UsersService', () => {
 
       userRepository.findOne.mockResolvedValue(mockUser);
       minioProvider.uploadFile.mockResolvedValue('http://minio.test/new-file.jpg');
+      minioProvider.extractFileNameFromUrl.mockReturnValue('profile-pictures/user-id/old-file.jpg');
       minioProvider.deleteFile.mockRejectedValue(new Error('File not found'));
       userRepository.save.mockResolvedValue(savedUser);
 
       const result = await service.updateProfile(userId, dto, mockFile);
 
+      expect(minioProvider.extractFileNameFromUrl).toHaveBeenCalledWith(
+        'http://minio.test/old-file.jpg',
+      );
       expect(minioProvider.deleteFile).toHaveBeenCalledWith(
-        `profile-pictures/${userId}/old-file.jpg`,
+        'profile-pictures/user-id/old-file.jpg',
       );
       expect(result.profilePictureUrl).toBe('http://minio.test/new-file.jpg');
     });
@@ -906,6 +915,99 @@ describe('UsersService', () => {
       expect(userRepository.findOne).toHaveBeenCalledWith({
         where: { id: userId },
       });
+    });
+
+    it('should sanitize filename with special characters and spaces', async () => {
+      const userId = 'user-id';
+      const dto: UpdateProfileDto = {};
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        originalname: 'my profile pic!@#$%^&*().jpg',
+        mimetype: 'image/jpeg',
+      } as Express.Multer.File;
+
+      const mockUser = {
+        id: userId,
+        telegramUsername: null,
+        emailNotificationsEnabled: false,
+        profilePictureUrl: null,
+      } as User;
+
+      userRepository.findOne.mockResolvedValue(mockUser);
+      minioProvider.uploadFile.mockResolvedValue('http://minio.test/sanitized.jpg');
+      userRepository.save.mockResolvedValue({
+        ...mockUser,
+        profilePictureUrl: 'http://minio.test/sanitized.jpg',
+      } as User);
+
+      await service.updateProfile(userId, dto, mockFile);
+
+      expect(minioProvider.uploadFile).toHaveBeenCalledWith(
+        'profile-pictures/user-id/mocked-id-my_profile_pic__________.jpg',
+        mockFile.buffer,
+        mockFile.mimetype,
+      );
+    });
+
+    it('should sanitize filename with path traversal attempt', async () => {
+      const userId = 'user-id';
+      const dto: UpdateProfileDto = {};
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        originalname: '../../etc/passwd.jpg',
+        mimetype: 'image/jpeg',
+      } as Express.Multer.File;
+
+      const mockUser = {
+        id: userId,
+        telegramUsername: null,
+        emailNotificationsEnabled: false,
+        profilePictureUrl: null,
+      } as User;
+
+      userRepository.findOne.mockResolvedValue(mockUser);
+      minioProvider.uploadFile.mockResolvedValue('http://minio.test/safe.jpg');
+      userRepository.save.mockResolvedValue({
+        ...mockUser,
+        profilePictureUrl: 'http://minio.test/safe.jpg',
+      } as User);
+
+      await service.updateProfile(userId, dto, mockFile);
+
+      // path.basename removes path components, leaves only 'passwd.jpg'
+      expect(minioProvider.uploadFile).toHaveBeenCalledWith(
+        'profile-pictures/user-id/mocked-id-passwd.jpg',
+        mockFile.buffer,
+        mockFile.mimetype,
+      );
+    });
+
+    it('should allow removing telegram username with empty string', async () => {
+      const userId = 'user-id';
+      const dto: UpdateProfileDto = {
+        telegramUsername: '',
+      };
+
+      const mockUser = {
+        id: userId,
+        telegramUsername: '@oldusername',
+        emailNotificationsEnabled: false,
+        profilePictureUrl: null,
+      } as User;
+
+      userRepository.findOne.mockResolvedValue(mockUser);
+      userRepository.save.mockResolvedValue({
+        ...mockUser,
+        telegramUsername: null,
+      } as User);
+
+      const result = await service.updateProfile(userId, dto);
+
+      expect(userRepository.save).toHaveBeenCalledWith({
+        ...mockUser,
+        telegramUsername: null,
+      });
+      expect(result.telegramUsername).toBeNull();
     });
   });
 });
