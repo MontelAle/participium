@@ -23,7 +23,9 @@
 
 - Cookie-based authentication and session management
 - Role and permission system
-- Municipal user management
+- Municipal user management with office assignments
+- Regular user profile management (Telegram, notifications, profile picture)
+- File storage with MinIO (S3-compatible)
 - Modern dashboard interface with reusable UI components
 - RESTful API with Swagger documentation
 
@@ -51,15 +53,16 @@ The project uses **Turborepo** to manage a monorepo workspace with:
 
 ### Backend
 
-| Technology | Version | Purpose              |
-| ---------- | ------- | -------------------- |
-| NestJS     | ^11.0.0 | Main framework       |
-| TypeORM    | ^0.3.27 | Database ORM         |
-| PostgreSQL | 18      | Relational database  |
-| PostGIS    | 3.6     | Geographic extension |
-| Passport   | ^0.7.0  | Authentication       |
-| Swagger    | ^11.2.1 | API documentation    |
-| Jest       | ^29.7.0 | Testing              |
+| Technology | Version | Purpose                       |
+| ---------- | ------- | ----------------------------- |
+| NestJS     | ^11.0.0 | Main framework                |
+| TypeORM    | ^0.3.27 | Database ORM                  |
+| PostgreSQL | 18      | Relational database           |
+| PostGIS    | 3.6     | Geographic extension          |
+| MinIO      | ^8.0.1  | S3-compatible object storage  |
+| Passport   | ^0.7.0  | Authentication                |
+| Swagger    | ^11.2.1 | API documentation             |
+| Jest       | ^29.7.0 | Testing                       |
 
 ### Frontend
 
@@ -91,10 +94,14 @@ participium/
 │   │   ├── src/
 │   │   │   ├── modules/        # Functional modules
 │   │   │   │   ├── auth/       # Authentication
+│   │   │   │   ├── categories/ # Report categories
+│   │   │   │   ├── offices/    # Office management
+│   │   │   │   ├── reports/    # Report management
 │   │   │   │   ├── roles/      # Role management
 │   │   │   │   └── users/      # User management
 │   │   │   ├── providers/
-│   │   │   │   └── database/   # DB configuration
+│   │   │   │   ├── database/   # DB configuration
+│   │   │   │   └── minio/      # MinIO S3 storage
 │   │   │   ├── config/         # App configurations
 │   │   │   └── common/         # Types and utilities
 │   │   ├── test/               # E2E tests
@@ -161,19 +168,36 @@ participium/
 
 **Endpoint**: `/users`
 
-| Method | Route                    | Description           |
-| ------ | ------------------------ | --------------------- |
-| GET    | `/municipality`          | List municipal users  |
-| GET    | `/municipality/user/:id` | User details          |
-| POST   | `/municipality`          | Create municipal user |
-| POST   | `/municipality/user/:id` | Update user           |
-| DELETE | `/municipality/user/:id` | Delete user           |
+| Method | Route                    | Description                      |
+| ------ | ------------------------ | -------------------------------- |
+| GET    | `/municipality`          | List municipal users             |
+| GET    | `/municipality/user/:id` | User details                     |
+| POST   | `/municipality`          | Create municipal user            |
+| POST   | `/municipality/user/:id` | Update user                      |
+| DELETE | `/municipality/user/:id` | Delete user                      |
+| PATCH  | `/profile`               | Update regular user profile      |
 
 **Functionality**:
 
 - Complete municipal user management
+- Regular user profile editing (for non-municipal users only)
 - Validation with class-validator
-- Relations with roles and accounts
+- Relations with roles, accounts, and offices
+- File upload handling with Multer
+- MinIO integration for profile picture storage
+
+**Profile Management** (`PATCH /profile`):
+
+- **Telegram Username**: Optional Telegram handle (`@username`)
+  - Validated format: `@[a-zA-Z0-9_]{4,31}` (5-32 characters)
+  - Can be removed by sending empty string
+- **Email Notifications**: Boolean flag for notification preferences
+- **Profile Picture**: Upload and manage user avatar
+  - Supported formats: JPEG, PNG, WebP
+  - Maximum size: 5MB
+  - Automatic filename sanitization (path traversal protection)
+  - Old pictures automatically deleted on replacement
+- **Security**: Municipality users (admin, officers) cannot edit their profile via this endpoint
 
 #### Roles Module
 
@@ -182,6 +206,33 @@ participium/
 | Method | Route | Description                  |
 | ------ | ----- | ---------------------------- |
 | GET    | `/`   | Retrieve all available roles |
+
+#### Offices Module
+
+**Endpoint**: `/offices`
+
+| Method | Route | Description                    |
+| ------ | ----- | ------------------------------ |
+| GET    | `/`   | Retrieve all available offices |
+
+**Functionality**:
+
+- Manage municipal offices/departments
+- Assign offices to municipal users
+- Used for organizational structure
+
+#### Categories Module
+
+**Endpoint**: `/categories`
+
+| Method | Route | Description                       |
+| ------ | ----- | --------------------------------- |
+| GET    | `/`   | Retrieve all report categories    |
+
+**Functionality**:
+
+- Categorize civic reports
+- Infrastructure, environment, public services, etc.
 
 #### Reports Module
 
@@ -323,24 +374,39 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### User
 
-| Field     | Type   | Description           | Nullable | Notes                      |
-| --------- | ------ | --------------------- | -------- | -------------------------- |
-| id        | string | Primary key           | No       |                            |
-| email     | string | User email            | No       | Unique                     |
-| username  | string | Username              | No       | Unique                     |
-| firstName | string | First name            | No       |                            |
-| lastName  | string | Last name             | No       |                            |
-| roleId    | string | Linked role ID        | No       | Foreign key to Role entity |
-| role      | Role   | Role entity relation  | No       | Many-to-one, not nullable  |
-| createdAt | Date   | Creation timestamp    | No       | Auto-generated             |
-| updatedAt | Date   | Last update timestamp | No       | Auto-generated             |
+| Field                       | Type    | Description              | Nullable | Notes                        |
+| --------------------------- | ------- | ------------------------ | -------- | ---------------------------- |
+| id                          | string  | Primary key              | No       |                              |
+| email                       | string  | User email               | No       | Unique                       |
+| username                    | string  | Username                 | No       | Unique                       |
+| firstName                   | string  | First name               | No       |                              |
+| lastName                    | string  | Last name                | No       |                              |
+| roleId                      | string  | Linked role ID           | No       | Foreign key to Role entity   |
+| role                        | Role    | Role entity relation     | No       | Many-to-one, not nullable    |
+| officeId                    | string  | Linked office ID         | Yes      | Foreign key to Office entity |
+| office                      | Office  | Office entity relation   | Yes      | Many-to-one, optional        |
+| telegramUsername            | string  | Telegram handle          | Yes      | Format: @username            |
+| emailNotificationsEnabled   | boolean | Email notifications flag | No       | Default: false               |
+| profilePictureUrl           | string  | Profile picture URL      | Yes      | MinIO storage URL            |
+| createdAt                   | Date    | Creation timestamp       | No       | Auto-generated               |
+| updatedAt                   | Date    | Last update timestamp    | No       | Auto-generated               |
 
 #### Role
 
-| Field | Type   | Description | Nullable | Notes |
-| ----- | ------ | ----------- | -------- | ----- |
-| id    | string | Primary key | No       |       |
-| name  | string | Role name   | No       |       |
+| Field       | Type    | Description                     | Nullable | Notes                            |
+| ----------- | ------- | ------------------------------- | -------- | -------------------------------- |
+| id          | string  | Primary key                     | No       |                                  |
+| name        | string  | Role name                       | No       |                                  |
+| label       | string  | Display label                   | No       |                                  |
+| isMunicipal | boolean | Municipality user flag          | No       | true for admin/officers          |
+
+#### Office
+
+| Field | Type   | Description        | Nullable | Notes |
+| ----- | ------ | ------------------ | -------- | ----- |
+| id    | string | Primary key        | No       |       |
+| name  | string | Office name        | No       |       |
+| label | string | Office label       | No       |       |
 
 #### Account
 
@@ -405,6 +471,7 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 ### Relations
 
 - User ⟷ Role (ManyToOne)
+- User ⟷ Office (ManyToOne, optional)
 - User ⟷ Account (OneToMany)
 - User ⟷ Session (OneToMany)
 - Report ⟷ User (ManyToOne)
@@ -442,6 +509,37 @@ radiusMeters = 5000;
 - `ST_MakePoint`: Create point geometry from coordinates
 - Geography cast (`::geography`) for accurate metric calculations
 
+### MinIO Object Storage
+
+**Purpose**: S3-compatible object storage for file uploads
+
+**Configuration**:
+
+- Default endpoint: `localhost:9000`
+- Default bucket: `participium-reports`
+- Access policy: Public read for uploaded files
+
+**Features**:
+
+- **Profile Pictures**: User avatar storage in `profile-pictures/{userId}/` directory
+- **Report Images**: Report attachments in `reports/{reportId}/` directory
+- **Automatic Management**:
+  - Bucket auto-creation on startup
+  - Public read policy configuration
+  - Old file deletion when updating
+- **Security**:
+  - Filename sanitization (path traversal protection)
+  - File type validation (JPEG, PNG, WebP)
+  - Size limits (5MB for profile pictures, 5MB per report image)
+  - Unique filenames with nanoid prefix
+
+**Provider Methods**:
+
+- `uploadFile(fileName, buffer, mimetype)`: Upload file and return URL
+- `deleteFile(fileName)`: Delete single file
+- `deleteFiles(fileNames)`: Bulk delete files
+- `extractFileNameFromUrl(url)`: Parse MinIO URL to get file path
+
 ---
 
 ## Shared Packages
@@ -458,6 +556,7 @@ radiusMeters = 5000;
   - `register.dto.ts`
   - `create-municipality-user.dto.ts`
   - `update-municipality-user.dto.ts`
+  - `user.dto.ts` (UpdateProfileDto, UpdateProfileResponseDto)
   - `create-report.dto.ts`
   - `update-report.dto.ts`
   - `filter-reports.dto.ts`
@@ -556,6 +655,14 @@ SESSION_EXPIRES_IN_SECONDS=86400
 COOKIE_HTTP_ONLY=true
 COOKIE_SECURE=false
 COOKIE_SAME_SITE=lax
+
+# MinIO (S3-compatible storage)
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+MINIO_USE_SSL=false
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET_NAME=participium-reports
 ```
 
 4. **Seed database (optional)**
@@ -651,8 +758,16 @@ docker exec -it participium-postgres psql -U admin -d participium  # psql connec
 
 - **Coverage available**: `apps/api/coverage/`
 - Coverage reports in formats: HTML, LCOV, Clover, JSON
-- E2E tests configured for the API
-- Unit tests for all modules including geospatial queries
+- E2E tests configured for the API (49 tests)
+- Unit tests for all modules (181 tests)
+- 100% coverage for users module
+- Tests include:
+  - Geospatial queries with PostGIS
+  - File upload validation
+  - Filename sanitization (path traversal protection)
+  - Telegram username format validation
+  - MinIO integration
+  - Municipality user restrictions
 
 ### PostGIS & Geospatial Features
 
@@ -680,6 +795,15 @@ Turborepo optimizes builds and tests through intelligent caching:
 - HTTP-only cookies for CSRF protection
 - Helmet for security headers
 - Class-validator for input validation
+- **File Upload Security**:
+  - Filename sanitization with `path.basename()` and regex
+  - Path traversal attack prevention
+  - File type validation (mimetype checking)
+  - File size limits enforcement
+- **Role-based Access Control**:
+  - Municipality users cannot edit profiles
+  - Guards enforce isMunicipal flag checks
+- **Centralized Error Messages**: Constants pattern for consistency
 
 ### Extensibility
 
@@ -692,6 +816,6 @@ The project is structured for future evolutions:
 
 ---
 
-**Document Version**: 1.0  
-**Last Update**: November 2025  
+**Document Version**: 1.1  
+**Last Update**: November 24, 2025  
 **Project Status**: In Development

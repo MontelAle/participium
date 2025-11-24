@@ -42,6 +42,15 @@ export class User implements UserInterface {
   @JoinColumn({ name: 'officeId' })
   office: Office;
 
+  @Column({ nullable: true })
+  telegramUsername: string | null;
+
+  @Column({ default: false })
+  emailNotificationsEnabled: boolean;
+
+  @Column({ nullable: true })
+  profilePictureUrl: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
