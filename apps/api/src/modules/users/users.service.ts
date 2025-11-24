@@ -252,15 +252,13 @@ export class UsersService {
       );
 
       if (user.profilePictureUrl) {
-        const oldFileName = user.profilePictureUrl.split('/').pop();
-        if (oldFileName) {
-          try {
-            await this.minioProvider.deleteFile(
-              `profile-pictures/${userId}/${oldFileName}`,
-            );
-          } catch {
-            // Ignore errors if old file doesn't exist
-          }
+        try {
+          const oldFileName = this.minioProvider.extractFileNameFromUrl(
+            user.profilePictureUrl,
+          );
+          await this.minioProvider.deleteFile(oldFileName);
+        } catch {
+          // Ignore errors if old file doesn't exist
         }
       }
 
