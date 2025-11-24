@@ -12,7 +12,9 @@ import ReportDetailsPage from '@/pages/report-details/page';
 import DashboardPage from '@/pages/app/dashboard/page';
 import MunicipalityUsersPage from '@/pages/app/municipality-users/page';
 import MunicipalityPrOfficerPage from '@/pages/app/municipality-pr-officer/page';
+import ProfilePage from './pages/ProfilePage';
 
+// ...existing code...
 const App = () => {
   return (
     <BrowserRouter>
@@ -45,6 +47,9 @@ const App = () => {
                 </CitizenGuard>
               }
             />
+            {/* Add the profile route here (inside the DashboardLayout routes) */}
+            <Route path="/profile" element={<ProfilePage />} />
+
             <Route
               path="/app/dashboard"
               element={
