@@ -726,7 +726,7 @@ describe('ReportsService', () => {
         category: mockCategory,
       } as Report);
 
-      const result = await service.update('mocked-id', updateDto);
+      await service.update('mocked-id', updateDto);
 
       expect(categoryRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'cat-456' },
