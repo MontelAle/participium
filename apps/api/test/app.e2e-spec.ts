@@ -440,14 +440,14 @@ describe('AppController (e2e)', () => {
     expect(cookies).toMatch(/session_token=[^;]+/);
   });
 
-  it('POST /auth/logout returns success', async () => {
+  it('POST /auth/logout with valid session returns 200', async () => {
     await request(app.getHttpServer())
       .post('/auth/logout')
       .set('Cookie', sessionCookie)
       .expect(200);
   });
 
-  it('POST /auth/refresh refreshes session', async () => {
+  it('POST /auth/refresh with valid session returns 201', async () => {
     await request(app.getHttpServer())
       .post('/auth/refresh')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -458,7 +458,7 @@ describe('AppController (e2e)', () => {
   // Roles Management
   // ============================================================================
 
-  it('GET /roles returns all roles', async () => {
+  it('GET /roles with authentication returns 200 with all roles', async () => {
     await request(app.getHttpServer())
       .get('/roles')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -469,7 +469,7 @@ describe('AppController (e2e)', () => {
   // Municipality Users Management
   // ============================================================================
 
-  it('POST /users/municipality creates a municipality user', async () => {
+  it('POST /users/municipality with valid data returns 201 and creates user', async () => {
     await request(app.getHttpServer())
       .post('/users/municipality')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -484,21 +484,21 @@ describe('AppController (e2e)', () => {
       .expect(201);
   });
 
-  it('GET /users/municipality returns all municipality users', async () => {
+  it('GET /users/municipality with authentication returns 200 with all users', async () => {
     await request(app.getHttpServer())
       .get('/users/municipality')
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
   });
 
-  it('GET /users/municipality/user/:id returns a municipality user by ID', async () => {
+  it('GET /users/municipality/user/:id with valid ID returns 200 with user', async () => {
     await request(app.getHttpServer())
       .get('/users/municipality/user/user_1')
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
   });
 
-  it('POST /users/municipality/user/:id updates a municipality user by ID', async () => {
+  it('POST /users/municipality/user/:id with valid data returns 200 and updates user', async () => {
     await request(app.getHttpServer())
       .post('/users/municipality/user/user_1')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -506,7 +506,7 @@ describe('AppController (e2e)', () => {
       .expect(200);
   });
 
-  it('DELETE /users/municipality/user/:id deletes a municipality user by ID', async () => {
+  it('DELETE /users/municipality/user/:id with valid ID returns 200 and deletes user', async () => {
     await request(app.getHttpServer())
       .delete('/users/municipality/user/user_1')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -554,7 +554,7 @@ describe('AppController (e2e)', () => {
   // Regular User Profile Management
   // ============================================================================
 
-  it('PATCH /users/profile updates telegram username', async () => {
+  it('PATCH /users/profile with telegram username returns 200 and updates profile', async () => {
     await request(app.getHttpServer())
       .patch('/users/profile')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -562,7 +562,7 @@ describe('AppController (e2e)', () => {
       .expect(200);
   });
 
-  it('PATCH /users/profile updates email notifications setting', async () => {
+  it('PATCH /users/profile with emailNotificationsEnabled returns 200 and updates profile', async () => {
     await request(app.getHttpServer())
       .patch('/users/profile')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -640,7 +640,7 @@ describe('AppController (e2e)', () => {
   // Reports Management
   // ============================================================================
 
-  it('POST /reports creates a report with images', async () => {
+  it('POST /reports with valid data and images returns 201 and creates report', async () => {
     await request(app.getHttpServer())
       .post('/reports')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -653,7 +653,7 @@ describe('AppController (e2e)', () => {
       .expect(201);
   });
 
-  it('POST /reports with 3 images (maximum allowed)', async () => {
+  it('POST /reports with 3 images (maximum allowed) returns 201', async () => {
     await request(app.getHttpServer())
       .post('/reports')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -723,7 +723,7 @@ describe('AppController (e2e)', () => {
       .expect(400);
   });
 
-  it('POST /reports with missing required fields returns 400', async () => {
+  it('POST /reports with missing required fields returns 400 validation error', async () => {
     await request(app.getHttpServer())
       .post('/reports')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -732,14 +732,14 @@ describe('AppController (e2e)', () => {
       .expect(400);
   });
 
-  it('GET /reports returns all reports', async () => {
+  it('GET /reports with authentication returns 200 with all reports', async () => {
     await request(app.getHttpServer())
       .get('/reports')
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
   });
 
-  it('GET /reports/:id returns a report by ID', async () => {
+  it('GET /reports/:id with valid ID returns 200 with report', async () => {
     await request(app.getHttpServer())
       .get('/reports/report_1')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -753,7 +753,7 @@ describe('AppController (e2e)', () => {
       .expect(404);
   });
 
-  it('PATCH /reports/:id updates a report', async () => {
+  it('PATCH /reports/:id with valid data returns 200 and updates report', async () => {
     await request(app.getHttpServer())
       .patch('/reports/report_1')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -782,7 +782,7 @@ describe('AppController (e2e)', () => {
       .expect(404);
   });
 
-  it('DELETE /reports/:id deletes a report', async () => {
+  it('DELETE /reports/:id with valid ID returns 204 and deletes report', async () => {
     await request(app.getHttpServer())
       .delete('/reports/report_1')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -800,28 +800,28 @@ describe('AppController (e2e)', () => {
   // Reports Filtering & Search
   // ============================================================================
 
-  it('GET /reports with status filter', async () => {
+  it('GET /reports with status filter returns 200 with filtered reports', async () => {
     await request(app.getHttpServer())
       .get('/reports?status=pending')
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
   });
 
-  it('GET /reports with categoryId filter', async () => {
+  it('GET /reports with categoryId filter returns 200 with filtered reports', async () => {
     await request(app.getHttpServer())
       .get('/reports?categoryId=cat_1')
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
   });
 
-  it('GET /reports with userId filter', async () => {
+  it('GET /reports with userId filter returns 200 with filtered reports', async () => {
     await request(app.getHttpServer())
       .get('/reports?userId=user_1')
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
   });
 
-  it('GET /reports with bounding box filter', async () => {
+  it('GET /reports with bounding box filter returns 200 with filtered reports', async () => {
     await request(app.getHttpServer())
       .get(
         '/reports?minLongitude=7.0&maxLongitude=8.0&minLatitude=45.0&maxLatitude=46.0',
@@ -830,7 +830,7 @@ describe('AppController (e2e)', () => {
       .expect(200);
   });
 
-  it('GET /reports with radius search', async () => {
+  it('GET /reports with radius search returns 200 with nearby reports', async () => {
     await request(app.getHttpServer())
       .get('/reports?searchLongitude=7.6869&searchLatitude=45.0703&radiusMeters=5000')
       .set('Cookie', 'session_token=sess_1.secret')
@@ -841,14 +841,14 @@ describe('AppController (e2e)', () => {
   // Categories & Offices
   // ============================================================================
 
-  it('GET /categories returns all categories', async () => {
+  it('GET /categories with authentication returns 200 with all categories', async () => {
     await request(app.getHttpServer())
       .get('/categories')
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
   });
 
-  it('GET /offices returns all offices', async () => {
+  it('GET /offices with authentication returns 200 with all offices', async () => {
     await request(app.getHttpServer())
       .get('/offices')
       .set('Cookie', 'session_token=sess_1.secret')
