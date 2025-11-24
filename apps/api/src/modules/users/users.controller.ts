@@ -196,4 +196,24 @@ export class UsersController {
       },
     };
   }
+
+  /**
+   * Retrieves the profile of the current user by ID.
+   *
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Accessing another user's profile
+   */
+  @Get('profile/:id')
+  @UseGuards(SessionGuard)
+  async getUserProfileById(
+    @Param('id') id: string,
+    @Req() req: RequestWithUserSession,
+  ) {
+    if (id !== req.user.id) {
+      throw new ForbiddenException();
+    }
+
+    const user = await this.usersService.findUserById(id);
+    return { success: true, data: user };
+  }
 }
