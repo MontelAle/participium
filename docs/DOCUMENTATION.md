@@ -10,8 +10,9 @@
 6. [Frontend Web](#frontend-web)
 7. [Database](#database)
 8. [Shared Packages](#shared-packages)
-9. [Setup and Configuration](#setup-and-configuration)
-10. [Available Commands](#available-commands)
+9. [Operational Model & Workflow](#operational-model--workflow)
+10. [Setup and Configuration](#setup-and-configuration)
+11. [Available Commands](#available-commands)
 
 ---
 
@@ -53,16 +54,16 @@ The project uses **Turborepo** to manage a monorepo workspace with:
 
 ### Backend
 
-| Technology | Version | Purpose                       |
-| ---------- | ------- | ----------------------------- |
-| NestJS     | ^11.0.0 | Main framework                |
-| TypeORM    | ^0.3.27 | Database ORM                  |
-| PostgreSQL | 18      | Relational database           |
-| PostGIS    | 3.6     | Geographic extension          |
-| MinIO      | ^8.0.1  | S3-compatible object storage  |
-| Passport   | ^0.7.0  | Authentication                |
-| Swagger    | ^11.2.1 | API documentation             |
-| Jest       | ^29.7.0 | Testing                       |
+| Technology | Version | Purpose                      |
+| ---------- | ------- | ---------------------------- |
+| NestJS     | ^11.0.0 | Main framework               |
+| TypeORM    | ^0.3.27 | Database ORM                 |
+| PostgreSQL | 18      | Relational database          |
+| PostGIS    | 3.6     | Geographic extension         |
+| MinIO      | ^8.0.1  | S3-compatible object storage |
+| Passport   | ^0.7.0  | Authentication               |
+| Swagger    | ^11.2.1 | API documentation            |
+| Jest       | ^29.7.0 | Testing                      |
 
 ### Frontend
 
@@ -168,14 +169,14 @@ participium/
 
 **Endpoint**: `/users`
 
-| Method | Route                    | Description                      |
-| ------ | ------------------------ | -------------------------------- |
-| GET    | `/municipality`          | List municipal users             |
-| GET    | `/municipality/user/:id` | User details                     |
-| POST   | `/municipality`          | Create municipal user            |
-| POST   | `/municipality/user/:id` | Update user                      |
-| DELETE | `/municipality/user/:id` | Delete user                      |
-| PATCH  | `/profile`               | Update regular user profile      |
+| Method | Route                    | Description                 |
+| ------ | ------------------------ | --------------------------- |
+| GET    | `/municipality`          | List municipal users        |
+| GET    | `/municipality/user/:id` | User details                |
+| POST   | `/municipality`          | Create municipal user       |
+| POST   | `/municipality/user/:id` | Update user                 |
+| DELETE | `/municipality/user/:id` | Delete user                 |
+| PATCH  | `/profile`               | Update regular user profile |
 
 **Functionality**:
 
@@ -225,9 +226,9 @@ participium/
 
 **Endpoint**: `/categories`
 
-| Method | Route | Description                       |
-| ------ | ----- | --------------------------------- |
-| GET    | `/`   | Retrieve all report categories    |
+| Method | Route | Description                    |
+| ------ | ----- | ------------------------------ |
+| GET    | `/`   | Retrieve all report categories |
 
 **Functionality**:
 
@@ -374,39 +375,39 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### User
 
-| Field                       | Type    | Description              | Nullable | Notes                        |
-| --------------------------- | ------- | ------------------------ | -------- | ---------------------------- |
-| id                          | string  | Primary key              | No       |                              |
-| email                       | string  | User email               | No       | Unique                       |
-| username                    | string  | Username                 | No       | Unique                       |
-| firstName                   | string  | First name               | No       |                              |
-| lastName                    | string  | Last name                | No       |                              |
-| roleId                      | string  | Linked role ID           | No       | Foreign key to Role entity   |
-| role                        | Role    | Role entity relation     | No       | Many-to-one, not nullable    |
-| officeId                    | string  | Linked office ID         | Yes      | Foreign key to Office entity |
-| office                      | Office  | Office entity relation   | Yes      | Many-to-one, optional        |
-| telegramUsername            | string  | Telegram handle          | Yes      | Format: @username            |
-| emailNotificationsEnabled   | boolean | Email notifications flag | No       | Default: false               |
-| profilePictureUrl           | string  | Profile picture URL      | Yes      | MinIO storage URL            |
-| createdAt                   | Date    | Creation timestamp       | No       | Auto-generated               |
-| updatedAt                   | Date    | Last update timestamp    | No       | Auto-generated               |
+| Field                     | Type    | Description              | Nullable | Notes                        |
+| ------------------------- | ------- | ------------------------ | -------- | ---------------------------- |
+| id                        | string  | Primary key              | No       |                              |
+| email                     | string  | User email               | No       | Unique                       |
+| username                  | string  | Username                 | No       | Unique                       |
+| firstName                 | string  | First name               | No       |                              |
+| lastName                  | string  | Last name                | No       |                              |
+| roleId                    | string  | Linked role ID           | No       | Foreign key to Role entity   |
+| role                      | Role    | Role entity relation     | No       | Many-to-one, not nullable    |
+| officeId                  | string  | Linked office ID         | Yes      | Foreign key to Office entity |
+| office                    | Office  | Office entity relation   | Yes      | Many-to-one, optional        |
+| telegramUsername          | string  | Telegram handle          | Yes      | Format: @username            |
+| emailNotificationsEnabled | boolean | Email notifications flag | No       | Default: false               |
+| profilePictureUrl         | string  | Profile picture URL      | Yes      | MinIO storage URL            |
+| createdAt                 | Date    | Creation timestamp       | No       | Auto-generated               |
+| updatedAt                 | Date    | Last update timestamp    | No       | Auto-generated               |
 
 #### Role
 
-| Field       | Type    | Description                     | Nullable | Notes                            |
-| ----------- | ------- | ------------------------------- | -------- | -------------------------------- |
-| id          | string  | Primary key                     | No       |                                  |
-| name        | string  | Role name                       | No       |                                  |
-| label       | string  | Display label                   | No       |                                  |
-| isMunicipal | boolean | Municipality user flag          | No       | true for admin/officers          |
+| Field       | Type    | Description            | Nullable | Notes                   |
+| ----------- | ------- | ---------------------- | -------- | ----------------------- |
+| id          | string  | Primary key            | No       |                         |
+| name        | string  | Role name              | No       |                         |
+| label       | string  | Display label          | No       |                         |
+| isMunicipal | boolean | Municipality user flag | No       | true for admin/officers |
 
 #### Office
 
-| Field | Type   | Description        | Nullable | Notes |
-| ----- | ------ | ------------------ | -------- | ----- |
-| id    | string | Primary key        | No       |       |
-| name  | string | Office name        | No       |       |
-| label | string | Office label       | No       |       |
+| Field | Type   | Description  | Nullable | Notes |
+| ----- | ------ | ------------ | -------- | ----- |
+| id    | string | Primary key  | No       |       |
+| name  | string | Office name  | No       |       |
+| label | string | Office label | No       |       |
 
 #### Account
 
@@ -597,6 +598,66 @@ radiusMeters = 5000;
 
 ---
 
+## Operational Model & Workflow
+
+This section outlines how the platform manages departments, categories, and the report resolution process
+
+### Office - Category Mapping
+
+This table shows which office is competent for specific problem categories
+
+| Office Name                             | ID (Database)     | Competent Categories                               |
+| :-------------------------------------- | :---------------- | :------------------------------------------------- |
+| **Maintenance and Technical Services**  | `maintenance`     | Roads and Urban Furnishings Architectural Barriers |
+| **Infrastructure**                      | `infrastructure`  | Road Signs and Traffic Lights Public Lighting      |
+| **Local Public Services**               | `public_services` | Water Supply Drinking Water Sewer System           |
+| **Environment Quality**                 | `environment`     | Waste                                              |
+| **Green Areas and Parks**               | `green_parks`     | Public Green Areas and Playgrounds                 |
+| **Decentralization and Civic Services** | `civic_services`  | Other (General issues)                             |
+
+### Report Status Lifecycle
+
+According to the project specifications, a report can be in one of the following states:
+
+1. **Pending Approval** (Initial state)
+2. **Assigned** (After PR acceptance)
+3. **In Progress**
+4. **Suspended**
+5. **Rejected**
+6. **Resolved**
+
+### Management Workflow
+
+The system follows a workflow where the **Organization Office** (PR Officers) acts as the gateway for all citizen reports.
+
+1.  **Submission**: A Citizen submits a report specifying a category
+
+2.  **Verification & Assignment (PR Officer)**:
+    - The report appears in the dashboard of the **PR Officers**
+    - A PR Officer performs a preliminary verification of the content and image
+    - **Action**: The PR Officer marks the report as **Accepted** (or Rejected with motivations)
+    - **Outcome**: Upon acceptance, the report status changes to **Assigned**. The system routes the report to the competent technical office determined by the problem category (e.g., a "Public Lighting" issue is sent to the _Infrastructure Office_).
+
+3.  **Technical View (Technical Officer)**:
+    - The **Technical Officer** (e.g., `tech_infrastructure_1`) logs into the platform
+    - They access their specific office dashboard
+    - **Action**: The officer **views** the list of reports that have been accepted and assigned to their department
+
+### Office - Technical User - PR User Table
+
+This table lists the credentials (usernames) to use for testing the workflow
+
+| Office                                | Technical Officer                                 | PR Officer                                                  |
+| :------------------------------------ | :------------------------------------------------ | :---------------------------------------------------------- |
+| **Maintenance & Technical Services**  | `tech_maintenance_1` `tech_maintenance_2`         | `pr_officer_1` `pr_officer_2` `pr_officer_3` `pr_officer_4` |
+| **Infrastructure**                    | `tech_infrastructure_1` `tech_infrastructure_1`   | _Same as above_                                             |
+| **Local Public Services**             | `tech_public_services_1` `tech_public_services_2` | _Same as above_                                             |
+| **Environment Quality**               | `tech_environment_1` `tech_environment_2`         | _Same as above_                                             |
+| **Green Areas and Parks**             | `tech_green_parks_1` `tech_green_parks_2`         | _Same as above_                                             |
+| **Decentralization & Civic Services** | `tech_civic_services_1` `tech_civic_services_2`   | _Same as above_                                             |
+
+---
+
 ## Setup and Configuration
 
 ### Prerequisites
@@ -665,26 +726,46 @@ MINIO_SECRET_KEY=minioadmin
 MINIO_BUCKET_NAME=participium-reports
 ```
 
-4. **Seed database (optional)**
-
-```bash
-cd apps/api
-pnpm run seed:user     # Seed users and roles
-pnpm run seed:reports  # Seed reports with Turin locations
-```
-
 ### Starting Applications
 
 #### Development Mode (all apps)
+
+To start the entire stack (Frontend + Backend) in development mode:
 
 ```bash
 pnpm dev
 ```
 
-#### Individual applications
+#### Database Seeding (optional)
+
+The application includes an auto-seeding mechanism that runs automatically on application bootstrap (in main.ts).
+
+**How it works**
+
+1. On startup, the system checks the reports table
+
+2. **Conditional Execution:** If there are **fewer than 10 reports**, the seed script executes
+
+3. **Data Population:** It populates the database with:
+   - System Roles (User, Admin, Officers)
+   - Real Turin Municipal Offices & Categories
+   - Staff users (Tech Officers & PRs) and Sample Citizens
+   - 60 Real geolocated reports in Turin
+
+**Manual Execution & Customization:** You can manually trigger the seed script or modify the logic (e.g., to change the < 10 threshold) by editing `apps/api/src/providers/database/seed/participium.seed.ts`
+To run the seed manually:
 
 ```bash
-# Backend only
+cd apps/api
+pnpm run seed:participium
+```
+
+#### Individual applications
+
+If you prefer to run services separately:
+
+```bash
+# Backend only (Auto-seed will run if needed)
 cd apps/api
 pnpm dev
 
