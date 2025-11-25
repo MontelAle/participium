@@ -7,13 +7,13 @@ import { MunicipalSidebarProps } from '@/types/ui';
 
 export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
   const location = useLocation();
-  const { isAdminUser, isMunicipalPrOfficer, isTechnicalOfficer } = useAuth();
+  const { hasRole } = useAuth();
 
   const menuItems = [
     { title: 'Dashboard', href: '/app/dashboard', icon: Home },
   ];
 
-  if (isAdminUser) {
+  if (hasRole(['admin'])) {
     menuItems.push({
       title: 'Municipality Users',
       href: '/app/municipality-users',
@@ -21,7 +21,7 @@ export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
     });
   }
 
-  if (isMunicipalPrOfficer) {
+  if (hasRole(['admin', 'pr_officer'])) {
     menuItems.push({
       title: 'View Reports',
       href: '/app/assign-reports',
@@ -29,7 +29,7 @@ export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
     });
   }
 
-  if (isTechnicalOfficer) {
+  if (hasRole(['admin', 'tech_officer'])) {
     menuItems.push({
       title: 'View Assigned Reports',
       href: '/app/assigned-reports',
