@@ -1,4 +1,4 @@
-import ReportsMap from '@/components/report-map/report-map';
+import ReportsMap from '@/components/reports-map/report-map';
 import { Suspense } from 'react';
 
 export default function MapPage() {

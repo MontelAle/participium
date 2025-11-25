@@ -18,4 +18,5 @@ export type AuthContextType = {
   isGuestUser: boolean;
   isMunicipalPrOfficer: boolean;
   isTechnicalOfficer: boolean;
+  hasRole: (roles: string[]) => boolean;
 };

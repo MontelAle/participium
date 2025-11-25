@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn, getStatusConfig } from '@/lib/utils';
 import { useReport } from '@/hooks/use-reports';
-import { ReviewReportForm } from '@/components/municipality-pr-officer/review-report-form';
+import { ViewReportForm } from '@/components/assigned-reports/view-report-form';
 
-function ReviewReportPage() {
+function AssignedReportsViewPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: report, isLoading, isError } = useReport(id!);
@@ -61,11 +61,11 @@ function ReviewReportPage() {
         </div>
 
         <div className="flex-1 pb-2">
-          <ReviewReportForm report={report} onClose={() => navigate(-1)} />
+          <ViewReportForm report={report} onClose={() => navigate(-1)} />
         </div>
       </div>
     </div>
   );
 }
 
-export default ReviewReportPage;
+export default AssignedReportsViewPage;

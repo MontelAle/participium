@@ -1,6 +1,6 @@
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { useReport } from '@/hooks/use-reports';
-import { ReportDetails } from '@/components/report-details/report-details';
+import { ReportDetails } from '@/components/reports-view/report-details';
 import { ArrowLeft, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

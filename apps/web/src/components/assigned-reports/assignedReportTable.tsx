@@ -74,7 +74,7 @@ export function ReportsTable({ data }: ReportsTableProps) {
           return (
             <Button
               onClick={() =>
-                navigate(`/app/technical-reports/view/${report.id}`)
+                navigate(`/app/assigned-reports/view/${report.id}`)
               }
             >
               View Report Details
