@@ -6,7 +6,7 @@ export function MunicipalGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   if (!isAuthenticated || !isMunicipalityUser) {
-    return <Navigate to="/report-map" state={{ from: location }} replace />;
+    return <Navigate to="/reports/map" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;

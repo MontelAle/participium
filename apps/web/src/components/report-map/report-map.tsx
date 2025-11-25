@@ -290,7 +290,7 @@ export default function ReportsMap() {
       detailsBtn.textContent = 'SHOW DETAILS';
       detailsBtn.onclick = (e) => {
         e.stopPropagation();
-        navigate(`/reports/${report.id}`);
+        navigate(`/reports/view/${report.id}`);
       };
 
       popupDiv.appendChild(detailsBtn);

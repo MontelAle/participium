@@ -8,7 +8,7 @@ import LoginPage from '@/pages/auth/login/page';
 import RegistrationPage from '@/pages/auth/registration/page';
 import MapPage from '@/pages/reports/map/page';
 import CreateReportpage from '@/pages/reports/create/page';
-import ReportDetailsPage from '@/pages/reports/[id]/page';
+import ReportDetailsPage from '@/pages/reports/view/page';
 import DashboardPage from '@/pages/app/dashboard/page';
 import MunicipalityUsersPage from '@/pages/app/municipality-users/page';
 import MunicipalityPrOfficerPage from '@/pages/app/municipality-pr-officer/page';
@@ -22,7 +22,7 @@ const App = () => {
         <Toaster position="top-center" richColors />
         <Routes>
           <Route element={<DashboardLayout />}>
-            <Route index element={<Navigate to="/report-map" replace />} />
+            <Route index element={<Navigate to="/reports/map" replace />} />
             <Route
               path="/reports/map"
               element={
@@ -40,7 +40,7 @@ const App = () => {
               }
             />
             <Route
-              path="/reports/:id"
+              path="/reports/view/:id"
               element={
                 <CitizenGuard>
                   <ReportDetailsPage />

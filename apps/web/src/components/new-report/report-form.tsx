@@ -50,7 +50,7 @@ export function ReportForm() {
       setValue('address', location.state.address);
     } else {
       toast.warning('Please select a location on the map first');
-      navigate('/report-map');
+      navigate('/reports/map');
     }
   }, [location.state, setValue, navigate]);
 

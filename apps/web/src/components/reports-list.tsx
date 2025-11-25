@@ -84,7 +84,7 @@ export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
   };
 
   const handleShowDetails = (reportId: string) => {
-    navigate(`/reports/${reportId}`);
+    navigate(`/reports/view/${reportId}`);
   };
 
   if (filteredReports.length === 0) {
