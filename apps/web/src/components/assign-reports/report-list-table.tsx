@@ -11,6 +11,7 @@ import {
 import type { Report } from '@repo/api';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { Eye } from 'lucide-react';
 
 export type ReportsTableProps = {
   data: Report[];
@@ -52,7 +53,7 @@ export function ReportsTable({ data }: ReportsTableProps) {
 
           return (
             <span
-              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${bgColor}`}
+              className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium ${bgColor} border whitespace-nowrap`}
             >
               {status.replaceAll('_', ' ')}
             </span>
@@ -65,11 +66,19 @@ export function ReportsTable({ data }: ReportsTableProps) {
         cell: ({ row }: any) => {
           const report = row.original as Report;
           return (
-            <Button
-              onClick={() => navigate(`/app/assign-reports/view/${report.id}`)}
-            >
-              View Report Details
-            </Button>
+            <div className="text-base items-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-muted-foreground"
+                onClick={() =>
+                  navigate(`/app/assign-reports/view/${report.id}`)
+                }
+                aria-label="View"
+              >
+                <Eye className="h-5 w-5" />
+              </Button>
+            </div>
           );
         },
       },
@@ -78,30 +87,46 @@ export function ReportsTable({ data }: ReportsTableProps) {
   );
 
   return (
-    <>
-      <TableProvider columns={columns as any} data={data}>
-        <TableHeader>
-          {({ headerGroup }) => (
-            <TableHeaderGroup headerGroup={headerGroup}>
-              {({ header }) => (
-                <TableColumnHeader
-                  key={header.id}
-                  column={header.column as any}
-                  title={header.column.columnDef.header as string}
-                />
-              )}
-            </TableHeaderGroup>
-          )}
-        </TableHeader>
-
-        <TableBody>
-          {({ row }) => (
-            <TableRow key={row.id} row={row}>
-              {({ cell }) => <TableCell key={cell.id} cell={cell} />}
-            </TableRow>
-          )}
-        </TableBody>
-      </TableProvider>
-    </>
+    <div className="relative w-full overflow-auto rounded-md border">
+      <div className="min-w-[800px]">
+        <TableProvider columns={columns as any} data={data}>
+          <TableHeader>
+            {({ headerGroup }) => (
+              <TableHeaderGroup
+                headerGroup={headerGroup}
+                className="bg-muted/40 hover:bg-muted/40 border-b"
+              >
+                {({ header }) => (
+                  <TableColumnHeader
+                    column={header.column as any}
+                    title={
+                      typeof header.column.columnDef.header === 'function'
+                        ? (header.column.columnDef.header as any)()
+                        : (header.column.columnDef.header as string)
+                    }
+                    className="h-12 text-sm font-semibold text-muted-foreground px-4 first:pl-6"
+                  />
+                )}
+              </TableHeaderGroup>
+            )}
+          </TableHeader>
+          <TableBody>
+            {({ row }) => (
+              <TableRow
+                row={row}
+                className="border-b transition-colors hover:bg-muted/30 data-[state=selected]:bg-muted"
+              >
+                {({ cell }) => (
+                  <TableCell
+                    cell={cell}
+                    className="p-4 first:pl-6 align-middle"
+                  />
+                )}
+              </TableRow>
+            )}
+          </TableBody>
+        </TableProvider>
+      </div>
+    </div>
   );
 }

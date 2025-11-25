@@ -1,13 +1,34 @@
+import { useAuth } from '@/contexts/auth-context';
+import { useMemo } from 'react';
 import { ReportsTable } from '@/components/assigned-reports/assignedReportTable';
 import { useReports } from '@/hooks/use-reports';
 
 const AssignedReportsPage = () => {
   const { data: reports = [], isLoading } = useReports(); // Recupera i report dal server
 
+  const { user } = useAuth();
+
+  const filteredData = useMemo(() => {
+    if (!user) return [];
+    return reports.filter((report) => report.assignedOfficerId === user.id);
+  }, [reports, user]);
+
   if (isLoading) return <div>Loading...</div>;
   return (
-    <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-      <ReportsTable data={reports} />
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+            Assigned Reports
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Review assigned reports.
+          </p>
+        </div>
+      </div>
+      <div className="overflow-hidden">
+        <ReportsTable data={filteredData} />
+      </div>
     </div>
   );
 };

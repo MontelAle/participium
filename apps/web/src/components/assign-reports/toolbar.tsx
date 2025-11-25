@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Search, X, RotateCcw } from 'lucide-react';
 import {
   Command,
   CommandEmpty,
@@ -65,149 +65,156 @@ export function Toolbar({
     [onCategoriesChange, selectedCategories],
   );
 
-  const clearStatuses = React.useCallback(
-    () => onStatusesChange([]),
-    [onStatusesChange],
-  );
+  const clearAll = React.useCallback(() => {
+    onStatusesChange([]);
+    onCategoriesChange([]);
+  }, [onStatusesChange, onCategoriesChange]);
 
-  const clearCategories = React.useCallback(
-    () => onCategoriesChange([]),
-    [onCategoriesChange],
-  );
+  const hasFilters =
+    selectedStatuses.length > 0 || selectedCategories.length > 0;
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-3 md:flex-row md:items-center',
-        className,
-      )}
-    >
-      <div className="flex-1">
-        <Input
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="Search by report title…"
-          className="h-9"
-          aria-label="Search by report title"
-        />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Popover open={openStatus} onOpenChange={setOpenStatus}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={openStatus}
-              className="h-9 min-w-[160px] justify-between"
+    <div className={cn('flex flex-col gap-4 w-full', className)}>
+      <div className="flex flex-col xl:flex-row gap-4 w-full">
+        <div className="relative w-full xl:flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            placeholder="Search reports..."
+            className="h-12 pl-10 text-base w-full"
+          />
+          {query && (
+            <button
+              onClick={() => onQueryChange('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-2"
             >
-              {selectedStatuses.length > 0
-                ? `${selectedStatuses.length} status(s)`
-                : 'Filter by status'}
-              <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="p-0" align="end">
-            <Command>
-              <CommandInput placeholder="Search status…" />
-              <CommandList>
-                <CommandEmpty>No status found.</CommandEmpty>
-                <CommandGroup>
-                  {availableStatuses.map((status) => {
-                    const checked = selectedStatuses.includes(status);
-                    return (
-                      <CommandItem
-                        key={status}
-                        onSelect={() => toggleStatus(status)}
-                        className="cursor-pointer"
-                        aria-checked={checked}
-                        role="checkbox"
-                      >
-                        <Check
-                          className={cn(
-                            'mr-2 h-4 w-4',
-                            checked ? 'opacity-100' : 'opacity-0',
-                          )}
-                        />
-                        {status.replaceAll(/_/g, ' ')}
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-
-        {selectedStatuses.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2"
-            onClick={clearStatuses}
-          >
-            Clear
-          </Button>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Popover open={openCategory} onOpenChange={setOpenCategory}>
-          <PopoverTrigger asChild>
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-4 w-full xl:w-auto">
+          <Popover open={openStatus} onOpenChange={setOpenStatus}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                className="h-12 w-full lg:w-[200px] justify-between text-base border-slate-200 px-4"
+              >
+                <div className="flex items-center gap-2 truncate mr-2">
+                  <span className="truncate">
+                    {selectedStatuses.length > 0
+                      ? `${selectedStatuses.length} status${selectedStatuses.length > 1 ? 'es' : ''}`
+                      : 'Filter by status'}
+                  </span>
+                </div>
+                <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="min-w-[200px] p-0" align="start">
+              <Command>
+                <CommandInput
+                  placeholder="Search status..."
+                  className="h-12 text-base"
+                />
+                <CommandList>
+                  <CommandEmpty>No statuses found</CommandEmpty>
+                  <CommandGroup>
+                    {availableStatuses.map((status) => {
+                      const checked = selectedStatuses.includes(status);
+                      return (
+                        <CommandItem
+                          key={status}
+                          onSelect={() => toggleStatus(status)}
+                          className="cursor-pointer py-2 text-base"
+                        >
+                          <div
+                            className={cn(
+                              'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary shrink-0',
+                              checked
+                                ? 'bg-primary text-primary-foreground'
+                                : 'opacity-50 [&_svg]:invisible',
+                            )}
+                          >
+                            <Check className="h-4 w-4" />
+                          </div>
+                          <span className="truncate">
+                            {status.replaceAll('_', ' ')}
+                          </span>
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          <Popover open={openCategory} onOpenChange={setOpenCategory}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                className="h-12 w-full lg:w-[220px] justify-between text-base border-slate-200 px-4"
+              >
+                <div className="flex items-center gap-2 truncate mr-2">
+                  <span className="truncate">
+                    {selectedCategories.length > 0
+                      ? `${selectedCategories.length} category${selectedCategories.length > 1 ? 'ies' : ''}`
+                      : 'Filter by category'}
+                  </span>
+                </div>
+                <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="min-w-[220px] p-0" align="start">
+              <Command>
+                <CommandInput
+                  placeholder="Search category..."
+                  className="h-10 text-base"
+                />
+                <CommandList>
+                  <CommandEmpty>No categories found</CommandEmpty>
+                  <CommandGroup>
+                    {availableCategories.map((category) => {
+                      const checked = selectedCategories.includes(category);
+                      return (
+                        <CommandItem
+                          key={category}
+                          onSelect={() => toggleCategory(category)}
+                          className="cursor-pointer py-4 text-base"
+                        >
+                          <div
+                            className={cn(
+                              'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary shrink-0',
+                              checked
+                                ? 'bg-primary text-primary-foreground'
+                                : 'opacity-50 [&_svg]:invisible',
+                            )}
+                          >
+                            <Check className="h-4 w-4" />
+                          </div>
+                          <span className="truncate">{category}</span>
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+          {hasFilters && (
             <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={openCategory}
-              className="h-9 min-w-[160px] justify-between"
+              variant="ghost"
+              size="lg"
+              className="h-12 px-4 text-base text-muted-foreground hover:text-destructive w-full lg:w-auto col-span-1 sm:col-span-2 lg:col-span-1"
+              onClick={clearAll}
             >
-              {selectedCategories.length > 0
-                ? `${selectedCategories.length} category(s)`
-                : 'Filter by category'}
-              <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+              <RotateCcw className="h-4 w-4 mr-2 sm:hidden" />
+              <span className="sm:hidden">Reset Filters</span>
+              <span className="hidden sm:inline">Clear</span>
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="p-0" align="end">
-            <Command>
-              <CommandInput placeholder="Search category…" />
-              <CommandList>
-                <CommandEmpty>No categories found.</CommandEmpty>
-                <CommandGroup>
-                  {availableCategories.map((category) => {
-                    const checked = selectedCategories.includes(category);
-                    return (
-                      <CommandItem
-                        key={category}
-                        onSelect={() => toggleCategory(category)}
-                        className="cursor-pointer"
-                        aria-checked={checked}
-                        role="checkbox"
-                      >
-                        <Check
-                          className={cn(
-                            'mr-2 h-4 w-4',
-                            checked ? 'opacity-100' : 'opacity-0',
-                          )}
-                        />
-                        {category}
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-
-        {selectedCategories.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2"
-            onClick={clearCategories}
-          >
-            Clear
-          </Button>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

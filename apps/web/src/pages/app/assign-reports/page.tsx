@@ -56,14 +56,19 @@ const AssignReportsPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Reports for Officer
-        </h1>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+            Assign Reports
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Review and assign reports to municipal users.
+          </p>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="rounded-xl border bg-card p-4">
         <Toolbar
           query={query}
           onQueryChange={setQuery}
@@ -75,8 +80,9 @@ const AssignReportsPage = () => {
           availableCategories={availableCategories}
         />
       </div>
-
-      <ReportsTable data={filteredReports} />
+      <div className="overflow-hidden">
+        <ReportsTable data={filteredReports} />
+      </div>
     </div>
   );
 };

@@ -86,7 +86,7 @@ const MunicipalityUsersPage = () => {
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card p-5 shadow-sm">
+      <div className="rounded-xl border bg-card p-4">
         <UsersToolbar
           query={query}
           onQueryChange={setQuery}
@@ -99,7 +99,7 @@ const MunicipalityUsersPage = () => {
         />
       </div>
 
-      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+      <div className="overflow-hidden">
         <MunicipalityUsersTable data={filteredData} />
       </div>
     </div>

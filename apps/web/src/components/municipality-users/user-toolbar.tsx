@@ -74,7 +74,7 @@ export function UsersToolbar({
     <div className={cn('flex flex-col gap-4 w-full', className)}>
       <div className="flex flex-col xl:flex-row gap-4 w-full">
         <div className="relative w-full xl:flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
@@ -84,19 +84,19 @@ export function UsersToolbar({
           {query && (
             <button
               onClick={() => onQueryChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-2"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-2"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           )}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-3 w-full xl:w-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-4 w-full xl:w-auto">
           <Popover open={openRoles} onOpenChange={setOpenRoles}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 role="combobox"
-                className="h-12 w-full lg:w-[200px] justify-between text-base border-slate-200 shadow-sm px-3"
+                className="h-12 w-full lg:w-[200px] justify-between text-base border-slate-200 px-4"
               >
                 <div className="flex items-center gap-2 truncate mr-2">
                   <Briefcase className="h-4 w-4 shrink-0 opacity-50" />
@@ -127,7 +127,7 @@ export function UsersToolbar({
                         <CommandItem
                           key={role}
                           onSelect={() => toggleRole(role)}
-                          className="cursor-pointer py-3 text-base"
+                          className="cursor-pointer py-4 text-base"
                         >
                           <div
                             className={cn(
@@ -137,7 +137,7 @@ export function UsersToolbar({
                                 : 'opacity-50 [&_svg]:invisible',
                             )}
                           >
-                            <Check className="h-3 w-3" />
+                            <Check className="h-4 w-4" />
                           </div>
                           <span className="truncate">{prettifyRole(role)}</span>
                         </CommandItem>
@@ -153,7 +153,7 @@ export function UsersToolbar({
               <Button
                 variant="outline"
                 role="combobox"
-                className="h-12 w-full lg:w-[220px] justify-between text-base border-slate-200 shadow-sm px-3"
+                className="h-12 w-full lg:w-[220px] justify-between text-base border-slate-200 px-4"
               >
                 <div className="flex items-center gap-2 truncate mr-2">
                   <Building2 className="h-4 w-4 shrink-0 opacity-50" />
@@ -184,7 +184,7 @@ export function UsersToolbar({
                         <CommandItem
                           key={officeLabel}
                           onSelect={() => toggleOffice(officeLabel)}
-                          className="cursor-pointer py-3 text-base"
+                          className="cursor-pointer py-4 text-base"
                         >
                           <div
                             className={cn(
@@ -194,7 +194,7 @@ export function UsersToolbar({
                                 : 'opacity-50 [&_svg]:invisible',
                             )}
                           >
-                            <Check className="h-3 w-3" />
+                            <Check className="h-4 w-4" />
                           </div>
                           <span className="truncate">{officeLabel}</span>
                         </CommandItem>

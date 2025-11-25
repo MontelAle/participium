@@ -23,7 +23,7 @@ export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
 
   if (hasRole(['admin', 'pr_officer'])) {
     menuItems.push({
-      title: 'View Reports',
+      title: 'Assign Reports',
       href: '/app/assign-reports',
       icon: FileText,
     });
@@ -31,7 +31,7 @@ export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
 
   if (hasRole(['admin', 'tech_officer'])) {
     menuItems.push({
-      title: 'View Assigned Reports',
+      title: 'Assigned Reports',
       href: '/app/assigned-reports',
       icon: FileText,
     });
