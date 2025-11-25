@@ -90,11 +90,13 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
               onChange={(e) => setSearchTerm(e.target.value)}
               onFocus={() => setIsMobileExpanded(true)}
             />
+            {/*}
             <FilterDialog
               filters={filters}
               setFilters={setFilters}
               categories={categories}
             />
+            */}
           </div>
 
           {isCitizenUser && (
