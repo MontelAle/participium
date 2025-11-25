@@ -11,6 +11,8 @@ import CreateReportpage from '@/pages/reports/create/page';
 import ReportDetailsPage from '@/pages/reports/view/page';
 import DashboardPage from '@/pages/app/dashboard/page';
 import MunicipalityUsersPage from '@/pages/app/municipality-users/page';
+import MunicipalityUsersCreatePage from '@/pages/app/municipality-users/create/page';
+import MunicipalityUsersViewPage from '@/pages/app/municipality-users/view/page';
 import MunicipalityPrOfficerPage from '@/pages/app/municipality-pr-officer/page';
 import ProfilePage from '@/pages/profile/page';
 import TechnicalOfficerPage from './pages/app/technical-officer/page';
@@ -62,6 +64,22 @@ const App = () => {
               element={
                 <MunicipalGuard>
                   <MunicipalityUsersPage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
+              path="/app/municipality-users/create"
+              element={
+                <MunicipalGuard>
+                  <MunicipalityUsersCreatePage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
+              path="/app/municipality-users/view/:id"
+              element={
+                <MunicipalGuard>
+                  <MunicipalityUsersViewPage />
                 </MunicipalGuard>
               }
             />
