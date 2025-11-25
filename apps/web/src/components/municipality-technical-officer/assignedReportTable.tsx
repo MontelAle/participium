@@ -11,7 +11,6 @@ import {
 import type { Report } from '@repo/api';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
-import { ViewReportDialog } from './view-report-dialog'; // ← importa il dialog
 import { useNavigate } from 'react-router-dom';
 
 export type ReportsTableProps = {
@@ -21,21 +20,6 @@ export type ReportsTableProps = {
 export function ReportsTable({ data }: ReportsTableProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  const [selectedReport, setSelectedReport] = React.useState<Report | null>(
-    null,
-  );
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-
-  const openDialog = (report: Report) => {
-    setSelectedReport(report);
-    setIsDialogOpen(true);
-  };
-
-  const closeDialog = () => {
-    setSelectedReport(null);
-    setIsDialogOpen(false);
-  };
 
   const filteredData = React.useMemo(() => {
     if (!user) return [];
@@ -127,14 +111,6 @@ export function ReportsTable({ data }: ReportsTableProps) {
           )}
         </TableBody>
       </TableProvider>
-
-      {selectedReport && (
-        <ViewReportDialog
-          report={selectedReport}
-          open={isDialogOpen}
-          onClose={closeDialog}
-        />
-      )}
     </>
   );
 }
