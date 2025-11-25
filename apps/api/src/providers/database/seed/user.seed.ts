@@ -167,6 +167,28 @@ export async function seedDatabase(dataSource: DataSource) {
     'road',
   );
 
+
+  
+// Road
+await createUser('road_officer_1', 'officer', 'Luca', 'Ferrari', 'road');
+await createUser('road_officer_2', 'officer', 'Sara', 'Ricci', 'road');
+await createUser('road_officer_3', 'officer', 'Marco', 'Galli', 'road');
+
+// Waste
+await createUser('waste_officer_1', 'officer', 'Chiara', 'Bianchi', 'waste');
+await createUser('waste_officer_2', 'officer', 'Andrea', 'Lombardi', 'waste');
+await createUser('waste_officer_3', 'officer', 'Davide', 'Conti', 'waste');
+
+// Parks
+await createUser('parks_officer_1', 'officer', 'Elisa', 'Fontana', 'parks');
+await createUser('parks_officer_2', 'officer', 'Riccardo', 'Moretti', 'parks');
+await createUser('parks_officer_3', 'officer', 'Francesca', 'Marini', 'parks');
+
+// Public Lighting
+await createUser('lighting_officer_1', 'officer', 'Simone', 'Costa', 'public-lighting');
+await createUser('lighting_officer_2', 'officer', 'Valentina', 'Rinaldi', 'public-lighting');
+await createUser('lighting_officer_3', 'officer', 'Giulio', 'Martini', 'public-lighting');
+
   const reportsCount = await reportRepo.count();
 
   if (reportsCount < 5) {
@@ -205,6 +227,7 @@ export async function seedDatabase(dataSource: DataSource) {
       `Reports already present (${reportsCount}). Skipping generation.`,
     );
   }
+
 
   console.log(' Database seed check completed.');
 }

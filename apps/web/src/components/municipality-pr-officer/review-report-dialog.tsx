@@ -4,11 +4,12 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import type { Report, UpdateReportDto } from '@repo/api';
+import type { Report, UpdateReportDto, User } from '@repo/api';
 import { ReportStatus } from '@repo/api';
 import { XIcon, MapPin, Tag, Maximize2 } from 'lucide-react';
 import { useCategories } from '@/hooks/use-categories';
 import { useUpdateReport } from '@/hooks/use-reports';
+import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
 import { toast } from 'sonner';
 import { MiniMap } from '@/components/mini-map';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,15 +26,20 @@ type FormData = {
   categoryId: string;
   status: string;
   explanation?: string;
+  technicalOfficerId?: string; // ⭐ AGGIUNTO
 };
 
 export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialogProps) {
   const { data: categories = [] } = useCategories();
+  const { data: municipalityUsers = [] } = useMunicipalityUsers(); // ⭐ AGGIUNTO
+
   const updateReportMutation = useUpdateReport();
 
   const [selectedImageIndex, setSelectedImageIndex] = React.useState<number | null>(null);
   const [explanation, setExplanation] = React.useState<string>(report.explanation ?? '');
-  const [competentOfficeName, setCompetentOfficeName] = React.useState<string>(report.category?.office?.name ?? 'Unknown');
+  const [competentOfficeName, setCompetentOfficeName] = React.useState<string>(
+    report.category?.office?.name ?? 'Unknown'
+  );
 
   const isPending = report.status === ReportStatus.PENDING;
   const isLoading = updateReportMutation.status === 'pending';
@@ -43,31 +49,53 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
       categoryId: report.category?.id ?? '',
       status: report.status,
       explanation: report.explanation ?? '',
+      technicalOfficerId: report.assignedOfficerId ?? '', // ⭐ AGGIUNTO
     },
   });
 
   const watchedCategory = watch('categoryId');
   const watchedStatus = watch('status');
+  const watchedOfficer = watch('technicalOfficerId'); // ⭐ AGGIUNTO
 
-  // Aggiorna i valori quando il report cambia
+  // ──────────────────────────────────────────────────────────────
+  // Manteniamo tutto come prima
+  // ──────────────────────────────────────────────────────────────
   React.useEffect(() => {
     setValue('categoryId', report.category?.id ?? '');
     setValue('status', report.status);
     setExplanation(report.explanation ?? '');
+    setValue('technicalOfficerId', report.assignedOfficerId ?? ''); // ⭐ AGGIUNTO
     setCompetentOfficeName(report.category?.office?.name ?? 'Unknown');
   }, [report, setValue]);
 
-  // Aggiorna il nome dell'ufficio quando cambia la categoria selezionata
   React.useEffect(() => {
     const selectedCategory = categories.find(cat => cat.id === watchedCategory);
     setCompetentOfficeName(selectedCategory?.office?.name ?? 'Unknown');
   }, [watchedCategory, categories]);
 
+  // ──────────────────────────────────────────────────────────────
+  // FILTRO OFFICERS: utenti che appartengono allo stesso ufficio della categoria
+  // ──────────────────────────────────────────────────────────────
+  const filteredOfficers = React.useMemo(() => {
+    const cat = categories.find(c => c.id === watchedCategory);
+    if (!cat?.office?.id) return [];
+    return municipalityUsers.filter((u: User) => u.officeId === cat.office.id);
+  }, [municipalityUsers, categories, watchedCategory]);
+
+  // ──────────────────────────────────────────────────────────────
+  // VALIDAZIONE
+  // ──────────────────────────────────────────────────────────────
   const canConfirm =
     isPending &&
-    ((watchedStatus === ReportStatus.REJECTED && explanation.trim() !== '') ||
-    (watchedStatus !== ReportStatus.REJECTED && watchedStatus !== report.status));
+    (
+      (watchedStatus === ReportStatus.REJECTED && explanation.trim() !== '') ||
+      (watchedStatus === ReportStatus.ASSIGNED && watchedOfficer && watchedOfficer.trim() !== '') ||
+      (watchedStatus !== ReportStatus.REJECTED && watchedStatus !== report.status)
+    );
 
+  // ──────────────────────────────────────────────────────────────
+  // SUBMIT
+  // ──────────────────────────────────────────────────────────────
   const handleConfirm = async (data: FormData) => {
     if (!canConfirm) return;
 
@@ -75,6 +103,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
       status: data.status as ReportStatus,
       categoryId: data.categoryId,
       ...(data.status === ReportStatus.REJECTED && { explanation: explanation }),
+      ...(data.status === ReportStatus.ASSIGNED && { assignedOfficerId: data.technicalOfficerId }), // ⭐ AGGIUNTO
     };
 
     try {
@@ -91,27 +120,30 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
   const longitude = report.location.coordinates[0];
   const reportImages = report.images || [];
 
+  // ──────────────────────────────────────────────────────────────
+  // RENDER
+  // ──────────────────────────────────────────────────────────────
   return (
     <Dialog.Root open={open} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
         <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl max-h-[90vh] overflow-y-auto z-50">
           <Card className="w-full h-full flex flex-col border-none overflow-hidden bg-white/90 backdrop-blur-sm ring-1 ring-gray-200 p-6">
+
             <div className="flex items-center justify-between mb-4">
               <Dialog.Title className="text-xl font-bold">Review Report</Dialog.Title>
               <Dialog.Close asChild>
-                <button
-                  aria-label="Close"
-                  className="p-1 rounded hover:bg-black/5"
-                  disabled={isLoading}
-                >
+                <button aria-label="Close" className="p-1 rounded hover:bg-black/5" disabled={isLoading}>
                   <XIcon className="w-5 h-5" />
                 </button>
               </Dialog.Close>
             </div>
 
             <form onSubmit={handleSubmit(handleConfirm)} className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
+
+              {/* LEFT PANEL */}
               <div className="md:col-span-7 flex flex-col bg-white overflow-y-auto h-full border-b md:border-b-0 md:border-r border-gray-100 p-6 order-2 md:order-1 min-w-0 gap-4">
+
                 {/* Title */}
                 <div>
                   <h4 className="text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wider">Title</h4>
@@ -120,11 +152,12 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
 
                 <Separator className="bg-gray-100" />
 
-                {/* Category + Competent Office */}
+                {/* Category */}
                 <div>
                   <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
                     <Tag className="size-3.5" /> Category
                   </h4>
+
                   {isPending ? (
                     <Select value={watchedCategory} onValueChange={(v) => setValue('categoryId', v)} disabled={isLoading}>
                       <SelectTrigger className="w-full">
@@ -144,10 +177,9 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                     </div>
                   )}
 
+                  {/* Competent office (NON TOCCATO) */}
                   <div className="mt-2">
-                    <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
-                      Competent Office
-                    </h4>
+                    <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Competent Office</h4>
                     <Input value={competentOfficeName} readOnly />
                   </div>
                 </div>
@@ -155,7 +187,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                 {/* Description */}
                 <div>
                   <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Description</h4>
-                  <div className="bg-gray-50/50 rounded-lg p-4 border text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words min-h-[100px]">
+                  <div className="bg-gray-50/50 rounded-lg p-4 border text-sm text-gray-700 whitespace-pre-wrap break-words min-h-[100px]">
                     {report.description}
                   </div>
                 </div>
@@ -183,6 +215,42 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                   </div>
                 )}
 
+                {/* ⭐ TECHNICAL OFFICER */}
+                {(isPending && watchedStatus === ReportStatus.ASSIGNED) || report.status === ReportStatus.ASSIGNED ? (
+                  <div>
+                    <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Technical Officer</h4>
+
+                    {isPending ? (
+                      <Select
+                        value={watchedOfficer}
+                        onValueChange={(v) => setValue('technicalOfficerId', v)}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select officer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredOfficers.map((u: User) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.firstName} {u.lastName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        readOnly
+                        value={
+                          municipalityUsers.find(u => u.id === report.assignedOfficerId)
+                            ? `${municipalityUsers.find(u => u.id === report.assignedOfficerId)!.firstName} ${municipalityUsers.find(u => u.id === report.assignedOfficerId)!.lastName}`
+                            : 'Not assigned'
+                        }
+                      />
+                    )}
+                  </div>
+                ) : null}
+
+                {/* Footer left panel */}
                 <div className="pt-3 mt-auto flex items-center justify-between text-sm text-muted-foreground border-t border-dashed">
                   <p className="truncate">
                     Reported By: <span className="font-medium text-foreground">{report.user?.firstName} {report.user?.lastName}</span>
@@ -193,8 +261,9 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                 </div>
               </div>
 
-              {/* Right panel */}
+              {/* RIGHT PANEL (non toccato) */}
               <div className="md:col-span-5 flex flex-col gap-6 overflow-y-auto order-1 md:order-2 p-6">
+
                 {/* Map */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col shrink-0">
                   <div className="relative w-full h-56 bg-slate-100">
@@ -264,6 +333,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
               <Dialog.Close asChild>
                 <Button variant="outline" disabled={isLoading}>Close</Button>
               </Dialog.Close>
+
               {isPending && (
                 <Button type="submit" disabled={!canConfirm || isLoading} onClick={handleSubmit(handleConfirm)}>
                   {isLoading ? 'Saving...' : 'Confirm'}
@@ -290,6 +360,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                 />
               </div>
             )}
+
           </Card>
         </Dialog.Content>
       </Dialog.Portal>
