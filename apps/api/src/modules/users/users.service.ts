@@ -247,7 +247,7 @@ export class UsersService {
     }
 
     if (dto.emailNotificationsEnabled !== undefined) {
-      user.emailNotificationsEnabled = dto.emailNotificationsEnabled;
+      user.emailNotificationsEnabled = dto.emailNotificationsEnabled === 'true';
     }
 
     if (file) {

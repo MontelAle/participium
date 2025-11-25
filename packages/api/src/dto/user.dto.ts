@@ -2,7 +2,7 @@ import { ResponseDto } from './response.dto';
 
 export interface UpdateProfileDto {
   telegramUsername?: string;
-  emailNotificationsEnabled?: boolean;
+  emailNotificationsEnabled?: string;
 }
 
 export interface UpdateProfileResponseDto extends ResponseDto {

@@ -5,6 +5,7 @@ import {
   Matches,
   ValidateIf,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import {
   UpdateProfileDto as UpdateProfileDtoInterface,
   UpdateProfileResponseDto as UpdateProfileResponseDtoInterface,
@@ -20,9 +21,9 @@ export class UpdateProfileDto implements UpdateProfileDtoInterface {
   })
   telegramUsername?: string;
 
-  @IsBoolean()
+  @IsString()
   @IsOptional()
-  emailNotificationsEnabled?: boolean;
+  emailNotificationsEnabled?: string;
 }
 
 export class UpdateProfileResponseDto

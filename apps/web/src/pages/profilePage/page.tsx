@@ -86,7 +86,7 @@ export default function ProfilePage() {
       formData.append('telegramUsername', data.telegramUsername ?? '');
       formData.append(
         'emailNotificationsEnabled',
-        String(!!data.emailNotificationsEnabled),
+        String(data.emailNotificationsEnabled),
       );
       if (data.profilePicture)
         formData.append('profilePicture', data.profilePicture);
