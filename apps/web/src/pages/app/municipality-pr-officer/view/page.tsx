@@ -6,7 +6,7 @@ import { cn, getStatusConfig } from '@/lib/utils';
 import { useReport } from '@/hooks/use-reports';
 import { ReviewReportForm } from '@/components/municipality-pr-officer/review-report-form';
 
-function ReviewReportPage() {
+function AssignReportsViewPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: report, isLoading, isError } = useReport(id!);
@@ -68,4 +68,4 @@ function ReviewReportPage() {
   );
 }
 
-export default ReviewReportPage;
+export default AssignReportsViewPage;

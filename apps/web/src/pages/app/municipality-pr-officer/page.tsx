@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { PrOfficerToolbar } from '@/components/municipality-pr-officer/pr-officer-toolbar';
 import { ReportsTable } from '@/components/municipality-pr-officer/report-list-table';
 
-const MunicipalityPrOfficerPage = () => {
+const AssignReportsPage = () => {
   const { data: reports = [] } = useReports();
   const navigate = useNavigate();
 
@@ -81,4 +81,4 @@ const MunicipalityPrOfficerPage = () => {
   );
 };
 
-export default MunicipalityPrOfficerPage;
+export default AssignReportsPage;

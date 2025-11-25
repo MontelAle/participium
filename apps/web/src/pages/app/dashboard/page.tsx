@@ -3,27 +3,44 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
 import { useReports } from '@/hooks/use-reports';
-import { Users, FileText, Timer, AlertCircle, Plus , CheckCircle , XCircle , UserCheck } from 'lucide-react';
+import {
+  Users,
+  FileText,
+  Timer,
+  AlertCircle,
+  Plus,
+  CheckCircle,
+  XCircle,
+  UserCheck,
+} from 'lucide-react';
 import { StatCard } from '@/components/dashboard/stat-card';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const { isAdminUser, user , isMunicipalPrOfficer , isTechnicalOfficer } = useAuth();
+  const { isAdminUser, user, isMunicipalPrOfficer, isTechnicalOfficer } =
+    useAuth();
   const { data: municipalityUsers = [] } = useMunicipalityUsers();
   const { data: reports = [] } = useReports();
 
-  const inProgressCount = reports.filter((r) => r.status === 'in_progress',).length;
+  const inProgressCount = reports.filter(
+    (r) => r.status === 'in_progress',
+  ).length;
   const pendingCount = reports.filter((r) => r.status === 'pending').length;
   const assignedCount = reports.filter((r) => r.status === 'assigned').length;
   const rejectedCount = reports.filter((r) => r.status === 'rejected').length;
   const resolvedCount = reports.filter((r) => r.status === 'resolved').length;
 
   ////
-  const inProgressCountUser = reports.filter((r) => r.status === 'in_progress' && r.assignedOfficerId===user?.id ).length;
-  const assignedCountUser = reports.filter((r) => r.status === 'assigned' && r.assignedOfficerId===user?.id).length;
-  const resolvedCountUser = reports.filter((r) => r.status === 'resolved' && r.assignedOfficerId===user?.id).length;
+  const inProgressCountUser = reports.filter(
+    (r) => r.status === 'in_progress' && r.assignedOfficerId === user?.id,
+  ).length;
+  const assignedCountUser = reports.filter(
+    (r) => r.status === 'assigned' && r.assignedOfficerId === user?.id,
+  ).length;
+  const resolvedCountUser = reports.filter(
+    (r) => r.status === 'resolved' && r.assignedOfficerId === user?.id,
+  ).length;
   ////
-
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -48,82 +65,84 @@ const DashboardPage = () => {
         )}
 
         {!isTechnicalOfficer && (
-        <>
-        <StatCard
-          title="Total Reports"
-          value={reports.length}
-          icon={FileText}
-          color="text-violet-600"
-          bgColor="bg-violet-500/10"
-        />
+          <>
+            <StatCard
+              title="Total Reports"
+              value={reports.length}
+              icon={FileText}
+              color="text-violet-600"
+              bgColor="bg-violet-500/10"
+            />
 
-        <StatCard
-          title="In Progress"
-          value={inProgressCount}
-          icon={Timer}
-          color="text-amber-600"
-          bgColor="bg-amber-500/10"
-        />
+            <StatCard
+              title="In Progress"
+              value={inProgressCount}
+              icon={Timer}
+              color="text-amber-600"
+              bgColor="bg-amber-500/10"
+            />
 
-        <StatCard
-          title="Pending Approval"
-          value={pendingCount}
-          icon={AlertCircle}
-          color="text-rose-600"
-          bgColor="bg-rose-500/10"
-        />
+            <StatCard
+              title="Pending Approval"
+              value={pendingCount}
+              icon={AlertCircle}
+              color="text-rose-600"
+              bgColor="bg-rose-500/10"
+            />
 
-        <StatCard
-          title="Assigned"
-          value={assignedCount}
-          icon={UserCheck}
-          color="text-purple-600"
-          bgColor="bg-purple-500/10"
-        />
-        
-        <StatCard
-          title="Rejected"
-          value={rejectedCount}
-          icon={XCircle}
-          color="text-red-600"
-          bgColor="bg-red-500/10"
-        />
+            <StatCard
+              title="Assigned"
+              value={assignedCount}
+              icon={UserCheck}
+              color="text-purple-600"
+              bgColor="bg-purple-500/10"
+            />
 
-        <StatCard
-          title="Resolved"
-          value={resolvedCount}
-          icon={CheckCircle}
-          color="text-green-600"
-          bgColor="bg-green-500/10"
-        />
-        </>)}
+            <StatCard
+              title="Rejected"
+              value={rejectedCount}
+              icon={XCircle}
+              color="text-red-600"
+              bgColor="bg-red-500/10"
+            />
+
+            <StatCard
+              title="Resolved"
+              value={resolvedCount}
+              icon={CheckCircle}
+              color="text-green-600"
+              bgColor="bg-green-500/10"
+            />
+          </>
+        )}
 
         {isTechnicalOfficer && (
-        <>
-        <StatCard
-          title="In Progress"
-          value={inProgressCountUser}
-          icon={Timer}
-          color="text-amber-600"
-          bgColor="bg-amber-500/10"
-        />
+          <>
+            <StatCard
+              title="In Progress"
+              value={inProgressCountUser}
+              icon={Timer}
+              color="text-amber-600"
+              bgColor="bg-amber-500/10"
+            />
 
-        <StatCard
-          title="Assigned"
-          value={assignedCountUser}
-          icon={UserCheck}
-          color="text-purple-600"
-          bgColor="bg-purple-500/10"
-        />
+            <StatCard
+              title="Assigned"
+              value={assignedCountUser}
+              icon={UserCheck}
+              color="text-purple-600"
+              bgColor="bg-purple-500/10"
+            />
 
-        <StatCard
-          title="Resolved"
-          value={resolvedCountUser}
-          icon={CheckCircle}
-          color="text-green-600"
-          bgColor="bg-green-500/10"
-        />
-        </>)}
+            <StatCard
+              title="Resolved"
+              value={resolvedCountUser}
+              icon={CheckCircle}
+              color="text-green-600"
+              bgColor="bg-green-500/10"
+            />
+          </>
+        )}
       </div>
 
       <div className="rounded-xl border bg-linear-to-br from-card to-muted/30 p-8 shadow-sm">
@@ -155,9 +174,7 @@ const DashboardPage = () => {
             <Button
               size="lg"
               className="h-12 rounded-lg shadow-md transition-transform active:scale-95 cursor-pointer"
-              onClick={() =>
-                navigate('/app/municipality-pr-officer')
-              }
+              onClick={() => navigate('/app/assign-reports')}
             >
               <Plus className="mr-2 h-5 w-5" />
               View Reports
@@ -167,9 +184,7 @@ const DashboardPage = () => {
             <Button
               size="lg"
               className="h-12 rounded-lg shadow-md transition-transform active:scale-95 cursor-pointer"
-              onClick={() =>
-                navigate('/app/technical-officer')
-              }
+              onClick={() => navigate('/app/assigned-reports')}
             >
               <Plus className="mr-2 h-5 w-5" />
               View Reports
