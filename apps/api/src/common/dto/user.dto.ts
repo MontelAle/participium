@@ -5,8 +5,13 @@ import {
   Matches,
   ValidateIf,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+  UpdateProfileDto as UpdateProfileDtoInterface,
+  UpdateProfileResponseDto as UpdateProfileResponseDtoInterface,
+} from '@repo/api';
 
-export class UpdateProfileDto {
+export class UpdateProfileDto implements UpdateProfileDtoInterface {
   @IsString()
   @IsOptional()
   @ValidateIf((o) => o.telegramUsername !== '')
@@ -16,12 +21,14 @@ export class UpdateProfileDto {
   })
   telegramUsername?: string;
 
-  @IsBoolean()
+  @IsString()
   @IsOptional()
-  emailNotificationsEnabled?: boolean;
+  emailNotificationsEnabled?: string;
 }
 
-export class UpdateProfileResponseDto {
+export class UpdateProfileResponseDto
+  implements UpdateProfileResponseDtoInterface
+{
   success: boolean;
   data: {
     id: string;

@@ -12,6 +12,8 @@ import ReportDetailsPage from '@/pages/report-details/page';
 import DashboardPage from '@/pages/app/dashboard/page';
 import MunicipalityUsersPage from '@/pages/app/municipality-users/page';
 import MunicipalityPrOfficerPage from '@/pages/app/municipality-pr-officer/page';
+import ProfilePage from '@/pages/profilePage/page';
+import TechnicalOfficerPage from './pages/app/technical-officer/page';
 
 const App = () => {
   return (
@@ -45,6 +47,8 @@ const App = () => {
                 </CitizenGuard>
               }
             />
+            <Route path="/profile" element={<ProfilePage />} />
+
             <Route
               path="/app/dashboard"
               element={
@@ -66,6 +70,14 @@ const App = () => {
               element={
                 <MunicipalGuard>
                   <MunicipalityPrOfficerPage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
+              path="/app/technical-officer"
+              element={
+                <MunicipalGuard>
+                  <TechnicalOfficerPage />
                 </MunicipalGuard>
               }
             />
