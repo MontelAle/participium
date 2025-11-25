@@ -6,14 +6,18 @@ import { MunicipalGuard } from '@/components/municipal-guard';
 import { CitizenGuard } from '@/components/citizen-guard';
 import LoginPage from '@/pages/auth/login/page';
 import RegistrationPage from '@/pages/auth/registration/page';
-import MapPage from '@/pages/report-map/page';
-import ReportPage from '@/pages/new-report/page';
-import ReportDetailsPage from '@/pages/report-details/page';
+import MapPage from '@/pages/reports/map/page';
+import CreateReportpage from '@/pages/reports/create/page';
+import ReportDetailsPage from '@/pages/reports/view/page';
 import DashboardPage from '@/pages/app/dashboard/page';
 import MunicipalityUsersPage from '@/pages/app/municipality-users/page';
+import MunicipalityUsersCreatePage from '@/pages/app/municipality-users/create/page';
+import MunicipalityUsersViewPage from '@/pages/app/municipality-users/view/page';
 import MunicipalityPrOfficerPage from '@/pages/app/municipality-pr-officer/page';
-import ProfilePage from '@/pages/profilePage/page';
+import ProfilePage from '@/pages/profile/page';
 import TechnicalOfficerPage from './pages/app/technical-officer/page';
+import MunicipalityPrOfficerViewPage from '@/pages/app/municipality-pr-officer/view/page';
+import TechnicalOfficerViewPage from './pages/app/technical-officer/view/page';
 
 const App = () => {
   return (
@@ -22,9 +26,9 @@ const App = () => {
         <Toaster position="top-center" richColors />
         <Routes>
           <Route element={<DashboardLayout />}>
-            <Route index element={<Navigate to="/report-map" replace />} />
+            <Route index element={<Navigate to="/reports/map" replace />} />
             <Route
-              path="/report-map"
+              path="/reports/map"
               element={
                 <CitizenGuard>
                   <MapPage />
@@ -32,15 +36,15 @@ const App = () => {
               }
             />
             <Route
-              path="/new-report"
+              path="/reports/create"
               element={
                 <CitizenGuard>
-                  <ReportPage />
+                  <CreateReportpage />
                 </CitizenGuard>
               }
             />
             <Route
-              path="/report/:id"
+              path="/reports/view/:id"
               element={
                 <CitizenGuard>
                   <ReportDetailsPage />
@@ -66,6 +70,22 @@ const App = () => {
               }
             />
             <Route
+              path="/app/municipality-users/create"
+              element={
+                <MunicipalGuard>
+                  <MunicipalityUsersCreatePage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
+              path="/app/municipality-users/view/:id"
+              element={
+                <MunicipalGuard>
+                  <MunicipalityUsersViewPage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
               path="/app/municipality-pr-officer"
               element={
                 <MunicipalGuard>
@@ -74,10 +94,26 @@ const App = () => {
               }
             />
             <Route
+              path="/app/municipality-reports/view/:id"
+              element={
+                <MunicipalGuard>
+                  <MunicipalityPrOfficerViewPage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
               path="/app/technical-officer"
               element={
                 <MunicipalGuard>
                   <TechnicalOfficerPage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
+              path="/app/technical-reports/view/:id"
+              element={
+                <MunicipalGuard>
+                  <TechnicalOfficerViewPage />
                 </MunicipalGuard>
               }
             />

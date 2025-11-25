@@ -1,12 +1,14 @@
 import { useLocation } from 'react-router-dom';
 import * as React from 'react';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
-import { CreateMunicipalityUserDialog } from '@/components/municipality-users/create-municipality-user-dialog';
 import { UsersToolbar } from '@/components/municipality-users/user-toolbar';
 import { MunicipalityUsersTable } from '@/components/municipality-users/municipality-users-table';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const MunicipalityUsersPage = () => {
-  const location = useLocation();
+  const navigate = useNavigate();
   const { data: municipalUsers = [] } = useMunicipalityUsers();
 
   const [query, setQuery] = React.useState('');
@@ -73,9 +75,14 @@ const MunicipalityUsersPage = () => {
           </p>
         </div>
         <div className="shrink-0">
-          <CreateMunicipalityUserDialog
-            openDialog={location.state?.openCreateDialog}
-          />
+          <Button
+            size="lg"
+            className="gap-2 text-base font-medium shadow-md hover:shadow-lg transition-all"
+            onClick={() => navigate('create')}
+          >
+            <Plus className="size-5" />
+            Add User
+          </Button>
         </div>
       </div>
 

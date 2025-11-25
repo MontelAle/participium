@@ -10,27 +10,14 @@ import {
 } from '@/components/ui/shadcn-io/table';
 import type { Report } from '@repo/api';
 import { Button } from '@/components/ui/button';
-import { ReviewReportDialog } from './review-report-dialog';
+import { useNavigate } from 'react-router-dom';
 
 export type ReportsTableProps = {
   data: Report[];
 };
 
 export function ReportsTable({ data }: ReportsTableProps) {
-  const [selectedReport, setSelectedReport] = React.useState<Report | null>(
-    null,
-  );
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-
-  const openDialog = (report: Report) => {
-    setSelectedReport(report);
-    setIsDialogOpen(true);
-  };
-
-  const closeDialog = () => {
-    setSelectedReport(null);
-    setIsDialogOpen(false);
-  };
+  const navigate = useNavigate();
 
   const columns = React.useMemo(
     () => [
@@ -78,7 +65,11 @@ export function ReportsTable({ data }: ReportsTableProps) {
         cell: ({ row }: any) => {
           const report = row.original as Report;
           return (
-            <Button onClick={() => openDialog(report)}>
+            <Button
+              onClick={() =>
+                navigate(`/app/municipality-reports/view/${report.id}`)
+              }
+            >
               View Report Details
             </Button>
           );
@@ -113,14 +104,6 @@ export function ReportsTable({ data }: ReportsTableProps) {
           )}
         </TableBody>
       </TableProvider>
-
-      {selectedReport && (
-        <ReviewReportDialog
-          report={selectedReport}
-          open={isDialogOpen}
-          onClose={closeDialog}
-        />
-      )}
     </>
   );
 }

@@ -34,7 +34,7 @@ function ReportDetailsPage() {
   });
 
   return (
-    <div className="flex flex-col w-full h-full animate-in fade-in zoom-in-95 duration-300 overflow-hidden">
+    <div className="flex flex-col w-full h-full animate-in fade-in zoom-in-95 duration-300">
       <div className="w-full max-w-6xl mx-auto flex flex-col h-full gap-4">
         <div className="flex flex-col gap-1 shrink-0">
           <div>
@@ -71,7 +71,7 @@ function ReportDetailsPage() {
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 mb-2">
+        <div className="flex-1 pb-2">
           <ReportDetails report={report} />
         </div>
       </div>
