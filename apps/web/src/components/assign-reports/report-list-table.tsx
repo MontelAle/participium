@@ -66,9 +66,7 @@ export function ReportsTable({ data }: ReportsTableProps) {
           const report = row.original as Report;
           return (
             <Button
-              onClick={() =>
-                navigate(`/app/municipality-reports/view/${report.id}`)
-              }
+              onClick={() => navigate(`/app/assign-reports/view/${report.id}`)}
             >
               View Report Details
             </Button>
