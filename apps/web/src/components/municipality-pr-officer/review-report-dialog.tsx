@@ -33,6 +33,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
 
   const [selectedImageIndex, setSelectedImageIndex] = React.useState<number | null>(null);
   const [explanation, setExplanation] = React.useState<string>(report.explanation ?? '');
+  const [competentOfficeName, setCompetentOfficeName] = React.useState<string>(report.category?.office?.name ?? 'Unknown');
 
   const isPending = report.status === ReportStatus.PENDING;
   const isLoading = updateReportMutation.status === 'pending';
@@ -48,23 +49,26 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
   const watchedCategory = watch('categoryId');
   const watchedStatus = watch('status');
 
+  // Aggiorna i valori quando il report cambia
   React.useEffect(() => {
     setValue('categoryId', report.category?.id ?? '');
     setValue('status', report.status);
     setExplanation(report.explanation ?? '');
+    setCompetentOfficeName(report.category?.office?.name ?? 'Unknown');
   }, [report, setValue]);
 
-  /*
-  const canConfirm =
-    isPending &&
-    (watchedStatus !== report.status || (watchedStatus === ReportStatus.REJECTED && explanation.trim() !== ''));
-*/
+  // Aggiorna il nome dell'ufficio quando cambia la categoria selezionata
+  React.useEffect(() => {
+    const selectedCategory = categories.find(cat => cat.id === watchedCategory);
+    setCompetentOfficeName(selectedCategory?.office?.name ?? 'Unknown');
+  }, [watchedCategory, categories]);
+
   const canConfirm =
     isPending &&
     ((watchedStatus === ReportStatus.REJECTED && explanation.trim() !== '') ||
     (watchedStatus !== ReportStatus.REJECTED && watchedStatus !== report.status));
-  
-   const handleConfirm = async (data: FormData) => {
+
+  const handleConfirm = async (data: FormData) => {
     if (!canConfirm) return;
 
     const updateData: UpdateReportDto = {
@@ -108,6 +112,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
 
             <form onSubmit={handleSubmit(handleConfirm)} className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
               <div className="md:col-span-7 flex flex-col bg-white overflow-y-auto h-full border-b md:border-b-0 md:border-r border-gray-100 p-6 order-2 md:order-1 min-w-0 gap-4">
+                {/* Title */}
                 <div>
                   <h4 className="text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wider">Title</h4>
                   <p className="text-xl font-bold text-foreground leading-tight break-words">{report.title}</p>
@@ -115,6 +120,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
 
                 <Separator className="bg-gray-100" />
 
+                {/* Category + Competent Office */}
                 <div>
                   <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
                     <Tag className="size-3.5" /> Category
@@ -137,17 +143,24 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                       {report.category?.name || 'Unknown'}
                     </div>
                   )}
+
+                  <div className="mt-2">
+                    <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+                      Competent Office
+                    </h4>
+                    <Input value={competentOfficeName} readOnly />
+                  </div>
                 </div>
 
-               <div>
+                {/* Description */}
+                <div>
                   <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Description</h4>
-                    <div className="bg-gray-50/50 rounded-lg p-4 border text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words min-h-[100px]">
-                      {report.description}
-                    </div>
+                  <div className="bg-gray-50/50 rounded-lg p-4 border text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words min-h-[100px]">
+                    {report.description}
+                  </div>
                 </div>
 
-
-                {/* Explanation sotto Description */}
+                {/* Explanation */}
                 {((isPending && watchedStatus === ReportStatus.REJECTED) || report.status === ReportStatus.REJECTED) && (
                   <div>
                     <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Explanation</h4>
@@ -180,7 +193,9 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                 </div>
               </div>
 
+              {/* Right panel */}
               <div className="md:col-span-5 flex flex-col gap-6 overflow-y-auto order-1 md:order-2 p-6">
+                {/* Map */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col shrink-0">
                   <div className="relative w-full h-56 bg-slate-100">
                     {latitude && longitude ? (
@@ -201,6 +216,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                   </div>
                 </div>
 
+                {/* Status */}
                 <div>
                   <h3 className="mb-3 text-base font-semibold text-foreground/80">Status</h3>
                   {isPending ? (
@@ -218,6 +234,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                   )}
                 </div>
 
+                {/* Photos */}
                 <div className="flex-1 flex flex-col">
                   <h3 className="mb-3 text-base font-semibold text-foreground/80">Photos ({reportImages.length})</h3>
                   <div className="grid grid-cols-2 gap-3">
@@ -254,6 +271,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
               )}
             </div>
 
+            {/* Enlarged image view */}
             {selectedImageIndex !== null && reportImages.length > 0 && (
               <div
                 className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
