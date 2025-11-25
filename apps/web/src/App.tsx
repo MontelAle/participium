@@ -51,7 +51,15 @@ const App = () => {
                 </CitizenGuard>
               }
             />
-            <Route path="/profile" element={<ProfilePage />} />
+
+            <Route
+              path="/profile"
+              element={
+                <CitizenGuard>
+                  <ProfilePage />
+                </CitizenGuard>
+              }
+            />
 
             <Route
               path="/app/dashboard"

@@ -13,7 +13,7 @@ import {
 import { useAuth } from '@/contexts/auth-context';
 
 export function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, isMunicipalityUser } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -27,14 +27,6 @@ export function Navbar() {
       (user.firstName?.charAt(0) + user.lastName?.charAt(0)).toUpperCase() ||
       '?'
     );
-  };
-
-  const formatRole = (roleName: string) => {
-    return roleName
-      .replace(/_/g, ' ')
-      .split(' ')
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-      .join(' ');
   };
 
   return (
@@ -80,15 +72,20 @@ export function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 p-2">
-              <DropdownMenuLabel className="text-base">
-                <Link
-                  to="/profile"
-                  className="text-base cursor-pointer hover:text-primary transition-colors"
-                >
-                  My account
-                </Link>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              {!isMunicipalityUser && (
+                <>
+                  <DropdownMenuLabel className="text-base">
+                    <Link
+                      to="/profile"
+                      className="text-base cursor-pointer hover:text-primary transition-colors"
+                    >
+                      Profile
+                    </Link>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+
               <DropdownMenuItem>
                 <div className="flex flex-col space-y-1">
                   <p className="text-base font-medium">
@@ -96,7 +93,7 @@ export function Navbar() {
                   </p>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                   <p className="text-sm text-muted-foreground capitalize">
-                    {formatRole(user.role.name)}
+                    {user.role.label}
                   </p>
                 </div>
               </DropdownMenuItem>
