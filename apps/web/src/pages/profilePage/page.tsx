@@ -20,7 +20,9 @@ type FormValues = {
 
 export default function ProfilePage() {
   const { user: authUser } = useAuth();
-  const { data: me, updateProfile } = useProfile(authUser?.id || '');
+  const { data: { data: me } = {}, updateProfile } = useProfile(
+    authUser?.id || '',
+  );
   const { control, handleSubmit, setValue, watch, reset } = useForm<FormValues>(
     {
       defaultValues: {
@@ -98,13 +100,6 @@ export default function ProfilePage() {
       setServerError(err?.message ?? 'Update failed');
     }
   };
-
-  if (!me)
-    return (
-      <div className="flex items-center justify-center h-full">
-        <span>Loading profile...</span>
-      </div>
-    );
 
   return (
     <div className="w-full max-w-3xl mx-auto py-10">

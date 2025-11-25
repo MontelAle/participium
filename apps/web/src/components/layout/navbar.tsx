@@ -81,7 +81,12 @@ export function Navbar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 p-2">
               <DropdownMenuLabel className="text-base">
-                My account
+                <Link
+                  to="/profile"
+                  className="text-base cursor-pointer hover:text-primary transition-colors"
+                >
+                  My account
+                </Link>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>

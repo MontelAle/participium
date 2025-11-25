@@ -1,29 +1,23 @@
 import { apiFetch } from '../client';
-import { UpdateProfileDto } from '@repo/api';
-import { UpdateProfileResponseDto } from '@repo/api';
 
-export async function updateProfileWithFile(data: {
-  telegramUsername?: string;
-  emailNotificationsEnabled?: boolean;
-  profilePicture?: File | null;
-}) {
-  const formData = new FormData();
-  if (data.telegramUsername)
-    formData.append('telegramUsername', data.telegramUsername);
-  if (typeof data.emailNotificationsEnabled !== 'undefined')
-    formData.append(
-      'emailNotificationsEnabled',
-      String(data.emailNotificationsEnabled),
-    );
-  if (data.profilePicture)
-    formData.append('profilePicture', data.profilePicture);
-
-  return apiFetch('/users/profile', {
+export async function updateProfileWithFile(formData: FormData) {
+  const res = await fetch('http://localhost:5000/api/users/profile', {
     method: 'PATCH',
     body: formData,
+    credentials: 'include',
   });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'Network error' }));
+    const errorMessage = Array.isArray(error.message)
+      ? error.message[0]
+      : error.message || `Request failed with status ${res.status}`;
+    throw new Error(errorMessage);
+  }
+
+  return res.json();
 }
 
 export async function getProfile(id: string) {
-  return apiFetch<UpdateProfileResponseDto>(`/users/profile/${id}`);
+  return apiFetch(`/users/profile/${id}`);
 }

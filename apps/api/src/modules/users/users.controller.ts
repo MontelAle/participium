@@ -141,20 +141,6 @@ export class UsersController {
   @UseGuards(SessionGuard)
   @UseInterceptors(FileInterceptor('profilePicture'))
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        telegramUsername: { type: 'string', example: '@username' },
-        emailNotificationsEnabled: { type: 'boolean', example: true },
-        profilePicture: {
-          type: 'string',
-          format: 'binary',
-          description: 'Profile picture (JPEG, PNG, or WebP, max 5MB)',
-        },
-      },
-    },
-  })
   async updateProfile(
     @Req() req: RequestWithUserSession,
     @Body() dto: UpdateProfileDto,

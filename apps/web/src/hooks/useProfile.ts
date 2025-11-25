@@ -3,10 +3,11 @@ import { getProfile, updateProfileWithFile } from '@/api/endpoints/users';
 import type { UpdateProfileDto, UpdateProfileResponseDto } from '@repo/api';
 
 export function useProfile(id: string) {
-  // Fetch profile
+  // Fetch profile only when id is truthy
   const profileQuery = useQuery<UpdateProfileResponseDto>({
     queryKey: ['profile', id],
     queryFn: () => getProfile(id),
+    enabled: !!id,
   });
 
   // Update profile (with file support)
