@@ -19,7 +19,7 @@ export function ViewReportDialog({ report, open, onClose }: ViewReportDialogProp
   const { data: categories = [] } = useCategories();
   const [selectedImageIndex, setSelectedImageIndex] = React.useState<number | null>(null);
 
-  // Prendi la category completa e il suo office
+  
   const selectedCategory = categories.find(cat => cat.id === report.category?.id);
   const categoryName = selectedCategory?.name || 'Unknown';
   const competentOfficeName = selectedCategory?.office?.name || 'Unknown';

@@ -26,12 +26,12 @@ type FormData = {
   categoryId: string;
   status: string;
   explanation?: string;
-  technicalOfficerId?: string; // ⭐ AGGIUNTO
+  technicalOfficerId?: string; 
 };
 
 export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialogProps) {
   const { data: categories = [] } = useCategories();
-  const { data: municipalityUsers = [] } = useMunicipalityUsers(); // ⭐ AGGIUNTO
+  const { data: municipalityUsers = [] } = useMunicipalityUsers();
 
   const updateReportMutation = useUpdateReport();
 
@@ -49,22 +49,20 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
       categoryId: report.category?.id ?? '',
       status: report.status,
       explanation: report.explanation ?? '',
-      technicalOfficerId: report.assignedOfficerId ?? '', // ⭐ AGGIUNTO
+      technicalOfficerId: report.assignedOfficerId ?? '', 
     },
   });
 
   const watchedCategory = watch('categoryId');
   const watchedStatus = watch('status');
-  const watchedOfficer = watch('technicalOfficerId'); // ⭐ AGGIUNTO
+  const watchedOfficer = watch('technicalOfficerId'); 
 
-  // ──────────────────────────────────────────────────────────────
-  // Manteniamo tutto come prima
-  // ──────────────────────────────────────────────────────────────
+
   React.useEffect(() => {
     setValue('categoryId', report.category?.id ?? '');
     setValue('status', report.status);
     setExplanation(report.explanation ?? '');
-    setValue('technicalOfficerId', report.assignedOfficerId ?? ''); // ⭐ AGGIUNTO
+    setValue('technicalOfficerId', report.assignedOfficerId ?? ''); 
     setCompetentOfficeName(report.category?.office?.name ?? 'Unknown');
   }, [report, setValue]);
 
@@ -73,18 +71,14 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
     setCompetentOfficeName(selectedCategory?.office?.name ?? 'Unknown');
   }, [watchedCategory, categories]);
 
-  // ──────────────────────────────────────────────────────────────
-  // FILTRO OFFICERS: utenti che appartengono allo stesso ufficio della categoria
-  // ──────────────────────────────────────────────────────────────
+
   const filteredOfficers = React.useMemo(() => {
     const cat = categories.find(c => c.id === watchedCategory);
     if (!cat?.office?.id) return [];
     return municipalityUsers.filter((u: User) => u.officeId === cat.office.id);
   }, [municipalityUsers, categories, watchedCategory]);
 
-  // ──────────────────────────────────────────────────────────────
-  // VALIDAZIONE
-  // ──────────────────────────────────────────────────────────────
+
   const canConfirm =
     isPending &&
     (
@@ -93,9 +87,6 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
       (watchedStatus !== ReportStatus.REJECTED && watchedStatus !== report.status)
     );
 
-  // ──────────────────────────────────────────────────────────────
-  // SUBMIT
-  // ──────────────────────────────────────────────────────────────
   const handleConfirm = async (data: FormData) => {
     if (!canConfirm) return;
 
@@ -103,7 +94,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
       status: data.status as ReportStatus,
       categoryId: data.categoryId,
       ...(data.status === ReportStatus.REJECTED && { explanation: explanation }),
-      ...(data.status === ReportStatus.ASSIGNED && { assignedOfficerId: data.technicalOfficerId }), // ⭐ AGGIUNTO
+      ...(data.status === ReportStatus.ASSIGNED && { assignedOfficerId: data.technicalOfficerId }), 
     };
 
     try {
@@ -120,9 +111,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
   const longitude = report.location.coordinates[0];
   const reportImages = report.images || [];
 
-  // ──────────────────────────────────────────────────────────────
-  // RENDER
-  // ──────────────────────────────────────────────────────────────
+
   return (
     <Dialog.Root open={open} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
@@ -177,7 +166,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                     </div>
                   )}
 
-                  {/* Competent office (NON TOCCATO) */}
+                  {/* Competent office*/}
                   <div className="mt-2">
                     <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Competent Office</h4>
                     <Input value={competentOfficeName} readOnly />
@@ -215,7 +204,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                   </div>
                 )}
 
-                {/* ⭐ TECHNICAL OFFICER */}
+                {/* TECHNICAL OFFICER */}
                 {(isPending && watchedStatus === ReportStatus.ASSIGNED) || report.status === ReportStatus.ASSIGNED ? (
                   <div>
                     <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Technical Officer</h4>
@@ -261,7 +250,7 @@ export function ReviewReportDialog({ report, open, onClose }: ReviewReportDialog
                 </div>
               </div>
 
-              {/* RIGHT PANEL (non toccato) */}
+              {/* RIGHT PANEL */}
               <div className="md:col-span-5 flex flex-col gap-6 overflow-y-auto order-1 md:order-2 p-6">
 
                 {/* Map */}

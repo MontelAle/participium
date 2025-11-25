@@ -20,7 +20,7 @@ export type ReportsTableProps = {
 export function ReportsTable({ data }: ReportsTableProps) {
   const { user } = useAuth();
 
-  // Stato per il report selezionato e dialog
+
   const [selectedReport, setSelectedReport] = React.useState<Report | null>(null);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
@@ -34,7 +34,7 @@ export function ReportsTable({ data }: ReportsTableProps) {
     setIsDialogOpen(false);
   };
 
-  // Filtra i report assegnati all'utente loggato
+
   const filteredData = React.useMemo(() => {
     if (!user) return [];
     return data.filter((report) => report.assignedOfficerId === user.id);
@@ -122,7 +122,7 @@ export function ReportsTable({ data }: ReportsTableProps) {
         </TableBody>
       </TableProvider>
 
-      {/* Dialog per visualizzare il report */}
+
       {selectedReport && (
         <ViewReportDialog
           report={selectedReport}
