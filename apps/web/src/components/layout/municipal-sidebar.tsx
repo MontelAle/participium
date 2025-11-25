@@ -7,7 +7,7 @@ import { MunicipalSidebarProps } from '@/types/ui';
 
 export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
   const location = useLocation();
-  const { isAdminUser , isMunicipalPrOfficer } = useAuth();
+  const { isAdminUser , isMunicipalPrOfficer , isTechnicalOfficer } = useAuth();
 
   const menuItems = [
     { title: 'Dashboard', href: '/app/dashboard', icon: Home },
@@ -25,6 +25,14 @@ export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
     menuItems.push({
       title: 'View Reports',
       href: '/app/municipality-pr-officer',
+      icon: FileText,
+    });
+  }
+
+  if (isTechnicalOfficer) {
+    menuItems.push({
+      title: 'View Reports',
+      href: '/app/technical-officer',
       icon: FileText,
     });
   }
