@@ -58,7 +58,9 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException(USER_ERROR_MESSAGES.MUNICIPALITY_USER_NOT_FOUND);
+      throw new NotFoundException(
+        USER_ERROR_MESSAGES.MUNICIPALITY_USER_NOT_FOUND,
+      );
     }
 
     return user;
@@ -88,7 +90,9 @@ export class UsersService {
         where: { username },
       });
       if (existingUser) {
-        throw new ConflictException(USER_ERROR_MESSAGES.USERNAME_ALREADY_EXISTS);
+        throw new ConflictException(
+          USER_ERROR_MESSAGES.USERNAME_ALREADY_EXISTS,
+        );
       }
 
       const existingEmail = await manager.getRepository(User).findOne({
@@ -137,7 +141,9 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException(USER_ERROR_MESSAGES.MUNICIPALITY_USER_NOT_FOUND);
+      throw new NotFoundException(
+        USER_ERROR_MESSAGES.MUNICIPALITY_USER_NOT_FOUND,
+      );
     }
 
     await this.userRepository.manager.transaction(async (manager) => {
@@ -155,7 +161,9 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException(USER_ERROR_MESSAGES.MUNICIPALITY_USER_NOT_FOUND);
+      throw new NotFoundException(
+        USER_ERROR_MESSAGES.MUNICIPALITY_USER_NOT_FOUND,
+      );
     }
 
     if (dto.username && dto.username !== user.username) {
@@ -164,7 +172,9 @@ export class UsersService {
       });
 
       if (existingUser) {
-        throw new ConflictException(USER_ERROR_MESSAGES.USERNAME_ALREADY_EXISTS);
+        throw new ConflictException(
+          USER_ERROR_MESSAGES.USERNAME_ALREADY_EXISTS,
+        );
       }
     }
 
@@ -237,7 +247,7 @@ export class UsersService {
     }
 
     if (dto.emailNotificationsEnabled !== undefined) {
-      user.emailNotificationsEnabled = dto.emailNotificationsEnabled;
+      user.emailNotificationsEnabled = dto.emailNotificationsEnabled === 'true';
     }
 
     if (file) {
@@ -266,5 +276,15 @@ export class UsersService {
     }
 
     return this.userRepository.save(user);
+  }
+
+  async findUserById(userId: string): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+    return user;
   }
 }

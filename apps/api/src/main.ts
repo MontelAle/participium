@@ -9,7 +9,7 @@ import pkg from '../package.json';
 import { AppModule } from './app.module';
 import passport from 'passport';
 import { DataSource } from 'typeorm';
-import { seedDatabase } from './providers/database/seed/user.seed';
+import { seedDatabase } from './providers/database/seed/participium.seed';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
