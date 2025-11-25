@@ -19,7 +19,10 @@ const DashboardPage = () => {
   const navigate = useNavigate();
   const { isAdminUser, user, isMunicipalPrOfficer, isTechnicalOfficer } =
     useAuth();
-  const { data: municipalityUsers = [] } = useMunicipalityUsers();
+  const { data: municipalityUsers = [] } = isAdminUser
+    ? useMunicipalityUsers()
+    : { data: [] };
+
   const { data: reports = [] } = useReports();
 
   const inProgressCount = reports.filter(
@@ -57,7 +60,9 @@ const DashboardPage = () => {
         {isAdminUser && (
           <StatCard
             title="Municipality Users"
-            value={municipalityUsers.length}
+            value={
+              municipalityUsers.filter((u) => u.role?.name !== 'admin').length
+            }
             icon={Users}
             color="text-blue-600"
             bgColor="bg-blue-500/10"
