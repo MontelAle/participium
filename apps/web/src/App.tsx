@@ -16,6 +16,8 @@ import MunicipalityUsersViewPage from '@/pages/app/municipality-users/view/page'
 import MunicipalityPrOfficerPage from '@/pages/app/municipality-pr-officer/page';
 import ProfilePage from '@/pages/profile/page';
 import TechnicalOfficerPage from './pages/app/technical-officer/page';
+import MunicipalityPrOfficerViewPage from '@/pages/app/municipality-pr-officer/view/page';
+import TechnicalOfficerViewPage from './pages/app/technical-officer/view/page';
 
 const App = () => {
   return (
@@ -92,10 +94,26 @@ const App = () => {
               }
             />
             <Route
+              path="/app/municipality-reports/view/:id"
+              element={
+                <MunicipalGuard>
+                  <MunicipalityPrOfficerViewPage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
               path="/app/technical-officer"
               element={
                 <MunicipalGuard>
                   <TechnicalOfficerPage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
+              path="/app/technical-reports/view/:id"
+              element={
+                <MunicipalGuard>
+                  <TechnicalOfficerViewPage />
                 </MunicipalGuard>
               }
             />
