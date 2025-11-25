@@ -38,7 +38,7 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
       );
       return;
     }
-    navigate('/new-report', { state: { ...locationData } });
+    navigate('/reports/create', { state: { ...locationData } });
   };
 
   return (

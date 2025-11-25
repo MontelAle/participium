@@ -6,13 +6,13 @@ import { MunicipalGuard } from '@/components/municipal-guard';
 import { CitizenGuard } from '@/components/citizen-guard';
 import LoginPage from '@/pages/auth/login/page';
 import RegistrationPage from '@/pages/auth/registration/page';
-import MapPage from '@/pages/report-map/page';
-import ReportPage from '@/pages/new-report/page';
-import ReportDetailsPage from '@/pages/report-details/page';
+import MapPage from '@/pages/reports/map/page';
+import CreateReportpage from '@/pages/reports/create/page';
+import ReportDetailsPage from '@/pages/reports/[id]/page';
 import DashboardPage from '@/pages/app/dashboard/page';
 import MunicipalityUsersPage from '@/pages/app/municipality-users/page';
 import MunicipalityPrOfficerPage from '@/pages/app/municipality-pr-officer/page';
-import ProfilePage from '@/pages/profilePage/page';
+import ProfilePage from '@/pages/profile/page';
 import TechnicalOfficerPage from './pages/app/technical-officer/page';
 
 const App = () => {
@@ -24,7 +24,7 @@ const App = () => {
           <Route element={<DashboardLayout />}>
             <Route index element={<Navigate to="/report-map" replace />} />
             <Route
-              path="/report-map"
+              path="/reports/map"
               element={
                 <CitizenGuard>
                   <MapPage />
@@ -32,15 +32,15 @@ const App = () => {
               }
             />
             <Route
-              path="/new-report"
+              path="/reports/create"
               element={
                 <CitizenGuard>
-                  <ReportPage />
+                  <CreateReportpage />
                 </CitizenGuard>
               }
             />
             <Route
-              path="/report/:id"
+              path="/reports/:id"
               element={
                 <CitizenGuard>
                   <ReportDetailsPage />

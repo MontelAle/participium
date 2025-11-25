@@ -7,16 +7,20 @@ import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 
 export function DashboardLayout() {
-  const { isMunicipalityUser, isAdminUser, isCitizenUser, isGuestUser, isMunicipalPrOfficer } =
-    useAuth();
+  const {
+    isMunicipalityUser,
+    isAdminUser,
+    isCitizenUser,
+    isGuestUser,
+    isMunicipalPrOfficer,
+  } = useAuth();
   const [municipalSidebarOpen, setMunicipalSidebarOpen] = useState(true);
   const location = useLocation();
-  const isReportPage = location.pathname === '/new-report' || location.pathname.startsWith('/report/');
-  const isMapPage = location.pathname === '/report-map';
+  const isMapPage = location.pathname === '/reports/map';
   const RIGHT_SIDEBAR_WIDTH = '400px';
 
   const showLeftSidebar = isMunicipalityUser || isAdminUser;
-  const showRightSidebar = (isCitizenUser || isGuestUser) && !isReportPage;
+  const showRightSidebar = (isCitizenUser || isGuestUser) && isMapPage;
 
   return (
     <div className="h-screen bg-background flex flex-col font-sans text-base antialiased overflow-hidden">

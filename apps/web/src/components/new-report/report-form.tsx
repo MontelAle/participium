@@ -76,12 +76,12 @@ export function ReportForm() {
   };
 
   return (
-    <Card className="w-full h-full flex flex-col border-none overflow-hidden bg-white/90 backdrop-blur-sm ring-1 ring-gray-200">
+    <Card className="w-full h-full flex flex-col border-none bg-white/90 backdrop-blur-sm ring-1 ring-gray-200">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex-1 flex flex-col md:flex-row h-full overflow-hidden"
+        className="flex-1 flex flex-col md:flex-row h-full"
       >
-        <div className="w-full md:w-7/12 p-6 md:p-6 flex flex-col bg-white overflow-y-auto border-b md:border-b-0 md:border-r border-gray-100 order-2 md:order-1 min-w-0">
+        <div className="w-full md:w-7/12 p-6 md:p-6 flex flex-col bg-white border-b md:border-b-0 md:border-r border-gray-100 order-2 md:order-1 min-w-0">
           <div className="space-y-6 flex-1">
             <Field>
               <FieldLabel className="mb-2 ml-1 text-base font-medium">
@@ -160,8 +160,8 @@ export function ReportForm() {
           </div>
         </div>
 
-        <div className="w-full md:w-5/12 p-6 border-b md:border-b-0 flex flex-col gap-6 overflow-y-auto order-1 md:order-2">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col shrink-0">
+        <div className="w-full md:w-5/12 p-6 border-b md:border-b-0 flex flex-col gap-6 order-1 md:order-2">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col shrink-0">
             <div className="relative w-full h-56 bg-slate-100">
               {watch('latitude') && watch('longitude') ? (
                 <MiniMap

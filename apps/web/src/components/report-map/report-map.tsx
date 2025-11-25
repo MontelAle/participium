@@ -290,7 +290,7 @@ export default function ReportsMap() {
       detailsBtn.textContent = 'SHOW DETAILS';
       detailsBtn.onclick = (e) => {
         e.stopPropagation();
-        navigate(`/report/${report.id}`);
+        navigate(`/reports/${report.id}`);
       };
 
       popupDiv.appendChild(detailsBtn);
@@ -381,7 +381,7 @@ export default function ReportsMap() {
       addBtn.textContent = 'ADD REPORT';
       addBtn.onclick = (e) => {
         e.stopPropagation();
-        navigate('/new-report', { state: location });
+        navigate('/reports/create', { state: location });
       };
       popupDiv.appendChild(addBtn);
     } else {
