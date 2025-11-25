@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { useCategories } from '@/hooks/use-categories';
 
 import type { Report } from '@repo/api';
+import { useAuth } from '@/contexts/auth-context';
 
 type ViewReportDialogProps = {
   report: Report;
@@ -16,13 +17,14 @@ type ViewReportDialogProps = {
 };
 
 export function ViewReportDialog({ report, open, onClose }: ViewReportDialogProps) {
-  const { data: categories = [] } = useCategories();
+  //const { data: categories = [] } = useCategories();
   const [selectedImageIndex, setSelectedImageIndex] = React.useState<number | null>(null);
+  const { user } = useAuth();
 
   
-  const selectedCategory = categories.find(cat => cat.id === report.category?.id);
-  const categoryName = selectedCategory?.name || 'Unknown';
-  const competentOfficeName = selectedCategory?.office?.name || 'Unknown';
+  //const selectedCategory = categories.find(cat => cat.id === report.category?.id);
+  const categoryName = report.category?.name || 'Unknown';
+  const competentOfficeName = user?.office?.name || 'Unknown';
 
   const latitude = report.location.coordinates[1];
   const longitude = report.location.coordinates[0];
