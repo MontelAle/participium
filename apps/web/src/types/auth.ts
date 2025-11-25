@@ -17,4 +17,5 @@ export type AuthContextType = {
   isCitizenUser: boolean;
   isGuestUser: boolean;
   isMunicipalPrOfficer: boolean;
+  isTechnicalOfficer: boolean;
 };

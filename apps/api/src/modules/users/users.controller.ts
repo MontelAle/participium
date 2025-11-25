@@ -55,7 +55,7 @@ export class UsersController {
    *
    */
   @Get('municipality')
-  @Roles('admin')
+  @Roles('admin','pr_officer')
   async getMunicipalityUsers(): Promise<MunicipalityUsersResponseDto> {
     const users = await this.usersService.findMunicipalityUsers();
     return { success: true, data: users };
