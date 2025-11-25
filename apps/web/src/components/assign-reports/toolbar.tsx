@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-export type PrOfficerToolbarProps = {
+export type ToolbarProps = {
   query: string;
   onQueryChange: (value: string) => void;
   selectedStatuses: string[];
@@ -29,7 +29,7 @@ export type PrOfficerToolbarProps = {
   className?: string;
 };
 
-export function PrOfficerToolbar({
+export function Toolbar({
   query,
   onQueryChange,
   selectedStatuses,
@@ -39,7 +39,7 @@ export function PrOfficerToolbar({
   onCategoriesChange,
   availableCategories,
   className,
-}: PrOfficerToolbarProps) {
+}: ToolbarProps) {
   const [openStatus, setOpenStatus] = React.useState(false);
   const [openCategory, setOpenCategory] = React.useState(false);
 

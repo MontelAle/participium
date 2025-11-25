@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { useReports } from '@/hooks/use-reports';
 import { useNavigate } from 'react-router-dom';
-import { PrOfficerToolbar } from '@/components/municipality-pr-officer/pr-officer-toolbar';
-import { ReportsTable } from '@/components/municipality-pr-officer/report-list-table';
+import { Toolbar } from '@/components/assign-reports/toolbar';
+import { ReportsTable } from '@/components/assign-reports/report-list-table';
 
 const AssignReportsPage = () => {
   const { data: reports = [] } = useReports();
@@ -64,7 +64,7 @@ const AssignReportsPage = () => {
       </div>
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <PrOfficerToolbar
+        <Toolbar
           query={query}
           onQueryChange={setQuery}
           selectedStatuses={selectedStatuses}

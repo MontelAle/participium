@@ -13,11 +13,11 @@ import DashboardPage from '@/pages/app/dashboard/page';
 import MunicipalityUsersPage from '@/pages/app/municipality-users/page';
 import MunicipalityUsersCreatePage from '@/pages/app/municipality-users/create/page';
 import MunicipalityUsersViewPage from '@/pages/app/municipality-users/view/page';
-import AssignReportsPage from '@/pages/app/municipality-pr-officer/page';
+import AssignReportsPage from '@/pages/app/assign-reports/page';
 import ProfilePage from '@/pages/profile/page';
-import AssignedReportsPage from './pages/app/technical-officer/page';
-import AssignReportsViewPage from '@/pages/app/municipality-pr-officer/view/page';
-import AssignedReportsViewPage from './pages/app/technical-officer/view/page';
+import AssignedReportsPage from './pages/app/assigned-reports/page';
+import AssignReportsViewPage from '@/pages/app/assign-reports/view/page';
+import AssignedReportsViewPage from './pages/app/assigned-reports/view/page';
 
 const App = () => {
   return (

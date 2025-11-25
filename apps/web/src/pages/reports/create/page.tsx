@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ReportForm } from '@/components/new-report/report-form';
+import { ReportForm } from '@/components/reports-create/report-form';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
