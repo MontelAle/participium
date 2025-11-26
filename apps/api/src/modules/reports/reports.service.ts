@@ -41,7 +41,7 @@ export class ReportsService {
   private async findReportEntity(id: string): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ['user', 'user.role', 'category'],
+      relations: ['user', 'user.role', 'category', 'assignedOfficer'],
     });
 
     if (!report) {
@@ -116,7 +116,8 @@ export class ReportsService {
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.user', 'user')
       .leftJoinAndSelect('user.role', 'role')
-      .leftJoinAndSelect('report.category', 'category');
+      .leftJoinAndSelect('report.category', 'category')
+      .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer');
 
     if (filters?.status) {
       query.andWhere('report.status = :status', { status: filters.status });
@@ -181,7 +182,7 @@ export class ReportsService {
   async findOne(id: string, viewer: User): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ['user', 'user.role', 'category'],
+      relations: ['user', 'user.role', 'category', 'assignedOfficer'],
     });
 
     if (!report) {
@@ -227,6 +228,7 @@ export class ReportsService {
         });
         if (officer) {
           report.assignedOfficer = officer;
+          report.assignedOfficerId = officer.id;
         }
       } else {
         const category =
@@ -242,6 +244,7 @@ export class ReportsService {
 
           if (officerWithFewestReports) {
             report.assignedOfficer = officerWithFewestReports;
+            report.assignedOfficerId = officerWithFewestReports.id;
           }
         }
       }
@@ -272,7 +275,9 @@ export class ReportsService {
     });
 
     const technicalOfficers = officers.filter(
-      (officer) => officer.role?.name === 'officer',
+      (officer) =>
+        officer.role?.name === 'officer' ||
+        officer.role?.name === 'tech_officer',
     );
 
     if (technicalOfficers.length === 0) {
@@ -305,6 +310,7 @@ export class ReportsService {
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.user', 'user')
       .leftJoinAndSelect('report.category', 'category')
+      .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer')
       .addSelect(
         `ST_Distance(
           report.location::geography,
@@ -335,7 +341,7 @@ export class ReportsService {
   async findByUserId(targetUserId: string, viewer: User): Promise<Report[]> {
     const reports = await this.reportRepository.find({
       where: { assignedOfficerId: targetUserId },
-      relations: ['user', 'category'],
+      relations: ['user', 'category', 'assignedOfficer'],
       order: { createdAt: 'DESC' },
     });
     return reports.map((report) => this.sanitizeReport(report, viewer));

@@ -583,7 +583,7 @@ describe('ReportsService', () => {
 
       expect(reportRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'mocked-id' },
-        relations: ['user', 'user.role', 'category'],
+        relations: ['user', 'user.role', 'category', 'assignedOfficer'],
       });
       expect(result).toEqual(mockReport);
     });
@@ -756,7 +756,7 @@ describe('ReportsService', () => {
 
       expect(reportRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'mocked-id' },
-        relations: ['user', 'user.role', 'category'],
+        relations: ['user', 'user.role', 'category', 'assignedOfficer'],
       });
       expect(reportRepository.save).toHaveBeenCalledWith({
         ...mockReport,
@@ -1192,7 +1192,7 @@ describe('ReportsService', () => {
 
       expect(reportRepository.find).toHaveBeenCalledWith({
         where: { assignedOfficerId: 'officer-1' },
-        relations: ['user', 'category'],
+        relations: ['user', 'category', 'assignedOfficer'],
         order: { createdAt: 'DESC' },
       });
 
