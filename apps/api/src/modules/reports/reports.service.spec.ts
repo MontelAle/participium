@@ -1052,6 +1052,60 @@ describe('ReportsService', () => {
       );
     });
 
+    it('should auto-assign when assignedOfficerId is empty string', async () => {
+      const mockCategory = {
+        id: 'cat-123',
+        name: 'Road Issues',
+        office: {
+          id: 'office-1',
+          name: 'Public Works',
+        },
+      } as Category;
+
+      const mockOfficer = {
+        id: 'officer-1',
+        username: 'officer_one',
+        role: { name: 'officer' },
+        officeId: 'office-1',
+      } as User;
+
+      const reportWithCategory = {
+        ...mockReport,
+        category: mockCategory,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+        assignedOfficerId: '',
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithCategory);
+      (userRepository.find as jest.Mock).mockResolvedValue([mockOfficer]);
+      (reportRepository.count as jest.Mock).mockResolvedValue(1);
+
+      const expectedSavedReport = {
+        ...reportWithCategory,
+        status: ReportStatus.ASSIGNED,
+        assignedOfficer: mockOfficer,
+      };
+
+      reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(userRepository.find).toHaveBeenCalledWith({
+        where: { officeId: 'office-1' },
+        relations: ['role'],
+      });
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.ASSIGNED,
+          assignedOfficer: mockOfficer,
+        }),
+      );
+    });
+
     it('should update location when longitude and latitude provided', async () => {
       const updateDto: UpdateReportDto = {
         longitude: 8.0,

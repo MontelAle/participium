@@ -221,11 +221,13 @@ export class ReportsService {
     }
 
     if (status === 'assigned') {
-      if (assignedOfficerId !== undefined) {
+      if (assignedOfficerId !== undefined && assignedOfficerId !== '') {
         const officer = await this.userRepository.findOne({
           where: { id: assignedOfficerId },
         });
-        report.assignedOfficer = officer;
+        if (officer) {
+          report.assignedOfficer = officer;
+        }
       } else {
         const category =
           report.category ||

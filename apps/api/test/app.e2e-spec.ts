@@ -79,6 +79,20 @@ const createMockRepository = (data: any[] = []) => {
     create: jest.fn((dto) => ({ ...dto, id: dto.id || 'mocked-id' })),
     remove: jest.fn((entity) => Promise.resolve(entity)),
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
+    count: jest.fn((options) => {
+      let results = [...data];
+      if (options && options.where) {
+        results = results.filter((e) =>
+          Object.entries(options.where).every(([k, v]) => {
+            if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+              return true;
+            }
+            return e[k] === v;
+          }),
+        );
+      }
+      return Promise.resolve(results.length);
+    }),
     update: jest.fn((criteria, partialEntity) => {
       const id = typeof criteria === 'string' ? criteria : criteria.id;
       const existing = data.find((e) => e.id === id);
@@ -179,6 +193,36 @@ describe('AppController (e2e)', () => {
         roleId: 'role_2',
         role: { id: 'role_2', name: 'user', label: 'User', isMunicipal: false },
       },
+      {
+        id: 'officer_1',
+        email: 'officer1@example.com',
+        username: 'officer1',
+        firstName: 'Officer',
+        lastName: 'One',
+        roleId: 'role_5',
+        officeId: 'office_1',
+        role: {
+          id: 'role_5',
+          name: 'officer',
+          label: 'Technical Officer',
+          isMunicipal: true,
+        },
+      },
+      {
+        id: 'officer_2',
+        email: 'officer2@example.com',
+        username: 'officer2',
+        firstName: 'Officer',
+        lastName: 'Two',
+        roleId: 'role_5',
+        officeId: 'office_1',
+        role: {
+          id: 'role_5',
+          name: 'officer',
+          label: 'Technical Officer',
+          isMunicipal: true,
+        },
+      },
     ];
 
     const mockUser = mockUsers[0];
@@ -191,8 +235,21 @@ describe('AppController (e2e)', () => {
       },
     ];
 
+    const mockOffices = [
+      {
+        id: 'office_1',
+        name: 'administration',
+        label: 'Administration',
+      },
+    ];
+
     const mockCategories = [
-      { id: 'cat_1', name: 'Infrastructure' },
+      {
+        id: 'cat_1',
+        name: 'Infrastructure',
+        office: mockOffices[0],
+        officeId: 'office_1',
+      },
       { id: 'cat_2', name: 'Environment' },
     ];
 
@@ -245,14 +302,6 @@ describe('AppController (e2e)', () => {
       mockReports.push(newEntity);
       return Promise.resolve(newEntity);
     });
-
-    const mockOffices = [
-      {
-        id: 'office_1',
-        name: 'administration',
-        label: 'Administration',
-      },
-    ];
 
     const mockSession = {
       id: 'sess_1',
@@ -955,6 +1004,17 @@ describe('AppController (e2e)', () => {
       .expect(200);
 
     expect(res.body.data.status).toBe('assigned');
+  });
+
+  it('PATCH /reports/:id with status=assigned auto-assigns to officer with fewest reports when no assignedOfficerId provided', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/reports/report_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ status: 'assigned' })
+      .expect(200);
+
+    expect(res.body.data.status).toBe('assigned');
+    expect(res.body.data.assignedOfficerId).toBeDefined();
   });
 
   it('PATCH /reports/:id with explanation field updates correctly', async () => {
