@@ -5,7 +5,6 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   Query,
   UseGuards,
   Request,
@@ -16,16 +15,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiCookieAuth,
-  ApiBody,
-  ApiParam,
-  ApiQuery,
-  ApiConsumes,
-} from '@nestjs/swagger';
+import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import {
   CreateReportDto,
@@ -96,10 +86,12 @@ export class ReportsController {
    *
    */
   @Get()
+  @UseGuards(SessionGuard)
   async findAll(
+    @Request() req,
     @Query() filters: FilterReportsDto,
   ): Promise<ReportsResponseDto> {
-    const reports = await this.reportsService.findAll(filters);
+    const reports = await this.reportsService.findAll(req.user, filters);
     return { success: true, data: reports };
   }
 
@@ -107,7 +99,9 @@ export class ReportsController {
    * Finds nearby reports based on location and radius.
    */
   @Get('nearby')
+  @UseGuards(SessionGuard)
   async findNearby(
+    @Request() req,
     @Query('longitude') longitude: string,
     @Query('latitude') latitude: string,
     @Query('radius') radius?: string,
@@ -117,6 +111,7 @@ export class ReportsController {
       parseFloat(longitude),
       parseFloat(latitude),
       radiusMeters,
+      req.user,
     );
     return { success: true, data: reports };
   }
@@ -127,8 +122,12 @@ export class ReportsController {
    * @throws {404} Not Found - Report with specified ID does not exist
    */
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<ReportResponseDto> {
-    const report = await this.reportsService.findOne(id);
+  @UseGuards(SessionGuard)
+  async findOne(
+    @Param('id') id: string,
+    @Request() req,
+  ): Promise<ReportResponseDto> {
+    const report = await this.reportsService.findOne(id, req.user);
     return { success: true, data: report };
   }
 
@@ -141,7 +140,7 @@ export class ReportsController {
    */
   @Patch(':id')
   @UseGuards(SessionGuard, RolesGuard)
-  @Roles('pr_officer', 'admin', 'user')
+  @Roles('pr_officer', 'officer')
   async update(
     @Param('id') id: string,
     @Body() updateReportDto: UpdateReportDto,
@@ -151,31 +150,19 @@ export class ReportsController {
   }
 
   /**
-   * Deletes a report by its ID.
-   *
-   * @throws {401} Unauthorized - Invalid or missing session
-   * @throws {403} Forbidden - Insufficient permissions (admin role required)
-   * @throws {404} Not Found - Report with specified ID does not exist
-   */
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @Roles('pr_officer')
-  async remove(@Param('id') id: string) {
-    await this.reportsService.remove(id);
-  }
-
-  /**
    * Finds reports assigned to a specific user (officer).
    *
    * @throws {401} Unauthorized - Invalid or missing session
-   * @throws {403} Forbidden - Insufficient permissions (admin, pr_officer, or officer role required)
+   * @throws {403} Forbidden - Insufficient permissions (pr_officer, or officer role required)
    * */
   @Get('/user/:userId')
-  @Roles('admin', 'pr_officer', 'officer')
+  @UseGuards(SessionGuard, RolesGuard)
+  @Roles('pr_officer', 'officer')
   async findByUserId(
     @Param('userId') userId: string,
+    @Request() req,
   ): Promise<ReportsResponseDto> {
-    const reports = await this.reportsService.findByUserId(userId);
+    const reports = await this.reportsService.findByUserId(userId, req.user);
     return { success: true, data: reports };
   }
 }

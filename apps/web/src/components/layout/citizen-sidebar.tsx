@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Plus, Search, MapPin, X, GripHorizontal } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { Search, GripHorizontal, Lock } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -17,16 +16,17 @@ import { CitizenSidebarProps } from '@/types/ui';
 
 export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
   const navigate = useNavigate();
-  const { isCitizenUser } = useAuth();
-  const { locationData, clearLocation } = useActiveReportStore();
-  const { data: reports = [] } = useReports();
+  const { isCitizenUser, isGuestUser } = useAuth();
+  const { locationData } = useActiveReportStore();
 
-  const { searchTerm, setSearchTerm, filters, setFilters } = useFilterStore();
+  const { data: reports = [] } = useReports({ enabled: !isGuestUser });
+  const { searchTerm, setSearchTerm, showOnlyMyReports, setShowOnlyMyReports } =
+    useFilterStore();
 
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
-  const [showMyReports, setShowMyReports] = useState(false);
 
   const categories = useMemo(() => {
+    if (!reports) return [];
     const cats = new Set(reports.map((r) => r.category.name));
     return Array.from(cats);
   }, [reports]);
@@ -40,6 +40,23 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
     }
     navigate('/reports/create', { state: { ...locationData } });
   };
+
+  const GuestState = () => (
+    <div className="flex flex-col items-center justify-center h-[60vh] p-8 text-center space-y-6">
+      <div className="size-20 rounded-full bg-slate-100 flex items-center justify-center mb-2 shadow-inner">
+        <Lock className="size-10 text-slate-400" />
+      </div>
+      <div className="space-y-3 max-w-xs">
+        <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
+          Access Restricted
+        </h3>
+        <p className="text-base text-slate-500 leading-relaxed font-medium">
+          Join our community to view active reports, track issues in your area,
+          and contribute to a better city
+        </p>
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -78,44 +95,48 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
           <GripHorizontal className="text-slate-300" />
         </div>
 
-        <div className="px-4 pb-4 pt-2 md:pt-4 bg-slate-50 border-b space-y-3 shrink-0 z-10">
-          <div className="flex w-full items-center rounded-md border bg-background shadow-sm focus-within:ring-1 focus-within:ring-primary">
-            <div className="flex h-9 items-center px-3 text-muted-foreground">
-              <Search className="size-4" />
-            </div>
-            <Input
-              placeholder="Search report..."
-              className="h-12 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 text-base flex-1"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onFocus={() => setIsMobileExpanded(true)}
-            />
-            {/*}
+        {!isGuestUser && (
+          <div className="px-4 pb-4 pt-2 md:pt-4 bg-slate-50 border-b space-y-3 shrink-0 z-10">
+            <div className="flex w-full items-center rounded-md border bg-background shadow-sm focus-within:ring-1 focus-within:ring-primary">
+              <div className="flex h-9 items-center px-3 text-muted-foreground">
+                <Search className="size-4" />
+              </div>
+              <Input
+                placeholder="Search report..."
+                className="h-12 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 text-base flex-1"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => setIsMobileExpanded(true)}
+              />
+              {/*}
             <FilterDialog
               filters={filters}
               setFilters={setFilters}
               categories={categories}
             />
             */}
-          </div>
-
-          {isCitizenUser && (
-            <div className="flex items-center justify-between px-1">
-              <Label
-                htmlFor="my-reports"
-                className="text-sm font-medium cursor-pointer text-muted-foreground uppercase tracking-wider"
-              >
-                My reports
-              </Label>
-              <Switch
-                id="my-reports"
-                checked={showMyReports}
-                onCheckedChange={setShowMyReports}
-                className="scale-75 origin-right"
-              />
             </div>
-          )}
-        </div>
+
+            {isCitizenUser && (
+              <div>
+                <div className="flex items-center justify-between px-1">
+                  <Label
+                    htmlFor="my-reports"
+                    className="text-sm font-medium cursor-pointer text-muted-foreground uppercase tracking-wider"
+                  >
+                    My reports
+                  </Label>
+                  <Switch
+                    id="my-reports"
+                    checked={showOnlyMyReports}
+                    onCheckedChange={setShowOnlyMyReports}
+                    className="scale-75 origin-right"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div
           className={cn(
@@ -124,10 +145,12 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
               'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto hidden md:block',
           )}
         >
-          <ReportsList
-            onlyMyReports={showMyReports}
-            setIsMobileExpanded={setIsMobileExpanded}
-          />
+          {isGuestUser ? (
+            <GuestState />
+          ) : (
+            <ReportsList setIsMobileExpanded={setIsMobileExpanded} />
+          )}
+
           <div className="h-24 md:h-20" />
         </div>
       </aside>

@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { MapPin, Tag, Maximize2, X, Info } from 'lucide-react';
+import {
+  MapPin,
+  Tag,
+  Maximize2,
+  X,
+  Info,
+  Ghost,
+  User,
+  CalendarClock,
+} from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import type { Report } from '@repo/api';
@@ -68,21 +77,44 @@ export function ReportDetails({ report }: ReportDetailsProps) {
                   {report.description}
                 </div>
               </div>
-              <div className="pt-3 mt-auto flex items-center justify-between text-sm text-muted-foreground border-t border-dashed w-full">
-                <p className="truncate mr-2">
-                  {' '}
-                  Reported By:{' '}
-                  <span className="font-medium text-foreground">
-                    {report.user?.firstName} {report.user?.lastName}
+              <div className="pt-4 mt-auto flex items-center justify-between gap-4 border-t border-dashed w-full">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest hidden sm:inline-block shrink-0">
+                    Reported By
                   </span>
-                </p>
-                <p className="whitespace-nowrap">
-                  {' '}
-                  Last Updated:{' '}
-                  <span className="font-medium text-foreground">
-                    {new Date(report.updatedAt).toLocaleDateString()}
+                  {report.user ? (
+                    <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-medium text-sm truncate">
+                      <User className="size-3.5 text-slate-500 shrink-0" />
+                      <span className="capitalize truncate max-w-[120px]">
+                        {report.user.firstName} {report.user.lastName}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-700 font-medium text-sm italic shrink-0">
+                      <Ghost className="size-3.5 shrink-0" />
+                      <span>Anonymous</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest hidden sm:inline-block text-right">
+                    Last Updated
                   </span>
-                </p>
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-gray-50 border border-gray-200 text-gray-600 font-medium text-sm">
+                    <CalendarClock className="size-3.5 text-gray-400" />
+                    <span>
+                      {new Date(report.updatedAt).toLocaleDateString(
+                        undefined,
+                        {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        },
+                      )}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

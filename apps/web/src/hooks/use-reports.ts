@@ -5,10 +5,15 @@ import { UpdateReportDto } from '@repo/api';
 import { updateReport } from '@/api/endpoints/reports';
 import { getReport } from '@/api/endpoints/reports';
 
-export function useReports() {
+export function useReports(options?: { enabled: boolean }) {
   return useQuery<Report[]>({
     queryKey: ['reports'],
-    queryFn: getReports,
+    queryFn: async () => {
+      const response = await getReports();
+      return response;
+    },
+    enabled: options?.enabled !== false,
+    retry: false,
   });
 }
 
@@ -21,7 +26,6 @@ export function useCreateReport() {
     },
   });
 }
-
 
 export function useUpdateReport() {
   const queryClient = useQueryClient();
@@ -44,6 +48,6 @@ export function useReport(reportId: string) {
   return useQuery<Report>({
     queryKey: ['report', reportId],
     queryFn: () => getReport(reportId),
-    enabled: !!reportId, // evita la chiamata se reportId non è definito
+    enabled: !!reportId,
   });
 }

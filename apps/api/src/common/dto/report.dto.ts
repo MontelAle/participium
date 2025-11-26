@@ -6,6 +6,7 @@ import {
   Min,
   Max,
   IsArray,
+  IsBoolean,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
@@ -53,6 +54,11 @@ export class CreateReportDto implements CreateReportDtoInterface {
 
   @IsString()
   categoryId: string;
+
+  @ApiPropertyOptional()
+  @IsBoolean()
+  @IsOptional()
+  isAnonymous?: boolean;
 }
 
 export class UpdateReportDto implements UpdateReportDtoInterface {

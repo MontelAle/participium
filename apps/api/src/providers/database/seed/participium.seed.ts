@@ -728,6 +728,7 @@ export async function seedDatabase(dataSource: DataSource) {
       }
 
       const isResolved = Math.random() > 0.8;
+      const isAnonymous = Math.random() < 0.2;
 
       const report = reportRepo.create({
         id: nanoid(),
@@ -743,6 +744,7 @@ export async function seedDatabase(dataSource: DataSource) {
         user: randomUser,
         category: category,
         createdAt: faker.date.recent({ days: 30 }),
+        isAnonymous: isAnonymous,
       });
 
       reportsToSave.push(report);

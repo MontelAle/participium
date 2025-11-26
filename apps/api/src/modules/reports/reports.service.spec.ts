@@ -23,7 +23,14 @@ describe('ReportsService', () => {
   let service: ReportsService;
   let reportRepository: jest.Mocked<Repository<Report>>;
   let categoryRepository: jest.Mocked<Repository<Category>>;
+  let userRepository: jest.Mocked<Repository<User>>;
   let minioProvider: jest.Mocked<MinioProvider>;
+
+  const mockCitizenUser = { id: 'user-123', role: { name: 'user' } } as User;
+  const mockOtherCitizenUser = {
+    id: 'citizen-123',
+    role: { name: 'user' },
+  } as User;
 
   const mockReport: Partial<Report> = {
     id: 'mocked-id',
@@ -35,8 +42,9 @@ describe('ReportsService', () => {
       coordinates: [7.686864, 45.070312],
     },
     address: 'Via Roma 1, Torino',
+    isAnonymous: false,
     images: [],
-    userId: 'user-123',
+    userId: mockCitizenUser.id,
     categoryId: 'cat-123',
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -73,8 +81,6 @@ describe('ReportsService', () => {
           provide: MinioProvider,
           useValue: {
             uploadFile: jest.fn(),
-            deleteFile: jest.fn(),
-            deleteFiles: jest.fn(),
             extractFileNameFromUrl: jest.fn((url: string) =>
               url.split('/').pop(),
             ),
@@ -87,6 +93,7 @@ describe('ReportsService', () => {
     reportRepository = module.get(getRepositoryToken(Report));
     categoryRepository = module.get(getRepositoryToken(Category));
     minioProvider = module.get(MinioProvider);
+    userRepository = module.get(getRepositoryToken(User));
   });
 
   it('should be defined', () => {
@@ -102,6 +109,7 @@ describe('ReportsService', () => {
         latitude: 45.070312,
         address: 'Via Roma 1, Torino',
         categoryId: 'cat-123',
+        isAnonymous: false,
       };
 
       const mockFiles = [
@@ -160,6 +168,7 @@ describe('ReportsService', () => {
         },
         userId: 'user-123',
         images: mockImageUrls,
+        isAnonymous: false,
       });
       expect(reportRepository.save).toHaveBeenCalledWith(expectedReport);
       expect(result).toEqual(expectedReport);
@@ -172,6 +181,7 @@ describe('ReportsService', () => {
         longitude: 7.686864,
         latitude: 45.070312,
         categoryId: 'cat-123',
+        isAnonymous: false,
       };
 
       const mockFiles = [
@@ -198,6 +208,7 @@ describe('ReportsService', () => {
         status: ReportStatus.PENDING,
         userId: 'user-123',
         images: [mockImageUrl],
+        isAnonymous: false,
       };
 
       reportRepository.create.mockReturnValue(
@@ -221,6 +232,7 @@ describe('ReportsService', () => {
         },
         userId: 'user-123',
         images: [mockImageUrl],
+        isAnonymous: false,
       });
       expect(result).toEqual(expectedReport);
     });
@@ -232,6 +244,7 @@ describe('ReportsService', () => {
         longitude: 7.686864,
         latitude: 45.070312,
         categoryId: 'cat-123',
+        isAnonymous: false,
       };
 
       const mockFiles = [
@@ -275,6 +288,7 @@ describe('ReportsService', () => {
         status: ReportStatus.PENDING,
         userId: 'user-123',
         images: mockImageUrls,
+        isAnonymous: false,
       };
 
       reportRepository.create.mockReturnValue(
@@ -298,6 +312,7 @@ describe('ReportsService', () => {
         longitude: 7.686864,
         latitude: 45.070312,
         categoryId: 'cat-123',
+        isAnonymous: false,
       };
 
       const mockFiles = [
@@ -334,7 +349,7 @@ describe('ReportsService', () => {
         mockQueryBuilder as any,
       );
 
-      const result = await service.findAll();
+      const result = await service.findAll(mockCitizenUser);
 
       expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith(
         'report',
@@ -369,7 +384,7 @@ describe('ReportsService', () => {
         mockQueryBuilder as any,
       );
 
-      const result = await service.findAll(filters);
+      const result = await service.findAll(mockCitizenUser, filters);
 
       expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith(
         'report',
@@ -399,7 +414,7 @@ describe('ReportsService', () => {
         mockQueryBuilder as any,
       );
 
-      const result = await service.findAll(filters);
+      const result = await service.findAll(mockOtherCitizenUser, filters);
 
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'report.categoryId = :categoryId',
@@ -426,7 +441,7 @@ describe('ReportsService', () => {
         mockQueryBuilder as any,
       );
 
-      const result = await service.findAll(filters);
+      const result = await service.findAll(mockCitizenUser, filters);
 
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'report.userId = :userId',
@@ -458,7 +473,7 @@ describe('ReportsService', () => {
         mockQueryBuilder as any,
       );
 
-      const result = await service.findAll(filters);
+      const result = await service.findAll(mockCitizenUser, filters);
 
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         `ST_Contains(
@@ -495,7 +510,7 @@ describe('ReportsService', () => {
         mockQueryBuilder as any,
       );
 
-      const result = await service.findAll(filters);
+      const result = await service.findAll(mockCitizenUser, filters);
 
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         `ST_DWithin(
@@ -531,7 +546,7 @@ describe('ReportsService', () => {
         mockQueryBuilder as any,
       );
 
-      const result = await service.findAll(filters);
+      const result = await service.findAll(mockCitizenUser, filters);
 
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'report.status = :status',
@@ -556,27 +571,87 @@ describe('ReportsService', () => {
   });
 
   describe('findOne', () => {
-    it('should return a report by id', async () => {
+    it('should return a standard report by id', async () => {
+      const standardReport = { ...mockReport, isAnonymous: false };
       reportRepository.findOne.mockResolvedValue(
-        mockReport as unknown as Report,
+        standardReport as unknown as Report,
       );
 
-      const result = await service.findOne('mocked-id');
+      const result = await service.findOne('mocked-id', mockCitizenUser);
 
       expect(reportRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'mocked-id' },
-        relations: ['user', 'category'],
+        relations: ['user', 'user.role', 'category'],
       });
       expect(result).toEqual(mockReport);
+    });
+
+    it('should sanitize user info if report is anonymous and viewer is other citizen user', async () => {
+      const anonymousReport = {
+        ...mockReport,
+        userId: 'user-123',
+        user: mockCitizenUser,
+        isAnonymous: true,
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        anonymousReport as unknown as Report,
+      );
+
+      const result = await service.findOne('mocked-id', mockOtherCitizenUser);
+
+      expect(result.user).toBeNull();
+      expect(result.id).toBe('mocked-id');
+    });
+
+    it('should NOT sanitize info if viewer is the owner', async () => {
+      const anonymousReport = {
+        ...mockReport,
+        userId: 'user-123',
+        user: mockCitizenUser,
+        isAnonymous: true,
+      };
+      reportRepository.findOne.mockResolvedValue(
+        anonymousReport as unknown as Report,
+      );
+
+      const result = await service.findOne('mocked-id', mockCitizenUser);
+
+      expect(result.user).toEqual(mockCitizenUser);
+    });
+
+    it('should show user info if report is anonymous but viewer has privileged role (officer)', async () => {
+      const anonymousReport = {
+        ...mockReport,
+        userId: 'user-123',
+        user: mockCitizenUser,
+        isAnonymous: true,
+      };
+
+      const mockOfficerUser = {
+        id: 'officer-999',
+        role: { name: 'officer' },
+      } as User;
+
+      reportRepository.findOne.mockResolvedValue(
+        anonymousReport as unknown as Report,
+      );
+
+      const result = await service.findOne('mocked-id', mockOfficerUser);
+
+      expect(result.user).toEqual(mockCitizenUser);
+      expect(result.id).toBe('mocked-id');
     });
 
     it('should throw NotFoundException if report not found', async () => {
       reportRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('non-existent-id')).rejects.toThrow(
-        NotFoundException,
-      );
-      await expect(service.findOne('non-existent-id')).rejects.toThrow(
+      await expect(
+        service.findOne('non-existent-id', mockCitizenUser),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.findOne('non-existent-id', mockCitizenUser),
+      ).rejects.toThrow(
         REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('non-existent-id'),
       );
     });
@@ -605,7 +680,12 @@ describe('ReportsService', () => {
         mockQueryBuilder as any,
       );
 
-      const result = await service.findNearby(7.686864, 45.070312, 5000);
+      const result = await service.findNearby(
+        7.686864,
+        45.070312,
+        5000,
+        mockCitizenUser,
+      );
 
       expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith(
         'report',
@@ -648,7 +728,7 @@ describe('ReportsService', () => {
         mockQueryBuilder as any,
       );
 
-      const result = await service.findNearby(0, 0, 1000);
+      const result = await service.findNearby(0, 0, 1000, mockCitizenUser);
 
       expect(result).toEqual([]);
     });
@@ -674,7 +754,7 @@ describe('ReportsService', () => {
 
       expect(reportRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'mocked-id' },
-        relations: ['user', 'category'],
+        relations: ['user', 'user.role', 'category'],
       });
       expect(reportRepository.save).toHaveBeenCalledWith({
         ...mockReport,
@@ -682,6 +762,39 @@ describe('ReportsService', () => {
         status: ReportStatus.IN_PROGRESS,
       });
       expect(result).toEqual(updatedReport);
+    });
+
+    it('should update assignedOfficerId when provided', async () => {
+      const mockOfficer = {
+        id: 'officer-1',
+        username: 'officer_jane',
+        role: { name: 'officer' },
+      } as User;
+
+      const updateDto: UpdateReportDto = {
+        assignedOfficerId: 'officer-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(mockReport as Report);
+      (userRepository.findOne as jest.Mock).mockResolvedValue(mockOfficer);
+
+      const expectedSavedReport = {
+        ...mockReport,
+        assignedOfficer: mockOfficer,
+      };
+
+      reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'officer-1' },
+      });
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          assignedOfficer: mockOfficer,
+        }),
+      );
     });
 
     it('should update location when longitude and latitude provided', async () => {
@@ -753,84 +866,29 @@ describe('ReportsService', () => {
     });
   });
 
-  describe('remove', () => {
-    it('should delete a report and its images from MinIO', async () => {
-      const reportWithImages = {
-        ...mockReport,
-        images: [
-          'http://localhost:9000/bucket/reports/mocked-id/123-test1.jpg',
-          'http://localhost:9000/bucket/reports/mocked-id/123-test2.jpg',
-        ],
-      };
+  describe('findByUserId', () => {
+    it('should return reports assigned to a specific officer and sanitize them', async () => {
+      const mockReports = [
+        { ...mockReport, id: 'r1' },
+        { ...mockReport, id: 'r2', isAnonymous: true, user: mockCitizenUser },
+      ];
 
-      reportRepository.findOne.mockResolvedValue(
-        reportWithImages as unknown as Report,
-      );
-      reportRepository.remove.mockResolvedValue(
-        reportWithImages as unknown as Report,
-      );
-      minioProvider.extractFileNameFromUrl.mockImplementation(
-        (url) => url.split('/').pop() || '',
+      reportRepository.find.mockResolvedValue(mockReports as Report[]);
+
+      const result = await service.findByUserId(
+        'officer-1',
+        mockOtherCitizenUser,
       );
 
-      await service.remove('mocked-id');
-
-      expect(reportRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'mocked-id' },
+      expect(reportRepository.find).toHaveBeenCalledWith({
+        where: { assignedOfficerId: 'officer-1' },
         relations: ['user', 'category'],
+        order: { createdAt: 'DESC' },
       });
-      expect(minioProvider.deleteFiles).toHaveBeenCalledWith([
-        '123-test1.jpg',
-        '123-test2.jpg',
-      ]);
-      expect(reportRepository.remove).toHaveBeenCalledWith(reportWithImages);
-    });
 
-    it('should delete a report without images', async () => {
-      reportRepository.findOne.mockResolvedValue(
-        mockReport as unknown as Report,
-      );
-      reportRepository.remove.mockResolvedValue(
-        mockReport as unknown as Report,
-      );
-
-      await service.remove('mocked-id');
-
-      expect(reportRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'mocked-id' },
-        relations: ['user', 'category'],
-      });
-      expect(minioProvider.deleteFiles).not.toHaveBeenCalled();
-      expect(reportRepository.remove).toHaveBeenCalledWith(mockReport);
-    });
-
-    it('should throw NotFoundException if report not found', async () => {
-      reportRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.remove('non-existent-id')).rejects.toThrow(
-        NotFoundException,
-      );
-      await expect(service.remove('non-existent-id')).rejects.toThrow(
-        REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('non-existent-id'),
-      );
-    });
-
-    it('should throw InternalServerErrorException if image deletion fails', async () => {
-      const reportWithImages = {
-        ...mockReport,
-        images: ['http://localhost:9000/bucket/reports/id1/image1.jpg'],
-      } as Report;
-
-      reportRepository.findOne.mockResolvedValue(reportWithImages);
-      minioProvider.extractFileNameFromUrl.mockReturnValue('image1.jpg');
-      minioProvider.deleteFiles.mockRejectedValue(new Error('MinIO error'));
-
-      await expect(service.remove('mocked-id')).rejects.toThrow(
-        InternalServerErrorException,
-      );
-      await expect(service.remove('mocked-id')).rejects.toThrow(
-        REPORT_ERROR_MESSAGES.IMAGE_DELETE_FAILED,
-      );
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('r1');
+      expect(result[1].user).toBeNull();
     });
   });
 });

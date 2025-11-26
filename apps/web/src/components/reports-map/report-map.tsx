@@ -7,6 +7,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
 import { useActiveReportStore } from '@/store/activeReportStore';
 import { useFilterStore } from '@/store/filterStore';
+import { useFilteredReports } from '@/hooks/use-filtered-reports';
 import { useReports } from '@/hooks/use-reports';
 import { useAuth } from '@/contexts/auth-context';
 import { ReportStatus } from '@repo/api';
@@ -23,7 +24,6 @@ import {
   escapeHtml,
   STATUS_COLORS,
   DEFAULT_COLOR,
-  filterReportsLogic,
 } from './map.utils';
 import { SearchBox, MapControls } from './map-controls';
 
@@ -41,23 +41,14 @@ export default function ReportsMap() {
   const setLocation = useActiveReportStore((state) => state.setLocation);
   const location = useActiveReportStore((state) => state.locationData);
   const clearLocation = useActiveReportStore((s) => s.clearLocation);
-  const { data: reports = [] } = useReports();
-  const { searchTerm, filters } = useFilterStore();
+  const { reports } = useFilteredReports();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [mapType, setMapType] = useState<'standard' | 'satellite'>('standard');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [searchTerm]);
 
   useEffect(() => {
     injectStylesOnce();
@@ -238,13 +229,7 @@ export default function ReportsMap() {
 
     if (!reports?.length) return;
 
-    const filteredReports = filterReportsLogic(
-      reports,
-      debouncedSearchTerm,
-      filters,
-    );
-
-    filteredReports.forEach((report: any) => {
+    reports.forEach((report: any) => {
       const [lng, lat] = report.location?.coordinates ?? [0, 0];
       if (!lat || !lng) return;
 
@@ -257,7 +242,22 @@ export default function ReportsMap() {
 
       const popupDiv = document.createElement('div');
       popupDiv.className = 'font-sans bg-white min-w-[260px] p-4';
-
+      let userHtml = '';
+      if (report.user) {
+        userHtml = `
+          <div class="flex items-center gap-2 text-sm text-slate-500 mt-1">
+            ${getSvgIcon('user')}
+            <span class="capitalize">${escapeHtml(report.user.firstName)} ${escapeHtml(report.user.lastName)}</span>
+          </div>
+        `;
+      } else {
+        userHtml = `
+          <div class="flex items-center gap-2 text-sm mt-1 text-indigo-500/80 font-medium italic">
+            ${getSvgIcon('ghost')}
+            <span>Anonymous Reporter</span>
+          </div>
+        `;
+      }
       popupDiv.innerHTML = `
         <div class="flex items-start justify-between mb-2 pr-6">
           <div class="text-xs text-slate-500 uppercase font-bold tracking-wider pt-1">
@@ -283,6 +283,7 @@ export default function ReportsMap() {
           ${getSvgIcon('calendar')}
           <span class="capitalize">${formattedDate}</span>
         </div>
+        ${userHtml} 
       `;
 
       const detailsBtn = document.createElement('button');
@@ -314,7 +315,7 @@ export default function ReportsMap() {
       markersMapRef.current.set(report.id, m);
       clusterGroup.addLayer(m);
     });
-  }, [reports, debouncedSearchTerm, filters, navigate]);
+  }, [reports, navigate]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
