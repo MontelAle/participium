@@ -37,11 +37,11 @@ export default function ProfilePage() {
   useEffect(() => {
     if (profile) {
       reset({
-        telegramUsername: profile.data.telegramUsername ?? '',
-        emailNotificationsEnabled: !!profile.data.emailNotificationsEnabled,
+        telegramUsername: profile.telegramUsername ?? '',
+        emailNotificationsEnabled: !!profile.emailNotificationsEnabled,
         profilePicture: null,
       });
-      setPreviewUrl(profile.data.profilePictureUrl ?? null);
+      setPreviewUrl(profile.profilePictureUrl ?? null);
     }
   }, [profile, reset]);
 
@@ -52,8 +52,8 @@ export default function ProfilePage() {
       setPreviewUrl(url);
       return () => URL.revokeObjectURL(url);
     }
-    if (!watchedPhoto && profile?.data.profilePictureUrl)
-      setPreviewUrl(profile.data.profilePictureUrl);
+    if (!watchedPhoto && profile?.profilePictureUrl)
+      setPreviewUrl(profile.profilePictureUrl);
   }, [watchedPhoto, profile]);
 
   const validateFile = (file: File) => {

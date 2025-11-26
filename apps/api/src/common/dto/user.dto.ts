@@ -5,11 +5,11 @@ import {
   Matches,
   ValidateIf,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
 import {
   UpdateProfileDto as UpdateProfileDtoInterface,
-  UpdateProfileResponseDto as UpdateProfileResponseDtoInterface,
+  ProfileResponseDto as ProfileResponseDtoInterface,
 } from '@repo/api';
+import { User } from '../entities/user.entity';
 
 export class UpdateProfileDto implements UpdateProfileDtoInterface {
   @IsString()
@@ -26,14 +26,7 @@ export class UpdateProfileDto implements UpdateProfileDtoInterface {
   emailNotificationsEnabled?: string;
 }
 
-export class UpdateProfileResponseDto
-  implements UpdateProfileResponseDtoInterface
-{
+export class ProfileResponseDto implements ProfileResponseDtoInterface {
   success: boolean;
-  data: {
-    id: string;
-    telegramUsername: string | null;
-    emailNotificationsEnabled: boolean;
-    profilePictureUrl: string | null;
-  };
+  data: User;
 }

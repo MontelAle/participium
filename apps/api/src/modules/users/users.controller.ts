@@ -30,7 +30,7 @@ import {
 } from '../../common/dto/municipality-user.dto';
 import {
   UpdateProfileDto,
-  UpdateProfileResponseDto,
+  ProfileResponseDto,
 } from '../../common/dto/user.dto';
 import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
 import {
@@ -145,7 +145,7 @@ export class UsersController {
     @Req() req: RequestWithUserSession,
     @Body() dto: UpdateProfileDto,
     @UploadedFile() file?: Express.Multer.File,
-  ): Promise<UpdateProfileResponseDto> {
+  ): Promise<ProfileResponseDto> {
     // Only regular users (not municipality users) can edit their profile
     if (req.user.role?.isMunicipal) {
       throw new ForbiddenException(
@@ -174,12 +174,7 @@ export class UsersController {
 
     return {
       success: true,
-      data: {
-        id: updatedUser.id,
-        telegramUsername: updatedUser.telegramUsername,
-        emailNotificationsEnabled: updatedUser.emailNotificationsEnabled,
-        profilePictureUrl: updatedUser.profilePictureUrl,
-      },
+      data: updatedUser,
     };
   }
 
@@ -191,18 +186,15 @@ export class UsersController {
    */
   @Get('profile/me')
   @UseGuards(SessionGuard)
-  async getUserProfileById(@Req() req: RequestWithUserSession) {
+  async getUserProfileById(
+    @Req() req: RequestWithUserSession,
+  ): Promise<ProfileResponseDto> {
     const id = req.user.id;
 
     const user = await this.usersService.findUserById(id);
     return {
       success: true,
-      data: {
-        id: user.id,
-        telegramUsername: user.telegramUsername,
-        emailNotificationsEnabled: user.emailNotificationsEnabled,
-        profilePictureUrl: user.profilePictureUrl,
-      },
+      data: user,
     };
   }
 }

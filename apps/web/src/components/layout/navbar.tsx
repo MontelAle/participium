@@ -58,7 +58,7 @@ export function Navbar() {
                 className="h-15 gap-3 px-3 hover:bg-muted rounded-xl cursor-pointer"
               >
                 <Avatar className="size-10 border-2 border-background shadow-sm">
-                  <AvatarImage src={profile.data.profilePictureUrl} />
+                  <AvatarImage src={profile?.profilePictureUrl || ''} />
                   <AvatarFallback className="bg-primary/10 text-primary font-bold">
                     {getUserInitials()}
                   </AvatarFallback>

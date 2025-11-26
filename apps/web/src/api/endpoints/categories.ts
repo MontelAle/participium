@@ -8,4 +8,3 @@ export async function getCategories(): Promise<Category[]> {
   });
   return response.data;
 }
-
