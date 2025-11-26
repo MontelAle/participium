@@ -8,11 +8,13 @@ import {
   Maximize2,
   User,
   CalendarClock,
+  Info,
 } from 'lucide-react';
 import { MiniMap } from '@/components/mini-map';
 import { useAuth } from '@/contexts/auth-context';
 
 import type { Report } from '@repo/api';
+import { ReportStatus } from '@repo/api';
 
 type ViewReportFormProps = {
   report: Report;
@@ -34,8 +36,9 @@ export function ViewReportForm({ report }: ViewReportFormProps) {
   return (
     <Card className="w-full h-full flex flex-col border-none overflow-hidden bg-white/90 backdrop-blur-sm ring-1 ring-gray-200 p-6">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
-        <div className="md:col-span-7 flex flex-col bg-white overflow-y-auto h-full border-b md:border-b-0 md:border-r border-gray-100 p-6 order-2 md:order-1 min-w-0 gap-4">
-          <div>
+        <div className="md:col-span-7 p-6 flex flex-col bg-white overflow-y-auto h-full border-b md:border-b-0 md:border-r border-gray-100 order-2 md:order-1 min-w-0">
+          <div className="space-y-4 flex-1 flex flex-col min-w-0">
+          <div className="w-full">
             <h4 className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wider">
               Title
             </h4>
@@ -53,15 +56,56 @@ export function ViewReportForm({ report }: ViewReportFormProps) {
               {categoryName}
             </div>
           </div>
-          <div>
+          <div className="flex-1 w-full">
             <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">
               Description
             </h4>
-            <div className="bg-gray-50/50 rounded-lg p-4 border text-sm text-gray-700 whitespace-pre-wrap break-words min-h-[100px]">
+            <div className="bg-gray-50/50 rounded-lg p-4 border text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words w-full min-h-[100px]">
               {report.description}
             </div>
           </div>
-          <div className="pt-4 mt-auto flex items-center justify-between gap-4 border-t border-dashed w-full">
+          {report.explanation && (
+            <div
+              className={`rounded-lg border p-3 text-sm animate-in fade-in w-full ${
+                report.status === ReportStatus.REJECTED
+                  ? 'border-red-200 bg-red-50'
+                  : 'border-amber-200 bg-amber-50'
+              }`}
+            >
+              <div className="flex gap-2">
+                <Info
+                  className={`h-4 w-4 mt-0.5 shrink-0 ${
+                    report.status === ReportStatus.REJECTED
+                      ? 'text-red-600'
+                      : 'text-amber-600'
+                  }`}
+                />
+                <div className="space-y-0.5 w-full">
+                  <h5
+                    className={`font-semibold ${
+                      report.status === ReportStatus.REJECTED
+                        ? 'text-red-900'
+                        : 'text-amber-900'
+                    }`}
+                  >
+                    {report.status === ReportStatus.REJECTED
+                      ? 'Rejection Reason'
+                      : 'Admin Note'}
+                  </h5>
+                  <p
+                    className={`leading-relaxed break-words ${
+                      report.status === ReportStatus.REJECTED
+                        ? 'text-red-800'
+                        : 'text-amber-800'
+                    }`}
+                  >
+                    {report.explanation}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="pt-4 mt-auto flex flex-wrap items-center justify-between gap-4 border-t border-dashed w-full">
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest hidden sm:inline-block shrink-0">
                 Reported By
@@ -88,6 +132,7 @@ export function ViewReportForm({ report }: ViewReportFormProps) {
                 </span>
               </div>
             </div>
+          </div>
           </div>
         </div>
         <div className="md:col-span-5 flex flex-col gap-6 overflow-y-auto order-1 md:order-2 p-6">
