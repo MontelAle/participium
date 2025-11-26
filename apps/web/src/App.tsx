@@ -23,7 +23,12 @@ const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Toaster position="top-center" richColors />
+        <Toaster
+          position="top-center"
+          mobileOffset={80}
+          richColors
+          duration={2000}
+        />
         <Routes>
           <Route element={<DashboardLayout />}>
             <Route index element={<Navigate to="/reports/map" replace />} />
