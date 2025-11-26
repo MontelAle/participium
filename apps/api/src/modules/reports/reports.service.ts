@@ -17,6 +17,7 @@ import path from 'path';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 import { Category } from '../../common/entities/category.entity';
 import { User } from '../../common/entities/user.entity';
+const PRIVILEGED_ROLES = ['pr_officer', 'officer'];
 
 @Injectable()
 export class ReportsService {
@@ -37,12 +38,43 @@ export class ReportsService {
     };
   }
 
+  private async findReportEntity(id: string): Promise<Report> {
+    const report = await this.reportRepository.findOne({
+      where: { id },
+      relations: ['user', 'user.role', 'category'],
+    });
+
+    if (!report) {
+      throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
+    }
+
+    return report;
+  }
+
+  private sanitizeReport(report: Report, viewer: User): Report {
+    if (!report.isAnonymous) {
+      return report;
+    }
+
+    if (viewer.id === report.userId) {
+      return report;
+    }
+
+    if (viewer.role && PRIVILEGED_ROLES.includes(viewer.role.name)) {
+      return report;
+    }
+
+    const sanitized = { ...report };
+    sanitized.user = null;
+    return sanitized as Report;
+  }
+
   async create(
     createReportDto: CreateReportDto,
     userId: string,
     images: Express.Multer.File[],
   ): Promise<Report> {
-    const { longitude, latitude, ...reportData } = createReportDto;
+    const { longitude, latitude, isAnonymous, ...reportData } = createReportDto;
 
     const reportId = nanoid();
     const imageUrls: string[] = [];
@@ -73,15 +105,17 @@ export class ReportsService {
       location: this.createPointGeometry(longitude, latitude),
       userId,
       images: imageUrls,
+      isAnonymous: isAnonymous ?? false,
     });
 
     return await this.reportRepository.save(report);
   }
 
-  async findAll(filters?: FilterReportsDto): Promise<Report[]> {
+  async findAll(viewer: User, filters?: FilterReportsDto): Promise<Report[]> {
     const query = this.reportRepository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.user', 'user')
+      .leftJoinAndSelect('report.user.role', 'role')
       .leftJoinAndSelect('report.category', 'category');
 
     if (filters?.status) {
@@ -139,24 +173,26 @@ export class ReportsService {
 
     query.orderBy('report.createdAt', 'DESC');
 
-    return await query.getMany();
+    const reports = await query.getMany();
+
+    return reports.map((report) => this.sanitizeReport(report, viewer));
   }
 
-  async findOne(id: string): Promise<Report> {
+  async findOne(id: string, viewer: User): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ['user', 'category'],
+      relations: ['user', 'user.role', 'category'],
     });
 
     if (!report) {
       throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
     }
 
-    return report;
+    return this.sanitizeReport(report, viewer);
   }
 
   async update(id: string, updateReportDto: UpdateReportDto): Promise<Report> {
-    const report = await this.findOne(id);
+    const report = await this.findReportEntity(id);
 
     const {
       longitude,
@@ -207,32 +243,11 @@ export class ReportsService {
     return await this.reportRepository.save(report);
   }
 
-  async remove(id: string): Promise<void> {
-    const report = await this.findOne(id);
-
-    if (report.images && report.images.length > 0) {
-      try {
-        const fileNames = report.images.map((url) =>
-          this.minioProvider.extractFileNameFromUrl(url),
-        );
-        await this.minioProvider.deleteFiles(fileNames);
-      } catch (error) {
-        throw new InternalServerErrorException(
-          REPORT_ERROR_MESSAGES.IMAGE_DELETE_FAILED,
-        );
-      }
-    }
-
-    await this.reportRepository.remove(report);
-  }
-
-  /**
-   * Get reports with their distance from a specific point
-   */
   async findNearby(
     longitude: number,
     latitude: number,
     radiusMeters: number = 5000,
+    viewer: User,
   ): Promise<Array<Report & { distance: number }>> {
     const reports = await this.reportRepository
       .createQueryBuilder('report')
@@ -256,18 +271,21 @@ export class ReportsService {
       .orderBy('distance', 'ASC')
       .getRawAndEntities();
 
-    return reports.entities.map((entity, index) => ({
-      ...entity,
-      distance: parseFloat(reports.raw[index].distance),
-    }));
+    return reports.entities.map((entity, index) => {
+      const sanitizedEntity = this.sanitizeReport(entity, viewer);
+      return {
+        ...sanitizedEntity,
+        distance: parseFloat(reports.raw[index].distance),
+      };
+    });
   }
 
-  async findByUserId(officerId: string): Promise<Report[]> {
+  async findByUserId(targetUserId: string, viewer: User): Promise<Report[]> {
     const reports = await this.reportRepository.find({
-      where: { assignedOfficerId: officerId },
+      where: { assignedOfficerId: targetUserId },
       relations: ['user', 'category'],
       order: { createdAt: 'DESC' },
     });
-    return reports;
+    return reports.map((report) => this.sanitizeReport(report, viewer));
   }
 }

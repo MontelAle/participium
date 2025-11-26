@@ -8,6 +8,7 @@ export interface CreateReportDto {
   latitude: number;
   address?: string;
   categoryId: string;
+  isAnonymous?: boolean;
 }
 
 export interface UpdateReportDto {
