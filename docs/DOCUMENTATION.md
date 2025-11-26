@@ -377,7 +377,7 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 | Field                     | Type    | Description              | Nullable | Notes                        |
 | ------------------------- | ------- | ------------------------ | -------- | ---------------------------- |
-| id                        | string  | Primary key              | No       |                              |
+| id                        | string  | Primary key              | No       | varchar                      |
 | email                     | string  | User email               | No       | Unique                       |
 | username                  | string  | Username                 | No       | Unique                       |
 | firstName                 | string  | First name               | No       |                              |
@@ -389,78 +389,84 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 | telegramUsername          | string  | Telegram handle          | Yes      | Format: @username            |
 | emailNotificationsEnabled | boolean | Email notifications flag | No       | Default: false               |
 | profilePictureUrl         | string  | Profile picture URL      | Yes      | MinIO storage URL            |
-| createdAt                 | Date    | Creation timestamp       | No       | Auto-generated               |
-| updatedAt                 | Date    | Last update timestamp    | No       | Auto-generated               |
+| createdAt                 | Date    | Creation timestamp       | No       | timestamptz, auto-generated  |
+| updatedAt                 | Date    | Last update timestamp    | No       | timestamptz, auto-generated  |
 
 #### Role
 
 | Field       | Type    | Description            | Nullable | Notes                   |
 | ----------- | ------- | ---------------------- | -------- | ----------------------- |
-| id          | string  | Primary key            | No       |                         |
-| name        | string  | Role name              | No       |                         |
-| label       | string  | Display label          | No       |                         |
+| id          | string  | Primary key            | No       | varchar                 |
+| name        | string  | Role name              | No       | varchar                 |
+| label       | string  | Display label          | No       | varchar                 |
 | isMunicipal | boolean | Municipality user flag | No       | true for admin/officers |
 
 #### Office
 
-| Field | Type   | Description  | Nullable | Notes |
-| ----- | ------ | ------------ | -------- | ----- |
-| id    | string | Primary key  | No       |       |
-| name  | string | Office name  | No       |       |
-| label | string | Office label | No       |       |
+| Field      | Type       | Description             | Nullable | Notes                           |
+| ---------- | ---------- | ----------------------- | -------- | ------------------------------- |
+| id         | string     | Primary key             | No       | varchar                         |
+| name       | string     | Office name             | No       | varchar                         |
+| label      | string     | Office label            | No       | varchar                         |
+| categories | Category[] | Related categories list | -        | One-to-many with Category table |
 
 #### Account
 
 | Field      | Type   | Description           | Nullable | Notes                       |
 | ---------- | ------ | --------------------- | -------- | --------------------------- |
-| id         | string | Primary key           | No       |                             |
-| accountId  | string | Account identifier    | No       |                             |
-| providerId | string | Provider identifier   | No       |                             |
+| id         | string | Primary key           | No       | varchar                     |
+| accountId  | string | Account identifier    | No       | varchar                     |
+| providerId | string | Provider identifier   | No       | varchar                     |
 | userId     | string | Linked user ID        | No       | Foreign key to User entity  |
 | user       | User   | User entity relation  | No       | Many-to-one, cascade delete |
-| password   | string | Account password      | Yes      | Optional, hashed            |
-| createdAt  | Date   | Creation timestamp    | No       | Auto-generated              |
-| updatedAt  | Date   | Last update timestamp | No       | Auto-generated              |
+| password   | string | Account password      | Yes      | varchar, optional, hashed   |
+| createdAt  | Date   | Creation timestamp    | No       | timestamptz, auto-generated |
+| updatedAt  | Date   | Last update timestamp | No       | timestamptz, auto-generated |
 
 #### Session
 
 | Field          | Type   | Description              | Nullable | Notes                       |
 | -------------- | ------ | ------------------------ | -------- | --------------------------- |
-| id             | string | Primary key              | No       |                             |
-| expiresAt      | Date   | Session expiry timestamp | No       |                             |
-| hashedSecret   | string | Hashed session secret    | No       | Excluded from serialization |
-| createdAt      | Date   | Creation timestamp       | No       | Auto-generated              |
-| updatedAt      | Date   | Last update timestamp    | No       | Auto-generated              |
-| ipAddress      | string | IP address               | Yes      | Optional                    |
-| userAgent      | string | User agent string        | Yes      | Optional                    |
+| id             | string | Primary key              | No       | varchar                     |
+| expiresAt      | Date   | Session expiry timestamp | No       | timestamptz                 |
+| hashedSecret   | string | Hashed session secret    | No       | varchar, excluded from JSON |
+| createdAt      | Date   | Creation timestamp       | No       | timestamptz, auto-generated |
+| updatedAt      | Date   | Last update timestamp    | No       | timestamptz, auto-generated |
+| ipAddress      | string | IP address               | Yes      | varchar, optional           |
+| userAgent      | string | User agent string        | Yes      | varchar, optional           |
 | userId         | string | Linked user ID           | No       | Foreign key to User entity  |
 | user           | User   | User entity relation     | No       | Many-to-one, cascade delete |
-| impersonatedBy | string | Impersonator user ID     | Yes      | Optional                    |
+| impersonatedBy | string | Impersonator user ID     | Yes      | varchar, optional           |
 
 #### Category
 
-| Field | Type   | Description   | Nullable | Notes |
-| ----- | ------ | ------------- | -------- | ----- |
-| id    | string | Primary key   | No       |       |
-| name  | string | Category name | No       |       |
+| Field  | Type   | Description              | Nullable | Notes                           |
+| ------ | ------ | ------------------------ | -------- | ------------------------------- |
+| id     | string | Primary key              | No       | varchar                         |
+| name   | string | Category name            | No       | varchar                         |
+| office | Office | Linked office            | -        | Many-to-one with Office entity  |
 
 #### Report
 
-| Field       | Type     | Description               | Nullable | Notes                                                              |
-| ----------- | -------- | ------------------------- | -------- | ------------------------------------------------------------------ |
-| id          | string   | Primary key               | No       |                                                                    |
-| title       | string   | Report title              | No       |                                                                    |
-| description | string   | Report description        | No       | Text type for longer content                                       |
-| status      | enum     | Report status             | No       | Values: pending, in_progress, resolved, rejected. Default: pending |
-| location    | string   | Geographic coordinates    | No       | PostGIS geometry(Point, 4326), stored as WKT format                |
-| address     | string   | Physical address          | Yes      | Optional                                                           |
-| images      | string[] | Array of image paths/URLs | Yes      | Optional                                                           |
-| userId      | string   | Linked user ID            | No       | Foreign key to User entity                                         |
-| user        | User     | User entity relation      | No       | Many-to-one, cascade delete                                        |
-| categoryId  | string   | Linked category ID        | No       | Foreign key to Category entity                                     |
-| category    | Category | Category entity relation  | No       | Many-to-one, not nullable                                          |
-| createdAt   | Date     | Creation timestamp        | No       | Auto-generated                                                     |
-| updatedAt   | Date     | Last update timestamp     | No       | Auto-generated                                                     |
+| Field             | Type     | Description               | Nullable | Notes                                                                          |
+| ----------------- | -------- | ------------------------- | -------- | ------------------------------------------------------------------------------ |
+| id                | string   | Primary key               | No       | varchar                                                                        |
+| title             | string   | Report title              | Yes      | varchar, optional                                                              |
+| description       | string   | Report description        | Yes      | text type, optional                                                            |
+| status            | enum     | Report status             | No       | Values: pending, in_progress, resolved, rejected, assigned. Default: pending   |
+| location          | Point    | Geographic coordinates    | No       | PostGIS geometry(Point, 4326)                                                  |
+| address           | string   | Physical address          | Yes      | varchar, optional                                                              |
+| images            | string[] | Array of image paths/URLs | No       | varchar array                                                                  |
+| userId            | string   | Linked user ID            | No       | Foreign key to User entity                                                     |
+| user              | User     | User entity relation      | No       | Many-to-one, cascade delete                                                    |
+| isAnonymous       | boolean  | Anonymous report flag     | No       | Default: false                                                                 |
+| categoryId        | string   | Linked category ID        | Yes      | Foreign key to Category entity, optional                                       |
+| category          | Category | Category entity relation  | Yes      | Many-to-one, optional                                                          |
+| createdAt         | Date     | Creation timestamp        | No       | timestamptz, auto-generated                                                    |
+| updatedAt         | Date     | Last update timestamp     | No       | timestamptz, auto-generated                                                    |
+| explanation       | string   | Rejection/action reason   | Yes      | text type, optional                                                            |
+| assignedOfficerId | string   | Assigned officer ID       | Yes      | Foreign key to User entity, optional                                           |
+| assignedOfficer   | User     | Assigned officer relation | Yes      | Many-to-one with User entity, optional                                         |
 
 **PostGIS Integration**:
 
@@ -471,12 +477,15 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 ### Relations
 
-- User ⟷ Role (ManyToOne)
+- User ⟷ Role (ManyToOne, required)
 - User ⟷ Office (ManyToOne, optional)
-- User ⟷ Account (OneToMany)
-- User ⟷ Session (OneToMany)
-- Report ⟷ User (ManyToOne)
-- Report ⟷ Category (ManyToOne)
+- User ⟷ Account (OneToMany, cascade delete)
+- User ⟷ Session (OneToMany, cascade delete)
+- Report ⟷ User (ManyToOne, cascade delete)
+- Report ⟷ Category (ManyToOne, optional)
+- Report ⟷ User (as assignedOfficer, ManyToOne, optional)
+- Category ⟷ Office (ManyToOne)
+- Office ⟷ Category (OneToMany)
 
 ### PostGIS Geospatial Features
 
