@@ -62,6 +62,7 @@ describe('ReportsService', () => {
             find: jest.fn(),
             findOne: jest.fn(),
             remove: jest.fn(),
+            count: jest.fn(),
             createQueryBuilder: jest.fn(),
           },
         },
@@ -74,6 +75,7 @@ describe('ReportsService', () => {
         {
           provide: getRepositoryToken(User),
           useValue: {
+            find: jest.fn(),
             findOne: jest.fn(),
           },
         },
@@ -581,7 +583,7 @@ describe('ReportsService', () => {
 
       expect(reportRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'mocked-id' },
-        relations: ['user', 'user.role', 'category'],
+        relations: ['user', 'user.role', 'category', 'assignedOfficer'],
       });
       expect(result).toEqual(mockReport);
     });
@@ -754,7 +756,7 @@ describe('ReportsService', () => {
 
       expect(reportRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'mocked-id' },
-        relations: ['user', 'user.role', 'category'],
+        relations: ['user', 'user.role', 'category', 'assignedOfficer'],
       });
       expect(reportRepository.save).toHaveBeenCalledWith({
         ...mockReport,
@@ -764,7 +766,7 @@ describe('ReportsService', () => {
       expect(result).toEqual(updatedReport);
     });
 
-    it('should update assignedOfficerId when provided', async () => {
+    it('should update assignedOfficerId when status is assigned and officerId is provided', async () => {
       const mockOfficer = {
         id: 'officer-1',
         username: 'officer_jane',
@@ -772,6 +774,7 @@ describe('ReportsService', () => {
       } as User;
 
       const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
         assignedOfficerId: 'officer-1',
       };
 
@@ -780,6 +783,7 @@ describe('ReportsService', () => {
 
       const expectedSavedReport = {
         ...mockReport,
+        status: ReportStatus.ASSIGNED,
         assignedOfficer: mockOfficer,
       };
 
@@ -792,6 +796,311 @@ describe('ReportsService', () => {
       });
       expect(reportRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
+          status: ReportStatus.ASSIGNED,
+          assignedOfficer: mockOfficer,
+        }),
+      );
+    });
+
+    it('should auto-assign to officer with fewest reports when status is assigned without officerId', async () => {
+      const mockCategory = {
+        id: 'cat-123',
+        name: 'Road Issues',
+        office: {
+          id: 'office-1',
+          name: 'Public Works',
+        },
+      } as Category;
+
+      const mockOfficer1 = {
+        id: 'officer-1',
+        username: 'officer_one',
+        role: { name: 'officer' },
+        officeId: 'office-1',
+      } as User;
+
+      const mockOfficer2 = {
+        id: 'officer-2',
+        username: 'officer_two',
+        role: { name: 'officer' },
+        officeId: 'office-1',
+      } as User;
+
+      const reportWithCategory = {
+        ...mockReport,
+        category: mockCategory,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithCategory);
+      (userRepository.find as jest.Mock).mockResolvedValue([
+        mockOfficer1,
+        mockOfficer2,
+      ]);
+
+      (reportRepository.count as jest.Mock)
+        .mockResolvedValueOnce(3)
+        .mockResolvedValueOnce(1);
+
+      const expectedSavedReport = {
+        ...reportWithCategory,
+        status: ReportStatus.ASSIGNED,
+        assignedOfficer: mockOfficer2,
+      };
+
+      reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(userRepository.find).toHaveBeenCalledWith({
+        where: { officeId: 'office-1' },
+        relations: ['role'],
+      });
+
+      expect(reportRepository.count).toHaveBeenCalledWith({
+        where: {
+          assignedOfficerId: 'officer-1',
+          status: 'assigned',
+        },
+      });
+
+      expect(reportRepository.count).toHaveBeenCalledWith({
+        where: {
+          assignedOfficerId: 'officer-2',
+          status: 'assigned',
+        },
+      });
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.ASSIGNED,
+          assignedOfficer: mockOfficer2,
+        }),
+      );
+    });
+
+    it('should auto-assign when status is assigned without officerId and category is loaded separately', async () => {
+      const mockCategory = {
+        id: 'cat-123',
+        name: 'Road Issues',
+        office: {
+          id: 'office-1',
+          name: 'Public Works',
+        },
+      } as Category;
+
+      const mockOfficer = {
+        id: 'officer-1',
+        username: 'officer_one',
+        role: { name: 'officer' },
+        officeId: 'office-1',
+      } as User;
+
+      const reportWithoutCategory = {
+        ...mockReport,
+        categoryId: 'cat-123',
+        category: null,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithoutCategory);
+      categoryRepository.findOne.mockResolvedValue(mockCategory);
+      (userRepository.find as jest.Mock).mockResolvedValue([mockOfficer]);
+      (reportRepository.count as jest.Mock).mockResolvedValue(2);
+
+      const expectedSavedReport = {
+        ...reportWithoutCategory,
+        status: ReportStatus.ASSIGNED,
+        assignedOfficer: mockOfficer,
+      };
+
+      reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(categoryRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'cat-123' },
+        relations: ['office'],
+      });
+
+      expect(userRepository.find).toHaveBeenCalledWith({
+        where: { officeId: 'office-1' },
+        relations: ['role'],
+      });
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.ASSIGNED,
+          assignedOfficer: mockOfficer,
+        }),
+      );
+    });
+
+    it('should not auto-assign if no officers are found in the office', async () => {
+      const mockCategory = {
+        id: 'cat-123',
+        name: 'Road Issues',
+        office: {
+          id: 'office-1',
+          name: 'Public Works',
+        },
+      } as Category;
+
+      const reportWithCategory = {
+        ...mockReport,
+        category: mockCategory,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithCategory);
+      (userRepository.find as jest.Mock).mockResolvedValue([]);
+
+      const expectedSavedReport = {
+        ...reportWithCategory,
+        status: ReportStatus.ASSIGNED,
+        assignedOfficer: undefined,
+      };
+
+      reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(userRepository.find).toHaveBeenCalledWith({
+        where: { officeId: 'office-1' },
+        relations: ['role'],
+      });
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.ASSIGNED,
+        }),
+      );
+    });
+
+    it('should filter out pr_officers and only auto-assign to technical officers', async () => {
+      const mockCategory = {
+        id: 'cat-123',
+        name: 'Road Issues',
+        office: {
+          id: 'office-1',
+          name: 'Public Works',
+        },
+      } as Category;
+
+      const mockOfficer = {
+        id: 'officer-1',
+        username: 'tech_officer',
+        role: { name: 'officer' },
+        officeId: 'office-1',
+      } as User;
+
+      const mockPrOfficer = {
+        id: 'pr-officer-1',
+        username: 'pr_officer',
+        role: { name: 'pr_officer' },
+        officeId: 'office-1',
+      } as User;
+
+      const reportWithCategory = {
+        ...mockReport,
+        category: mockCategory,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithCategory);
+      (userRepository.find as jest.Mock).mockResolvedValue([
+        mockOfficer,
+        mockPrOfficer,
+      ]);
+      (reportRepository.count as jest.Mock).mockResolvedValue(0);
+
+      const expectedSavedReport = {
+        ...reportWithCategory,
+        status: ReportStatus.ASSIGNED,
+        assignedOfficer: mockOfficer,
+      };
+
+      reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(reportRepository.count).toHaveBeenCalledTimes(1);
+      expect(reportRepository.count).toHaveBeenCalledWith({
+        where: {
+          assignedOfficerId: 'officer-1',
+          status: 'assigned',
+        },
+      });
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.ASSIGNED,
+          assignedOfficer: mockOfficer,
+        }),
+      );
+    });
+
+    it('should auto-assign when assignedOfficerId is empty string', async () => {
+      const mockCategory = {
+        id: 'cat-123',
+        name: 'Road Issues',
+        office: {
+          id: 'office-1',
+          name: 'Public Works',
+        },
+      } as Category;
+
+      const mockOfficer = {
+        id: 'officer-1',
+        username: 'officer_one',
+        role: { name: 'officer' },
+        officeId: 'office-1',
+      } as User;
+
+      const reportWithCategory = {
+        ...mockReport,
+        category: mockCategory,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+        assignedOfficerId: '',
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithCategory);
+      (userRepository.find as jest.Mock).mockResolvedValue([mockOfficer]);
+      (reportRepository.count as jest.Mock).mockResolvedValue(1);
+
+      const expectedSavedReport = {
+        ...reportWithCategory,
+        status: ReportStatus.ASSIGNED,
+        assignedOfficer: mockOfficer,
+      };
+
+      reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(userRepository.find).toHaveBeenCalledWith({
+        where: { officeId: 'office-1' },
+        relations: ['role'],
+      });
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.ASSIGNED,
           assignedOfficer: mockOfficer,
         }),
       );
@@ -850,6 +1159,7 @@ describe('ReportsService', () => {
 
       expect(categoryRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'cat-456' },
+        relations: ['office'],
       });
       expect(reportRepository.save).toHaveBeenCalled();
     });
@@ -882,7 +1192,7 @@ describe('ReportsService', () => {
 
       expect(reportRepository.find).toHaveBeenCalledWith({
         where: { assignedOfficerId: 'officer-1' },
-        relations: ['user', 'category'],
+        relations: ['user', 'category', 'assignedOfficer'],
         order: { createdAt: 'DESC' },
       });
 

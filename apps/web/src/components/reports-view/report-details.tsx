@@ -36,7 +36,7 @@ export function ReportDetails({ report }: ReportDetailsProps) {
               {' '}
               <div className="w-full">
                 {' '}
-                <h4 className="text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wider">
+                <h4 className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wider">
                   Title
                 </h4>
                 <p className="text-xl font-bold text-foreground leading-tight break-words w-full">
@@ -45,39 +45,65 @@ export function ReportDetails({ report }: ReportDetailsProps) {
               </div>
               <Separator className="bg-gray-100" />
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
-                  <Tag className="size-3.5" /> Category
+                <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
+                  Category
                 </h4>
-                <div className="inline-flex items-center px-3 py-1.5 rounded-lg bg-primary/5 text-primary font-medium text-sm border border-primary/10">
+                <div className="inline-flex items-center px-3 py-2 rounded-lg bg-purple-50 text-purple-700 font-medium text-sm border border-purple-200 w-fit">
+                  <Tag className="size-4 mr-2" />
                   {report.category?.name || 'Unknown'}
                 </div>
               </div>
-              {report.explanation && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm animate-in fade-in w-full">
-                  <div className="flex gap-2">
-                    <Info className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                    <div className="space-y-0.5 w-full">
-                      {' '}
-                      <h5 className="font-semibold text-amber-900">
-                        Admin Note
-                      </h5>
-                      <p className="text-amber-800 leading-relaxed break-words">
-                        {report.explanation}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
               <div className="flex-1 w-full">
                 {' '}
-                <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+                <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">
                   Description
                 </h4>
                 <div className="bg-gray-50/50 rounded-lg p-4 border text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words w-full min-h-[100px]">
                   {report.description}
                 </div>
               </div>
-              <div className="pt-4 mt-auto flex items-center justify-between gap-4 border-t border-dashed w-full">
+              {report.explanation && (
+                <div
+                  className={`rounded-lg border p-3 text-sm animate-in fade-in w-full ${
+                    report.status === 'rejected'
+                      ? 'border-red-200 bg-red-50'
+                      : 'border-amber-200 bg-amber-50'
+                  }`}
+                >
+                  <div className="flex gap-2">
+                    <Info
+                      className={`h-4 w-4 mt-0.5 shrink-0 ${
+                        report.status === 'rejected'
+                          ? 'text-red-600'
+                          : 'text-amber-600'
+                      }`}
+                    />
+                    <div className="space-y-0.5 w-full">
+                      <h5
+                        className={`font-semibold ${
+                          report.status === 'rejected'
+                            ? 'text-red-900'
+                            : 'text-amber-900'
+                        }`}
+                      >
+                        {report.status === 'rejected'
+                          ? 'Rejection Reason'
+                          : 'Admin Note'}
+                      </h5>
+                      <p
+                        className={`leading-relaxed break-words ${
+                          report.status === 'rejected'
+                            ? 'text-red-800'
+                            : 'text-amber-800'
+                        }`}
+                      >
+                        {report.explanation}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="pt-4 mt-auto flex flex-wrap items-center justify-between gap-4 border-t border-dashed w-full">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest hidden sm:inline-block shrink-0">
                     Reported By
@@ -151,7 +177,7 @@ export function ReportDetails({ report }: ReportDetailsProps) {
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col">
+            <div className="flex flex-col">
               <h3 className="mb-3 text-base font-semibold text-foreground/80">
                 Photos ({reportImages.length})
               </h3>

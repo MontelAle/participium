@@ -22,7 +22,6 @@ export function useFilteredReports() {
       }
 
       if (isCitizenUser) {
-        const isMyReport = user && report.userId === user.id;
         if (report.status === 'pending') {
           return false;
         }

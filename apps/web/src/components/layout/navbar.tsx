@@ -63,9 +63,9 @@ export function Navbar() {
                     {getUserInitials()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-col items-end text-right hidden md:flex">
+                <div className="flex-col items-end text-right hidden md:flex max-w-[200px]">
                   {' '}
-                  <span className="text-sm font-medium leading-none">
+                  <span className="text-sm font-medium leading-none truncate">
                     {user.firstName} {user.lastName}
                   </span>
                 </div>
@@ -74,31 +74,30 @@ export function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64 p-2">
-              {!isMunicipalityUser && (
-                <>
-                  <DropdownMenuLabel className="text-base">
-                    <Link
-                      to="/profile"
-                      className="text-base cursor-pointer hover:text-primary transition-colors"
-                    >
-                      Profile
-                    </Link>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-
               <DropdownMenuItem>
-                <div className="flex flex-col space-y-1">
-                  <p className="text-base font-medium">
+                <div className="flex flex-col space-y-1 w-full min-w-0">
+                  <p className="text-base font-medium truncate">
                     {user.firstName} {user.lastName}
                   </p>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                  <p className="text-sm text-muted-foreground capitalize">
+                  <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                  <p className="text-sm text-muted-foreground capitalize truncate">
                     {user.role.label}
                   </p>
                 </div>
               </DropdownMenuItem>
+              {!isMunicipalityUser && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-sm">
+                    <Link
+                      to="/profile"
+                      className=" cursor-pointer hover:text-primary transition-colors"
+                    >
+                      Profile Settings
+                    </Link>
+                  </DropdownMenuLabel>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleLogout}
