@@ -1,18 +1,23 @@
-import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import type { Report, UpdateReportDto, User } from '@repo/api';
 import { ReportStatus } from '@repo/api';
-import { XIcon, MapPin, Tag, Maximize2 } from 'lucide-react';
+import {
+  XIcon,
+  MapPin,
+  Tag,
+  Maximize2,
+  CalendarClock,
+  UserIcon,
+} from 'lucide-react';
 import { useCategories } from '@/hooks/use-categories';
 import { useUpdateReport } from '@/hooks/use-reports';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
 import { toast } from 'sonner';
 import { MiniMap } from '@/components/mini-map';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectTrigger,
@@ -20,6 +25,7 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
+import { useEffect, useMemo, useState } from 'react';
 
 type ReviewReportFormProps = {
   report: Report;
@@ -28,7 +34,7 @@ type ReviewReportFormProps = {
 
 type FormData = {
   categoryId: string;
-  status: string;
+  action: 'accept' | 'reject' | '';
   explanation?: string;
   technicalOfficerId?: string;
 };
@@ -39,13 +45,13 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
 
   const updateReportMutation = useUpdateReport();
 
-  const [selectedImageIndex, setSelectedImageIndex] = React.useState<
-    number | null
-  >(null);
-  const [explanation, setExplanation] = React.useState<string>(
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
+    null,
+  );
+  const [explanation, setExplanation] = useState<string>(
     report.explanation ?? '',
   );
-  const [competentOfficeName, setCompetentOfficeName] = React.useState<string>(
+  const [competentOfficeName, setCompetentOfficeName] = useState<string>(
     report.category?.office?.name ?? 'Unknown',
   );
 
@@ -55,32 +61,32 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
   const { register, handleSubmit, watch, setValue } = useForm<FormData>({
     defaultValues: {
       categoryId: report.category?.id ?? '',
-      status: report.status,
+      action: '',
       explanation: report.explanation ?? '',
       technicalOfficerId: report.assignedOfficerId ?? '',
     },
   });
 
   const watchedCategory = watch('categoryId');
-  const watchedStatus = watch('status');
+  const watchedAction = watch('action');
   const watchedOfficer = watch('technicalOfficerId');
 
-  React.useEffect(() => {
+  useEffect(() => {
     setValue('categoryId', report.category?.id ?? '');
-    setValue('status', report.status);
+    setValue('action', '');
     setExplanation(report.explanation ?? '');
     setValue('technicalOfficerId', report.assignedOfficerId ?? '');
     setCompetentOfficeName(report.category?.office?.name ?? 'Unknown');
   }, [report, setValue]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const selectedCategory = categories.find(
       (cat) => cat.id === watchedCategory,
     );
     setCompetentOfficeName(selectedCategory?.office?.name ?? 'Unknown');
   }, [watchedCategory, categories]);
 
-  const filteredOfficers = React.useMemo(() => {
+  const filteredOfficers = useMemo(() => {
     const cat = categories.find((c) => c.id === watchedCategory);
     if (!cat?.office?.id) return [];
     return municipalityUsers.filter((u: User) => u.officeId === cat.office.id);
@@ -88,24 +94,23 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
 
   const canConfirm =
     isPending &&
-    ((watchedStatus === ReportStatus.REJECTED && explanation.trim() !== '') ||
-      (watchedStatus === ReportStatus.ASSIGNED &&
-        watchedOfficer &&
-        watchedOfficer.trim() !== '') ||
-      (watchedStatus !== ReportStatus.REJECTED &&
-        watchedStatus !== report.status));
+    ((watchedAction === 'reject' && explanation.trim() !== '') ||
+      watchedAction === 'accept');
 
   const handleConfirm = async (data: FormData) => {
     if (!canConfirm) return;
 
     const updateData: UpdateReportDto = {
-      status: data.status as ReportStatus,
+      status:
+        data.action === 'reject'
+          ? ReportStatus.REJECTED
+          : ReportStatus.ASSIGNED,
       categoryId: data.categoryId,
-      ...(data.status === ReportStatus.REJECTED && {
+      ...(data.action === 'reject' && {
         explanation: explanation,
       }),
-      ...(data.status === ReportStatus.ASSIGNED && {
-        assignedOfficerId: data.technicalOfficerId,
+      ...(data.action === 'accept' && {
+        assignedOfficerId: data.technicalOfficerId || '',
       }),
     };
 
@@ -127,16 +132,14 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
   const reportImages = report.images || [];
 
   return (
-    <Card className="w-full h-full flex flex-col border-none overflow-hidden bg-white/90 backdrop-blur-sm ring-1 ring-gray-200 p-6">
+    <Card className="w-full h-full flex flex-col border-none overflow-hidden bg-white/90 backdrop-blur-sm ring-1 ring-gray-200">
       <form
         onSubmit={handleSubmit(handleConfirm)}
         className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full"
       >
-        {/* LEFT PANEL */}
         <div className="md:col-span-7 flex flex-col bg-white overflow-y-auto h-full border-b md:border-b-0 md:border-r border-gray-100 p-6 order-2 md:order-1 min-w-0 gap-4">
-          {/* Title */}
           <div>
-            <h4 className="text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wider">
+            <h4 className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wider">
               Title
             </h4>
             <p className="text-xl font-bold text-foreground leading-tight break-words">
@@ -144,10 +147,9 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
             </p>
           </div>
           <Separator className="bg-gray-100" />
-          {/* Category */}
           <div>
-            <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
-              <Tag className="size-3.5" /> Category
+            <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
+              Category
             </h4>
             {isPending ? (
               <Select
@@ -156,7 +158,10 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
                 disabled={isLoading}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select category" />
+                  <div className="flex items-center gap-3">
+                    <Tag className="size-4 text-muted-foreground" />
+                    <SelectValue placeholder="Select category" />
+                  </div>
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -167,109 +172,188 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
                 </SelectContent>
               </Select>
             ) : (
-              <div className="inline-flex items-center px-3 py-1.5 rounded-lg bg-primary/5 text-primary font-medium text-sm border border-primary/10">
+              <div className="inline-flex items-center px-3 py-2 rounded-lg bg-purple-50 text-purple-700 font-medium text-sm border border-purple-200 w-fit">
+                <Tag className="size-4 mr-2" />
                 {report.category?.name || 'Unknown'}
               </div>
             )}
-            {/* Competent office*/}
-            <div className="mt-2">
-              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
-                Competent Office
-              </h4>
-              <Input value={competentOfficeName} readOnly />
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
+              Competent Office
+            </h4>
+            <div className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-medium text-sm border border-blue-200 w-fit">
+              <svg
+                className="size-4 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
+              </svg>
+              {competentOfficeName}
             </div>
           </div>
-          {/* Description */}
           <div>
-            <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+            <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">
               Description
             </h4>
             <div className="bg-gray-50/50 rounded-lg p-4 border text-sm text-gray-700 whitespace-pre-wrap break-words min-h-[100px]">
               {report.description}
             </div>
           </div>
-          {/* Explanation */}
-          {((isPending && watchedStatus === ReportStatus.REJECTED) ||
-            report.status === ReportStatus.REJECTED) && (
+          {isPending && (
             <div>
-              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
-                Explanation
+              <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+                Decision
               </h4>
-              {isPending ? (
-                <Textarea
-                  {...register('explanation')}
-                  value={explanation}
-                  onChange={(e) => {
-                    setExplanation(e.target.value);
-                    setValue('explanation', e.target.value);
-                  }}
-                  disabled={isLoading}
-                  rows={3}
-                />
-              ) : (
-                <div className="bg-gray-50/50 rounded-lg p-3 border text-sm text-gray-700 whitespace-pre-wrap break-words">
-                  {explanation}
-                </div>
-              )}
+              <Select
+                value={watchedAction}
+                onValueChange={(v) =>
+                  setValue('action', v as 'accept' | 'reject')
+                }
+                disabled={isLoading}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose action" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="accept">Accept</SelectItem>
+                  <SelectItem value="reject">Reject</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
-          {/* TECHNICAL OFFICER */}
-          {(isPending && watchedStatus === ReportStatus.ASSIGNED) ||
-          report.status === ReportStatus.ASSIGNED ? (
+          {isPending && watchedAction === 'accept' && (
             <div>
               <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
-                Technical Officer
+                Technical Officer (Optional)
               </h4>
-              {isPending ? (
-                <Select
-                  value={watchedOfficer}
-                  onValueChange={(v) => setValue('technicalOfficerId', v)}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select officer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredOfficers.map((u: User) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.firstName} {u.lastName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  readOnly
-                  value={
-                    municipalityUsers.find(
-                      (u) => u.id === report.assignedOfficerId,
-                    )
-                      ? `${municipalityUsers.find((u) => u.id === report.assignedOfficerId)!.firstName} ${municipalityUsers.find((u) => u.id === report.assignedOfficerId)!.lastName}`
-                      : 'Not assigned'
-                  }
-                />
-              )}
+              <Select
+                value={watchedOfficer}
+                onValueChange={(v) => setValue('technicalOfficerId', v)}
+                disabled={isLoading}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Auto-assign to officer with fewest reports" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredOfficers.map((u: User) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.firstName} {u.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Leave empty to automatically assign to the officer with the
+                fewest assigned reports in this office
+              </p>
             </div>
-          ) : null}
-          {/* Footer left panel */}
-          <div className="pt-3 mt-auto flex items-center justify-between text-sm text-muted-foreground border-t border-dashed">
-            <p className="truncate">
-              Reported By:{' '}
-              <span className="font-medium text-foreground">
-                {report.user?.firstName} {report.user?.lastName}
+          )}
+          {isPending && watchedAction === 'reject' && (
+            <div>
+              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+                Rejection Reason
+              </h4>
+              <Textarea
+                {...register('explanation')}
+                value={explanation}
+                onChange={(e) => {
+                  setExplanation(e.target.value);
+                  setValue('explanation', e.target.value);
+                }}
+                disabled={isLoading}
+                rows={3}
+                placeholder="Please provide a reason for rejecting this report"
+              />
+            </div>
+          )}
+          {!isPending && report.status === ReportStatus.ASSIGNED && (
+            <div>
+              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
+                <svg
+                  className="size-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+                Assigned Technical Officer
+              </h4>
+              <div className="inline-flex items-center px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 font-medium text-sm border border-emerald-200 w-fit">
+                <svg
+                  className="size-4 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                {municipalityUsers.find(
+                  (u) => u.id === report.assignedOfficerId,
+                )
+                  ? `${municipalityUsers.find((u) => u.id === report.assignedOfficerId)!.firstName} ${municipalityUsers.find((u) => u.id === report.assignedOfficerId)!.lastName}`
+                  : 'Not assigned'}
+              </div>
+            </div>
+          )}
+          {!isPending && report.status === ReportStatus.REJECTED && (
+            <div>
+              <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+                Rejection Reason
+              </h4>
+              <div className="bg-gray-50/50 rounded-lg p-3 border text-sm text-gray-700 whitespace-pre-wrap break-words">
+                {explanation}
+              </div>
+            </div>
+          )}
+          <div className="pt-4 mt-auto flex items-center justify-between gap-4 border-t border-dashed w-full">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest hidden sm:inline-block shrink-0">
+                Reported By
               </span>
-            </p>
-            <p className="whitespace-nowrap">
-              Last Updated:{' '}
-              <span className="font-medium text-foreground">
-                {new Date(report.updatedAt).toLocaleDateString()}
+              <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-medium text-sm truncate">
+                <UserIcon className="size-3.5 text-slate-500 shrink-0" />
+                <span className="capitalize truncate max-w-[120px]">
+                  {report.user.firstName} {report.user.lastName}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest hidden sm:inline-block text-right">
+                Last Updated
               </span>
-            </p>
+              <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-gray-50 border border-gray-200 text-gray-600 font-medium text-sm">
+                <CalendarClock className="size-3.5 text-gray-400" />
+                <span>
+                  {new Date(report.updatedAt).toLocaleDateString(undefined, {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
-        {/* RIGHT PANEL */}
         <div className="md:col-span-5 flex flex-col gap-6 overflow-y-auto order-1 md:order-2 p-6">
-          {/* Map */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col shrink-0">
             <div className="relative w-full h-56 bg-slate-100">
               {latitude && longitude ? (
@@ -299,35 +383,7 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
               </p>
             </div>
           </div>
-          {/* Status */}
-          <div>
-            <h3 className="mb-3 text-base font-semibold text-foreground/80">
-              Status
-            </h3>
-            {isPending ? (
-              <Select
-                value={watchedStatus}
-                onValueChange={(v) => setValue('status', v)}
-                disabled={isLoading}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ReportStatus.ASSIGNED}>
-                    Assigned
-                  </SelectItem>
-                  <SelectItem value={ReportStatus.REJECTED}>
-                    Rejected
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <span className="block mt-1">{report.status}</span>
-            )}
-          </div>
-          {/* Photos */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex flex-col">
             <h3 className="mb-3 text-base font-semibold text-foreground/80">
               Photos ({reportImages.length})
             </h3>
@@ -354,12 +410,8 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
           </div>
         </div>
         <input type="hidden" {...register('categoryId')} />
-        <input type="hidden" {...register('status')} />
       </form>
       <div className="flex justify-end mt-4 gap-3">
-        <Button variant="outline" disabled={isLoading} onClick={onClose}>
-          Close
-        </Button>
         {isPending && (
           <Button
             type="submit"
@@ -370,7 +422,6 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
           </Button>
         )}
       </div>
-      {/* Enlarged image view */}
       {selectedImageIndex !== null && reportImages.length > 0 && (
         <div
           className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"

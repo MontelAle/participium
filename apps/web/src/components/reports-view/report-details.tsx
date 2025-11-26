@@ -36,7 +36,7 @@ export function ReportDetails({ report }: ReportDetailsProps) {
               {' '}
               <div className="w-full">
                 {' '}
-                <h4 className="text-xs font-medium text-muted-foreground mb-1 uppercase tracking-wider">
+                <h4 className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wider">
                   Title
                 </h4>
                 <p className="text-xl font-bold text-foreground leading-tight break-words w-full">
@@ -45,10 +45,11 @@ export function ReportDetails({ report }: ReportDetailsProps) {
               </div>
               <Separator className="bg-gray-100" />
               <div>
-                <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
-                  <Tag className="size-3.5" /> Category
+                <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
+                  Category
                 </h4>
-                <div className="inline-flex items-center px-3 py-1.5 rounded-lg bg-primary/5 text-primary font-medium text-sm border border-primary/10">
+                <div className="inline-flex items-center px-3 py-2 rounded-lg bg-purple-50 text-purple-700 font-medium text-sm border border-purple-200 w-fit">
+                  <Tag className="size-4 mr-2" />
                   {report.category?.name || 'Unknown'}
                 </div>
               </div>
@@ -70,7 +71,7 @@ export function ReportDetails({ report }: ReportDetailsProps) {
               )}
               <div className="flex-1 w-full">
                 {' '}
-                <h4 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+                <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">
                   Description
                 </h4>
                 <div className="bg-gray-50/50 rounded-lg p-4 border text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words w-full min-h-[100px]">
@@ -151,7 +152,7 @@ export function ReportDetails({ report }: ReportDetailsProps) {
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col">
+            <div className="flex flex-col">
               <h3 className="mb-3 text-base font-semibold text-foreground/80">
                 Photos ({reportImages.length})
               </h3>

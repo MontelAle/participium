@@ -17,7 +17,7 @@ function ReportPage() {
               className="group pl-0 h-8 hover:bg-transparent text-muted-foreground hover:text-primary transition-colors text-sm cursor-pointer"
             >
               <ArrowLeft className="size-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-              Back to map
+              Back
             </Button>
           </div>
 

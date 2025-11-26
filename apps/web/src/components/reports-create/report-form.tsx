@@ -134,7 +134,7 @@ export function ReportForm() {
               <div className="relative flex-1">
                 <textarea
                   {...register('description')}
-                  placeholder="Describe the problem in detail..."
+                  placeholder="Description of the report"
                   className="w-full h-full min-h-[150px] rounded-xl border border-input bg-gray-50/50 pl-4 pr-12 py-3 text-base focus:bg-white shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none leading-relaxed"
                 />
                 <FileText className="absolute top-4 right-4 size-5 text-muted-foreground/50 pointer-events-none" />
