@@ -34,7 +34,7 @@ export function DashboardLayout() {
         )}
         <main
           className={cn(
-            'flex-1 h-full relative transition-all duration-300 ease-out',
+            'flex-1 h-full relative transition-all duration-300 ease-out min-w-0',
             showLeftSidebar && (municipalSidebarOpen ? 'md:ml-72' : 'md:ml-20'),
             showRightSidebar && `md:mr-[${RIGHT_SIDEBAR_WIDTH}]`,
             showLeftSidebar ? 'pb-20 md:pb-0' : '',
