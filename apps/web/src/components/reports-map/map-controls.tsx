@@ -37,7 +37,7 @@ export function SearchBox({
   onSelect,
 }: SearchBoxProps) {
   return (
-    <div className="absolute top-4 left-4 z-[400] w-[calc(100%-2rem)] max-w-sm flex flex-col gap-2 font-sans">
+    <div className="absolute top-4 left-4 z-20 w-[calc(100%-2rem)] max-w-sm flex flex-col gap-2 font-sans">
       <div className="relative flex items-center w-full bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
         <div className="pl-3 text-slate-400">
           {isSearching ? (
@@ -111,7 +111,7 @@ export function MapControls({
     <div
       className={cn(
         'absolute left-6 z-20 flex flex-col gap-3',
-        isMobile ? 'bottom-40' : 'bottom-8',
+        isMobile ? 'bottom-48' : 'bottom-8',
       )}
     >
       <Popover>
