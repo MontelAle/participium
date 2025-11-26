@@ -108,6 +108,13 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onFocus={() => setIsMobileExpanded(true)}
               />
+              {/*}
+            <FilterDialog
+              filters={filters}
+              setFilters={setFilters}
+              categories={categories}
+            />
+            */}
             </div>
 
             {isCitizenUser && (
@@ -138,7 +145,11 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
               'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto hidden md:block',
           )}
         >
-          {isGuestUser ? <GuestState /> : <ReportsList />}
+          {isGuestUser ? (
+            <GuestState />
+          ) : (
+            <ReportsList setIsMobileExpanded={setIsMobileExpanded} />
+          )}
 
           <div className="h-24 md:h-20" />
         </div>

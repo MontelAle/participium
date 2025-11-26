@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { STATUS_COLORS } from './map.utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface SearchBoxProps {
   searchQuery: string;
@@ -105,8 +106,14 @@ export function MapControls({
   onZoomIn,
   onZoomOut,
 }: MapControlsProps) {
+  const isMobile = useIsMobile();
   return (
-    <div className="absolute bottom-8 left-6 z-400 flex flex-col gap-3">
+    <div
+      className={cn(
+        'absolute left-6 z-20 flex flex-col gap-3',
+        isMobile ? 'bottom-40' : 'bottom-8',
+      )}
+    >
       <Popover>
         <PopoverTrigger asChild>
           <Button

@@ -13,13 +13,16 @@ import { isSameDay, subWeeks, subMonths, isAfter } from 'date-fns';
 import { ReportsListProps } from '@/types/report';
 import { useNavigate } from 'react-router-dom';
 
-export function ReportsList() {
+export function ReportsList({
+  setIsMobileExpanded = () => {},
+}: ReportsListProps) {
   const { reports: filteredReports } = useFilteredReports();
   const navigate = useNavigate();
   const setLocation = useActiveReportStore((state) => state.setLocation);
 
   const handleReportClick = (e: React.MouseEvent, report: Report) => {
     e.stopPropagation();
+    setIsMobileExpanded(false);
     setLocation({
       latitude: report.location.coordinates[1] ?? 0,
       longitude: report.location.coordinates[0] ?? 0,

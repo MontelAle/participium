@@ -165,11 +165,7 @@ const DashboardPage = () => {
             <Button
               size="lg"
               className="h-12 rounded-lg shadow-md transition-transform active:scale-95 cursor-pointer"
-              onClick={() =>
-                navigate('/app/municipality-users', {
-                  state: { openCreateDialog: true },
-                })
-              }
+              onClick={() => navigate('/app/municipality-users/create')}
             >
               <Plus className="mr-2 h-5 w-5" />
               Create New User
