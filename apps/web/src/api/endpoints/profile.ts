@@ -1,6 +1,9 @@
 import { apiFetch } from '../client';
+import { UpdateProfileResponseDto, ProfileResponseDto } from '@repo/api';
 
-export async function updateProfileWithFile(formData: FormData) {
+export async function updateProfileWithFile(
+  formData: FormData,
+): Promise<UpdateProfileResponseDto> {
   const res = await fetch('http://localhost:5000/api/users/profile', {
     method: 'PATCH',
     body: formData,
@@ -18,6 +21,6 @@ export async function updateProfileWithFile(formData: FormData) {
   return res.json();
 }
 
-export async function getProfile(id: string) {
-  return apiFetch(`/users/profile/${id}`);
+export async function getProfile(): Promise<ProfileResponseDto> {
+  return apiFetch(`/users/profile/me`);
 }

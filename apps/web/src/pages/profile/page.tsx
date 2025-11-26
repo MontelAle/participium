@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { useProfile } from '@/hooks/useProfile';
+import { useProfile } from '@/hooks/use-profile';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -9,9 +9,8 @@ import {
   InputGroupInput,
   InputGroupAddon,
 } from '@/components/ui/input-group';
-import { User, Mail, Image as ImageIcon, Send, ArrowLeft } from 'lucide-react';
-import { useAuth } from '@/contexts/auth-context';
-import { useNavigate } from 'react-router-dom';
+import { Image as ImageIcon, Send, ArrowLeft } from 'lucide-react';
+import { data, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 type FormValues = {
@@ -22,10 +21,7 @@ type FormValues = {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user: authUser } = useAuth();
-  const { data: { data: me } = {}, updateProfile } = useProfile(
-    authUser?.id || '',
-  );
+  const { data: profile, updateProfile } = useProfile();
   const { control, handleSubmit, setValue, watch, reset } = useForm<FormValues>(
     {
       defaultValues: {
@@ -39,15 +35,15 @@ export default function ProfilePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (me) {
+    if (profile) {
       reset({
-        telegramUsername: me.telegramUsername ?? '',
-        emailNotificationsEnabled: !!me.emailNotificationsEnabled,
+        telegramUsername: profile.data.telegramUsername ?? '',
+        emailNotificationsEnabled: !!profile.data.emailNotificationsEnabled,
         profilePicture: null,
       });
-      setPreviewUrl(me.profilePictureUrl ?? null);
+      setPreviewUrl(profile.data.profilePictureUrl ?? null);
     }
-  }, [me, reset]);
+  }, [profile, reset]);
 
   const watchedPhoto = watch('profilePicture');
   useEffect(() => {
@@ -56,9 +52,9 @@ export default function ProfilePage() {
       setPreviewUrl(url);
       return () => URL.revokeObjectURL(url);
     }
-    if (!watchedPhoto && me?.profilePictureUrl)
-      setPreviewUrl(me.profilePictureUrl);
-  }, [watchedPhoto, me]);
+    if (!watchedPhoto && profile?.data.profilePictureUrl)
+      setPreviewUrl(profile.data.profilePictureUrl);
+  }, [watchedPhoto, profile]);
 
   const validateFile = (file: File) => {
     const allowed = ['image/png', 'image/jpeg', 'image/jpg'];

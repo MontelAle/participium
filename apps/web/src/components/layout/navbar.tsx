@@ -11,9 +11,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/auth-context';
+import { useProfile } from '@/hooks/use-profile';
 
 export function Navbar() {
   const { user, logout, isMunicipalityUser } = useAuth();
+  const { data: profile } = useProfile();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -56,7 +58,7 @@ export function Navbar() {
                 className="h-15 gap-3 px-3 hover:bg-muted rounded-xl cursor-pointer"
               >
                 <Avatar className="size-10 border-2 border-background shadow-sm">
-                  <AvatarImage src="" />
+                  <AvatarImage src={profile.data.profilePictureUrl} />
                   <AvatarFallback className="bg-primary/10 text-primary font-bold">
                     {getUserInitials()}
                   </AvatarFallback>

@@ -55,7 +55,7 @@ export class UsersController {
    *
    */
   @Get('municipality')
-  @Roles('admin','pr_officer')
+  @Roles('admin', 'pr_officer')
   async getMunicipalityUsers(): Promise<MunicipalityUsersResponseDto> {
     const users = await this.usersService.findMunicipalityUsers();
     return { success: true, data: users };
@@ -189,17 +189,20 @@ export class UsersController {
    * @throws {401} Unauthorized - Invalid or missing session
    * @throws {403} Forbidden - Accessing another user's profile
    */
-  @Get('profile/:id')
+  @Get('profile/me')
   @UseGuards(SessionGuard)
-  async getUserProfileById(
-    @Param('id') id: string,
-    @Req() req: RequestWithUserSession,
-  ) {
-    if (id !== req.user.id) {
-      throw new ForbiddenException();
-    }
+  async getUserProfileById(@Req() req: RequestWithUserSession) {
+    const id = req.user.id;
 
     const user = await this.usersService.findUserById(id);
-    return { success: true, data: user };
+    return {
+      success: true,
+      data: {
+        id: user.id,
+        telegramUsername: user.telegramUsername,
+        emailNotificationsEnabled: user.emailNotificationsEnabled,
+        profilePictureUrl: user.profilePictureUrl,
+      },
+    };
   }
 }
