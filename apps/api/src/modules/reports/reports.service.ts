@@ -115,7 +115,7 @@ export class ReportsService {
     const query = this.reportRepository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.user', 'user')
-      .leftJoinAndSelect('report.user.role', 'role')
+      .leftJoinAndSelect('user.role', 'role')
       .leftJoinAndSelect('report.category', 'category');
 
     if (filters?.status) {
