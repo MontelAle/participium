@@ -47,6 +47,7 @@ describe('ReportsController', () => {
       findOne: jest.fn(),
       findNearby: jest.fn(),
       update: jest.fn(),
+      findByUserId: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -481,6 +482,21 @@ describe('ReportsController', () => {
         'non-existent',
         updateDto,
       );
+    });
+  });
+
+  describe('findByUserId', () => {
+    it('should return reports assigned to a specific user', async () => {
+      const mockReports = [mockReport];
+      reportsService.findByUserId.mockResolvedValue(mockReports as Report[]);
+
+      const result = await controller.findByUserId('officer-123', mockReq);
+
+      expect(reportsService.findByUserId).toHaveBeenCalledWith(
+        'officer-123',
+        mockUser,
+      );
+      expect(result).toEqual({ success: true, data: mockReports });
     });
   });
 });
