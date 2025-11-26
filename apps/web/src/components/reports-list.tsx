@@ -9,16 +9,59 @@ import { cn } from '@/lib/utils';
 import { useFilteredReports } from '@/hooks/use-filtered-reports';
 import { getStatusConfig } from '@/lib/utils';
 import { MapPin, CalendarDays, Tag, User, Ghost } from 'lucide-react';
-import { isSameDay, subWeeks, subMonths, isAfter } from 'date-fns';
 import { ReportsListProps } from '@/types/report';
 import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
 
 export function ReportsList({
   setIsMobileExpanded = () => {},
 }: ReportsListProps) {
-  const { reports: filteredReports } = useFilteredReports();
+  const { reports: baseFilteredReports } = useFilteredReports();
+  const { data: allReports = [] } = useReports({ enabled: true });
+  const { user, isCitizenUser, isGuestUser } = useAuth();
+  const { searchTerm, filters, showOnlyMyReports } = useFilterStore();
   const navigate = useNavigate();
   const setLocation = useActiveReportStore((state) => state.setLocation);
+
+  const sidebarReports = useMemo(() => {
+    if (isGuestUser) return [];
+    if (!isCitizenUser || !user) return baseFilteredReports;
+
+    const myRejectedReports = allReports.filter((report) => {
+      if (report.status !== 'rejected') return false;
+      if (report.userId !== user.id) return false;
+
+      if (!report.userId) return false;
+
+      if (showOnlyMyReports && report.userId !== user.id) return false;
+
+      if (searchTerm.trim() !== '') {
+        const term = searchTerm.toLowerCase();
+        const matches =
+          report.title.toLowerCase().includes(term) ||
+          (report.address && report.address.toLowerCase().includes(term)) ||
+          report.category.name.toLowerCase().includes(term);
+        if (!matches) return false;
+      }
+
+      if (filters?.status && report.status !== filters.status) return false;
+      if (filters?.category && report.category.name !== filters.category)
+        return false;
+
+      return true;
+    });
+
+    return [...baseFilteredReports, ...myRejectedReports];
+  }, [
+    baseFilteredReports,
+    allReports,
+    isCitizenUser,
+    isGuestUser,
+    user,
+    searchTerm,
+    filters,
+    showOnlyMyReports,
+  ]);
 
   const handleReportClick = (e: React.MouseEvent, report: Report) => {
     e.stopPropagation();
@@ -35,7 +78,7 @@ export function ReportsList({
     navigate(`/reports/view/${reportId}`);
   };
 
-  if (filteredReports.length === 0) {
+  if (sidebarReports.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-48 text-muted-foreground p-4 text-center">
         <p className="font-medium">No reports found</p>
@@ -47,9 +90,9 @@ export function ReportsList({
   return (
     <div className="flex flex-col gap-3 p-4 pb-24">
       <p className="text-sm font-semibold text-muted-foreground text-right">
-        {filteredReports.length} reports found
+        {sidebarReports.length} reports found
       </p>
-      {filteredReports.map((report) => {
+      {sidebarReports.map((report) => {
         const statusConfig = getStatusConfig(report.status);
         const formattedDate = new Date(report.createdAt).toLocaleDateString(
           'en-En',
@@ -117,16 +160,18 @@ export function ReportsList({
               </div>
             </div>
 
-            <div className="flex items-center justify-end pt-3 border-t border-dashed">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-base rounded-md border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 z-10"
-                onClick={(e) => handleReportClick(e, report)}
-              >
-                Show on Map
-              </Button>
-            </div>
+            {report.status !== 'rejected' && (
+              <div className="flex items-center justify-end pt-3 border-t border-dashed">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-base rounded-md border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 z-10"
+                  onClick={(e) => handleReportClick(e, report)}
+                >
+                  Show on Map
+                </Button>
+              </div>
+            )}
           </div>
         );
       })}

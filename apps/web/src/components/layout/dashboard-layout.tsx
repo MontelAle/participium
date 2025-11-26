@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Navbar } from '@/components/layout/navbar';
 import { MunicipalSidebar } from '@/components/layout/municipal-sidebar';
@@ -7,17 +7,22 @@ import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 
 export function DashboardLayout() {
-  const {
-    isMunicipalityUser,
-    isAdminUser,
-    isCitizenUser,
-    isGuestUser,
-    isMunicipalPrOfficer,
-  } = useAuth();
+  const { isMunicipalityUser, isAdminUser, isCitizenUser, isGuestUser } =
+    useAuth();
   const [municipalSidebarOpen, setMunicipalSidebarOpen] = useState(true);
   const location = useLocation();
   const isMapPage = location.pathname === '/reports/map';
   const RIGHT_SIDEBAR_WIDTH = '400px';
+
+  useEffect(() => {
+    const isReportViewPage =
+      location.pathname.includes('/app/assign-reports/') ||
+      location.pathname.includes('/app/assigned-reports/');
+
+    if (isReportViewPage && window.innerWidth >= 768) {
+      setMunicipalSidebarOpen(false);
+    }
+  }, [location.pathname]);
 
   const showLeftSidebar = isMunicipalityUser || isAdminUser;
   const showRightSidebar = (isCitizenUser || isGuestUser) && isMapPage;

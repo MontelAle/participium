@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -41,7 +41,12 @@ export default function ReportsMap() {
   const setLocation = useActiveReportStore((state) => state.setLocation);
   const location = useActiveReportStore((state) => state.locationData);
   const clearLocation = useActiveReportStore((s) => s.clearLocation);
-  const { reports } = useFilteredReports();
+  const { reports: filteredReports } = useFilteredReports();
+
+  const mapReports = useMemo(
+    () => filteredReports.filter((report) => report.status !== 'rejected'),
+    [filteredReports],
+  );
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -227,9 +232,9 @@ export default function ReportsMap() {
     clusterGroup.clearLayers();
     markersMapRef.current.clear();
 
-    if (!reports?.length) return;
+    if (!mapReports?.length) return;
 
-    reports.forEach((report: any) => {
+    mapReports.forEach((report: any) => {
       const [lng, lat] = report.location?.coordinates ?? [0, 0];
       if (!lat || !lng) return;
 
@@ -315,7 +320,7 @@ export default function ReportsMap() {
       markersMapRef.current.set(report.id, m);
       clusterGroup.addLayer(m);
     });
-  }, [reports, navigate]);
+  }, [mapReports, navigate]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -327,7 +332,7 @@ export default function ReportsMap() {
       return;
     }
 
-    const existingReport = reports.find(
+    const existingReport = mapReports.find(
       (r) =>
         Math.abs((r.location?.coordinates[1] ?? 0) - location.latitude) <
           0.00001 &&
@@ -406,7 +411,7 @@ export default function ReportsMap() {
     map.flyTo([location.latitude, location.longitude], 16, { duration: 1.2 });
     setTimeout(() => marker.openPopup(), 300);
     markerRef.current = marker;
-  }, [location, navigate, isCitizenUser, reports, clearLocation]);
+  }, [location, navigate, isCitizenUser, mapReports, clearLocation]);
 
   useEffect(() => {
     return () => clearLocation();

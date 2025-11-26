@@ -21,7 +21,7 @@ export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
     });
   }
 
-  if (hasRole(['admin', 'pr_officer'])) {
+  if (hasRole(['pr_officer'])) {
     menuItems.push({
       title: 'Assign Reports',
       href: '/app/assign-reports',
@@ -29,7 +29,7 @@ export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
     });
   }
 
-  if (hasRole(['admin', 'tech_officer'])) {
+  if (hasRole(['tech_officer'])) {
     menuItems.push({
       title: 'Assigned Reports',
       href: '/app/assigned-reports',

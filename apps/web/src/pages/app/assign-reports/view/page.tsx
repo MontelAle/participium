@@ -1,5 +1,5 @@
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn, getStatusConfig } from '@/lib/utils';
@@ -26,6 +26,12 @@ function AssignReportsViewPage() {
   }
 
   const statusConfig = getStatusConfig(report.status);
+  const formattedDate = new Date(report.createdAt).toLocaleDateString('en-En', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 
   return (
     <div className="flex flex-col w-full h-full animate-in fade-in zoom-in-95 duration-300">
@@ -56,6 +62,11 @@ function AssignReportsViewPage() {
               >
                 {statusConfig.label}
               </Badge>
+            </div>
+
+            <div className="flex items-center gap-2 text-muted-foreground text-sm bg-white/60 px-3 py-1.5 rounded-md border border-border/40 w-fit">
+              <CalendarDays className="size-4 text-primary/70" />
+              <span className="font-medium">{formattedDate}</span>
             </div>
           </div>
         </div>
