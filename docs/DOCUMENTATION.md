@@ -560,16 +560,15 @@ radiusMeters = 5000;
 
 **Content**:
 
-- `entities/`: TypeORM definitions (User, Role, Account, Session, Category, Report)
+- `entities/`: TypeORM definitions (User, Role, Office, Account, Session, Category, Report)
 - `dto/`: Data Transfer Objects
-  - `login.dto.ts`
-  - `register.dto.ts`
-  - `create-municipality-user.dto.ts`
-  - `update-municipality-user.dto.ts`
-  - `user.dto.ts` (UpdateProfileDto, UpdateProfileResponseDto)
-  - `create-report.dto.ts`
-  - `update-report.dto.ts`
-  - `filter-reports.dto.ts`
+  - `auth.dto.ts` (RegisterDto, LoginDto, LoginResponseDto, LogoutResponseDto)
+  - `municipality-user.dto.ts` (CreateMunicipalityUserDto, UpdateMunicipalityUserDto, responses)
+  - `profile.dto.ts` (UpdateProfileDto, ProfileResponseDto)
+  - `report.dto.ts` (CreateReportDto, UpdateReportDto, FilterReportsDto, responses)
+  - `role.dto.ts` (RolesResponseDto)
+  - `category.dto.ts` (CategoriesResponseDto)
+  - `response.dto.ts` (Base ResponseDto interface)
 
 ### @repo/eslint-config
 
@@ -623,6 +622,7 @@ This table shows which office is competent for specific problem categories
 | **Environment Quality**                 | `environment`     | Waste                                              |
 | **Green Areas and Parks**               | `green_parks`     | Public Green Areas and Playgrounds                 |
 | **Decentralization and Civic Services** | `civic_services`  | Other (General issues)                             |
+| **Organizational Office**               | `organization`    | No category                                        |
 
 ### Report Status Lifecycle
 
@@ -645,7 +645,11 @@ The system follows a workflow where the **Organization Office** (PR Officers) ac
     - The report appears in the dashboard of the **PR Officers**
     - A PR Officer performs a preliminary verification of the content and image
     - **Action**: The PR Officer marks the report as **Accepted** (or Rejected with motivations)
-    - **Outcome**: Upon acceptance, the report status changes to **Assigned**. The system routes the report to the competent technical office determined by the problem category (e.g., a "Public Lighting" issue is sent to the _Infrastructure Office_).
+      - Upon acceptance, the system determines the competent technical office based on the report's category
+      - The PR Officer can choose between two assignment options:
+        - **Manual Assignment**: Select a specific technical officer from the competent office
+        - **Automatic Assignment**: Let the system assign the report to the officer with the lowest workload (fewest assigned reports)
+    - **Outcome**: The report status changes to **Assigned** and is routed to the designated technical officer in the competent office (e.g., a "Public Lighting" issue is sent to the _Infrastructure Office_).
 
 3.  **Technical View (Technical Officer)**:
     - The **Technical Officer** (e.g., `tech_infrastructure_1`) logs into the platform
@@ -656,14 +660,15 @@ The system follows a workflow where the **Organization Office** (PR Officers) ac
 
 This table lists the credentials (usernames) to use for testing the workflow
 
-| Office                                | Technical Officer                                 | PR Officer                                                  |
-| :------------------------------------ | :------------------------------------------------ | :---------------------------------------------------------- |
-| **Maintenance & Technical Services**  | `tech_maintenance_1` `tech_maintenance_2`         | `pr_officer_1` `pr_officer_2` `pr_officer_3` `pr_officer_4` |
-| **Infrastructure**                    | `tech_infrastructure_1` `tech_infrastructure_1`   | _Same as above_                                             |
-| **Local Public Services**             | `tech_public_services_1` `tech_public_services_2` | _Same as above_                                             |
-| **Environment Quality**               | `tech_environment_1` `tech_environment_2`         | _Same as above_                                             |
-| **Green Areas and Parks**             | `tech_green_parks_1` `tech_green_parks_2`         | _Same as above_                                             |
-| **Decentralization & Civic Services** | `tech_civic_services_1` `tech_civic_services_2`   | _Same as above_                                             |
+| Office                                  | User Type                        | Username                                                                |
+| :-------------------------------------- | :------------------------------- | :---------------------------------------------------------------------- |
+| **Maintenance & Technical Services**    | Maintenance Technician           | `tech_maintenance_1`, `tech_maintenance_2`                              |
+| **Infrastructure**                      | Infrastructure Technician        | `tech_infrastructure_1`, `tech_infrastructure_2`                        |
+| **Local Public Services**               | Public Services Technician       | `tech_public_services_1`, `tech_public_services_2`                      |
+| **Environment Quality**                 | Environment Technician           | `tech_environment_1`, `tech_environment_2`                              |
+| **Green Areas and Parks**               | Green Parks Technician           | `tech_green_parks_1`, `tech_green_parks_2`                              |
+| **Decentralization & Civic Services**   | Civic Services Technician        | `tech_civic_services_1`, `tech_civic_services_2`                        |
+| **Organizational**                      | System Admin, PR Officer         | `admin`, `pr_officer_1`, `pr_officer_2`, `pr_officer_3`, `pr_officer_4` |
 
 ---
 
@@ -906,6 +911,6 @@ The project is structured for future evolutions:
 
 ---
 
-**Document Version**: 1.1  
-**Last Update**: November 24, 2025  
+**Document Version**: 1.3  
+**Last Update**: November 27, 2025  
 **Project Status**: In Development
