@@ -29,6 +29,7 @@ describe('UsersController', () => {
       deleteMunicipalityUserById: jest.fn(),
       updateMunicipalityUserById: jest.fn(),
       updateProfile: jest.fn(),
+      findUserById: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -226,7 +227,11 @@ describe('UsersController', () => {
       expect(result.success).toBe(true);
       expect(result.data.id).toBe('user-1');
       expect(result.data.telegramUsername).toBe('@newusername');
-      expect(usersService.updateProfile).toHaveBeenCalledWith('user-1', dto, undefined);
+      expect(usersService.updateProfile).toHaveBeenCalledWith(
+        'user-1',
+        dto,
+        undefined,
+      );
     });
 
     it('should update profile with file upload', async () => {
@@ -251,8 +256,14 @@ describe('UsersController', () => {
       const result = await controller.updateProfile(req, dto, file);
 
       expect(result.success).toBe(true);
-      expect(result.data.profilePictureUrl).toBe('http://minio.test/profile.jpg');
-      expect(usersService.updateProfile).toHaveBeenCalledWith('user-1', dto, file);
+      expect(result.data.profilePictureUrl).toBe(
+        'http://minio.test/profile.jpg',
+      );
+      expect(usersService.updateProfile).toHaveBeenCalledWith(
+        'user-1',
+        dto,
+        file,
+      );
     });
 
     it('should throw BadRequestException for invalid file type', async () => {
@@ -293,6 +304,28 @@ describe('UsersController', () => {
       await expect(controller.updateProfile(req, dto)).rejects.toThrow(
         ForbiddenException,
       );
+    });
+  });
+
+  describe('getUserProfileById', () => {
+    it('should return user profile if ids match', async () => {
+      const mockUser = { id: 'user-1', username: 'me' } as User;
+      const req = { user: { id: 'user-1' } } as any;
+
+      usersService.findUserById.mockResolvedValue(mockUser);
+
+      const result = await controller.getUserProfileById('user-1', req);
+
+      expect(usersService.findUserById).toHaveBeenCalledWith('user-1');
+      expect(result).toEqual({ success: true, data: mockUser });
+    });
+
+    it('should throw ForbiddenException if accessing another user profile', async () => {
+      const req = { user: { id: 'user-1' } } as any;
+
+      await expect(
+        controller.getUserProfileById('user-2', req),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 });
