@@ -176,7 +176,7 @@ participium/
 | POST   | `/municipality`          | Create municipal user       |
 | POST   | `/municipality/user/:id` | Update user                 |
 | DELETE | `/municipality/user/:id` | Delete user                 |
-| PATCH  | `/profile`               | Update regular user profile |
+| PATCH  | `/profile/me`            | Update regular user profile |
 
 **Functionality**:
 
@@ -187,7 +187,7 @@ participium/
 - File upload handling with Multer
 - MinIO integration for profile picture storage
 
-**Profile Management** (`PATCH /profile`):
+**Profile Management** (`PATCH /profile/me`):
 
 - **Telegram Username**: Optional Telegram handle (`@username`)
   - Validated format: `@[a-zA-Z0-9_]{4,31}` (5-32 characters)

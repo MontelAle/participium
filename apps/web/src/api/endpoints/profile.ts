@@ -3,7 +3,7 @@ import { ProfileResponseDto } from '@repo/api';
 import type { User } from '@repo/api';
 
 export async function updateProfileWithFile(formData: FormData) {
-  const res = await fetch('http://localhost:5000/api/users/profile', {
+  const res = await fetch('http://localhost:5000/api/users/profile/me', {
     method: 'PATCH',
     body: formData,
     credentials: 'include',

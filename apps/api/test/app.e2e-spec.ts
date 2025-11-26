@@ -311,14 +311,17 @@ describe('AppController (e2e)', () => {
             return true;
           }
 
-          if (cookieValue === 'sess_muni.secret' && path === '/users/profile') {
+          if (
+            cookieValue === 'sess_muni.secret' &&
+            path === '/users/profile/me'
+          ) {
             req.user = mockUsers[0]; // john - admin (municipal user)
             req.session = mockSession;
             return true;
           }
 
-          // Use regular user (user_2) for /users/profile endpoint
-          if (path === '/users/profile') {
+          // Use regular user (user_2) for /users/profile/me endpoint
+          if (path === '/users/profile/me') {
             req.user = mockUsers[1]; // jane - regular user
           } else {
             req.user = mockUser; // john - admin
@@ -592,25 +595,25 @@ describe('AppController (e2e)', () => {
   // ============================================================================
   // Regular User Profile Management
   // ============================================================================
-  it('PATCH /users/profile with telegram username returns 200 and updates profile', async () => {
+  it('PATCH /users/profile/me with telegram username returns 200 and updates profile', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '@newusername' })
       .expect(200);
   });
 
-  it('PATCH /users/profile with emailNotificationsEnabled returns 200 and updates profile', async () => {
+  it('PATCH /users/profile/me with emailNotificationsEnabled returns 200 and updates profile', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ emailNotificationsEnabled: true })
       .expect(200);
   });
 
-  it('PATCH /users/profile with invalid file type returns 400', async () => {
+  it('PATCH /users/profile/me with invalid file type returns 400', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .attach('profilePicture', Buffer.from('test'), {
         filename: 'test.txt',
@@ -619,56 +622,56 @@ describe('AppController (e2e)', () => {
       .expect(400);
   });
 
-  it('PATCH /users/profile without authentication returns 403', async () => {
+  it('PATCH /users/profile/me without authentication returns 403', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .send({ telegramUsername: '@username' })
       .expect(403);
   });
 
-  it('PATCH /users/profile as municipality user returns 403', async () => {
+  it('PATCH /users/profile/me as municipality user returns 403', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_muni.secret')
       .send({ telegramUsername: '@username' })
       .expect(403);
   });
 
-  it('PATCH /users/profile with invalid telegram username format returns 400', async () => {
+  it('PATCH /users/profile/me with invalid telegram username format returns 400', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: 'invalid' })
       .expect(400);
   });
 
-  it('PATCH /users/profile with telegram username too short returns 400', async () => {
+  it('PATCH /users/profile/me with telegram username too short returns 400', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '@abc' })
       .expect(400);
   });
 
-  it('PATCH /users/profile with telegram username too long returns 400', async () => {
+  it('PATCH /users/profile/me with telegram username too long returns 400', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '@' + 'a'.repeat(32) })
       .expect(400);
   });
 
-  it('PATCH /users/profile with valid telegram username returns 200', async () => {
+  it('PATCH /users/profile/me with valid telegram username returns 200', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '@valid_username' })
       .expect(200);
   });
 
-  it('PATCH /users/profile removes telegram username with empty string', async () => {
+  it('PATCH /users/profile/me removes telegram username with empty string', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '' })
       .expect(200);

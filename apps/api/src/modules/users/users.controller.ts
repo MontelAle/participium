@@ -137,7 +137,7 @@ export class UsersController {
    * @throws {400} Bad Request - Invalid data or file type
    * @throws {401} Unauthorized - Invalid or missing session
    */
-  @Patch('profile')
+  @Patch('profile/me')
   @UseGuards(SessionGuard)
   @UseInterceptors(FileInterceptor('profilePicture'))
   @ApiConsumes('multipart/form-data')
