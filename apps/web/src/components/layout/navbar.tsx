@@ -15,7 +15,7 @@ import { useProfile } from '@/hooks/use-profile';
 
 export function Navbar() {
   const { user, logout, isMunicipalityUser } = useAuth();
-  const { data: profile } = useProfile();
+  const { data: profile } = useProfile({ enabled: !!user });
   const navigate = useNavigate();
 
   const handleLogout = async () => {
