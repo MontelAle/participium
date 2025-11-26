@@ -2,6 +2,8 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
+    "assets": ["**/*.jpg", "**/*.png", "**/*.jpeg"],
+    "watchAssets": true,
     "plugins": [
       {
         "name": "@nestjs/swagger",

@@ -8,6 +8,9 @@ import { Office } from '../../../common/entities/office.entity';
 import { nanoid } from 'nanoid';
 import * as bcrypt from 'bcrypt';
 import { faker } from '@faker-js/faker';
+import { MinioProvider } from '../../minio/minio.provider';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const REAL_REPORTS = [
   {
@@ -18,7 +21,7 @@ const REAL_REPORTS = [
     lat: 45.049784,
     lng: 7.641252,
     categoryName: 'Road Signs and Traffic Lights',
-    images: ['images/DetachedRoadSign1.jpg','DetachedRoadSign2.jpg']
+    images: ['DetachedRoadSign1.jpg', 'DetachedRoasSign2.jpg'],
   },
   {
     title: 'Damaged Sidewalk',
@@ -26,19 +29,28 @@ const REAL_REPORTS = [
       'Street corner with broken pavement, posing a hazard to pedestrians and vehicles. Repair needed.',
     address: 'Via Amalia Guglielminetti, Torino',
     lat: 45.052937,
-    lng:  7.638527,
+    lng: 7.638527,
     categoryName: 'Roads and Urban Furnishings',
-    images: ['images/DamageSidewalk1.jpg','images/DamageSidewalk2.jpg','images/DamageSidewalk3.jpg']
+    images: [
+      'DamageSidewalk1.jpg',
+      'DamageSidewalk2.jpg',
+      'DamageSidewalk3.jpg',
+    ],
   },
   {
-    title: 'Road Sign Completely Destroyed and Lying in the Middle of the Street',
+    title:
+      'Road Sign Completely Destroyed and Lying in the Middle of the Street',
     description:
       'I would like to report that the road sign in this area is completely destroyed and lying on the ground in the middle of the roadway. Its presence poses a danger to drivers and cyclists, who might not notice the obstacle in time. It should be removed and the signage restored as soon as possible.',
     address: 'Via Gorizia, 37, Torino',
     lat: 45.051301,
     lng: 7.641507,
     categoryName: 'Road Signs and Traffic Lights',
-    images: ['images/RoadSignCompletelyDestroyed1,jpg','images/RoadSignCompletelyDestroyed2.jpg','images/RoadSignCompletelyDestroyed3.jpg']
+    images: [
+      'RoadSignCompletelyDestroyed1.jpg',
+      'RoadSignCompletelyDestroyed2.jpg',
+      'RoadSignCompletelyDestroyed3.jpg',
+    ],
   },
   {
     title: 'Cracked Sidewalk with Grass Growing Through the Gaps Description',
@@ -48,7 +60,7 @@ const REAL_REPORTS = [
     lat: 45.053499,
     lng: 7.636862,
     categoryName: 'Roads and Urban Furnishings',
-    images: ['images/CrackedSidewalkWithGrass1.jpg','images/CrackedSidewalkWithGrass2.jpg']
+    images: ['CrackedSidewalkWithGras1s.jpg', 'CrackedSidewalkWithGrass2.jpg'],
   },
   {
     title: 'Public Water Fountain Out of Service',
@@ -56,9 +68,9 @@ const REAL_REPORTS = [
       'The public water fountain is currently out of service: the water flow is completely absent. A technical intervention is needed to make the fountain operational again.',
     address: 'Corso Quattro Novembre, Torino',
     lat: 45.043917,
-    lng: 7.650200,
+    lng: 7.6502,
     categoryName: 'Water Supply – Drinking Water',
-    images: ['images/Fountain.png']
+    images: ['Fountain.png'],
   },
   {
     title: 'Street Light Not Working',
@@ -68,7 +80,7 @@ const REAL_REPORTS = [
     lat: 45.076697,
     lng: 7.632842,
     categoryName: 'Public Lighting',
-    images: ['images/StreetLight.jpg']
+    images: ['StreetLight.jpg'],
   },
   {
     title: 'Bent Pedestrian Bollard',
@@ -78,7 +90,7 @@ const REAL_REPORTS = [
     lat: 45.062138,
     lng: 7.647218,
     categoryName: 'Roads and Urban Furnishings',
-    images: ['images/PedestrianBollard.jpg']
+    images: ['PedestrianBollard.jpg'],
   },
   {
     title: 'Sidewalk in Very Bad Condition',
@@ -88,7 +100,7 @@ const REAL_REPORTS = [
     lat: 45.073873,
     lng: 7.662128,
     categoryName: 'Roads and Urban Furnishings',
-    images: ['images/SidewalkBadCondition1.jpg','images/SidewalkBadCondition1.jpg']
+    images: ['SidewalkBadCondition1.jpg', 'SidewalkBadCondition2.jpg'],
   },
   {
     title: 'Traffic Light Not Working',
@@ -98,7 +110,7 @@ const REAL_REPORTS = [
     lat: 45.064987,
     lng: 7.648226,
     categoryName: 'Road Signs and Traffic Lights',
-    images: ['images/TrafficLight.jpg']
+    images: ['TrafficLight.jpg'],
   },
   {
     title: 'Sidewalk in Poor Condition',
@@ -108,7 +120,7 @@ const REAL_REPORTS = [
     lat: 45.071205,
     lng: 7.695782,
     categoryName: 'Roads and Urban Furnishings',
-    images: ['images/SidewalkPoorCondition.jpg']
+    images: ['SidewalkPoorCondition.jpg'],
   },
   {
     title: 'Pole on the Ground (Possibly a Taxi Stand, Uncertain)',
@@ -118,11 +130,14 @@ const REAL_REPORTS = [
     lat: 45.065305,
     lng: 7.648741,
     categoryName: 'Roads and Urban Furnishings',
-    images: ['images/PoleOnTheGround1.jpg','images/PoleOnTheGround2jpg']
+    images: ['PoleOnTheGround1.jpg', 'PoleOnTheGround2.jpg'],
   },
 ];
 
-export async function seedDatabase(dataSource: DataSource) {
+export async function seedDatabase(
+  dataSource: DataSource,
+  minioProvider: MinioProvider,
+) {
   const roleRepo = dataSource.getRepository(Role);
   const userRepo = dataSource.getRepository(User);
   const accountRepo = dataSource.getRepository(Account);
@@ -312,24 +327,6 @@ export async function seedDatabase(dataSource: DataSource) {
       last: 'Bianchi',
       email: 'luca.b@libero.it',
     },
-    {
-      username: 'sofia_verdi',
-      first: 'Sofia',
-      last: 'Verdi',
-      email: 'sofia.v88@hotmail.com',
-    },
-    {
-      username: 'julia_black',
-      first: 'Julia',
-      last: 'Black',
-      email: 'juliablack@gmail.com',
-    },
-    {
-      username: 'anthony_count',
-      first: 'Anthony',
-      last: 'Count',
-      email: 'anto.count@email.it',
-    },
   ];
 
   for (const c of citizensData) {
@@ -339,8 +336,22 @@ export async function seedDatabase(dataSource: DataSource) {
 
   const currentReportCount = await reportRepo.count();
 
-  if (currentReportCount < 10) {
+  const shouldSeed =
+    process.env.FORCE_SEED === 'true' || currentReportCount < 10;
+
+  if (shouldSeed) {
     const reportsToSave: Report[] = [];
+
+    let imagesDir = path.join(__dirname, 'images');
+
+    if (__dirname.includes('/dist/')) {
+      imagesDir = path.join(
+        __dirname,
+        '../../../../../src/providers/database/seed/images',
+      );
+    }
+
+    console.log('Looking for images in:', imagesDir);
 
     for (const realReport of REAL_REPORTS) {
       const randomUser =
@@ -353,10 +364,46 @@ export async function seedDatabase(dataSource: DataSource) {
       }
 
       const isResolved = Math.random() > 0.8;
-      const isAnonymous = Math.random() < 0.2;
+      const isAnonymous = Math.random() < 0.5;
+
+      const reportId = nanoid();
+
+      const uploadedImageUrls: string[] = [];
+      for (const imageName of realReport.images) {
+        try {
+          const imagePath = path.join(imagesDir, imageName);
+
+          // Check if file exists
+          if (!fs.existsSync(imagePath)) {
+            console.warn(`Image file not found: ${imagePath}`);
+            continue;
+          }
+
+          const imageBuffer = fs.readFileSync(imagePath);
+          const mimeType = imageName.endsWith('.png')
+            ? 'image/png'
+            : 'image/jpeg';
+
+          // Generate unique filename for MinIO
+          const timestamp = Date.now();
+          const minioFileName = `reports/${reportId}/${timestamp}-${imageName}`;
+
+          // Upload to MinIO
+          const imageUrl = await minioProvider.uploadFile(
+            minioFileName,
+            imageBuffer,
+            mimeType,
+          );
+
+          uploadedImageUrls.push(imageUrl);
+          console.log(`Uploaded image: ${imageName} -> ${imageUrl}`);
+        } catch (error) {
+          console.error(`Failed to upload image ${imageName}:`, error);
+        }
+      }
 
       const report = reportRepo.create({
-        id: nanoid(),
+        id: reportId,
         title: realReport.title,
         description: realReport.description,
         status: isResolved ? ReportStatus.RESOLVED : ReportStatus.PENDING,
@@ -365,7 +412,7 @@ export async function seedDatabase(dataSource: DataSource) {
           type: 'Point',
           coordinates: [realReport.lng, realReport.lat],
         },
-        images: realReport.images,
+        images: uploadedImageUrls,
         user: randomUser,
         category: category,
         createdAt: faker.date.recent({ days: 30 }),
