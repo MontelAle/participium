@@ -12,8 +12,7 @@ const AssignedReportsPage = () => {
     if (!user) return [];
     return reports.filter((report) => report.assignedOfficerId === user.id);
   }, [reports, user]);
-
-  if (isLoading) return <div>Loading...</div>;
+  
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
