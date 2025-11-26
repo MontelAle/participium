@@ -12,7 +12,10 @@ import { isSameDay, subWeeks, subMonths, isAfter } from 'date-fns';
 import { ReportsListProps } from '@/types/report';
 import { useNavigate } from 'react-router-dom';
 
-export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
+export function ReportsList({
+  onlyMyReports = false,
+  setIsMobileExpanded = () => {},
+}: ReportsListProps) {
   const { data: reports = [] } = useReports();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -75,6 +78,7 @@ export function ReportsList({ onlyMyReports = false }: ReportsListProps) {
 
   const handleReportClick = (e: React.MouseEvent, report: Report) => {
     e.stopPropagation();
+    setIsMobileExpanded(false);
     setLocation({
       latitude: report.location.coordinates[1] ?? 0,
       longitude: report.location.coordinates[0] ?? 0,

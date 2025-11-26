@@ -124,7 +124,10 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
               'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto hidden md:block',
           )}
         >
-          <ReportsList onlyMyReports={showMyReports} />
+          <ReportsList
+            onlyMyReports={showMyReports}
+            setIsMobileExpanded={setIsMobileExpanded}
+          />
           <div className="h-24 md:h-20" />
         </div>
       </aside>
