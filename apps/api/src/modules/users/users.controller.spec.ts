@@ -308,24 +308,16 @@ describe('UsersController', () => {
   });
 
   describe('getUserProfileById', () => {
-    it('should return user profile if ids match', async () => {
+    it('should return user profile for current user', async () => {
       const mockUser = { id: 'user-1', username: 'me' } as User;
       const req = { user: { id: 'user-1' } } as any;
 
       usersService.findUserById.mockResolvedValue(mockUser);
 
-      const result = await controller.getUserProfileById('user-1', req);
+      const result = await controller.getUserProfileById(req);
 
       expect(usersService.findUserById).toHaveBeenCalledWith('user-1');
       expect(result).toEqual({ success: true, data: mockUser });
-    });
-
-    it('should throw ForbiddenException if accessing another user profile', async () => {
-      const req = { user: { id: 'user-1' } } as any;
-
-      await expect(
-        controller.getUserProfileById('user-2', req),
-      ).rejects.toThrow(ForbiddenException);
     });
   });
 });
