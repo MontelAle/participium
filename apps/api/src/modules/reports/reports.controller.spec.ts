@@ -19,6 +19,9 @@ describe('ReportsController', () => {
   let controller: ReportsController;
   let reportsService: jest.Mocked<ReportsService>;
 
+  const mockUser = { id: 'user-123', role: { name: 'user' } };
+  const mockReq = { user: mockUser };
+
   const mockReport: Partial<Report> = {
     id: 'report-123',
     title: 'Test Report',
@@ -34,6 +37,7 @@ describe('ReportsController', () => {
     categoryId: 'cat-123',
     createdAt: new Date(),
     updatedAt: new Date(),
+    isAnonymous: false,
   };
 
   beforeEach(async () => {
@@ -43,7 +47,6 @@ describe('ReportsController', () => {
       findOne: jest.fn(),
       findNearby: jest.fn(),
       update: jest.fn(),
-      remove: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -72,6 +75,7 @@ describe('ReportsController', () => {
         longitude: 7.686864,
         latitude: 45.070312,
         categoryId: 'cat-123',
+        isAnonymous: false,
       };
 
       const mockFiles = [
@@ -104,6 +108,7 @@ describe('ReportsController', () => {
         longitude: 7.686864,
         latitude: 45.070312,
         categoryId: 'cat-123',
+        isAnonymous: false,
       };
 
       const mockFiles = [
@@ -148,6 +153,7 @@ describe('ReportsController', () => {
         longitude: 7.686864,
         latitude: 45.070312,
         categoryId: 'cat-123',
+        isAnonymous: false,
       };
 
       const mockReq = { user: { id: 'user-123' } };
@@ -164,6 +170,7 @@ describe('ReportsController', () => {
         longitude: 7.686864,
         latitude: 45.070312,
         categoryId: 'cat-123',
+        isAnonymous: false,
       };
 
       const mockFiles = [
@@ -187,6 +194,7 @@ describe('ReportsController', () => {
         longitude: 7.686864,
         latitude: 45.070312,
         categoryId: 'cat-123',
+        isAnonymous: false,
       };
 
       const mockFiles = [
@@ -214,6 +222,7 @@ describe('ReportsController', () => {
         longitude: 7.686864,
         latitude: 45.070312,
         categoryId: 'cat-123',
+        isAnonymous: false,
       };
 
       const mockFiles = [
@@ -238,9 +247,9 @@ describe('ReportsController', () => {
       const mockReports = [mockReport, { ...mockReport, id: 'report-2' }];
       reportsService.findAll.mockResolvedValue(mockReports as Report[]);
 
-      const result = await controller.findAll({});
+      const result = await controller.findAll(mockReq, {});
 
-      expect(reportsService.findAll).toHaveBeenCalledWith({});
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, {});
       expect(result).toEqual({ success: true, data: mockReports });
     });
 
@@ -250,9 +259,9 @@ describe('ReportsController', () => {
 
       reportsService.findAll.mockResolvedValue(mockReports as Report[]);
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(mockReq, filters);
 
-      expect(reportsService.findAll).toHaveBeenCalledWith(filters);
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, filters);
       expect(result).toEqual({ success: true, data: mockReports });
     });
 
@@ -262,9 +271,9 @@ describe('ReportsController', () => {
 
       reportsService.findAll.mockResolvedValue(mockReports as Report[]);
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(mockReq, filters);
 
-      expect(reportsService.findAll).toHaveBeenCalledWith(filters);
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, filters);
       expect(result).toEqual({ success: true, data: mockReports });
     });
 
@@ -274,9 +283,9 @@ describe('ReportsController', () => {
 
       reportsService.findAll.mockResolvedValue(mockReports as Report[]);
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(mockReq, filters);
 
-      expect(reportsService.findAll).toHaveBeenCalledWith(filters);
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, filters);
       expect(result).toEqual({ success: true, data: mockReports });
     });
 
@@ -291,9 +300,9 @@ describe('ReportsController', () => {
 
       reportsService.findAll.mockResolvedValue(mockReports as Report[]);
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(mockReq, filters);
 
-      expect(reportsService.findAll).toHaveBeenCalledWith(filters);
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, filters);
       expect(result).toEqual({ success: true, data: mockReports });
     });
 
@@ -307,9 +316,9 @@ describe('ReportsController', () => {
 
       reportsService.findAll.mockResolvedValue(mockReports as Report[]);
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(mockReq, filters);
 
-      expect(reportsService.findAll).toHaveBeenCalledWith(filters);
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, filters);
       expect(result).toEqual({ success: true, data: mockReports });
     });
 
@@ -318,9 +327,9 @@ describe('ReportsController', () => {
 
       reportsService.findAll.mockResolvedValue([]);
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(mockReq, filters);
 
-      expect(reportsService.findAll).toHaveBeenCalledWith(filters);
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, filters);
       expect(result).toEqual({ success: true, data: [] });
     });
   });
@@ -334,12 +343,17 @@ describe('ReportsController', () => {
 
       reportsService.findNearby.mockResolvedValue(mockNearbyReports as any);
 
-      const result = await controller.findNearby('7.686864', '45.070312');
+      const result = await controller.findNearby(
+        mockReq,
+        '7.686864',
+        '45.070312',
+      );
 
       expect(reportsService.findNearby).toHaveBeenCalledWith(
         7.686864,
         45.070312,
         5000,
+        mockUser,
       );
       expect(result).toEqual({ success: true, data: mockNearbyReports });
     });
@@ -350,6 +364,7 @@ describe('ReportsController', () => {
       reportsService.findNearby.mockResolvedValue(mockNearbyReports as any);
 
       const result = await controller.findNearby(
+        mockReq,
         '7.686864',
         '45.070312',
         '1000',
@@ -359,6 +374,7 @@ describe('ReportsController', () => {
         7.686864,
         45.070312,
         1000,
+        mockUser,
       );
       expect(result).toEqual({ success: true, data: mockNearbyReports });
     });
@@ -366,9 +382,14 @@ describe('ReportsController', () => {
     it('should return empty array if no reports nearby', async () => {
       reportsService.findNearby.mockResolvedValue([]);
 
-      const result = await controller.findNearby('0', '0', '100');
+      const result = await controller.findNearby(mockReq, '0', '0', '100');
 
-      expect(reportsService.findNearby).toHaveBeenCalledWith(0, 0, 100);
+      expect(reportsService.findNearby).toHaveBeenCalledWith(
+        0,
+        0,
+        100,
+        mockUser,
+      );
       expect(result).toEqual({ success: true, data: [] });
     });
   });
@@ -377,9 +398,12 @@ describe('ReportsController', () => {
     it('should return a report by id', async () => {
       reportsService.findOne.mockResolvedValue(mockReport as Report);
 
-      const result = await controller.findOne('report-123');
+      const result = await controller.findOne('report-123', mockReq);
 
-      expect(reportsService.findOne).toHaveBeenCalledWith('report-123');
+      expect(reportsService.findOne).toHaveBeenCalledWith(
+        'report-123',
+        mockUser,
+      );
       expect(result).toEqual({ success: true, data: mockReport });
     });
 
@@ -388,10 +412,13 @@ describe('ReportsController', () => {
         new NotFoundException('Report with ID non-existent not found'),
       );
 
-      await expect(controller.findOne('non-existent')).rejects.toThrow(
+      await expect(controller.findOne('non-existent', mockReq)).rejects.toThrow(
         NotFoundException,
       );
-      expect(reportsService.findOne).toHaveBeenCalledWith('non-existent');
+      expect(reportsService.findOne).toHaveBeenCalledWith(
+        'non-existent',
+        mockUser,
+      );
     });
   });
 
@@ -454,27 +481,6 @@ describe('ReportsController', () => {
         'non-existent',
         updateDto,
       );
-    });
-  });
-
-  describe('remove', () => {
-    it('should delete a report', async () => {
-      reportsService.remove.mockResolvedValue(undefined);
-
-      await controller.remove('report-123');
-
-      expect(reportsService.remove).toHaveBeenCalledWith('report-123');
-    });
-
-    it('should throw NotFoundException if report not found', async () => {
-      reportsService.remove.mockRejectedValue(
-        new NotFoundException('Report with ID non-existent not found'),
-      );
-
-      await expect(controller.remove('non-existent')).rejects.toThrow(
-        NotFoundException,
-      );
-      expect(reportsService.remove).toHaveBeenCalledWith('non-existent');
     });
   });
 });
