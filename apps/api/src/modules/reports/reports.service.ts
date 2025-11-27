@@ -1,19 +1,34 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Point, Repository } from 'typeorm';
 import {
-  Report,
   CreateReportDto,
   UpdateReportDto,
   FilterReportsDto,
-} from '@repo/api';
+} from '../../common/dto/report.dto';
+import { Report } from '../../common/entities/report.entity';
 import { nanoid } from 'nanoid';
+import { MinioProvider } from '../../providers/minio/minio.provider';
+import path from 'path';
+import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
+import { Category } from '../../common/entities/category.entity';
+import { User } from '../../common/entities/user.entity';
+const PRIVILEGED_ROLES = ['pr_officer', 'officer'];
 
 @Injectable()
 export class ReportsService {
   constructor(
     @InjectRepository(Report)
     private readonly reportRepository: Repository<Report>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    private readonly minioProvider: MinioProvider,
   ) {}
 
   private createPointGeometry(longitude: number, latitude: number): Point {
@@ -23,52 +38,86 @@ export class ReportsService {
     };
   }
 
-  /**
-   * Extract coordinates from a Point geometry
-   *
-   * NOTE: This method is currently unused but will be useful for future features
-   * such as extracting coordinates for display, coordinate-based filtering,
-   * or returning coordinate data in specific API responses.
-   *
-   * @param location - WKT format string: POINT(longitude latitude)
-   * @returns Object with longitude and latitude values
-   */
-  // private extractCoordinates(location: string): {
-  //   longitude: number;
-  //   latitude: number;
-  // } {
-  //   // Parse WKT format: POINT(longitude latitude)
-  //   const match = location.match(/POINT\(([^ ]+) ([^ ]+)\)/);
-  //   if (match) {
-  //     return {
-  //       longitude: parseFloat(match[1]),
-  //       latitude: parseFloat(match[2]),
-  //     };
-  //   }
-  //   return { longitude: 0, latitude: 0 };
-  // }
+  private async findReportEntity(id: string): Promise<Report> {
+    const report = await this.reportRepository.findOne({
+      where: { id },
+      relations: ['user', 'user.role', 'category', 'assignedOfficer'],
+    });
+
+    if (!report) {
+      throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
+    }
+
+    return report;
+  }
+
+  private sanitizeReport(report: Report, viewer: User): Report {
+    if (!report.isAnonymous) {
+      return report;
+    }
+
+    if (viewer.id === report.userId) {
+      return report;
+    }
+
+    if (viewer.role && PRIVILEGED_ROLES.includes(viewer.role.name)) {
+      return report;
+    }
+
+    const sanitized = { ...report };
+    sanitized.user = null;
+    return sanitized as Report;
+  }
 
   async create(
     createReportDto: CreateReportDto,
     userId: string,
+    images: Express.Multer.File[],
   ): Promise<Report> {
-    const { longitude, latitude, ...reportData } = createReportDto;
+    const { longitude, latitude, isAnonymous, ...reportData } = createReportDto;
+
+    const reportId = nanoid();
+    const imageUrls: string[] = [];
+    try {
+      for (const image of images) {
+        const timestamp = Date.now();
+        const sanitizedFilename = path
+          .basename(image.originalname)
+          .replace(/[^a-zA-Z0-9.-]/g, '_');
+        const fileName = `reports/${reportId}/${timestamp}-${sanitizedFilename}`;
+
+        const imageUrl = await this.minioProvider.uploadFile(
+          fileName,
+          image.buffer,
+          image.mimetype,
+        );
+        imageUrls.push(imageUrl);
+      }
+    } catch (error) {
+      throw new InternalServerErrorException(
+        REPORT_ERROR_MESSAGES.IMAGE_UPLOAD_FAILED,
+      );
+    }
 
     const report = this.reportRepository.create({
-      id: nanoid(),
+      id: reportId,
       ...reportData,
       location: this.createPointGeometry(longitude, latitude),
       userId,
+      images: imageUrls,
+      isAnonymous: isAnonymous ?? false,
     });
 
     return await this.reportRepository.save(report);
   }
 
-  async findAll(filters?: FilterReportsDto): Promise<Report[]> {
+  async findAll(viewer: User, filters?: FilterReportsDto): Promise<Report[]> {
     const query = this.reportRepository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.user', 'user')
-      .leftJoinAndSelect('report.category', 'category');
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('report.category', 'category')
+      .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer');
 
     if (filters?.status) {
       query.andWhere('report.status = :status', { status: filters.status });
@@ -84,7 +133,6 @@ export class ReportsService {
       query.andWhere('report.userId = :userId', { userId: filters.userId });
     }
 
-    // Bounding box filter (geographical area)
     if (
       filters?.minLongitude !== undefined &&
       filters?.maxLongitude !== undefined &&
@@ -105,7 +153,6 @@ export class ReportsService {
       );
     }
 
-    // Radius filter (distance from a point)
     if (
       filters?.searchLongitude !== undefined &&
       filters?.searchLatitude !== undefined &&
@@ -127,54 +174,143 @@ export class ReportsService {
 
     query.orderBy('report.createdAt', 'DESC');
 
-    return await query.getMany();
+    const reports = await query.getMany();
+
+    return reports.map((report) => this.sanitizeReport(report, viewer));
   }
 
-  async findOne(id: string): Promise<Report> {
+  async findOne(id: string, viewer: User): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ['user', 'category'],
+      relations: ['user', 'user.role', 'category', 'assignedOfficer'],
     });
 
     if (!report) {
-      throw new NotFoundException(`Report with ID ${id} not found`);
+      throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
     }
 
-    return report;
+    return this.sanitizeReport(report, viewer);
   }
 
   async update(id: string, updateReportDto: UpdateReportDto): Promise<Report> {
-    const report = await this.findOne(id);
+    const report = await this.findReportEntity(id);
 
-    const { longitude, latitude, ...updateData } = updateReportDto;
+    const {
+      longitude,
+      latitude,
+      title,
+      description,
+      status,
+      address,
+      images,
+      categoryId,
+      explanation,
+      assignedOfficerId,
+    } = updateReportDto;
 
-    // Update location if coordinates are provided
     if (longitude !== undefined && latitude !== undefined) {
       report.location = this.createPointGeometry(longitude, latitude);
     }
 
-    Object.assign(report, updateData);
+    if (categoryId !== undefined) {
+      const category = await this.categoryRepository.findOne({
+        where: { id: updateReportDto.categoryId },
+        relations: ['office'],
+      });
+
+      report.category = category;
+    }
+
+    if (status === 'assigned') {
+      if (assignedOfficerId !== undefined && assignedOfficerId !== '') {
+        const officer = await this.userRepository.findOne({
+          where: { id: assignedOfficerId },
+        });
+        if (officer) {
+          report.assignedOfficer = officer;
+          report.assignedOfficerId = officer.id;
+        }
+      } else {
+        const category =
+          report.category ||
+          (await this.categoryRepository.findOne({
+            where: { id: report.categoryId },
+            relations: ['office'],
+          }));
+
+        if (category?.office?.id) {
+          const officerWithFewestReports =
+            await this.findOfficerWithFewestReports(category.office.id);
+
+          if (officerWithFewestReports) {
+            report.assignedOfficer = officerWithFewestReports;
+            report.assignedOfficerId = officerWithFewestReports.id;
+          }
+        }
+      }
+    }
+
+    Object.entries({
+      title,
+      description,
+      status,
+      address,
+      images,
+      explanation,
+    }).forEach(([key, value]) => {
+      if (value !== undefined) {
+        (report as any)[key] = value;
+      }
+    });
 
     return await this.reportRepository.save(report);
   }
 
-  async remove(id: string): Promise<void> {
-    const report = await this.findOne(id);
-    await this.reportRepository.remove(report);
+  private async findOfficerWithFewestReports(
+    officeId: string,
+  ): Promise<User | null> {
+    const officers = await this.userRepository.find({
+      where: { officeId },
+      relations: ['role'],
+    });
+
+    const technicalOfficers = officers.filter(
+      (officer) =>
+        officer.role?.name === 'officer' ||
+        officer.role?.name === 'tech_officer',
+    );
+
+    if (technicalOfficers.length === 0) {
+      return null;
+    }
+
+    const officerReportCounts = await Promise.all(
+      technicalOfficers.map(async (officer) => {
+        const count = await this.reportRepository.count({
+          where: {
+            assignedOfficerId: officer.id,
+            status: 'assigned' as any,
+          },
+        });
+        return { officer, count };
+      }),
+    );
+
+    officerReportCounts.sort((a, b) => a.count - b.count);
+    return officerReportCounts[0].officer;
   }
 
-  /**
-   * Get reports with their distance from a specific point
-   */
   async findNearby(
     longitude: number,
     latitude: number,
     radiusMeters: number = 5000,
+    viewer: User,
   ): Promise<Array<Report & { distance: number }>> {
     const reports = await this.reportRepository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.user', 'user')
       .leftJoinAndSelect('report.category', 'category')
+      .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer')
       .addSelect(
         `ST_Distance(
           report.location::geography,
@@ -193,9 +329,21 @@ export class ReportsService {
       .orderBy('distance', 'ASC')
       .getRawAndEntities();
 
-    return reports.entities.map((entity, index) => ({
-      ...entity,
-      distance: parseFloat(reports.raw[index].distance),
-    }));
+    return reports.entities.map((entity, index) => {
+      const sanitizedEntity = this.sanitizeReport(entity, viewer);
+      return {
+        ...sanitizedEntity,
+        distance: parseFloat(reports.raw[index].distance),
+      };
+    });
+  }
+
+  async findByUserId(targetUserId: string, viewer: User): Promise<Report[]> {
+    const reports = await this.reportRepository.find({
+      where: { assignedOfficerId: targetUserId },
+      relations: ['user', 'category', 'assignedOfficer'],
+      order: { createdAt: 'DESC' },
+    });
+    return reports.map((report) => this.sanitizeReport(report, viewer));
   }
 }

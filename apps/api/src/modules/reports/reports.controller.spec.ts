@@ -1,10 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
-import { CreateReportDto, UpdateReportDto, FilterReportsDto, Report, ReportStatus } from '@repo/api';
 import { NotFoundException } from '@nestjs/common';
+import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
+import {
+  CreateReportDto,
+  UpdateReportDto,
+  FilterReportsDto,
+} from '../../common/dto/report.dto';
+import { Report, ReportStatus } from '../../common/entities/report.entity';
 
-// Mock "nanoid" per evitare problemi ESM
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
 const mockSessionGuard = { canActivate: jest.fn(() => true) };
@@ -14,18 +19,25 @@ describe('ReportsController', () => {
   let controller: ReportsController;
   let reportsService: jest.Mocked<ReportsService>;
 
+  const mockUser = { id: 'user-123', role: { name: 'user' } };
+  const mockReq = { user: mockUser };
+
   const mockReport: Partial<Report> = {
     id: 'report-123',
     title: 'Test Report',
     description: 'Test Description',
     status: ReportStatus.PENDING,
-    location: 'POINT(7.686864 45.070312)',
+    location: {
+      type: 'Point',
+      coordinates: [7.686864, 45.070312],
+    },
     address: 'Via Roma 1, Torino',
     images: [],
     userId: 'user-123',
     categoryId: 'cat-123',
     createdAt: new Date(),
     updatedAt: new Date(),
+    isAnonymous: false,
   };
 
   beforeEach(async () => {
@@ -35,7 +47,7 @@ describe('ReportsController', () => {
       findOne: jest.fn(),
       findNearby: jest.fn(),
       update: jest.fn(),
-      remove: jest.fn(),
+      findByUserId: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -64,38 +76,170 @@ describe('ReportsController', () => {
         longitude: 7.686864,
         latitude: 45.070312,
         categoryId: 'cat-123',
+        isAnonymous: false,
       };
+
+      const mockFiles = [
+        {
+          originalname: 'test.jpg',
+          buffer: Buffer.from('test'),
+          mimetype: 'image/jpeg',
+          size: 1024,
+        },
+      ] as Express.Multer.File[];
 
       const mockReq = { user: { id: 'user-123' } };
 
       reportsService.create.mockResolvedValue(mockReport as Report);
 
-      const result = await controller.create(createDto, mockReq);
+      const result = await controller.create(createDto, mockFiles, mockReq);
 
-      expect(reportsService.create).toHaveBeenCalledWith(createDto, 'user-123');
+      expect(reportsService.create).toHaveBeenCalledWith(
+        createDto,
+        'user-123',
+        mockFiles,
+      );
       expect(result).toEqual({ success: true, data: mockReport });
     });
 
-    it('should create a report with only required fields', async () => {
+    it('should create a report with 3 images (maximum allowed)', async () => {
       const createDto: CreateReportDto = {
+        title: 'Report with max images',
+        description: 'Test Description',
         longitude: 7.686864,
         latitude: 45.070312,
+        categoryId: 'cat-123',
+        isAnonymous: false,
+      };
+
+      const mockFiles = [
+        {
+          originalname: 'test1.jpg',
+          buffer: Buffer.from('test1'),
+          mimetype: 'image/jpeg',
+          size: 1024,
+        },
+        {
+          originalname: 'test2.jpg',
+          buffer: Buffer.from('test2'),
+          mimetype: 'image/jpeg',
+          size: 1024,
+        },
+        {
+          originalname: 'test3.jpg',
+          buffer: Buffer.from('test3'),
+          mimetype: 'image/jpeg',
+          size: 1024,
+        },
+      ] as Express.Multer.File[];
+
+      const mockReq = { user: { id: 'user-123' } };
+
+      reportsService.create.mockResolvedValue(mockReport as Report);
+
+      const result = await controller.create(createDto, mockFiles, mockReq);
+
+      expect(reportsService.create).toHaveBeenCalledWith(
+        createDto,
+        'user-123',
+        mockFiles,
+      );
+      expect(result).toEqual({ success: true, data: mockReport });
+    });
+
+    it('should throw BadRequestException if no images provided', async () => {
+      const createDto: CreateReportDto = {
+        title: 'Test Report',
+        description: 'Test Description',
+        longitude: 7.686864,
+        latitude: 45.070312,
+        categoryId: 'cat-123',
+        isAnonymous: false,
       };
 
       const mockReq = { user: { id: 'user-123' } };
-      const minimalReport = {
-        id: 'report-min',
-        location: 'POINT(7.686864 45.070312)',
-        status: ReportStatus.PENDING,
-        userId: 'user-123',
+
+      await expect(controller.create(createDto, [], mockReq)).rejects.toThrow(
+        REPORT_ERROR_MESSAGES.IMAGES_REQUIRED,
+      );
+    });
+
+    it('should throw BadRequestException if more than 3 images provided', async () => {
+      const createDto: CreateReportDto = {
+        title: 'Test Report',
+        description: 'Test Description',
+        longitude: 7.686864,
+        latitude: 45.070312,
+        categoryId: 'cat-123',
+        isAnonymous: false,
       };
 
-      reportsService.create.mockResolvedValue(minimalReport as Report);
+      const mockFiles = [
+        { originalname: 'test1.jpg', mimetype: 'image/jpeg', size: 1024 },
+        { originalname: 'test2.jpg', mimetype: 'image/jpeg', size: 1024 },
+        { originalname: 'test3.jpg', mimetype: 'image/jpeg', size: 1024 },
+        { originalname: 'test4.jpg', mimetype: 'image/jpeg', size: 1024 },
+      ] as Express.Multer.File[];
 
-      const result = await controller.create(createDto, mockReq);
+      const mockReq = { user: { id: 'user-123' } };
 
-      expect(reportsService.create).toHaveBeenCalledWith(createDto, 'user-123');
-      expect(result).toEqual({ success: true, data: minimalReport });
+      await expect(
+        controller.create(createDto, mockFiles, mockReq),
+      ).rejects.toThrow(REPORT_ERROR_MESSAGES.IMAGES_REQUIRED);
+    });
+
+    it('should throw BadRequestException if invalid file type', async () => {
+      const createDto: CreateReportDto = {
+        title: 'Test Report',
+        description: 'Test Description',
+        longitude: 7.686864,
+        latitude: 45.070312,
+        categoryId: 'cat-123',
+        isAnonymous: false,
+      };
+
+      const mockFiles = [
+        {
+          originalname: 'test.pdf',
+          buffer: Buffer.from('test'),
+          mimetype: 'application/pdf',
+          size: 1024,
+        },
+      ] as Express.Multer.File[];
+
+      const mockReq = { user: { id: 'user-123' } };
+
+      await expect(
+        controller.create(createDto, mockFiles, mockReq),
+      ).rejects.toThrow(
+        REPORT_ERROR_MESSAGES.INVALID_FILE_TYPE('application/pdf'),
+      );
+    });
+
+    it('should throw BadRequestException if file exceeds size limit', async () => {
+      const createDto: CreateReportDto = {
+        title: 'Test Report',
+        description: 'Test Description',
+        longitude: 7.686864,
+        latitude: 45.070312,
+        categoryId: 'cat-123',
+        isAnonymous: false,
+      };
+
+      const mockFiles = [
+        {
+          originalname: 'large.jpg',
+          buffer: Buffer.from('test'),
+          mimetype: 'image/jpeg',
+          size: 6 * 1024 * 1024,
+        },
+      ] as Express.Multer.File[];
+
+      const mockReq = { user: { id: 'user-123' } };
+
+      await expect(
+        controller.create(createDto, mockFiles, mockReq),
+      ).rejects.toThrow(REPORT_ERROR_MESSAGES.FILE_SIZE_EXCEEDED('large.jpg'));
     });
   });
 
@@ -104,9 +248,9 @@ describe('ReportsController', () => {
       const mockReports = [mockReport, { ...mockReport, id: 'report-2' }];
       reportsService.findAll.mockResolvedValue(mockReports as Report[]);
 
-      const result = await controller.findAll({});
+      const result = await controller.findAll(mockReq, {});
 
-      expect(reportsService.findAll).toHaveBeenCalledWith({});
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, {});
       expect(result).toEqual({ success: true, data: mockReports });
     });
 
@@ -116,9 +260,9 @@ describe('ReportsController', () => {
 
       reportsService.findAll.mockResolvedValue(mockReports as Report[]);
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(mockReq, filters);
 
-      expect(reportsService.findAll).toHaveBeenCalledWith(filters);
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, filters);
       expect(result).toEqual({ success: true, data: mockReports });
     });
 
@@ -128,9 +272,9 @@ describe('ReportsController', () => {
 
       reportsService.findAll.mockResolvedValue(mockReports as Report[]);
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(mockReq, filters);
 
-      expect(reportsService.findAll).toHaveBeenCalledWith(filters);
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, filters);
       expect(result).toEqual({ success: true, data: mockReports });
     });
 
@@ -140,9 +284,9 @@ describe('ReportsController', () => {
 
       reportsService.findAll.mockResolvedValue(mockReports as Report[]);
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(mockReq, filters);
 
-      expect(reportsService.findAll).toHaveBeenCalledWith(filters);
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, filters);
       expect(result).toEqual({ success: true, data: mockReports });
     });
 
@@ -157,9 +301,9 @@ describe('ReportsController', () => {
 
       reportsService.findAll.mockResolvedValue(mockReports as Report[]);
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(mockReq, filters);
 
-      expect(reportsService.findAll).toHaveBeenCalledWith(filters);
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, filters);
       expect(result).toEqual({ success: true, data: mockReports });
     });
 
@@ -173,9 +317,9 @@ describe('ReportsController', () => {
 
       reportsService.findAll.mockResolvedValue(mockReports as Report[]);
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(mockReq, filters);
 
-      expect(reportsService.findAll).toHaveBeenCalledWith(filters);
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, filters);
       expect(result).toEqual({ success: true, data: mockReports });
     });
 
@@ -184,9 +328,9 @@ describe('ReportsController', () => {
 
       reportsService.findAll.mockResolvedValue([]);
 
-      const result = await controller.findAll(filters);
+      const result = await controller.findAll(mockReq, filters);
 
-      expect(reportsService.findAll).toHaveBeenCalledWith(filters);
+      expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, filters);
       expect(result).toEqual({ success: true, data: [] });
     });
   });
@@ -200,9 +344,18 @@ describe('ReportsController', () => {
 
       reportsService.findNearby.mockResolvedValue(mockNearbyReports as any);
 
-      const result = await controller.findNearby('7.686864', '45.070312');
+      const result = await controller.findNearby(
+        mockReq,
+        '7.686864',
+        '45.070312',
+      );
 
-      expect(reportsService.findNearby).toHaveBeenCalledWith(7.686864, 45.070312, 5000);
+      expect(reportsService.findNearby).toHaveBeenCalledWith(
+        7.686864,
+        45.070312,
+        5000,
+        mockUser,
+      );
       expect(result).toEqual({ success: true, data: mockNearbyReports });
     });
 
@@ -211,18 +364,33 @@ describe('ReportsController', () => {
 
       reportsService.findNearby.mockResolvedValue(mockNearbyReports as any);
 
-      const result = await controller.findNearby('7.686864', '45.070312', '1000');
+      const result = await controller.findNearby(
+        mockReq,
+        '7.686864',
+        '45.070312',
+        '1000',
+      );
 
-      expect(reportsService.findNearby).toHaveBeenCalledWith(7.686864, 45.070312, 1000);
+      expect(reportsService.findNearby).toHaveBeenCalledWith(
+        7.686864,
+        45.070312,
+        1000,
+        mockUser,
+      );
       expect(result).toEqual({ success: true, data: mockNearbyReports });
     });
 
     it('should return empty array if no reports nearby', async () => {
       reportsService.findNearby.mockResolvedValue([]);
 
-      const result = await controller.findNearby('0', '0', '100');
+      const result = await controller.findNearby(mockReq, '0', '0', '100');
 
-      expect(reportsService.findNearby).toHaveBeenCalledWith(0, 0, 100);
+      expect(reportsService.findNearby).toHaveBeenCalledWith(
+        0,
+        0,
+        100,
+        mockUser,
+      );
       expect(result).toEqual({ success: true, data: [] });
     });
   });
@@ -231,9 +399,12 @@ describe('ReportsController', () => {
     it('should return a report by id', async () => {
       reportsService.findOne.mockResolvedValue(mockReport as Report);
 
-      const result = await controller.findOne('report-123');
+      const result = await controller.findOne('report-123', mockReq);
 
-      expect(reportsService.findOne).toHaveBeenCalledWith('report-123');
+      expect(reportsService.findOne).toHaveBeenCalledWith(
+        'report-123',
+        mockUser,
+      );
       expect(result).toEqual({ success: true, data: mockReport });
     });
 
@@ -242,8 +413,13 @@ describe('ReportsController', () => {
         new NotFoundException('Report with ID non-existent not found'),
       );
 
-      await expect(controller.findOne('non-existent')).rejects.toThrow(NotFoundException);
-      expect(reportsService.findOne).toHaveBeenCalledWith('non-existent');
+      await expect(controller.findOne('non-existent', mockReq)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(reportsService.findOne).toHaveBeenCalledWith(
+        'non-existent',
+        mockUser,
+      );
     });
   });
 
@@ -259,7 +435,10 @@ describe('ReportsController', () => {
 
       const result = await controller.update('report-123', updateDto);
 
-      expect(reportsService.update).toHaveBeenCalledWith('report-123', updateDto);
+      expect(reportsService.update).toHaveBeenCalledWith(
+        'report-123',
+        updateDto,
+      );
       expect(result).toEqual({ success: true, data: updatedReport });
     });
 
@@ -270,16 +449,22 @@ describe('ReportsController', () => {
         address: 'New Address',
       };
 
-      const updatedReport = {
+      const updatedReport: Partial<Report> = {
         ...mockReport,
-        location: 'POINT(8 46)',
+        location: {
+          type: 'Point',
+          coordinates: [8.0, 46.0],
+        },
         address: 'New Address',
       };
       reportsService.update.mockResolvedValue(updatedReport as Report);
 
       const result = await controller.update('report-123', updateDto);
 
-      expect(reportsService.update).toHaveBeenCalledWith('report-123', updateDto);
+      expect(reportsService.update).toHaveBeenCalledWith(
+        'report-123',
+        updateDto,
+      );
       expect(result).toEqual({ success: true, data: updatedReport });
     });
 
@@ -290,27 +475,28 @@ describe('ReportsController', () => {
         new NotFoundException('Report with ID non-existent not found'),
       );
 
-      await expect(controller.update('non-existent', updateDto)).rejects.toThrow(NotFoundException);
-      expect(reportsService.update).toHaveBeenCalledWith('non-existent', updateDto);
+      await expect(
+        controller.update('non-existent', updateDto),
+      ).rejects.toThrow(NotFoundException);
+      expect(reportsService.update).toHaveBeenCalledWith(
+        'non-existent',
+        updateDto,
+      );
     });
   });
 
-  describe('remove', () => {
-    it('should delete a report', async () => {
-      reportsService.remove.mockResolvedValue(undefined);
+  describe('findByUserId', () => {
+    it('should return reports assigned to a specific user', async () => {
+      const mockReports = [mockReport];
+      reportsService.findByUserId.mockResolvedValue(mockReports as Report[]);
 
-      await controller.remove('report-123');
+      const result = await controller.findByUserId('officer-123', mockReq);
 
-      expect(reportsService.remove).toHaveBeenCalledWith('report-123');
-    });
-
-    it('should throw NotFoundException if report not found', async () => {
-      reportsService.remove.mockRejectedValue(
-        new NotFoundException('Report with ID non-existent not found'),
+      expect(reportsService.findByUserId).toHaveBeenCalledWith(
+        'officer-123',
+        mockUser,
       );
-
-      await expect(controller.remove('non-existent')).rejects.toThrow(NotFoundException);
-      expect(reportsService.remove).toHaveBeenCalledWith('non-existent');
+      expect(result).toEqual({ success: true, data: mockReports });
     });
   });
 });

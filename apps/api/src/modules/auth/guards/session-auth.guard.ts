@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Session } from '@repo/api';
+import { Session } from '../../../common/entities/session.entity';
 import type { RequestWithUserSession } from '../../../common/types/request-with-user-session.type';
 import { createHash } from 'crypto';
 import { ConfigService } from '@nestjs/config';
@@ -35,7 +35,7 @@ export class SessionGuard implements CanActivate {
 
     const session = await this.sessionRepository.findOne({
       where: { id: sessionId },
-      relations: ['user', 'user.role'],
+      relations: ['user', 'user.role', 'user.office'],
     });
 
     if (!session) {

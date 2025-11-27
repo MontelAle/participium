@@ -1,168 +1,91 @@
-# 🐘 Guide: Interacting with the PostgreSQL Database (Docker + PostGIS)
+# Participium - Full Stack Deployment
 
-## 🧩 1. Start the Database
+This repository contains the deployment configuration for the **Participium** platform, a full-stack application built with a modular architecture using a monorepo strategy.
 
-Run the following command from your terminal in position apps/api:(remember to open docker desktop if you are on macOS or Windows before run)
+The release is fully containerized and hosted on Docker Hub, ensuring a seamless "plug-and-play" deployment experience for third parties
 
-```bash
+## Prerequisites
+
+Before starting, ensure you have the following installed on your machine:
+
+- **Docker Desktop** (v4.0 or later)
+
+- **Docker Compose** (usually included with Docker Desktop)
+
+## Quick Start
+
+To start the entire system (Frontend, Backend, Database, and Object Storage), follow these simple steps:
+
+**1. Launch the System:** Open your terminal in the root directory that contains docker-compose.yml and run:
+
+```
 docker compose up -d
 ```
 
-Check if the container is running:
-
-```bash
-docker ps
-```
-
-You should see something like:
+**2. Verify Status:** Check if all containers are up and running correctly:
 
 ```
-participium-postgres   postgis/postgis:18-3.6   Up   0.0.0.0:5432->5432/tcp
+docker compose ps
 ```
 
----
+**3. Wait for Initialization:** Docker will pull the images from Docker Hub and start the containers
+_Note: The backend may take a few seconds to connect to the database on the first run_
 
-## 💻 2. Connecting to PostgreSQL
+**4. Stop the System:** To stop and remove the containers, run:
 
-### 🪟 **Windows**
-
-#### Option 1 – PowerShell (with `psql` installed)
-
-```bash
-psql -h localhost -p 5432 -U admin -d participium
 ```
-
-Then enter the password (`password`).
-
-> If `psql` is not recognized, install it from:
-> [https://www.postgresql.org/download/windows/](https://www.postgresql.org/download/windows/)
->
-> During installation, make sure to select **Command Line Tools**.
-
-#### Option 2 – From inside the container
-
-```bash
-docker exec -it participium-postgres psql -U admin -d participium
-```
-
----
-
-### 🍏 **macOS**
-
-#### Option 1 – From terminal (if `psql` is installed)
-
-```bash
-psql -h localhost -p 5432 -U admin -d participium
-```
-
-If you don’t have `psql`, install it using Homebrew:
-
-```bash
-brew install libpq
-brew link --force libpq
-```
-
-#### Option 2 – From inside the container
-
-```bash
-docker exec -it participium-postgres psql -U admin -d participium
-```
-
----
-
-### 🐧 **Linux**
-
-#### Option 1 – From the host (if `psql` is installed)
-
-```bash
-psql -h localhost -p 5432 -U admin -d participium
-```
-
-If not installed:
-
-```bash
-sudo apt install postgresql-client
-```
-
-#### Option 2 – From inside the container
-
-```bash
-docker exec -it participium-postgres psql -U admin -d participium
-```
-
----
-
-## 🧠 3. Useful `psql` Commands
-
-| Action                           | Command                     |
-| -------------------------------- | --------------------------- |
-| List databases                   | `\l`                        |
-| Connect to a database            | `\c participium`            |
-| List tables                      | `\dt`                       |
-| List tables in a specific schema | `\dt public.*`              |
-| Describe a table                 | `\d table_name`             |
-| Run an SQL query                 | `SELECT * FROM table_name;` |
-| Exit `psql`                      | `\q`                        |
-
----
-
-## 🧰 4. Example Queries
-
-### Insert a new role
-
-```sql
-INSERT INTO role (id, name)
-VALUES ('admin', 'admin');
-```
-
-### View all roles
-
-```sql
-SELECT * FROM role;
-```
-
-### Assign a role to a user
-
-```sql
-UPDATE "user" SET "roleId" = 'admin' WHERE username = 'user';
-```
-
----
-
-## 🧭 5. Access via GUI (Optional)
-
-You can also connect using a graphical interface:
-
-| Tool          | Platform              | Link                                                 |
-| ------------- | --------------------- | ---------------------------------------------------- |
-| **pgAdmin 4** | All                   | [https://www.pgadmin.org/](https://www.pgadmin.org/) |
-| **TablePlus** | macOS, Windows, Linux | [https://tableplus.com/](https://tableplus.com/)     |
-| **DBeaver**   | All                   | [https://dbeaver.io/](https://dbeaver.io/)           |
-
----
-
-## 🧼 6. Stop / Clean Up
-
-Stop the database:
-
-```bash
 docker compose down
 ```
 
-Remove volumes as well (⚠️ this deletes all data):
+## Accessing the Application
 
-```bash
-docker compose down -v
-```
+Once the containers are running, you can access the services at the following URLs:
+| Service | URL | Description |
+| :--- | :--- | :--- |
+| Frontend | http://localhost:5173 | Main user interface (React) |
+| Backend | http://localhost:5000/api | Rest API endpoints (NestJS) |
+| MinIO Console | http://localhost:9001 | Object Storage Management |
 
----
+## Demo Credentials
 
-## ✅ Quick Reference
+For release demo purpose, the **system automatically populates the database** on the first launch
 
-| Action          | Command                                                             |
-| --------------- | ------------------------------------------------------------------- |
-| Start DB        | `docker compose up -d`                                              |
-| Enter DB shell  | `docker exec -it participium-postgres psql -U admin -d participium` |
-| List tables     | `\dt`                                                               |
-| View table data | `SELECT * FROM table_name;`                                         |
-| Stop DB         | `docker compose down`                                               |
+**1. Mock Data Generation**
+The system generates **20 fake reports** with realistic descriptions and categories. These reports are **geolocated around the city center of Turin**, allowing you to immediately test the map features and list filtering.
+
+**2. Pre-configured Users**
+Use these accounts to log in and test the application with different permission levels:
+| Role | Username | Password
+| :--- | :--- | :--- |
+| Citizen (registered on platform) | `user` | `password` |
+| Municipal Officer | `officer` | `password` |
+| System Admin | `admin` | `password`|
+
+## Services Credentials
+
+The system comes pre-configured with the following default credentials for development and testing purposes:
+
+#### PostgreSQL (Database)
+
+- **Host:** localhost (port 5432)
+- **User:** admin
+- **Password:** password
+- **Database:** participium
+
+#### MinIO (Object Storage)
+
+- **Web Client Console URL:** http://localhost:9001
+- **User:** minioadmin
+- **Password:** minioadmin
+
+## Architecture Overview
+
+The system is composed of the following Docker services:
+
+- **`web`** Frontend application built with Vite, React, and TypeScript, served via Nginx
+
+- **`api`** Backend application built with NestJS, handling business logic and API requests
+
+- **`postgres`** PostgreSQL database extended with PostGIS for geospatial data support
+
+- **`minio`**: S3-compatible object storage for handling file uploads

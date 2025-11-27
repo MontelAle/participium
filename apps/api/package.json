@@ -13,8 +13,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
-    "seed:user": "ts-node -r tsconfig-paths/register src/providers/database/seed/user.seed.ts",
-    "seed:reports": "ts-node -r tsconfig-paths/register src/providers/database/seed/report.seed.ts"
+    "seed:participium": "ts-node -r tsconfig-paths/register src/providers/database/seed/participium.seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -31,6 +30,8 @@
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
     "helmet": "^8.1.0",
+    "minio": "^8.0.6",
+    "multer": "^2.0.2",
     "nanoid": "^5.1.6",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
@@ -53,6 +54,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^4.17.17",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.0.0",
     "@types/node": "^22.10.7",
     "@types/passport": "^1.0.17",
     "@types/passport-local": "^1.0.38",

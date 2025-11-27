@@ -33,6 +33,7 @@ import {
   Table as TableRaw,
   TableRow as TableRowRaw,
 } from '@/components/ui/table';
+import React from 'react';
 
 export type { ColumnDef } from '@tanstack/react-table';
 
@@ -109,14 +110,18 @@ TableHead.displayName = 'TableHead';
 export type TableHeaderGroupProps = {
   headerGroup: HeaderGroup<unknown>;
   children: (props: { header: Header<unknown, unknown> }) => ReactNode;
+  className?: string;
 };
 
 export const TableHeaderGroup = ({
   headerGroup,
   children,
+  className,
 }: TableHeaderGroupProps) => (
-  <TableRowRaw key={headerGroup.id}>
-    {headerGroup.headers.map((header) => children({ header }))}
+  <TableRowRaw key={headerGroup.id} className={className}>
+    {headerGroup.headers.map((header) => (
+      <React.Fragment key={header.id}>{children({ header })}</React.Fragment>
+    ))}
   </TableRowRaw>
 );
 
@@ -130,7 +135,11 @@ export const TableHeader = ({ className, children }: TableHeaderProps) => {
 
   return (
     <TableHeaderRaw className={className}>
-      {table?.getHeaderGroups().map((headerGroup) => children({ headerGroup }))}
+      {table?.getHeaderGroups().map((headerGroup) => (
+        <React.Fragment key={headerGroup.id}>
+          {children({ headerGroup })}
+        </React.Fragment>
+      ))}
     </TableHeaderRaw>
   );
 };
@@ -154,7 +163,6 @@ export function TableColumnHeader<TData, TValue>({
     column.toggleSorting(true);
   }, [column]);
 
-  // Usa TableHeadRaw invece di div
   return (
     <TableHeadRaw className={className}>
       {!column.getCanSort() ? (
@@ -216,9 +224,10 @@ export const TableRow = ({ row, children, className }: TableRowProps) => (
   <TableRowRaw
     className={className}
     data-state={row.getIsSelected() && 'selected'}
-    key={row.id}
   >
-    {row.getVisibleCells().map((cell) => children({ cell }))}
+    {row.getVisibleCells().map((cell) => (
+      <React.Fragment key={cell.id}>{children({ cell })}</React.Fragment>
+    ))}
   </TableRowRaw>
 );
 
@@ -234,11 +243,13 @@ export const TableBody = ({ children, className }: TableBodyProps) => {
   return (
     <TableBodyRaw className={className}>
       {rows?.length ? (
-        rows.map((row) => children({ row }))
+        rows.map((row) => (
+          <React.Fragment key={row.id}>{children({ row })}</React.Fragment>
+        ))
       ) : (
         <TableRowRaw>
           <TableCellRaw className="h-24 text-center" colSpan={columns.length}>
-            No Users found.
+            No Data found.
           </TableCellRaw>
         </TableRowRaw>
       )}

@@ -1,14 +1,7 @@
-import {
-  Entity,
-  PrimaryColumn,
-  Column,
-} from 'typeorm';
+import { Office } from './office.entity';
 
-@Entity('category')
-export class Category {
-  @PrimaryColumn('varchar')
+export interface Category {
   id: string;
-
-  @Column('varchar')
   name: string;
+  office: Office;
 }

@@ -2,11 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto, Session } from '@repo/api';
+import { LoginDto, RegisterDto } from '../../common/dto/auth.dto';
+import { Session } from '../../common/entities/session.entity';
 import { SessionGuard } from './guards/session-auth.guard';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { ref } from 'process';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
@@ -114,7 +114,7 @@ describe('AuthController', () => {
         password: 'password',
       };
       const req: any = {
-        user: null, // No user attached by guard
+        user: null,
         ip: '127.0.0.1',
         headers: { 'user-agent': 'jest' },
       };

@@ -1,15 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { User } from '../../common/entities/user.entity';
 import {
   CreateMunicipalityUserDto,
-  Role,
   UpdateMunicipalityUserDto,
-  User,
-} from '@repo/api';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+} from '../../common/dto/municipality-user.dto';
+import {
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 
-// Mock "nanoid" per evitare problemi ESM
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
 const mockSessionGuard = { canActivate: jest.fn(() => true) };
@@ -26,6 +28,8 @@ describe('UsersController', () => {
       createMunicipalityUser: jest.fn(),
       deleteMunicipalityUserById: jest.fn(),
       updateMunicipalityUserById: jest.fn(),
+      updateProfile: jest.fn(),
+      findUserById: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -63,7 +67,12 @@ describe('UsersController', () => {
       const mockUser: Partial<User> = {
         id: '1',
         username: 'officier1',
-        role: { id: 'role-id', name: 'municipal_pr_officer' },
+        role: {
+          id: 'role-id',
+          name: 'municipal_pr_officer',
+          label: 'Municipal PR Officer',
+          isMunicipal: true,
+        },
       };
 
       usersService.findMunicipalityUserById.mockResolvedValue(mockUser as User);
@@ -93,7 +102,7 @@ describe('UsersController', () => {
         firstName: 'New',
         lastName: 'User',
         password: 'SecurePass123',
-        role: { id: 'role-id', name: 'municipal_pr_officer' },
+        roleId: 'role-id',
       };
 
       const mockUser: Partial<User> = {
@@ -117,7 +126,7 @@ describe('UsersController', () => {
         firstName: 'Dup',
         lastName: 'User',
         password: 'SecurePass123',
-        role: { id: 'role-id', name: 'municipal_pr_officer' },
+        roleId: 'role-id',
       };
 
       usersService.createMunicipalityUser.mockRejectedValue(
@@ -196,6 +205,119 @@ describe('UsersController', () => {
       await expect(
         controller.updateMunicipalityUserById('1', dto),
       ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('should update profile successfully', async () => {
+      const mockUser = {
+        id: 'user-1',
+        telegramUsername: '@newusername',
+        emailNotificationsEnabled: true,
+        profilePictureUrl: null,
+      } as User;
+
+      const req = { user: { id: 'user-1' } } as any;
+      const dto = { telegramUsername: '@newusername' };
+
+      usersService.updateProfile.mockResolvedValue(mockUser);
+
+      const result = await controller.updateProfile(req, dto);
+
+      expect(result.success).toBe(true);
+      expect(result.data.id).toBe('user-1');
+      expect(result.data.telegramUsername).toBe('@newusername');
+      expect(usersService.updateProfile).toHaveBeenCalledWith(
+        'user-1',
+        dto,
+        undefined,
+      );
+    });
+
+    it('should update profile with file upload', async () => {
+      const mockUser = {
+        id: 'user-1',
+        telegramUsername: null,
+        emailNotificationsEnabled: false,
+        profilePictureUrl: 'http://minio.test/profile.jpg',
+      } as User;
+
+      const req = { user: { id: 'user-1' } } as any;
+      const dto = {};
+      const file = {
+        buffer: Buffer.from('test'),
+        originalname: 'profile.jpg',
+        mimetype: 'image/jpeg',
+        size: 1024,
+      } as Express.Multer.File;
+
+      usersService.updateProfile.mockResolvedValue(mockUser);
+
+      const result = await controller.updateProfile(req, dto, file);
+
+      expect(result.success).toBe(true);
+      expect(result.data.profilePictureUrl).toBe(
+        'http://minio.test/profile.jpg',
+      );
+      expect(usersService.updateProfile).toHaveBeenCalledWith(
+        'user-1',
+        dto,
+        file,
+      );
+    });
+
+    it('should throw BadRequestException for invalid file type', async () => {
+      const req = { user: { id: 'user-1' } } as any;
+      const dto = {};
+      const file = {
+        buffer: Buffer.from('test'),
+        originalname: 'file.txt',
+        mimetype: 'text/plain',
+        size: 1024,
+      } as Express.Multer.File;
+
+      await expect(controller.updateProfile(req, dto, file)).rejects.toThrow();
+    });
+
+    it('should throw BadRequestException for file size exceeded', async () => {
+      const req = { user: { id: 'user-1' } } as any;
+      const dto = {};
+      const file = {
+        buffer: Buffer.alloc(6 * 1024 * 1024),
+        originalname: 'large.jpg',
+        mimetype: 'image/jpeg',
+        size: 6 * 1024 * 1024,
+      } as Express.Multer.File;
+
+      await expect(controller.updateProfile(req, dto, file)).rejects.toThrow();
+    });
+
+    it('should throw ForbiddenException for municipality users', async () => {
+      const req = {
+        user: {
+          id: 'user-1',
+          role: { isMunicipal: true, name: 'officer' },
+        },
+      } as any;
+      const dto = { telegramUsername: '@newusername' };
+
+      await expect(controller.updateProfile(req, dto)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+  });
+
+  describe('getUserProfileById', () => {
+    it('should return user profile for current user', async () => {
+      const mockUser = { id: 'user-1', username: 'me' } as User;
+      const req = { user: { id: 'user-1' } } as any;
+
+      usersService.findUserById.mockResolvedValue(mockUser);
+
+      const result = await controller.getUserProfileById(req);
+
+      expect(usersService.findUserById).toHaveBeenCalledWith('user-1');
+      expect(result).toEqual({ success: true, data: mockUser });
     });
   });
 });

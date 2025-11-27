@@ -5,9 +5,17 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, Account, Role, CreateMunicipalityUserDto } from '@repo/api';
+import { User } from '../../common/entities/user.entity';
+import { Account } from '../../common/entities/account.entity';
+import { Role } from '../../common/entities/role.entity';
+import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
+import { UpdateProfileDto } from '../../common/dto/user.dto';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
+import path from 'path';
+import { Office } from '../../common/entities/office.entity';
+import { MinioProvider } from '../../providers/minio/minio.provider';
+import { USER_ERROR_MESSAGES } from './constants/error-messages';
 
 @Injectable()
 export class UsersService {
@@ -20,11 +28,16 @@ export class UsersService {
 
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
+
+    @InjectRepository(Office)
+    private readonly officeRepository: Repository<Office>,
+
+    private readonly minioProvider: MinioProvider,
   ) {}
 
   async findMunicipalityUsers(): Promise<User[]> {
     return this.userRepository.find({
-      relations: ['role'],
+      relations: ['role', 'office'],
       where: {
         role: {
           isMunicipal: true,
@@ -35,7 +48,7 @@ export class UsersService {
 
   async findMunicipalityUserById(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
-      relations: ['role'],
+      relations: ['role', 'office'],
       where: {
         id,
         role: {
@@ -45,7 +58,9 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('Municipality user not found');
+      throw new NotFoundException(
+        USER_ERROR_MESSAGES.MUNICIPALITY_USER_NOT_FOUND,
+      );
     }
 
     return user;
@@ -63,21 +78,28 @@ export class UsersService {
       });
 
       if (!dbRole) {
-        throw new NotFoundException(`Role not found`);
+        throw new NotFoundException(USER_ERROR_MESSAGES.ROLE_NOT_FOUND);
       }
+
+      const officeRepo = manager.getRepository(Office);
+      const dbOffice = await officeRepo.findOne({
+        where: { id: dto.officeId },
+      });
 
       const existingUser = await manager.getRepository(User).findOne({
         where: { username },
       });
       if (existingUser) {
-        throw new ConflictException('User with this username already exists');
+        throw new ConflictException(
+          USER_ERROR_MESSAGES.USERNAME_ALREADY_EXISTS,
+        );
       }
 
       const existingEmail = await manager.getRepository(User).findOne({
         where: { email },
       });
       if (existingEmail) {
-        throw new ConflictException('User with this email already exists');
+        throw new ConflictException(USER_ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
       }
 
       const newUser = manager.getRepository(User).create({
@@ -87,6 +109,7 @@ export class UsersService {
         firstName,
         lastName,
         role: dbRole,
+        office: dbOffice || null,
       });
 
       const user = await manager.getRepository(User).save(newUser);
@@ -118,7 +141,9 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('Municipality user not found');
+      throw new NotFoundException(
+        USER_ERROR_MESSAGES.MUNICIPALITY_USER_NOT_FOUND,
+      );
     }
 
     await this.userRepository.manager.transaction(async (manager) => {
@@ -136,7 +161,9 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('Municipality user not found');
+      throw new NotFoundException(
+        USER_ERROR_MESSAGES.MUNICIPALITY_USER_NOT_FOUND,
+      );
     }
 
     if (dto.username && dto.username !== user.username) {
@@ -145,7 +172,9 @@ export class UsersService {
       });
 
       if (existingUser) {
-        throw new ConflictException('Username already in use');
+        throw new ConflictException(
+          USER_ERROR_MESSAGES.USERNAME_ALREADY_EXISTS,
+        );
       }
     }
 
@@ -155,33 +184,38 @@ export class UsersService {
       });
 
       if (existingUserWithEmail) {
-        throw new ConflictException('Email already in use');
+        throw new ConflictException(USER_ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
       }
     }
 
     await this.userRepository.manager.transaction(async (manager) => {
-      // Update user fields
       if (dto.email) user.email = dto.email;
       if (dto.username) user.username = dto.username;
       if (dto.firstName) user.firstName = dto.firstName;
       if (dto.lastName) user.lastName = dto.lastName;
 
-      // we can get rid of this if the admin can select only from a list
       if (dto.roleId) {
         const role = await this.roleRepository.findOne({
           where: { id: dto.roleId },
         });
 
         if (!role) {
-          throw new NotFoundException('Role not found');
+          throw new NotFoundException(USER_ERROR_MESSAGES.ROLE_NOT_FOUND);
         }
 
         user.roleId = role.id;
       }
 
+      if (dto.officeId) {
+        const office = await this.officeRepository.findOne({
+          where: { id: dto.officeId },
+        });
+
+        user.officeId = office ? office.id : null;
+      }
+
       await manager.getRepository(User).save(user);
 
-      // Update associated account if username is changed
       if (dto.username) {
         const account = await manager.getRepository(Account).findOne({
           where: { userId: id, providerId: 'local' },
@@ -193,5 +227,64 @@ export class UsersService {
         }
       }
     });
+  }
+
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileDto,
+    file?: Express.Multer.File,
+  ): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(USER_ERROR_MESSAGES.PROFILE_NOT_FOUND);
+    }
+
+    if (dto.telegramUsername !== undefined) {
+      user.telegramUsername = dto.telegramUsername || null;
+    }
+
+    if (dto.emailNotificationsEnabled !== undefined) {
+      user.emailNotificationsEnabled = dto.emailNotificationsEnabled === 'true';
+    }
+
+    if (file) {
+      const sanitizedFilename = path
+        .basename(file.originalname)
+        .replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `profile-pictures/${userId}/${nanoid()}-${sanitizedFilename}`;
+      const fileUrl = await this.minioProvider.uploadFile(
+        fileName,
+        file.buffer,
+        file.mimetype,
+      );
+
+      if (user.profilePictureUrl) {
+        try {
+          const oldFileName = this.minioProvider.extractFileNameFromUrl(
+            user.profilePictureUrl,
+          );
+          await this.minioProvider.deleteFile(oldFileName);
+        } catch {
+          // Ignore errors if old file doesn't exist
+        }
+      }
+
+      user.profilePictureUrl = fileUrl;
+    }
+
+    return this.userRepository.save(user);
+  }
+
+  async findUserById(userId: string): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+    return user;
   }
 }

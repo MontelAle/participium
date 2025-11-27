@@ -1,4 +1,4 @@
-import { Session, User, LoginDto, RegisterDto } from '@repo/api';
+import { User, LoginDto, RegisterDto } from '@repo/api';
 
 export type AuthContextType = {
   user: User | null;
@@ -16,12 +16,7 @@ export type AuthContextType = {
   isAdminUser: boolean;
   isCitizenUser: boolean;
   isGuestUser: boolean;
-};
-
-export type AuthResponse = {
-  success: boolean;
-  data: {
-    user: User;
-    session: Session;
-  };
+  isMunicipalPrOfficer: boolean;
+  isTechnicalOfficer: boolean;
+  hasRole: (roles: string[]) => boolean;
 };

@@ -2,6 +2,7 @@
   "extends": "@repo/typescript-config/nestjs.json",
   "compilerOptions": {
     "allowJs": true,
+    "module": "esnext",
     "baseUrl": "src",
     "esModuleInterop": true,
     "incremental": false,

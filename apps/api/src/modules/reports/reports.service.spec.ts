@@ -1,16 +1,36 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReportsService } from './reports.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Report, CreateReportDto, UpdateReportDto, FilterReportsDto, ReportStatus } from '@repo/api';
+import { Report, ReportStatus } from '../../common/entities/report.entity';
+import { Category } from '../../common/entities/category.entity';
+import { User } from '../../common/entities/user.entity';
+import {
+  CreateReportDto,
+  UpdateReportDto,
+  FilterReportsDto,
+} from '../../common/dto/report.dto';
 import { Repository } from 'typeorm';
-import { NotFoundException } from '@nestjs/common';
+import {
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { MinioProvider } from '../../providers/minio/minio.provider';
+import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 
-// Mock nanoid per avere id prevedibili
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
 describe('ReportsService', () => {
   let service: ReportsService;
   let reportRepository: jest.Mocked<Repository<Report>>;
+  let categoryRepository: jest.Mocked<Repository<Category>>;
+  let userRepository: jest.Mocked<Repository<User>>;
+  let minioProvider: jest.Mocked<MinioProvider>;
+
+  const mockCitizenUser = { id: 'user-123', role: { name: 'user' } } as User;
+  const mockOtherCitizenUser = {
+    id: 'citizen-123',
+    role: { name: 'user' },
+  } as User;
 
   const mockReport: Partial<Report> = {
     id: 'mocked-id',
@@ -22,8 +42,9 @@ describe('ReportsService', () => {
       coordinates: [7.686864, 45.070312],
     },
     address: 'Via Roma 1, Torino',
+    isAnonymous: false,
     images: [],
-    userId: 'user-123',
+    userId: mockCitizenUser.id,
     categoryId: 'cat-123',
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -41,7 +62,30 @@ describe('ReportsService', () => {
             find: jest.fn(),
             findOne: jest.fn(),
             remove: jest.fn(),
+            count: jest.fn(),
             createQueryBuilder: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(Category),
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(User),
+          useValue: {
+            find: jest.fn(),
+            findOne: jest.fn(),
+          },
+        },
+        {
+          provide: MinioProvider,
+          useValue: {
+            uploadFile: jest.fn(),
+            extractFileNameFromUrl: jest.fn((url: string) =>
+              url.split('/').pop(),
+            ),
           },
         },
       ],
@@ -49,6 +93,9 @@ describe('ReportsService', () => {
 
     service = module.get<ReportsService>(ReportsService);
     reportRepository = module.get(getRepositoryToken(Report));
+    categoryRepository = module.get(getRepositoryToken(Category));
+    minioProvider = module.get(MinioProvider);
+    userRepository = module.get(getRepositoryToken(User));
   });
 
   it('should be defined', () => {
@@ -56,16 +103,38 @@ describe('ReportsService', () => {
   });
 
   describe('create', () => {
-    it('should create a report with all fields', async () => {
+    it('should create a report with uploaded images', async () => {
       const createDto: CreateReportDto = {
         title: 'New Report',
         description: 'New Description',
         longitude: 7.686864,
         latitude: 45.070312,
         address: 'Via Roma 1, Torino',
-        images: ['image1.jpg'],
         categoryId: 'cat-123',
+        isAnonymous: false,
       };
+
+      const mockFiles = [
+        {
+          originalname: 'test1.jpg',
+          buffer: Buffer.from('test1'),
+          mimetype: 'image/jpeg',
+        },
+        {
+          originalname: 'test2.jpg',
+          buffer: Buffer.from('test2'),
+          mimetype: 'image/jpeg',
+        },
+      ] as Express.Multer.File[];
+
+      const mockImageUrls = [
+        'http://localhost:9000/bucket/reports/mocked-id/123-test1.jpg',
+        'http://localhost:9000/bucket/reports/mocked-id/123-test2.jpg',
+      ];
+
+      minioProvider.uploadFile
+        .mockResolvedValueOnce(mockImageUrls[0])
+        .mockResolvedValueOnce(mockImageUrls[1]);
 
       const expectedReport = {
         id: 'mocked-id',
@@ -76,67 +145,201 @@ describe('ReportsService', () => {
         },
         status: ReportStatus.PENDING,
         userId: 'user-123',
+        images: mockImageUrls,
       };
 
-      reportRepository.create.mockReturnValue(expectedReport as unknown as Report);
-      reportRepository.save.mockResolvedValue(expectedReport as unknown as Report);
+      reportRepository.create.mockReturnValue(
+        expectedReport as unknown as Report,
+      );
+      reportRepository.save.mockResolvedValue(
+        expectedReport as unknown as Report,
+      );
 
-      const result = await service.create(createDto, 'user-123');
+      const result = await service.create(createDto, 'user-123', mockFiles);
 
+      expect(minioProvider.uploadFile).toHaveBeenCalledTimes(2);
       expect(reportRepository.create).toHaveBeenCalledWith({
         id: 'mocked-id',
         title: createDto.title,
         description: createDto.description,
         address: createDto.address,
-        images: createDto.images,
         categoryId: createDto.categoryId,
         location: {
           type: 'Point',
           coordinates: [7.686864, 45.070312],
         },
         userId: 'user-123',
+        images: mockImageUrls,
+        isAnonymous: false,
       });
       expect(reportRepository.save).toHaveBeenCalledWith(expectedReport);
       expect(result).toEqual(expectedReport);
     });
 
-    it('should create a report with only required fields (longitude, latitude)', async () => {
+    it('should create a report with minimum required fields and 1 image', async () => {
       const createDto: CreateReportDto = {
+        title: 'Minimum Report',
+        description: 'Minimum description',
         longitude: 7.686864,
         latitude: 45.070312,
+        categoryId: 'cat-123',
+        isAnonymous: false,
       };
+
+      const mockFiles = [
+        {
+          originalname: 'test.jpg',
+          buffer: Buffer.from('test'),
+          mimetype: 'image/jpeg',
+        },
+      ] as Express.Multer.File[];
+
+      const mockImageUrl =
+        'http://localhost:9000/bucket/reports/mocked-id/123-test.jpg';
+      minioProvider.uploadFile.mockResolvedValue(mockImageUrl);
 
       const expectedReport = {
         id: 'mocked-id',
+        title: 'Minimum Report',
+        description: 'Minimum description',
+        categoryId: 'cat-123',
         location: {
           type: 'Point',
           coordinates: [7.686864, 45.070312],
         },
         status: ReportStatus.PENDING,
         userId: 'user-123',
+        images: [mockImageUrl],
+        isAnonymous: false,
       };
 
-      reportRepository.create.mockReturnValue(expectedReport as unknown as Report);
-      reportRepository.save.mockResolvedValue(expectedReport as unknown as Report);
+      reportRepository.create.mockReturnValue(
+        expectedReport as unknown as Report,
+      );
+      reportRepository.save.mockResolvedValue(
+        expectedReport as unknown as Report,
+      );
 
-      const result = await service.create(createDto, 'user-123');
+      const result = await service.create(createDto, 'user-123', mockFiles);
 
+      expect(minioProvider.uploadFile).toHaveBeenCalledTimes(1);
       expect(reportRepository.create).toHaveBeenCalledWith({
         id: 'mocked-id',
+        title: 'Minimum Report',
+        description: 'Minimum description',
+        categoryId: 'cat-123',
         location: {
           type: 'Point',
           coordinates: [7.686864, 45.070312],
         },
         userId: 'user-123',
+        images: [mockImageUrl],
+        isAnonymous: false,
       });
       expect(result).toEqual(expectedReport);
+    });
+
+    it('should create a report with 3 images (maximum)', async () => {
+      const createDto: CreateReportDto = {
+        title: 'Report with max images',
+        description: 'Description with max images',
+        longitude: 7.686864,
+        latitude: 45.070312,
+        categoryId: 'cat-123',
+        isAnonymous: false,
+      };
+
+      const mockFiles = [
+        {
+          originalname: 'test1.jpg',
+          buffer: Buffer.from('test1'),
+          mimetype: 'image/jpeg',
+        },
+        {
+          originalname: 'test2.jpg',
+          buffer: Buffer.from('test2'),
+          mimetype: 'image/jpeg',
+        },
+        {
+          originalname: 'test3.jpg',
+          buffer: Buffer.from('test3'),
+          mimetype: 'image/jpeg',
+        },
+      ] as Express.Multer.File[];
+
+      const mockImageUrls = [
+        'http://localhost:9000/bucket/reports/mocked-id/123-test1.jpg',
+        'http://localhost:9000/bucket/reports/mocked-id/123-test2.jpg',
+        'http://localhost:9000/bucket/reports/mocked-id/123-test3.jpg',
+      ];
+
+      minioProvider.uploadFile
+        .mockResolvedValueOnce(mockImageUrls[0])
+        .mockResolvedValueOnce(mockImageUrls[1])
+        .mockResolvedValueOnce(mockImageUrls[2]);
+
+      const expectedReport = {
+        id: 'mocked-id',
+        title: 'Report with max images',
+        description: 'Description with max images',
+        categoryId: 'cat-123',
+        location: {
+          type: 'Point',
+          coordinates: [7.686864, 45.070312],
+        },
+        status: ReportStatus.PENDING,
+        userId: 'user-123',
+        images: mockImageUrls,
+        isAnonymous: false,
+      };
+
+      reportRepository.create.mockReturnValue(
+        expectedReport as unknown as Report,
+      );
+      reportRepository.save.mockResolvedValue(
+        expectedReport as unknown as Report,
+      );
+
+      const result = await service.create(createDto, 'user-123', mockFiles);
+
+      expect(minioProvider.uploadFile).toHaveBeenCalledTimes(3);
+      expect(result.images).toHaveLength(3);
+      expect(result).toEqual(expectedReport);
+    });
+
+    it('should throw InternalServerErrorException if image upload fails', async () => {
+      const createDto: CreateReportDto = {
+        title: 'Report with failing upload',
+        description: 'Description with failing upload',
+        longitude: 7.686864,
+        latitude: 45.070312,
+        categoryId: 'cat-123',
+        isAnonymous: false,
+      };
+
+      const mockFiles = [
+        {
+          originalname: 'test.jpg',
+          buffer: Buffer.from('test'),
+          mimetype: 'image/jpeg',
+        },
+      ] as Express.Multer.File[];
+
+      minioProvider.uploadFile.mockRejectedValue(new Error('Upload failed'));
+
+      await expect(
+        service.create(createDto, 'user-123', mockFiles),
+      ).rejects.toThrow(InternalServerErrorException);
+      await expect(
+        service.create(createDto, 'user-123', mockFiles),
+      ).rejects.toThrow(REPORT_ERROR_MESSAGES.IMAGE_UPLOAD_FAILED);
     });
   });
 
   describe('findAll', () => {
     it('should return all reports without filters', async () => {
       const mockReports = [mockReport, { ...mockReport, id: 'report-2' }];
-      
+
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
@@ -144,14 +347,27 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
-      const result = await service.findAll();
+      const result = await service.findAll(mockCitizenUser);
 
-      expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith('report');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('report.user', 'user');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('report.category', 'category');
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('report.createdAt', 'DESC');
+      expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'report',
+      );
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'report.user',
+        'user',
+      );
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'report.category',
+        'category',
+      );
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'report.createdAt',
+        'DESC',
+      );
       expect(result).toEqual(mockReports);
     });
 
@@ -166,14 +382,21 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
-      const result = await service.findAll(filters);
+      const result = await service.findAll(mockCitizenUser, filters);
 
-      expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith('report');
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('report.status = :status', {
-        status: ReportStatus.PENDING,
-      });
+      expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'report',
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.status = :status',
+        {
+          status: ReportStatus.PENDING,
+        },
+      );
       expect(result).toEqual(mockReports);
     });
 
@@ -189,13 +412,18 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
-      const result = await service.findAll(filters);
+      const result = await service.findAll(mockOtherCitizenUser, filters);
 
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('report.categoryId = :categoryId', {
-        categoryId: 'cat-123',
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.categoryId = :categoryId',
+        {
+          categoryId: 'cat-123',
+        },
+      );
       expect(result).toEqual(mockReports);
     });
 
@@ -211,13 +439,18 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
-      const result = await service.findAll(filters);
+      const result = await service.findAll(mockCitizenUser, filters);
 
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('report.userId = :userId', {
-        userId: 'user-123',
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.userId = :userId',
+        {
+          userId: 'user-123',
+        },
+      );
       expect(result).toEqual(mockReports);
     });
 
@@ -238,9 +471,11 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
-      const result = await service.findAll(filters);
+      const result = await service.findAll(mockCitizenUser, filters);
 
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         `ST_Contains(
@@ -273,9 +508,11 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
-      const result = await service.findAll(filters);
+      const result = await service.findAll(mockCitizenUser, filters);
 
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         `ST_DWithin(
@@ -307,42 +544,117 @@ describe('ReportsService', () => {
         getMany: jest.fn().mockResolvedValue(mockReports),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
-      const result = await service.findAll(filters);
+      const result = await service.findAll(mockCitizenUser, filters);
 
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('report.status = :status', {
-        status: ReportStatus.PENDING,
-      });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('report.categoryId = :categoryId', {
-        categoryId: 'cat-123',
-      });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('report.userId = :userId', {
-        userId: 'user-123',
-      });
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.status = :status',
+        {
+          status: ReportStatus.PENDING,
+        },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.categoryId = :categoryId',
+        {
+          categoryId: 'cat-123',
+        },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.userId = :userId',
+        {
+          userId: 'user-123',
+        },
+      );
       expect(result).toEqual(mockReports);
     });
   });
 
   describe('findOne', () => {
-    it('should return a report by id', async () => {
-      reportRepository.findOne.mockResolvedValue(mockReport as unknown as Report);
+    it('should return a standard report by id', async () => {
+      const standardReport = { ...mockReport, isAnonymous: false };
+      reportRepository.findOne.mockResolvedValue(
+        standardReport as unknown as Report,
+      );
 
-      const result = await service.findOne('mocked-id');
+      const result = await service.findOne('mocked-id', mockCitizenUser);
 
       expect(reportRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'mocked-id' },
-        relations: ['user', 'category'],
+        relations: ['user', 'user.role', 'category', 'assignedOfficer'],
       });
       expect(result).toEqual(mockReport);
+    });
+
+    it('should sanitize user info if report is anonymous and viewer is other citizen user', async () => {
+      const anonymousReport = {
+        ...mockReport,
+        userId: 'user-123',
+        user: mockCitizenUser,
+        isAnonymous: true,
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        anonymousReport as unknown as Report,
+      );
+
+      const result = await service.findOne('mocked-id', mockOtherCitizenUser);
+
+      expect(result.user).toBeNull();
+      expect(result.id).toBe('mocked-id');
+    });
+
+    it('should NOT sanitize info if viewer is the owner', async () => {
+      const anonymousReport = {
+        ...mockReport,
+        userId: 'user-123',
+        user: mockCitizenUser,
+        isAnonymous: true,
+      };
+      reportRepository.findOne.mockResolvedValue(
+        anonymousReport as unknown as Report,
+      );
+
+      const result = await service.findOne('mocked-id', mockCitizenUser);
+
+      expect(result.user).toEqual(mockCitizenUser);
+    });
+
+    it('should show user info if report is anonymous but viewer has privileged role (officer)', async () => {
+      const anonymousReport = {
+        ...mockReport,
+        userId: 'user-123',
+        user: mockCitizenUser,
+        isAnonymous: true,
+      };
+
+      const mockOfficerUser = {
+        id: 'officer-999',
+        role: { name: 'officer' },
+      } as User;
+
+      reportRepository.findOne.mockResolvedValue(
+        anonymousReport as unknown as Report,
+      );
+
+      const result = await service.findOne('mocked-id', mockOfficerUser);
+
+      expect(result.user).toEqual(mockCitizenUser);
+      expect(result.id).toBe('mocked-id');
     });
 
     it('should throw NotFoundException if report not found', async () => {
       reportRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('non-existent-id')).rejects.toThrow(NotFoundException);
-      await expect(service.findOne('non-existent-id')).rejects.toThrow(
-        'Report with ID non-existent-id not found',
+      await expect(
+        service.findOne('non-existent-id', mockCitizenUser),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.findOne('non-existent-id', mockCitizenUser),
+      ).rejects.toThrow(
+        REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('non-existent-id'),
       );
     });
   });
@@ -366,11 +678,20 @@ describe('ReportsService', () => {
         }),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
-      const result = await service.findNearby(7.686864, 45.070312, 5000);
+      const result = await service.findNearby(
+        7.686864,
+        45.070312,
+        5000,
+        mockCitizenUser,
+      );
 
-      expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith('report');
+      expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'report',
+      );
       expect(mockQueryBuilder.where).toHaveBeenCalledWith(
         `ST_DWithin(
           report.location::geography,
@@ -405,9 +726,11 @@ describe('ReportsService', () => {
         }),
       };
 
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
-      const result = await service.findNearby(0, 0, 1000);
+      const result = await service.findNearby(0, 0, 1000, mockCitizenUser);
 
       expect(result).toEqual([]);
     });
@@ -422,14 +745,18 @@ describe('ReportsService', () => {
 
       const updatedReport = { ...mockReport, ...updateDto };
 
-      reportRepository.findOne.mockResolvedValue(mockReport as unknown as Report);
-      reportRepository.save.mockResolvedValue(updatedReport as unknown as Report);
+      reportRepository.findOne.mockResolvedValue(
+        mockReport as unknown as Report,
+      );
+      reportRepository.save.mockResolvedValue(
+        updatedReport as unknown as Report,
+      );
 
       const result = await service.update('mocked-id', updateDto);
 
       expect(reportRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'mocked-id' },
-        relations: ['user', 'category'],
+        relations: ['user', 'user.role', 'category', 'assignedOfficer'],
       });
       expect(reportRepository.save).toHaveBeenCalledWith({
         ...mockReport,
@@ -437,6 +764,346 @@ describe('ReportsService', () => {
         status: ReportStatus.IN_PROGRESS,
       });
       expect(result).toEqual(updatedReport);
+    });
+
+    it('should update assignedOfficerId when status is assigned and officerId is provided', async () => {
+      const mockOfficer = {
+        id: 'officer-1',
+        username: 'officer_jane',
+        role: { name: 'officer' },
+      } as User;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+        assignedOfficerId: 'officer-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(mockReport as Report);
+      (userRepository.findOne as jest.Mock).mockResolvedValue(mockOfficer);
+
+      const expectedSavedReport = {
+        ...mockReport,
+        status: ReportStatus.ASSIGNED,
+        assignedOfficer: mockOfficer,
+      };
+
+      reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'officer-1' },
+      });
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.ASSIGNED,
+          assignedOfficer: mockOfficer,
+        }),
+      );
+    });
+
+    it('should auto-assign to officer with fewest reports when status is assigned without officerId', async () => {
+      const mockCategory = {
+        id: 'cat-123',
+        name: 'Road Issues',
+        office: {
+          id: 'office-1',
+          name: 'Public Works',
+        },
+      } as Category;
+
+      const mockOfficer1 = {
+        id: 'officer-1',
+        username: 'officer_one',
+        role: { name: 'officer' },
+        officeId: 'office-1',
+      } as User;
+
+      const mockOfficer2 = {
+        id: 'officer-2',
+        username: 'officer_two',
+        role: { name: 'officer' },
+        officeId: 'office-1',
+      } as User;
+
+      const reportWithCategory = {
+        ...mockReport,
+        category: mockCategory,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithCategory);
+      (userRepository.find as jest.Mock).mockResolvedValue([
+        mockOfficer1,
+        mockOfficer2,
+      ]);
+
+      (reportRepository.count as jest.Mock)
+        .mockResolvedValueOnce(3)
+        .mockResolvedValueOnce(1);
+
+      const expectedSavedReport = {
+        ...reportWithCategory,
+        status: ReportStatus.ASSIGNED,
+        assignedOfficer: mockOfficer2,
+      };
+
+      reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(userRepository.find).toHaveBeenCalledWith({
+        where: { officeId: 'office-1' },
+        relations: ['role'],
+      });
+
+      expect(reportRepository.count).toHaveBeenCalledWith({
+        where: {
+          assignedOfficerId: 'officer-1',
+          status: 'assigned',
+        },
+      });
+
+      expect(reportRepository.count).toHaveBeenCalledWith({
+        where: {
+          assignedOfficerId: 'officer-2',
+          status: 'assigned',
+        },
+      });
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.ASSIGNED,
+          assignedOfficer: mockOfficer2,
+        }),
+      );
+    });
+
+    it('should auto-assign when status is assigned without officerId and category is loaded separately', async () => {
+      const mockCategory = {
+        id: 'cat-123',
+        name: 'Road Issues',
+        office: {
+          id: 'office-1',
+          name: 'Public Works',
+        },
+      } as Category;
+
+      const mockOfficer = {
+        id: 'officer-1',
+        username: 'officer_one',
+        role: { name: 'officer' },
+        officeId: 'office-1',
+      } as User;
+
+      const reportWithoutCategory = {
+        ...mockReport,
+        categoryId: 'cat-123',
+        category: null,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithoutCategory);
+      categoryRepository.findOne.mockResolvedValue(mockCategory);
+      (userRepository.find as jest.Mock).mockResolvedValue([mockOfficer]);
+      (reportRepository.count as jest.Mock).mockResolvedValue(2);
+
+      const expectedSavedReport = {
+        ...reportWithoutCategory,
+        status: ReportStatus.ASSIGNED,
+        assignedOfficer: mockOfficer,
+      };
+
+      reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(categoryRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'cat-123' },
+        relations: ['office'],
+      });
+
+      expect(userRepository.find).toHaveBeenCalledWith({
+        where: { officeId: 'office-1' },
+        relations: ['role'],
+      });
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.ASSIGNED,
+          assignedOfficer: mockOfficer,
+        }),
+      );
+    });
+
+    it('should not auto-assign if no officers are found in the office', async () => {
+      const mockCategory = {
+        id: 'cat-123',
+        name: 'Road Issues',
+        office: {
+          id: 'office-1',
+          name: 'Public Works',
+        },
+      } as Category;
+
+      const reportWithCategory = {
+        ...mockReport,
+        category: mockCategory,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithCategory);
+      (userRepository.find as jest.Mock).mockResolvedValue([]);
+
+      const expectedSavedReport = {
+        ...reportWithCategory,
+        status: ReportStatus.ASSIGNED,
+        assignedOfficer: undefined,
+      };
+
+      reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(userRepository.find).toHaveBeenCalledWith({
+        where: { officeId: 'office-1' },
+        relations: ['role'],
+      });
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.ASSIGNED,
+        }),
+      );
+    });
+
+    it('should filter out pr_officers and only auto-assign to technical officers', async () => {
+      const mockCategory = {
+        id: 'cat-123',
+        name: 'Road Issues',
+        office: {
+          id: 'office-1',
+          name: 'Public Works',
+        },
+      } as Category;
+
+      const mockOfficer = {
+        id: 'officer-1',
+        username: 'tech_officer',
+        role: { name: 'officer' },
+        officeId: 'office-1',
+      } as User;
+
+      const mockPrOfficer = {
+        id: 'pr-officer-1',
+        username: 'pr_officer',
+        role: { name: 'pr_officer' },
+        officeId: 'office-1',
+      } as User;
+
+      const reportWithCategory = {
+        ...mockReport,
+        category: mockCategory,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithCategory);
+      (userRepository.find as jest.Mock).mockResolvedValue([
+        mockOfficer,
+        mockPrOfficer,
+      ]);
+      (reportRepository.count as jest.Mock).mockResolvedValue(0);
+
+      const expectedSavedReport = {
+        ...reportWithCategory,
+        status: ReportStatus.ASSIGNED,
+        assignedOfficer: mockOfficer,
+      };
+
+      reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(reportRepository.count).toHaveBeenCalledTimes(1);
+      expect(reportRepository.count).toHaveBeenCalledWith({
+        where: {
+          assignedOfficerId: 'officer-1',
+          status: 'assigned',
+        },
+      });
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.ASSIGNED,
+          assignedOfficer: mockOfficer,
+        }),
+      );
+    });
+
+    it('should auto-assign when assignedOfficerId is empty string', async () => {
+      const mockCategory = {
+        id: 'cat-123',
+        name: 'Road Issues',
+        office: {
+          id: 'office-1',
+          name: 'Public Works',
+        },
+      } as Category;
+
+      const mockOfficer = {
+        id: 'officer-1',
+        username: 'officer_one',
+        role: { name: 'officer' },
+        officeId: 'office-1',
+      } as User;
+
+      const reportWithCategory = {
+        ...mockReport,
+        category: mockCategory,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+        assignedOfficerId: '',
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithCategory);
+      (userRepository.find as jest.Mock).mockResolvedValue([mockOfficer]);
+      (reportRepository.count as jest.Mock).mockResolvedValue(1);
+
+      const expectedSavedReport = {
+        ...reportWithCategory,
+        status: ReportStatus.ASSIGNED,
+        assignedOfficer: mockOfficer,
+      };
+
+      reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(userRepository.find).toHaveBeenCalledWith({
+        where: { officeId: 'office-1' },
+        relations: ['role'],
+      });
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.ASSIGNED,
+          assignedOfficer: mockOfficer,
+        }),
+      );
     });
 
     it('should update location when longitude and latitude provided', async () => {
@@ -471,37 +1138,67 @@ describe('ReportsService', () => {
       });
     });
 
+    it('should update categoryId when provided', async () => {
+      const mockCategory = {
+        id: 'cat-456',
+        name: 'New Category',
+      } as Category;
+
+      const updateDto: UpdateReportDto = {
+        categoryId: 'cat-456',
+      };
+
+      reportRepository.findOne.mockResolvedValue(mockReport as Report);
+      categoryRepository.findOne.mockResolvedValue(mockCategory);
+      reportRepository.save.mockResolvedValue({
+        ...mockReport,
+        category: mockCategory,
+      } as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(categoryRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'cat-456' },
+        relations: ['office'],
+      });
+      expect(reportRepository.save).toHaveBeenCalled();
+    });
+
     it('should throw NotFoundException if report not found', async () => {
       reportRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.update('non-existent-id', {})).rejects.toThrow(NotFoundException);
       await expect(service.update('non-existent-id', {})).rejects.toThrow(
-        'Report with ID non-existent-id not found',
+        NotFoundException,
+      );
+      await expect(service.update('non-existent-id', {})).rejects.toThrow(
+        REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('non-existent-id'),
       );
     });
   });
 
-  describe('remove', () => {
-    it('should delete a report', async () => {
-      reportRepository.findOne.mockResolvedValue(mockReport as unknown as Report);
-      reportRepository.remove.mockResolvedValue(mockReport as unknown as Report);
+  describe('findByUserId', () => {
+    it('should return reports assigned to a specific officer and sanitize them', async () => {
+      const mockReports = [
+        { ...mockReport, id: 'r1' },
+        { ...mockReport, id: 'r2', isAnonymous: true, user: mockCitizenUser },
+      ];
 
-      await service.remove('mocked-id');
+      reportRepository.find.mockResolvedValue(mockReports as Report[]);
 
-      expect(reportRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'mocked-id' },
-        relations: ['user', 'category'],
-      });
-      expect(reportRepository.remove).toHaveBeenCalledWith(mockReport);
-    });
-
-    it('should throw NotFoundException if report not found', async () => {
-      reportRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.remove('non-existent-id')).rejects.toThrow(NotFoundException);
-      await expect(service.remove('non-existent-id')).rejects.toThrow(
-        'Report with ID non-existent-id not found',
+      const result = await service.findByUserId(
+        'officer-1',
+        mockOtherCitizenUser,
       );
+
+      expect(reportRepository.find).toHaveBeenCalledWith({
+        where: { assignedOfficerId: 'officer-1' },
+        relations: ['user', 'category', 'assignedOfficer'],
+        order: { createdAt: 'DESC' },
+      });
+
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('r1');
+      expect(result[1].user).toBeNull();
     });
   });
 });

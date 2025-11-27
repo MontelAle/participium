@@ -10,8 +10,9 @@
 6. [Frontend Web](#frontend-web)
 7. [Database](#database)
 8. [Shared Packages](#shared-packages)
-9. [Setup and Configuration](#setup-and-configuration)
-10. [Available Commands](#available-commands)
+9. [Operational Model & Workflow](#operational-model--workflow)
+10. [Setup and Configuration](#setup-and-configuration)
+11. [Available Commands](#available-commands)
 
 ---
 
@@ -23,7 +24,9 @@
 
 - Cookie-based authentication and session management
 - Role and permission system
-- Municipal user management
+- Municipal user management with office assignments
+- Regular user profile management (Telegram, notifications, profile picture)
+- File storage with MinIO (S3-compatible)
 - Modern dashboard interface with reusable UI components
 - RESTful API with Swagger documentation
 
@@ -51,15 +54,16 @@ The project uses **Turborepo** to manage a monorepo workspace with:
 
 ### Backend
 
-| Technology | Version | Purpose              |
-| ---------- | ------- | -------------------- |
-| NestJS     | ^11.0.0 | Main framework       |
-| TypeORM    | ^0.3.27 | Database ORM         |
-| PostgreSQL | 18      | Relational database  |
-| PostGIS    | 3.6     | Geographic extension |
-| Passport   | ^0.7.0  | Authentication       |
-| Swagger    | ^11.2.1 | API documentation    |
-| Jest       | ^29.7.0 | Testing              |
+| Technology | Version | Purpose                      |
+| ---------- | ------- | ---------------------------- |
+| NestJS     | ^11.0.0 | Main framework               |
+| TypeORM    | ^0.3.27 | Database ORM                 |
+| PostgreSQL | 18      | Relational database          |
+| PostGIS    | 3.6     | Geographic extension         |
+| MinIO      | ^8.0.1  | S3-compatible object storage |
+| Passport   | ^0.7.0  | Authentication               |
+| Swagger    | ^11.2.1 | API documentation            |
+| Jest       | ^29.7.0 | Testing                      |
 
 ### Frontend
 
@@ -91,10 +95,14 @@ participium/
 │   │   ├── src/
 │   │   │   ├── modules/        # Functional modules
 │   │   │   │   ├── auth/       # Authentication
+│   │   │   │   ├── categories/ # Report categories
+│   │   │   │   ├── offices/    # Office management
+│   │   │   │   ├── reports/    # Report management
 │   │   │   │   ├── roles/      # Role management
 │   │   │   │   └── users/      # User management
 │   │   │   ├── providers/
-│   │   │   │   └── database/   # DB configuration
+│   │   │   │   ├── database/   # DB configuration
+│   │   │   │   └── minio/      # MinIO S3 storage
 │   │   │   ├── config/         # App configurations
 │   │   │   └── common/         # Types and utilities
 │   │   ├── test/               # E2E tests
@@ -161,19 +169,36 @@ participium/
 
 **Endpoint**: `/users`
 
-| Method | Route                    | Description           |
-| ------ | ------------------------ | --------------------- |
-| GET    | `/municipality`          | List municipal users  |
-| GET    | `/municipality/user/:id` | User details          |
-| POST   | `/municipality`          | Create municipal user |
-| POST   | `/municipality/user/:id` | Update user           |
-| DELETE | `/municipality/user/:id` | Delete user           |
+| Method | Route                    | Description                 |
+| ------ | ------------------------ | --------------------------- |
+| GET    | `/municipality`          | List municipal users        |
+| GET    | `/municipality/user/:id` | User details                |
+| POST   | `/municipality`          | Create municipal user       |
+| POST   | `/municipality/user/:id` | Update user                 |
+| DELETE | `/municipality/user/:id` | Delete user                 |
+| PATCH  | `/profile/me`            | Update regular user profile |
 
 **Functionality**:
 
 - Complete municipal user management
+- Regular user profile editing (for non-municipal users only)
 - Validation with class-validator
-- Relations with roles and accounts
+- Relations with roles, accounts, and offices
+- File upload handling with Multer
+- MinIO integration for profile picture storage
+
+**Profile Management** (`PATCH /profile/me`):
+
+- **Telegram Username**: Optional Telegram handle (`@username`)
+  - Validated format: `@[a-zA-Z0-9_]{4,31}` (5-32 characters)
+  - Can be removed by sending empty string
+- **Email Notifications**: Boolean flag for notification preferences
+- **Profile Picture**: Upload and manage user avatar
+  - Supported formats: JPEG, PNG, WebP
+  - Maximum size: 5MB
+  - Automatic filename sanitization (path traversal protection)
+  - Old pictures automatically deleted on replacement
+- **Security**: Municipality users (admin, officers) cannot edit their profile via this endpoint
 
 #### Roles Module
 
@@ -182,6 +207,33 @@ participium/
 | Method | Route | Description                  |
 | ------ | ----- | ---------------------------- |
 | GET    | `/`   | Retrieve all available roles |
+
+#### Offices Module
+
+**Endpoint**: `/offices`
+
+| Method | Route | Description                    |
+| ------ | ----- | ------------------------------ |
+| GET    | `/`   | Retrieve all available offices |
+
+**Functionality**:
+
+- Manage municipal offices/departments
+- Assign offices to municipal users
+- Used for organizational structure
+
+#### Categories Module
+
+**Endpoint**: `/categories`
+
+| Method | Route | Description                    |
+| ------ | ----- | ------------------------------ |
+| GET    | `/`   | Retrieve all report categories |
+
+**Functionality**:
+
+- Categorize civic reports
+- Infrastructure, environment, public services, etc.
 
 #### Reports Module
 
@@ -223,11 +275,11 @@ File: `src/config/app.config.ts`
     env: 'development'
   },
   session: {
-    expiresInSeconds: 86400  // 24 hours
+    expiresInSeconds: 86400
   },
   cookie: {
     httpOnly: true,
-    secure: false,           // true in production
+    secure: false,
     sameSite: 'lax'
   },
   db: {
@@ -262,7 +314,7 @@ File: `src/config/app.config.ts`
 
 ```typescript
 /                      → HomePage
-/map                   → MapPage
+/report-map            → MapPage
 /login                 → LoginPage
 /register              → RegistrationPage
 /users-municipality    → (configurable)
@@ -323,77 +375,98 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### User
 
-| Field     | Type   | Description           | Nullable | Notes                      |
-| --------- | ------ | --------------------- | -------- | -------------------------- |
-| id        | string | Primary key           | No       |                            |
-| email     | string | User email            | No       | Unique                     |
-| username  | string | Username              | No       | Unique                     |
-| firstName | string | First name            | No       |                            |
-| lastName  | string | Last name             | No       |                            |
-| roleId    | string | Linked role ID        | No       | Foreign key to Role entity |
-| role      | Role   | Role entity relation  | No       | Many-to-one, not nullable  |
-| createdAt | Date   | Creation timestamp    | No       | Auto-generated             |
-| updatedAt | Date   | Last update timestamp | No       | Auto-generated             |
+| Field                     | Type    | Description              | Nullable | Notes                        |
+| ------------------------- | ------- | ------------------------ | -------- | ---------------------------- |
+| id                        | string  | Primary key              | No       | varchar                      |
+| email                     | string  | User email               | No       | Unique                       |
+| username                  | string  | Username                 | No       | Unique                       |
+| firstName                 | string  | First name               | No       |                              |
+| lastName                  | string  | Last name                | No       |                              |
+| roleId                    | string  | Linked role ID           | No       | Foreign key to Role entity   |
+| role                      | Role    | Role entity relation     | No       | Many-to-one, not nullable    |
+| officeId                  | string  | Linked office ID         | Yes      | Foreign key to Office entity |
+| office                    | Office  | Office entity relation   | Yes      | Many-to-one, optional        |
+| telegramUsername          | string  | Telegram handle          | Yes      | Format: @username            |
+| emailNotificationsEnabled | boolean | Email notifications flag | No       | Default: false               |
+| profilePictureUrl         | string  | Profile picture URL      | Yes      | MinIO storage URL            |
+| createdAt                 | Date    | Creation timestamp       | No       | timestamptz, auto-generated  |
+| updatedAt                 | Date    | Last update timestamp    | No       | timestamptz, auto-generated  |
 
 #### Role
 
-| Field | Type   | Description | Nullable | Notes |
-| ----- | ------ | ----------- | -------- | ----- |
-| id    | string | Primary key | No       |       |
-| name  | string | Role name   | No       |       |
+| Field       | Type    | Description            | Nullable | Notes                   |
+| ----------- | ------- | ---------------------- | -------- | ----------------------- |
+| id          | string  | Primary key            | No       | varchar                 |
+| name        | string  | Role name              | No       | varchar                 |
+| label       | string  | Display label          | No       | varchar                 |
+| isMunicipal | boolean | Municipality user flag | No       | true for admin/officers |
+
+#### Office
+
+| Field      | Type       | Description             | Nullable | Notes                           |
+| ---------- | ---------- | ----------------------- | -------- | ------------------------------- |
+| id         | string     | Primary key             | No       | varchar                         |
+| name       | string     | Office name             | No       | varchar                         |
+| label      | string     | Office label            | No       | varchar                         |
+| categories | Category[] | Related categories list | -        | One-to-many with Category table |
 
 #### Account
 
 | Field      | Type   | Description           | Nullable | Notes                       |
 | ---------- | ------ | --------------------- | -------- | --------------------------- |
-| id         | string | Primary key           | No       |                             |
-| accountId  | string | Account identifier    | No       |                             |
-| providerId | string | Provider identifier   | No       |                             |
+| id         | string | Primary key           | No       | varchar                     |
+| accountId  | string | Account identifier    | No       | varchar                     |
+| providerId | string | Provider identifier   | No       | varchar                     |
 | userId     | string | Linked user ID        | No       | Foreign key to User entity  |
 | user       | User   | User entity relation  | No       | Many-to-one, cascade delete |
-| password   | string | Account password      | Yes      | Optional, hashed            |
-| createdAt  | Date   | Creation timestamp    | No       | Auto-generated              |
-| updatedAt  | Date   | Last update timestamp | No       | Auto-generated              |
+| password   | string | Account password      | Yes      | varchar, optional, hashed   |
+| createdAt  | Date   | Creation timestamp    | No       | timestamptz, auto-generated |
+| updatedAt  | Date   | Last update timestamp | No       | timestamptz, auto-generated |
 
 #### Session
 
 | Field          | Type   | Description              | Nullable | Notes                       |
 | -------------- | ------ | ------------------------ | -------- | --------------------------- |
-| id             | string | Primary key              | No       |                             |
-| expiresAt      | Date   | Session expiry timestamp | No       |                             |
-| hashedSecret   | string | Hashed session secret    | No       | Excluded from serialization |
-| createdAt      | Date   | Creation timestamp       | No       | Auto-generated              |
-| updatedAt      | Date   | Last update timestamp    | No       | Auto-generated              |
-| ipAddress      | string | IP address               | Yes      | Optional                    |
-| userAgent      | string | User agent string        | Yes      | Optional                    |
+| id             | string | Primary key              | No       | varchar                     |
+| expiresAt      | Date   | Session expiry timestamp | No       | timestamptz                 |
+| hashedSecret   | string | Hashed session secret    | No       | varchar, excluded from JSON |
+| createdAt      | Date   | Creation timestamp       | No       | timestamptz, auto-generated |
+| updatedAt      | Date   | Last update timestamp    | No       | timestamptz, auto-generated |
+| ipAddress      | string | IP address               | Yes      | varchar, optional           |
+| userAgent      | string | User agent string        | Yes      | varchar, optional           |
 | userId         | string | Linked user ID           | No       | Foreign key to User entity  |
 | user           | User   | User entity relation     | No       | Many-to-one, cascade delete |
-| impersonatedBy | string | Impersonator user ID     | Yes      | Optional                    |
+| impersonatedBy | string | Impersonator user ID     | Yes      | varchar, optional           |
 
 #### Category
 
-| Field | Type   | Description   | Nullable | Notes |
-| ----- | ------ | ------------- | -------- | ----- |
-| id    | string | Primary key   | No       |       |
-| name  | string | Category name | No       |       |
+| Field  | Type   | Description              | Nullable | Notes                           |
+| ------ | ------ | ------------------------ | -------- | ------------------------------- |
+| id     | string | Primary key              | No       | varchar                         |
+| name   | string | Category name            | No       | varchar                         |
+| office | Office | Linked office            | -        | Many-to-one with Office entity  |
 
 #### Report
 
-| Field       | Type                  | Description               | Nullable | Notes                          |
-| ----------- | --------------------- | ------------------------- | -------- | ------------------------------ |
-| id          | string                | Primary key               | No       |                                |
-| title       | string                | Report title              | No       |                                |
-| description | string                | Report description        | No       | Text type for longer content   |
-| status      | enum                  | Report status             | No       | Values: pending, in_progress, resolved, rejected. Default: pending |
-| location    | string                | Geographic coordinates    | No       | PostGIS geometry(Point, 4326), stored as WKT format |
-| address     | string                | Physical address          | Yes      | Optional                       |
-| images      | string[]              | Array of image paths/URLs | Yes      | Optional                       |
-| userId      | string                | Linked user ID            | No       | Foreign key to User entity     |
-| user        | User                  | User entity relation      | No       | Many-to-one, cascade delete    |
-| categoryId  | string                | Linked category ID        | No       | Foreign key to Category entity |
-| category    | Category              | Category entity relation  | No       | Many-to-one, not nullable      |
-| createdAt   | Date                  | Creation timestamp        | No       | Auto-generated                 |
-| updatedAt   | Date                  | Last update timestamp     | No       | Auto-generated                 |
+| Field             | Type     | Description               | Nullable | Notes                                                                          |
+| ----------------- | -------- | ------------------------- | -------- | ------------------------------------------------------------------------------ |
+| id                | string   | Primary key               | No       | varchar                                                                        |
+| title             | string   | Report title              | Yes      | varchar, optional                                                              |
+| description       | string   | Report description        | Yes      | text type, optional                                                            |
+| status            | enum     | Report status             | No       | Values: pending, in_progress, resolved, rejected, assigned. Default: pending   |
+| location          | Point    | Geographic coordinates    | No       | PostGIS geometry(Point, 4326)                                                  |
+| address           | string   | Physical address          | Yes      | varchar, optional                                                              |
+| images            | string[] | Array of image paths/URLs | No       | varchar array                                                                  |
+| userId            | string   | Linked user ID            | No       | Foreign key to User entity                                                     |
+| user              | User     | User entity relation      | No       | Many-to-one, cascade delete                                                    |
+| isAnonymous       | boolean  | Anonymous report flag     | No       | Default: false                                                                 |
+| categoryId        | string   | Linked category ID        | Yes      | Foreign key to Category entity, optional                                       |
+| category          | Category | Category entity relation  | Yes      | Many-to-one, optional                                                          |
+| createdAt         | Date     | Creation timestamp        | No       | timestamptz, auto-generated                                                    |
+| updatedAt         | Date     | Last update timestamp     | No       | timestamptz, auto-generated                                                    |
+| explanation       | string   | Rejection/action reason   | Yes      | text type, optional                                                            |
+| assignedOfficerId | string   | Assigned officer ID       | Yes      | Foreign key to User entity, optional                                           |
+| assignedOfficer   | User     | Assigned officer relation | Yes      | Many-to-one with User entity, optional                                         |
 
 **PostGIS Integration**:
 
@@ -404,11 +477,15 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 ### Relations
 
-- User ⟷ Role (ManyToOne)
-- User ⟷ Account (OneToMany)
-- User ⟷ Session (OneToMany)
-- Report ⟷ User (ManyToOne)
-- Report ⟷ Category (ManyToOne)
+- User ⟷ Role (ManyToOne, required)
+- User ⟷ Office (ManyToOne, optional)
+- User ⟷ Account (OneToMany, cascade delete)
+- User ⟷ Session (OneToMany, cascade delete)
+- Report ⟷ User (ManyToOne, cascade delete)
+- Report ⟷ Category (ManyToOne, optional)
+- Report ⟷ User (as assignedOfficer, ManyToOne, optional)
+- Category ⟷ Office (ManyToOne)
+- Office ⟷ Category (OneToMany)
 
 ### PostGIS Geospatial Features
 
@@ -417,7 +494,6 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 **Bounding Box**: Find reports within a rectangular area
 
 ```typescript
-// Example: Reports in Turin city center
 ((minLongitude = 7.65), (maxLongitude = 7.72));
 ((minLatitude = 45.03), (maxLatitude = 45.1));
 ```
@@ -425,7 +501,6 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 **Radius Search**: Find reports within a circular area
 
 ```typescript
-// Example: Reports within 5km from Piazza Castello
 ((searchLongitude = 7.686864), (searchLatitude = 45.070312));
 radiusMeters = 5000;
 ```
@@ -433,7 +508,6 @@ radiusMeters = 5000;
 **Nearby with Distances**: Reports ordered by distance from a point
 
 ```typescript
-// Returns reports with calculated distance in meters
 ((longitude = 7.686864), (latitude = 45.070312), (radius = 5000));
 ```
 
@@ -445,6 +519,37 @@ radiusMeters = 5000;
 - `ST_MakePoint`: Create point geometry from coordinates
 - Geography cast (`::geography`) for accurate metric calculations
 
+### MinIO Object Storage
+
+**Purpose**: S3-compatible object storage for file uploads
+
+**Configuration**:
+
+- Default endpoint: `localhost:9000`
+- Default bucket: `participium-reports`
+- Access policy: Public read for uploaded files
+
+**Features**:
+
+- **Profile Pictures**: User avatar storage in `profile-pictures/{userId}/` directory
+- **Report Images**: Report attachments in `reports/{reportId}/` directory
+- **Automatic Management**:
+  - Bucket auto-creation on startup
+  - Public read policy configuration
+  - Old file deletion when updating
+- **Security**:
+  - Filename sanitization (path traversal protection)
+  - File type validation (JPEG, PNG, WebP)
+  - Size limits (5MB for profile pictures, 5MB per report image)
+  - Unique filenames with nanoid prefix
+
+**Provider Methods**:
+
+- `uploadFile(fileName, buffer, mimetype)`: Upload file and return URL
+- `deleteFile(fileName)`: Delete single file
+- `deleteFiles(fileNames)`: Bulk delete files
+- `extractFileNameFromUrl(url)`: Parse MinIO URL to get file path
+
 ---
 
 ## Shared Packages
@@ -455,15 +560,15 @@ radiusMeters = 5000;
 
 **Content**:
 
-- `entities/`: TypeORM definitions (User, Role, Account, Session, Category, Report)
+- `entities/`: TypeORM definitions (User, Role, Office, Account, Session, Category, Report)
 - `dto/`: Data Transfer Objects
-  - `login.dto.ts`
-  - `register.dto.ts`
-  - `create-municipality-user.dto.ts`
-  - `update-municipality-user.dto.ts`
-  - `create-report.dto.ts`
-  - `update-report.dto.ts`
-  - `filter-reports.dto.ts`
+  - `auth.dto.ts` (RegisterDto, LoginDto, LoginResponseDto, LogoutResponseDto)
+  - `municipality-user.dto.ts` (CreateMunicipalityUserDto, UpdateMunicipalityUserDto, responses)
+  - `profile.dto.ts` (UpdateProfileDto, ProfileResponseDto)
+  - `report.dto.ts` (CreateReportDto, UpdateReportDto, FilterReportsDto, responses)
+  - `role.dto.ts` (RolesResponseDto)
+  - `category.dto.ts` (CategoriesResponseDto)
+  - `response.dto.ts` (Base ResponseDto interface)
 
 ### @repo/eslint-config
 
@@ -498,6 +603,72 @@ radiusMeters = 5000;
 - `react.json`: React config
 - `react-library.json`: React library config
 - `vite.json`: Vite config
+
+---
+
+## Operational Model & Workflow
+
+This section outlines how the platform manages departments, categories, and the report resolution process
+
+### Office - Category Mapping
+
+This table shows which office is competent for specific problem categories
+
+| Office Name                             | ID (Database)     | Competent Categories                               |
+| :-------------------------------------- | :---------------- | :------------------------------------------------- |
+| **Maintenance and Technical Services**  | `maintenance`     | Roads and Urban Furnishings Architectural Barriers |
+| **Infrastructure**                      | `infrastructure`  | Road Signs and Traffic Lights Public Lighting      |
+| **Local Public Services**               | `public_services` | Water Supply Drinking Water Sewer System           |
+| **Environment Quality**                 | `environment`     | Waste                                              |
+| **Green Areas and Parks**               | `green_parks`     | Public Green Areas and Playgrounds                 |
+| **Decentralization and Civic Services** | `civic_services`  | Other (General issues)                             |
+| **Organizational Office**               | `organization`    | No category                                        |
+
+### Report Status Lifecycle
+
+According to the project specifications, a report can be in one of the following states:
+
+1. **Pending Approval** (Initial state)
+2. **Assigned** (After PR acceptance)
+3. **In Progress**
+4. **Suspended**
+5. **Rejected**
+6. **Resolved**
+
+### Management Workflow
+
+The system follows a workflow where the **Organization Office** (PR Officers) acts as the gateway for all citizen reports.
+
+1.  **Submission**: A Citizen submits a report specifying a category
+
+2.  **Verification & Assignment (PR Officer)**:
+    - The report appears in the dashboard of the **PR Officers**
+    - A PR Officer performs a preliminary verification of the content and image
+    - **Action**: The PR Officer marks the report as **Accepted** (or Rejected with motivations)
+      - Upon acceptance, the system determines the competent technical office based on the report's category
+      - The PR Officer can choose between two assignment options:
+        - **Manual Assignment**: Select a specific technical officer from the competent office
+        - **Automatic Assignment**: Let the system assign the report to the officer with the lowest workload (fewest assigned reports)
+    - **Outcome**: The report status changes to **Assigned** and is routed to the designated technical officer in the competent office (e.g., a "Public Lighting" issue is sent to the _Infrastructure Office_).
+
+3.  **Technical View (Technical Officer)**:
+    - The **Technical Officer** (e.g., `tech_infrastructure_1`) logs into the platform
+    - They access their specific office dashboard
+    - **Action**: The officer **views** the list of reports that have been accepted and assigned to their department
+
+### Office - Technical User - PR User Table
+
+This table lists the credentials (usernames) to use for testing the workflow
+
+| Office                                  | User Type                        | Username                                                                |
+| :-------------------------------------- | :------------------------------- | :---------------------------------------------------------------------- |
+| **Maintenance & Technical Services**    | Maintenance Technician           | `tech_maintenance_1`, `tech_maintenance_2`                              |
+| **Infrastructure**                      | Infrastructure Technician        | `tech_infrastructure_1`, `tech_infrastructure_2`                        |
+| **Local Public Services**               | Public Services Technician       | `tech_public_services_1`, `tech_public_services_2`                      |
+| **Environment Quality**                 | Environment Technician           | `tech_environment_1`, `tech_environment_2`                              |
+| **Green Areas and Parks**               | Green Parks Technician           | `tech_green_parks_1`, `tech_green_parks_2`                              |
+| **Decentralization & Civic Services**   | Civic Services Technician        | `tech_civic_services_1`, `tech_civic_services_2`                        |
+| **Organizational**                      | System Admin, PR Officer         | `admin`, `pr_officer_1`, `pr_officer_2`, `pr_officer_3`, `pr_officer_4` |
 
 ---
 
@@ -559,28 +730,56 @@ SESSION_EXPIRES_IN_SECONDS=86400
 COOKIE_HTTP_ONLY=true
 COOKIE_SECURE=false
 COOKIE_SAME_SITE=lax
-```
 
-4. **Seed database (optional)**
-
-```bash
-cd apps/api
-pnpm run seed:user     # Seed users and roles
-pnpm run seed:reports  # Seed reports with Turin locations
+# MinIO (S3-compatible storage)
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+MINIO_USE_SSL=false
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET_NAME=participium-reports
 ```
 
 ### Starting Applications
 
 #### Development Mode (all apps)
 
+To start the entire stack (Frontend + Backend) in development mode:
+
 ```bash
 pnpm dev
 ```
 
-#### Individual applications
+#### Database Seeding (optional)
+
+The application includes an auto-seeding mechanism that runs automatically on application bootstrap (in main.ts).
+
+**How it works**
+
+1. On startup, the system checks the reports table
+
+2. **Conditional Execution:** If there are **fewer than 10 reports**, the seed script executes
+
+3. **Data Population:** It populates the database with:
+   - System Roles (User, Admin, Officers)
+   - Real Turin Municipal Offices & Categories
+   - Staff users (Tech Officers & PRs) and Sample Citizens
+   - 60 Real geolocated reports in Turin
+
+**Manual Execution & Customization:** You can manually trigger the seed script or modify the logic (e.g., to change the < 10 threshold) by editing `apps/api/src/providers/database/seed/participium.seed.ts`
+To run the seed manually:
 
 ```bash
-# Backend only
+cd apps/api
+pnpm run seed:participium
+```
+
+#### Individual applications
+
+If you prefer to run services separately:
+
+```bash
+# Backend only (Auto-seed will run if needed)
 cd apps/api
 pnpm dev
 
@@ -654,8 +853,16 @@ docker exec -it participium-postgres psql -U admin -d participium  # psql connec
 
 - **Coverage available**: `apps/api/coverage/`
 - Coverage reports in formats: HTML, LCOV, Clover, JSON
-- E2E tests configured for the API
-- Unit tests for all modules including geospatial queries
+- E2E tests configured for the API (49 tests)
+- Unit tests for all modules (181 tests)
+- 100% coverage for users module
+- Tests include:
+  - Geospatial queries with PostGIS
+  - File upload validation
+  - Filename sanitization (path traversal protection)
+  - Telegram username format validation
+  - MinIO integration
+  - Municipality user restrictions
 
 ### PostGIS & Geospatial Features
 
@@ -683,6 +890,15 @@ Turborepo optimizes builds and tests through intelligent caching:
 - HTTP-only cookies for CSRF protection
 - Helmet for security headers
 - Class-validator for input validation
+- **File Upload Security**:
+  - Filename sanitization with `path.basename()` and regex
+  - Path traversal attack prevention
+  - File type validation (mimetype checking)
+  - File size limits enforcement
+- **Role-based Access Control**:
+  - Municipality users cannot edit profiles
+  - Guards enforce isMunicipal flag checks
+- **Centralized Error Messages**: Constants pattern for consistency
 
 ### Extensibility
 
@@ -695,6 +911,6 @@ The project is structured for future evolutions:
 
 ---
 
-**Document Version**: 1.0  
-**Last Update**: November 2025  
+**Document Version**: 1.3  
+**Last Update**: November 27, 2025  
 **Project Status**: In Development

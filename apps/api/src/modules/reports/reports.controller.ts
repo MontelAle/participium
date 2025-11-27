@@ -5,27 +5,35 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   Query,
   UseGuards,
   Request,
-  HttpCode,
   HttpStatus,
+  HttpCode,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiCookieAuth,
-  ApiBody,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
-import { CreateReportDto, UpdateReportDto, FilterReportsDto } from '@repo/api';
+import {
+  CreateReportDto,
+  UpdateReportDto,
+  FilterReportsDto,
+  ReportResponseDto,
+  ReportsResponseDto,
+} from '../../common/dto/report.dto';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import {
+  REPORT_ERROR_MESSAGES,
+  ALLOWED_IMAGE_MIMETYPES,
+  MAX_IMAGE_SIZE,
+  MIN_IMAGES,
+  MAX_IMAGES,
+} from './constants/error-messages';
 
 @ApiTags('Reports')
 @Controller('reports')
@@ -33,240 +41,128 @@ import { Roles } from '../auth/decorators/roles.decorator';
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
+  /**
+   * Creates a new report.
+   *
+   *
+   * @throws {400} Bad Request - Invalid data
+   * @throws {401} Unauthorized - Invalid or missing session
+   */
   @Post()
   @UseGuards(SessionGuard, RolesGuard)
+  @UseInterceptors(FilesInterceptor('images', 3))
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: 'Create a new report',
-    description: `Create a new report with geolocation data.
-      **Access:** Any authenticated user can create a report.`,
-  })
-  @ApiBody({ type: CreateReportDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Report created successfully',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad Request - Invalid data',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: [
-          'longitude must not be less than -180',
-          'latitude must not be greater than 90',
-        ],
-        error: 'Bad Request',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing session',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'No session token',
-        error: 'Unauthorized',
-      },
-    },
-  })
-  async create(@Body() createReportDto: CreateReportDto, @Request() req) {
+  async create(
+    @Body() createReportDto: CreateReportDto,
+    @UploadedFiles() images: Express.Multer.File[],
+    @Request() req,
+  ): Promise<ReportResponseDto> {
+    if (!images || images.length < MIN_IMAGES || images.length > MAX_IMAGES) {
+      throw new BadRequestException(REPORT_ERROR_MESSAGES.IMAGES_REQUIRED);
+    }
+    for (const image of images) {
+      if (!ALLOWED_IMAGE_MIMETYPES.includes(image.mimetype as any)) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.INVALID_FILE_TYPE(image.mimetype),
+        );
+      }
+      if (image.size > MAX_IMAGE_SIZE) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.FILE_SIZE_EXCEEDED(image.originalname),
+        );
+      }
+    }
+
     const report = await this.reportsService.create(
       createReportDto,
       req.user.id,
+      images,
     );
     return { success: true, data: report };
   }
 
+  /**
+   * Retrieves all reports with optional filters.
+   *
+   */
   @Get()
-  @ApiOperation({
-    summary: 'Get all reports with optional filters',
-    description: `Returns a list of reports. Supports filtering by status, category, user, and geographical area.`,
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: ['pending', 'in_progress', 'resolved', 'rejected'],
-  })
-  @ApiQuery({ name: 'categoryId', required: false, type: String })
-  @ApiQuery({ name: 'userId', required: false, type: String })
-  @ApiQuery({ name: 'minLongitude', required: false, type: Number })
-  @ApiQuery({ name: 'maxLongitude', required: false, type: Number })
-  @ApiQuery({ name: 'minLatitude', required: false, type: Number })
-  @ApiQuery({ name: 'maxLatitude', required: false, type: Number })
-  @ApiQuery({ name: 'searchLongitude', required: false, type: Number })
-  @ApiQuery({ name: 'searchLatitude', required: false, type: Number })
-  @ApiQuery({ name: 'radiusMeters', required: false, type: Number })
-  @ApiResponse({
-    status: 200,
-    description: 'List of reports retrieved successfully',
-  })
-  async findAll(@Query() filters: FilterReportsDto) {
-    const reports = await this.reportsService.findAll(filters);
+  @UseGuards(SessionGuard)
+  async findAll(
+    @Request() req,
+    @Query() filters: FilterReportsDto,
+  ): Promise<ReportsResponseDto> {
+    const reports = await this.reportsService.findAll(req.user, filters);
     return { success: true, data: reports };
   }
 
+  /**
+   * Finds nearby reports based on location and radius.
+   */
   @Get('nearby')
-  @ApiOperation({
-    summary: 'Find nearby reports',
-    description: `Returns reports near a specific location, ordered by distance.`,
-  })
-  @ApiQuery({ name: 'longitude', required: true, type: Number })
-  @ApiQuery({ name: 'latitude', required: true, type: Number })
-  @ApiQuery({
-    name: 'radius',
-    required: false,
-    type: Number,
-    description: 'Search radius in meters (default: 5000)',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Nearby reports retrieved successfully',
-  })
+  @UseGuards(SessionGuard)
   async findNearby(
+    @Request() req,
     @Query('longitude') longitude: string,
     @Query('latitude') latitude: string,
     @Query('radius') radius?: string,
-  ) {
+  ): Promise<ReportsResponseDto> {
     const radiusMeters = radius ? parseFloat(radius) : 5000;
     const reports = await this.reportsService.findNearby(
       parseFloat(longitude),
       parseFloat(latitude),
       radiusMeters,
+      req.user,
     );
     return { success: true, data: reports };
   }
 
+  /**
+   * Retrieves a report by its ID.
+   *
+   * @throws {404} Not Found - Report with specified ID does not exist
+   */
   @Get(':id')
-  @ApiOperation({
-    summary: 'Get a report by ID',
-    description: `Returns a specific report with its relations.`,
-  })
-  @ApiParam({ name: 'id', description: 'Report ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Report retrieved successfully',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Not Found - Report with specified ID does not exist',
-    schema: {
-      example: {
-        statusCode: 404,
-        message: 'Report with ID abc123 not found',
-        error: 'Not Found',
-      },
-    },
-  })
-  async findOne(@Param('id') id: string) {
-    const report = await this.reportsService.findOne(id);
+  @UseGuards(SessionGuard)
+  async findOne(
+    @Param('id') id: string,
+    @Request() req,
+  ): Promise<ReportResponseDto> {
+    const report = await this.reportsService.findOne(id, req.user);
     return { success: true, data: report };
   }
 
+  /**
+   * Updates a report by its ID.
+   *
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Insufficient permissions (officier or user role required)
+   * @throws {404} Not Found - Report with specified ID does not exist
+   */
   @Patch(':id')
   @UseGuards(SessionGuard, RolesGuard)
-  @Roles('officier', 'user')
-  @ApiOperation({
-    summary: 'Update a report (Officier/User only)',
-    description:
-      'Update report details including status and location. **Access:** Requires officier or User role.',
-  })
-  @ApiParam({ name: 'id', description: 'Report ID' })
-  @ApiBody({ type: UpdateReportDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Report updated successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing session',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'No session token',
-        error: 'Unauthorized',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 403,
-    description:
-      'Forbidden - Insufficient permissions (officier or user role required)',
-    schema: {
-      example: {
-        statusCode: 403,
-        message: 'Insufficient permissions',
-        error: 'Forbidden',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Not Found - Report with specified ID does not exist',
-    schema: {
-      example: {
-        statusCode: 404,
-        message: 'Report with ID abc123 not found',
-        error: 'Not Found',
-      },
-    },
-  })
+  @Roles('pr_officer', 'officer')
   async update(
     @Param('id') id: string,
     @Body() updateReportDto: UpdateReportDto,
-  ) {
+  ): Promise<ReportResponseDto> {
     const report = await this.reportsService.update(id, updateReportDto);
     return { success: true, data: report };
   }
 
-  @Delete(':id')
-  @Roles('Officier')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary: 'Delete a report (Officier only)',
-    description: `Permanently delete a report.
-      **Access:** Requires Officier role.`,
-  })
-  @ApiParam({ name: 'id', description: 'Report ID' })
-  @ApiResponse({
-    status: 204,
-    description: 'Report deleted successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing session',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'No session token',
-        error: 'Unauthorized',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - Insufficient permissions (admin role required)',
-    schema: {
-      example: {
-        statusCode: 403,
-        message: 'Insufficient permissions',
-        error: 'Forbidden',
-      },
-    },
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Not Found - Report with specified ID does not exist',
-    schema: {
-      example: {
-        statusCode: 404,
-        message: 'Report with ID abc123 not found',
-        error: 'Not Found',
-      },
-    },
-  })
-  async remove(@Param('id') id: string) {
-    await this.reportsService.remove(id);
+  /**
+   * Finds reports assigned to a specific user (officer).
+   *
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Insufficient permissions (pr_officer, or officer role required)
+   * */
+  @Get('/user/:userId')
+  @UseGuards(SessionGuard, RolesGuard)
+  @Roles('pr_officer', 'officer')
+  async findByUserId(
+    @Param('userId') userId: string,
+    @Request() req,
+  ): Promise<ReportsResponseDto> {
+    const reports = await this.reportsService.findByUserId(userId, req.user);
+    return { success: true, data: reports };
   }
 }

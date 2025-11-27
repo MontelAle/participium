@@ -1,7 +1,11 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, Account, RegisterDto, Session, Role } from '@repo/api';
+import { User } from '../../common/entities/user.entity';
+import { Account } from '../../common/entities/account.entity';
+import { Session } from '../../common/entities/session.entity';
+import { Role } from '../../common/entities/role.entity';
+import { RegisterDto } from '../../common/dto/auth.dto';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { ConfigService } from '@nestjs/config';
@@ -29,7 +33,7 @@ export class AuthService {
   async validateUser(username: string, password: string) {
     const account = await this.accountRepository.findOne({
       where: { providerId: 'local', accountId: username },
-      relations: ['user', 'user.role'],
+      relations: ['user', 'user.role', 'user.office'],
     });
 
     if (!account) return null;
@@ -44,7 +48,6 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return this.userRepository.manager.transaction(async (manager) => {
-      // Role check/create
       let userRole = await manager
         .getRepository(Role)
         .findOne({ where: { name: 'user' } });
@@ -55,7 +58,6 @@ export class AuthService {
         await manager.getRepository(Role).save(userRole);
       }
 
-      // User check/create
       let user = await manager.getRepository(User).findOne({
         where: { username },
         relations: ['role'],
