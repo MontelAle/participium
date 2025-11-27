@@ -30,7 +30,7 @@ import {
 } from '../../common/dto/municipality-user.dto';
 import {
   UpdateProfileDto,
-  UpdateProfileResponseDto,
+  ProfileResponseDto,
 } from '../../common/dto/user.dto';
 import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
 import {
@@ -55,7 +55,7 @@ export class UsersController {
    *
    */
   @Get('municipality')
-  @Roles('admin','pr_officer')
+  @Roles('admin', 'pr_officer')
   async getMunicipalityUsers(): Promise<MunicipalityUsersResponseDto> {
     const users = await this.usersService.findMunicipalityUsers();
     return { success: true, data: users };
@@ -137,7 +137,7 @@ export class UsersController {
    * @throws {400} Bad Request - Invalid data or file type
    * @throws {401} Unauthorized - Invalid or missing session
    */
-  @Patch('profile')
+  @Patch('profile/me')
   @UseGuards(SessionGuard)
   @UseInterceptors(FileInterceptor('profilePicture'))
   @ApiConsumes('multipart/form-data')
@@ -145,7 +145,7 @@ export class UsersController {
     @Req() req: RequestWithUserSession,
     @Body() dto: UpdateProfileDto,
     @UploadedFile() file?: Express.Multer.File,
-  ): Promise<UpdateProfileResponseDto> {
+  ): Promise<ProfileResponseDto> {
     // Only regular users (not municipality users) can edit their profile
     if (req.user.role?.isMunicipal) {
       throw new ForbiddenException(
@@ -174,12 +174,7 @@ export class UsersController {
 
     return {
       success: true,
-      data: {
-        id: updatedUser.id,
-        telegramUsername: updatedUser.telegramUsername,
-        emailNotificationsEnabled: updatedUser.emailNotificationsEnabled,
-        profilePictureUrl: updatedUser.profilePictureUrl,
-      },
+      data: updatedUser,
     };
   }
 
@@ -189,17 +184,17 @@ export class UsersController {
    * @throws {401} Unauthorized - Invalid or missing session
    * @throws {403} Forbidden - Accessing another user's profile
    */
-  @Get('profile/:id')
+  @Get('profile/me')
   @UseGuards(SessionGuard)
   async getUserProfileById(
-    @Param('id') id: string,
     @Req() req: RequestWithUserSession,
-  ) {
-    if (id !== req.user.id) {
-      throw new ForbiddenException();
-    }
+  ): Promise<ProfileResponseDto> {
+    const id = req.user.id;
 
     const user = await this.usersService.findUserById(id);
-    return { success: true, data: user };
+    return {
+      success: true,
+      data: user,
+    };
   }
 }

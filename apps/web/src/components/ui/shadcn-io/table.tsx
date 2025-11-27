@@ -249,7 +249,7 @@ export const TableBody = ({ children, className }: TableBodyProps) => {
       ) : (
         <TableRowRaw>
           <TableCellRaw className="h-24 text-center" colSpan={columns.length}>
-            No Users found.
+            No Data found.
           </TableCellRaw>
         </TableRowRaw>
       )}

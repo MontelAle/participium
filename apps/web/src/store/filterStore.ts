@@ -3,6 +3,7 @@ import { DateRange } from 'react-day-picker';
 
 interface FilterState {
   searchTerm: string;
+  showOnlyMyReports: boolean;
   filters: {
     status: string | null;
     category: string | null;
@@ -10,12 +11,14 @@ interface FilterState {
     customDate: DateRange | undefined;
   };
   setSearchTerm: (term: string) => void;
-  setFilters: (filters: FilterState['filters']) => void;
+  setShowOnlyMyReports: (show: boolean) => void;
+  setFilters: (filters: Partial<FilterState['filters']>) => void;
   resetFilters: () => void;
 }
 
 export const useFilterStore = create<FilterState>((set) => ({
   searchTerm: '',
+  showOnlyMyReports: false,
   filters: {
     status: null,
     category: null,
@@ -23,11 +26,13 @@ export const useFilterStore = create<FilterState>((set) => ({
     customDate: undefined,
   },
   setSearchTerm: (term) => set({ searchTerm: term }),
+  setShowOnlyMyReports: (show) => set({ showOnlyMyReports: show }),
   setFilters: (newFilters) =>
     set((state) => ({ filters: { ...state.filters, ...newFilters } })),
   resetFilters: () =>
     set({
       searchTerm: '',
+      showOnlyMyReports: false,
       filters: {
         status: null,
         category: null,

@@ -6,25 +6,34 @@ import { MunicipalGuard } from '@/components/municipal-guard';
 import { CitizenGuard } from '@/components/citizen-guard';
 import LoginPage from '@/pages/auth/login/page';
 import RegistrationPage from '@/pages/auth/registration/page';
-import MapPage from '@/pages/report-map/page';
-import ReportPage from '@/pages/new-report/page';
-import ReportDetailsPage from '@/pages/report-details/page';
+import MapPage from '@/pages/reports/map/page';
+import CreateReportPage from '@/pages/reports/create/page';
+import ReportDetailsPage from '@/pages/reports/view/page';
 import DashboardPage from '@/pages/app/dashboard/page';
 import MunicipalityUsersPage from '@/pages/app/municipality-users/page';
-import MunicipalityPrOfficerPage from '@/pages/app/municipality-pr-officer/page';
-import ProfilePage from '@/pages/profilePage/page';
-import TechnicalOfficerPage from './pages/app/technical-officer/page';
+import MunicipalityUsersCreatePage from '@/pages/app/municipality-users/create/page';
+import MunicipalityUsersViewPage from '@/pages/app/municipality-users/view/page';
+import AssignReportsPage from '@/pages/app/assign-reports/page';
+import ProfilePage from '@/pages/profile/page';
+import AssignedReportsPage from './pages/app/assigned-reports/page';
+import AssignReportsViewPage from '@/pages/app/assign-reports/view/page';
+import AssignedReportsViewPage from './pages/app/assigned-reports/view/page';
 
 const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Toaster position="top-center" richColors />
+        <Toaster
+          position="top-center"
+          mobileOffset={80}
+          richColors
+          duration={2000}
+        />
         <Routes>
           <Route element={<DashboardLayout />}>
-            <Route index element={<Navigate to="/report-map" replace />} />
+            <Route index element={<Navigate to="/reports/map" replace />} />
             <Route
-              path="/report-map"
+              path="/reports/map"
               element={
                 <CitizenGuard>
                   <MapPage />
@@ -32,22 +41,30 @@ const App = () => {
               }
             />
             <Route
-              path="/new-report"
+              path="/reports/create"
               element={
                 <CitizenGuard>
-                  <ReportPage />
+                  <CreateReportPage />
                 </CitizenGuard>
               }
             />
             <Route
-              path="/report/:id"
+              path="/reports/view/:id"
               element={
                 <CitizenGuard>
                   <ReportDetailsPage />
                 </CitizenGuard>
               }
             />
-            <Route path="/profile" element={<ProfilePage />} />
+
+            <Route
+              path="/profile"
+              element={
+                <CitizenGuard>
+                  <ProfilePage />
+                </CitizenGuard>
+              }
+            />
 
             <Route
               path="/app/dashboard"
@@ -66,18 +83,50 @@ const App = () => {
               }
             />
             <Route
-              path="/app/municipality-pr-officer"
+              path="/app/municipality-users/create"
               element={
                 <MunicipalGuard>
-                  <MunicipalityPrOfficerPage />
+                  <MunicipalityUsersCreatePage />
                 </MunicipalGuard>
               }
             />
             <Route
-              path="/app/technical-officer"
+              path="/app/municipality-users/view/:id"
               element={
                 <MunicipalGuard>
-                  <TechnicalOfficerPage />
+                  <MunicipalityUsersViewPage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
+              path="/app/assign-reports"
+              element={
+                <MunicipalGuard>
+                  <AssignReportsPage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
+              path="/app/assign-reports/view/:id"
+              element={
+                <MunicipalGuard>
+                  <AssignReportsViewPage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
+              path="/app/assigned-reports"
+              element={
+                <MunicipalGuard>
+                  <AssignedReportsPage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
+              path="/app/assigned-reports/view/:id"
+              element={
+                <MunicipalGuard>
+                  <AssignedReportsViewPage />
                 </MunicipalGuard>
               }
             />

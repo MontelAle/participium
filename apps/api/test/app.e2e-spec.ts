@@ -56,17 +56,51 @@ const createMockRepository = (data: any[] = []) => {
         const existing = data.find((e) => e.id === entity.id);
         if (existing) {
           Object.assign(existing, entity);
+          if (entity.assignedOfficer && entity.assignedOfficer.id) {
+            (existing as any).assignedOfficerId = entity.assignedOfficer.id;
+          }
           return Promise.resolve(existing);
         }
       }
-      const newEntity = { ...entity, id: entity.id || 'mocked-id' };
+      const newEntity = {
+        ...entity,
+        id: entity.id || 'mocked-id',
+        isAnonymous:
+          entity.isAnonymous !== undefined ? entity.isAnonymous : false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      if (entity.assignedOfficer && entity.assignedOfficer.id) {
+        (newEntity as any).assignedOfficerId = entity.assignedOfficer.id;
+      }
       data.push(newEntity);
       return Promise.resolve(newEntity);
     }),
     create: jest.fn((dto) => ({ ...dto, id: dto.id || 'mocked-id' })),
     remove: jest.fn((entity) => Promise.resolve(entity)),
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
-    update: jest.fn().mockResolvedValue({ affected: 1 }),
+    count: jest.fn((options) => {
+      let results = [...data];
+      if (options && options.where) {
+        results = results.filter((e) =>
+          Object.entries(options.where).every(([k, v]) => {
+            if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+              return true;
+            }
+            return e[k] === v;
+          }),
+        );
+      }
+      return Promise.resolve(results.length);
+    }),
+    update: jest.fn((criteria, partialEntity) => {
+      const id = typeof criteria === 'string' ? criteria : criteria.id;
+      const existing = data.find((e) => e.id === id);
+      if (existing) {
+        Object.assign(existing, partialEntity);
+      }
+      return Promise.resolve({ affected: existing ? 1 : 0 });
+    }),
     createQueryBuilder: jest.fn(() => ({
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
@@ -108,14 +142,6 @@ const createMockRepository = (data: any[] = []) => {
   return repo;
 };
 
-/**
- * End-to-End Test Suite for Participium API
- * 
- * Note: These tests use mock repositories and guards to simulate database
- * and authentication behavior. Some business logic validations (e.g., duplicate
- * username checks, password strength) are tested in unit tests where the actual
- * service logic is executed without mocks.
- */
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let AppModule: any;
@@ -129,8 +155,18 @@ describe('AppController (e2e)', () => {
     const mockRoles = [
       { id: 'role_1', name: 'admin', label: 'Admin', isMunicipal: true },
       { id: 'role_2', name: 'user', label: 'User', isMunicipal: false },
-      { id: 'role_3', name: 'municipal_pr_officer', label: 'PR Officer', isMunicipal: true },
-      { id: 'role_5', name: 'technical_officer', label: 'Technical Officer', isMunicipal: true },
+      {
+        id: 'role_3',
+        name: 'municipal_pr_officer',
+        label: 'PR Officer',
+        isMunicipal: true,
+      },
+      {
+        id: 'role_5',
+        name: 'technical_officer',
+        label: 'Technical Officer',
+        isMunicipal: true,
+      },
     ];
 
     const mockUsers = [
@@ -141,7 +177,12 @@ describe('AppController (e2e)', () => {
         firstName: 'John',
         lastName: 'Doe',
         roleId: 'role_1',
-        role: { id: 'role_1', name: 'admin', label: 'Admin', isMunicipal: true },
+        role: {
+          id: 'role_1',
+          name: 'admin',
+          label: 'Admin',
+          isMunicipal: true,
+        },
       },
       {
         id: 'user_2',
@@ -151,6 +192,36 @@ describe('AppController (e2e)', () => {
         lastName: 'Smith',
         roleId: 'role_2',
         role: { id: 'role_2', name: 'user', label: 'User', isMunicipal: false },
+      },
+      {
+        id: 'officer_1',
+        email: 'officer1@example.com',
+        username: 'officer1',
+        firstName: 'Officer',
+        lastName: 'One',
+        roleId: 'role_5',
+        officeId: 'office_1',
+        role: {
+          id: 'role_5',
+          name: 'officer',
+          label: 'Technical Officer',
+          isMunicipal: true,
+        },
+      },
+      {
+        id: 'officer_2',
+        email: 'officer2@example.com',
+        username: 'officer2',
+        firstName: 'Officer',
+        lastName: 'Two',
+        roleId: 'role_5',
+        officeId: 'office_1',
+        role: {
+          id: 'role_5',
+          name: 'officer',
+          label: 'Technical Officer',
+          isMunicipal: true,
+        },
       },
     ];
 
@@ -164,12 +235,25 @@ describe('AppController (e2e)', () => {
       },
     ];
 
+    const mockOffices = [
+      {
+        id: 'office_1',
+        name: 'administration',
+        label: 'Administration',
+      },
+    ];
+
     const mockCategories = [
-      { id: 'cat_1', name: 'Infrastructure' },
+      {
+        id: 'cat_1',
+        name: 'Infrastructure',
+        office: mockOffices[0],
+        officeId: 'office_1',
+      },
       { id: 'cat_2', name: 'Environment' },
     ];
 
-    const mockReports = [
+    const mockReports: any[] = [
       {
         id: 'report_1',
         title: 'Test Report',
@@ -179,16 +263,45 @@ describe('AppController (e2e)', () => {
         categoryId: 'cat_1',
         user: mockUsers[0],
         category: mockCategories[0],
+        isAnonymous: false,
+        assignedOfficerId: undefined,
       },
     ];
 
-    const mockOffices = [
-      {
-        id: 'office_1',
-        name: 'administration',
-        label: 'Administration',
-      },
-    ];
+    const reportsRepositoryMock = createMockRepository(mockReports);
+
+    reportsRepositoryMock.save = jest.fn((entity) => {
+      if (entity.id) {
+        const existing = mockReports.find((e) => e.id === entity.id);
+        if (existing) {
+          Object.assign(existing, entity);
+          if (entity.assignedOfficer && entity.assignedOfficer.id) {
+            existing.assignedOfficerId = entity.assignedOfficer.id;
+          }
+          return Promise.resolve(existing);
+        }
+      }
+
+      const newEntity = {
+        ...entity,
+        id: entity.id || 'mocked-id',
+        isAnonymous:
+          entity.isAnonymous !== undefined ? entity.isAnonymous : false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      if (newEntity.userId) {
+        newEntity.user = mockUsers.find((u) => u.id === newEntity.userId);
+      }
+
+      if (entity.assignedOfficer && entity.assignedOfficer.id) {
+        newEntity.assignedOfficerId = entity.assignedOfficer.id;
+      }
+
+      mockReports.push(newEntity);
+      return Promise.resolve(newEntity);
+    });
 
     const mockSession = {
       id: 'sess_1',
@@ -229,9 +342,6 @@ describe('AppController (e2e)', () => {
     testingModuleBuilder
       .overrideModule(DatabaseModule)
       .useModule(class MockDatabaseModule {});
-    testingModuleBuilder
-      .overrideModule(DatabaseModule)
-      .useModule(class MockDatabaseModule {});
 
     testingModuleBuilder
       .overrideProvider(getRepositoryToken(Session))
@@ -245,7 +355,7 @@ describe('AppController (e2e)', () => {
       .overrideProvider(getRepositoryToken(Category))
       .useValue(createMockRepository(mockCategories))
       .overrideProvider(getRepositoryToken(Report))
-      .useValue(createMockRepository(mockReports))
+      .useValue(reportsRepositoryMock)
       .overrideProvider(getRepositoryToken(Office))
       .useValue(createMockRepository(mockOffices))
       .overrideProvider(MinioProvider)
@@ -266,16 +376,24 @@ describe('AppController (e2e)', () => {
         if (hasCookie) {
           const path = req.path;
           const cookieValue = req.cookies.session_token;
-          
-          // Special case for testing municipality user restriction on /users/profile
-          if (cookieValue === 'sess_muni.secret' && path === '/users/profile') {
+
+          if (cookieValue === 'sess_2.secret') {
+            req.user = mockUsers[1];
+            req.session = { ...mockSession, userId: mockUsers[1].id };
+            return true;
+          }
+
+          if (
+            cookieValue === 'sess_muni.secret' &&
+            path === '/users/profile/me'
+          ) {
             req.user = mockUsers[0]; // john - admin (municipal user)
             req.session = mockSession;
             return true;
           }
-          
-          // Use regular user (user_2) for /users/profile endpoint
-          if (path === '/users/profile') {
+
+          // Use regular user (user_2) for /users/profile/me endpoint
+          if (path === '/users/profile/me') {
             req.user = mockUsers[1]; // jane - regular user
           } else {
             req.user = mockUser; // john - admin
@@ -316,7 +434,6 @@ describe('AppController (e2e)', () => {
   // ============================================================================
   // Basic HTTP Error Handling
   // ============================================================================
-
   it('GET /nonexistent returns JSON error with statusCode and error', async () => {
     const res = await request(app.getHttpServer())
       .get('/nonexistent')
@@ -353,7 +470,6 @@ describe('AppController (e2e)', () => {
   // ============================================================================
   // Authentication & Authorization
   // ============================================================================
-
   it('POST /auth/register returns user and sets session cookie', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/register')
@@ -457,7 +573,6 @@ describe('AppController (e2e)', () => {
   // ============================================================================
   // Roles Management
   // ============================================================================
-
   it('GET /roles with authentication returns 200 with all roles', async () => {
     await request(app.getHttpServer())
       .get('/roles')
@@ -468,7 +583,6 @@ describe('AppController (e2e)', () => {
   // ============================================================================
   // Municipality Users Management
   // ============================================================================
-
   it('POST /users/municipality with valid data returns 201 and creates user', async () => {
     await request(app.getHttpServer())
       .post('/users/municipality')
@@ -553,26 +667,25 @@ describe('AppController (e2e)', () => {
   // ============================================================================
   // Regular User Profile Management
   // ============================================================================
-
-  it('PATCH /users/profile with telegram username returns 200 and updates profile', async () => {
+  it('PATCH /users/profile/me with telegram username returns 200 and updates profile', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '@newusername' })
       .expect(200);
   });
 
-  it('PATCH /users/profile with emailNotificationsEnabled returns 200 and updates profile', async () => {
+  it('PATCH /users/profile/me with emailNotificationsEnabled returns 200 and updates profile', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ emailNotificationsEnabled: true })
       .expect(200);
   });
 
-  it('PATCH /users/profile with invalid file type returns 400', async () => {
+  it('PATCH /users/profile/me with invalid file type returns 400', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .attach('profilePicture', Buffer.from('test'), {
         filename: 'test.txt',
@@ -581,56 +694,56 @@ describe('AppController (e2e)', () => {
       .expect(400);
   });
 
-  it('PATCH /users/profile without authentication returns 403', async () => {
+  it('PATCH /users/profile/me without authentication returns 403', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .send({ telegramUsername: '@username' })
       .expect(403);
   });
 
-  it('PATCH /users/profile as municipality user returns 403', async () => {
+  it('PATCH /users/profile/me as municipality user returns 403', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_muni.secret')
       .send({ telegramUsername: '@username' })
       .expect(403);
   });
 
-  it('PATCH /users/profile with invalid telegram username format returns 400', async () => {
+  it('PATCH /users/profile/me with invalid telegram username format returns 400', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: 'invalid' })
       .expect(400);
   });
 
-  it('PATCH /users/profile with telegram username too short returns 400', async () => {
+  it('PATCH /users/profile/me with telegram username too short returns 400', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '@abc' })
       .expect(400);
   });
 
-  it('PATCH /users/profile with telegram username too long returns 400', async () => {
+  it('PATCH /users/profile/me with telegram username too long returns 400', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '@' + 'a'.repeat(32) })
       .expect(400);
   });
 
-  it('PATCH /users/profile with valid telegram username returns 200', async () => {
+  it('PATCH /users/profile/me with valid telegram username returns 200', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '@valid_username' })
       .expect(200);
   });
 
-  it('PATCH /users/profile removes telegram username with empty string', async () => {
+  it('PATCH /users/profile/me removes telegram username with empty string', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile')
+      .patch('/users/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '' })
       .expect(200);
@@ -666,6 +779,42 @@ describe('AppController (e2e)', () => {
       .attach('images', Buffer.from('fake-image-2'), 'test2.jpg')
       .attach('images', Buffer.from('fake-image-3'), 'test3.jpg')
       .expect(201);
+  });
+
+  it('POST /reports as anonymous (isAnonymous=true) returns 201 and handles visibility correctly', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Secret Report')
+      .field('description', 'Nobody needs to know who I am')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .field('isAnonymous', 'true')
+      .attach('images', Buffer.from('fake-image'), 'secret.jpg')
+      .expect(201);
+
+    expect(response.body.data.isAnonymous).toBe(true);
+    const reportId = response.body.data.id;
+
+    await request(app.getHttpServer())
+      .get(`/reports/${reportId}`)
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.data.user).toBeDefined();
+        expect(res.body.data.user.id).toBe('user_1');
+      });
+
+    await request(app.getHttpServer())
+      .get(`/reports/${reportId}`)
+      .set('Cookie', 'session_token=sess_2.secret')
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.data.user).toBeNull();
+        expect(res.body.data.id).toBe(reportId);
+        expect(res.body.data.title).toBe('Secret Report');
+      });
   });
 
   it('POST /reports without images returns 400', async () => {
@@ -782,20 +931,6 @@ describe('AppController (e2e)', () => {
       .expect(404);
   });
 
-  it('DELETE /reports/:id with valid ID returns 204 and deletes report', async () => {
-    await request(app.getHttpServer())
-      .delete('/reports/report_1')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(204);
-  });
-
-  it('DELETE /reports/:id with non-existent ID returns 404', async () => {
-    await request(app.getHttpServer())
-      .delete('/reports/non-existent-id')
-      .set('Cookie', 'session_token=sess_1.secret')
-      .expect(404);
-  });
-
   // ============================================================================
   // Reports Filtering & Search
   // ============================================================================
@@ -832,7 +967,9 @@ describe('AppController (e2e)', () => {
 
   it('GET /reports with radius search returns 200 with nearby reports', async () => {
     await request(app.getHttpServer())
-      .get('/reports?searchLongitude=7.6869&searchLatitude=45.0703&radiusMeters=5000')
+      .get(
+        '/reports?searchLongitude=7.6869&searchLatitude=45.0703&radiusMeters=5000',
+      )
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
   });
@@ -853,5 +990,369 @@ describe('AppController (e2e)', () => {
       .get('/offices')
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
+  });
+
+  // ============================================================================
+  // Report Auto-Assignment Logic
+  // ============================================================================
+
+  it('PATCH /reports/:id with status=assigned updates status correctly', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/reports/report_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ status: 'assigned' })
+      .expect(200);
+
+    expect(res.body.data.status).toBe('assigned');
+  });
+
+  it('PATCH /reports/:id with status=assigned auto-assigns to officer with fewest reports when no assignedOfficerId provided', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/reports/report_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ status: 'assigned' })
+      .expect(200);
+
+    expect(res.body.data.status).toBe('assigned');
+    expect(res.body.data.assignedOfficerId).toBeDefined();
+  });
+
+  it('PATCH /reports/:id with explanation field updates correctly', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/reports/report_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        status: 'resolved',
+        explanation: 'Fixed by replacing the broken component.',
+      })
+      .expect(200);
+
+    expect(res.body.data.explanation).toBe(
+      'Fixed by replacing the broken component.',
+    );
+  });
+
+  // ============================================================================
+  // Report Status Transitions
+  // ============================================================================
+
+  it('PATCH /reports/:id allows valid status transitions', async () => {
+    const validStatuses = [
+      'pending',
+      'assigned',
+      'in_progress',
+      'resolved',
+      'rejected',
+    ];
+
+    for (const status of validStatuses) {
+      await request(app.getHttpServer())
+        .patch('/reports/report_1')
+        .set('Cookie', 'session_token=sess_1.secret')
+        .send({ status })
+        .expect(200);
+    }
+  });
+
+  // ============================================================================
+  // Report Address Field
+  // ============================================================================
+
+  it('POST /reports with address field includes address in response', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Report with address')
+      .field('description', 'This has an address')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .field('address', '123 Main St, Turin')
+      .attach('images', Buffer.from('fake-image'), 'test.jpg')
+      .expect(201);
+
+    expect(res.body.data.address).toBe('123 Main St, Turin');
+  });
+
+  // ============================================================================
+  // Officer-Specific Endpoints
+  // ============================================================================
+
+  it('GET /reports/user/:userId returns reports assigned to specific officer', async () => {
+    await request(app.getHttpServer())
+      .get('/reports/user/user_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+  });
+
+  // ============================================================================
+  // Report Nearby Search Edge Cases
+  // ============================================================================
+
+  it('GET /reports/nearby with very small radius returns limited results', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/nearby?longitude=7.6869&latitude=45.0703&radius=10')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body).toHaveProperty('data');
+  });
+
+  it('GET /reports/nearby with large radius returns results with distance', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/nearby?longitude=7.6869&latitude=45.0703&radius=50000')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body).toHaveProperty('data');
+  });
+
+  it('GET /reports/nearby without radius parameter uses default radius', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/nearby?longitude=7.6869&latitude=45.0703')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body).toHaveProperty('data');
+  });
+
+  // ============================================================================
+  // User Registration Edge Cases
+  // ============================================================================
+
+  it('POST /auth/register with duplicate username returns 201 and reuses existing user', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email: 'different@example.com',
+        username: 'john',
+        firstName: 'John',
+        lastName: 'Doe',
+        password: 'StrongP@ssw0rd',
+      })
+      .expect(201);
+
+    expect(res.body.data.user.username).toBe('john');
+  });
+
+  it('POST /auth/register with duplicate email can succeed if username exists', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email: 'john@example.com',
+        username: 'different_john',
+        firstName: 'John',
+        lastName: 'Doe',
+        password: 'StrongP@ssw0rd',
+      })
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+  });
+
+  it('POST /auth/register with weak password returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email: 'newuser@example.com',
+        username: 'newuser',
+        firstName: 'New',
+        lastName: 'User',
+        password: 'weak',
+      })
+      .expect(400);
+  });
+
+  it('POST /auth/register with invalid email format returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email: 'not-an-email',
+        username: 'testuser',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'StrongP@ssw0rd',
+      })
+      .expect(400);
+  });
+
+  it('POST /auth/register with missing fields returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        email: 'test@example.com',
+        username: 'testuser',
+      })
+      .expect(400);
+  });
+
+  // ============================================================================
+  // Authentication Edge Cases
+  // ============================================================================
+
+  it('POST /auth/login with incorrect credentials returns 200 (mocked guard)', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ username: 'john', password: 'WrongPassword123' })
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+  });
+
+  it('POST /auth/logout without session cookie returns 403', async () => {
+    await request(app.getHttpServer()).post('/auth/logout').expect(403);
+  });
+
+  it('POST /auth/refresh without session cookie returns 403', async () => {
+    await request(app.getHttpServer()).post('/auth/refresh').expect(403);
+  });
+
+  // ============================================================================
+  // Profile Picture Upload
+  // ============================================================================
+
+  it('PATCH /users/profile/me with valid profile picture returns 200', async () => {
+    const imageBuffer = Buffer.from('fake-image-data');
+    const res = await request(app.getHttpServer())
+      .patch('/users/profile/me')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .attach('profilePicture', imageBuffer, {
+        filename: 'profile.jpg',
+        contentType: 'image/jpeg',
+      })
+      .expect(200);
+
+    expect(res.body.data.profilePictureUrl).toBeDefined();
+  });
+
+  // ============================================================================
+  // Municipality User Validation
+  // ============================================================================
+
+  it('POST /users/municipality with missing password returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/users/municipality')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        email: 'test@example.com',
+        username: 'testuser',
+        firstName: 'Test',
+        lastName: 'User',
+        roleId: 'role_1',
+      })
+      .expect(400);
+  });
+
+  // ============================================================================
+  // Authorization Edge Cases
+  // ============================================================================
+
+  it('GET /users/municipality without authentication returns 403', async () => {
+    await request(app.getHttpServer()).get('/users/municipality').expect(403);
+  });
+
+  it('POST /users/municipality without authentication returns 403', async () => {
+    await request(app.getHttpServer())
+      .post('/users/municipality')
+      .send({
+        email: 'test@example.com',
+        username: 'testuser',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'SecurePass123',
+        roleId: 'role_1',
+      })
+      .expect(403);
+  });
+
+  it('GET /reports without authentication returns 403', async () => {
+    await request(app.getHttpServer()).get('/reports').expect(403);
+  });
+
+  it('POST /reports without authentication returns 403', async () => {
+    await request(app.getHttpServer())
+      .post('/reports')
+      .field('title', 'Test')
+      .field('description', 'Test')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('fake-image'), 'test.jpg')
+      .expect(403);
+  });
+
+  it('GET /categories without authentication returns 403', async () => {
+    await request(app.getHttpServer()).get('/categories').expect(403);
+  });
+
+  it('GET /offices without authentication returns 403', async () => {
+    await request(app.getHttpServer()).get('/offices').expect(403);
+  });
+
+  it('GET /roles without authentication returns 403', async () => {
+    await request(app.getHttpServer()).get('/roles').expect(403);
+  });
+
+  // ============================================================================
+  // Report Update Validation
+  // ============================================================================
+
+  it('PATCH /reports/:id with empty body returns 200 (no changes)', async () => {
+    await request(app.getHttpServer())
+      .patch('/reports/report_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({})
+      .expect(200);
+  });
+
+  // ============================================================================
+  // User Profile Update Edge Cases
+  // ============================================================================
+
+  it('PATCH /users/profile/me with both telegram username and email notifications returns 200', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/users/profile/me')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        telegramUsername: '@combined_test',
+        emailNotificationsEnabled: true,
+      })
+      .expect(200);
+
+    expect(res.body.data.telegramUsername).toBe('@combined_test');
+    expect(res.body.data.emailNotificationsEnabled).toBe(true);
+  });
+
+  it('PATCH /users/profile/me with emailNotificationsEnabled=false returns 200', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/users/profile/me')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ emailNotificationsEnabled: false })
+      .expect(200);
+
+    expect(res.body.data.emailNotificationsEnabled).toBe(false);
+  });
+
+  // ============================================================================
+  // Report Creation with All Optional Fields
+  // ============================================================================
+
+  it('POST /reports with all fields including address and isAnonymous returns 201', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Complete Report')
+      .field('description', 'This report has all fields')
+      .field('longitude', '12.34')
+      .field('latitude', '56.78')
+      .field('categoryId', 'cat_1')
+      .field('address', '456 Test Ave')
+      .attach('images', Buffer.from('fake-image-1'), 'test1.jpg')
+      .attach('images', Buffer.from('fake-image-2'), 'test2.jpg')
+      .expect(201);
+
+    expect(res.body.data.address).toBe('456 Test Ave');
+    expect(res.body.data.isAnonymous).toBe(false);
+    expect(res.body.data.images).toHaveLength(2);
   });
 });

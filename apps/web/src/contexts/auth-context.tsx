@@ -19,9 +19,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isMunicipalityUser = user?.role?.isMunicipal || false;
   const isAdminUser = user?.role?.name === 'admin';
   const isCitizenUser = user?.role?.name === 'user';
-  const isMunicipalPrOfficer = user?.role?.name === 'pr_officer'; 
-  const isTechnicalOfficer = user?.role?.name === 'officer';
+  const isMunicipalPrOfficer = user?.role?.name === 'pr_officer';
+  const isTechnicalOfficer = user?.role?.name === 'tech_officer';
   const isGuestUser = isAuthenticated === false;
+  function hasRole(roles: string[]) {
+    return !!user && !!user.role && roles.includes(user.role.name);
+  }
   const isLoading =
     loginMutation.isPending ||
     registerMutation.isPending ||
@@ -80,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isMunicipalityUser,
         isMunicipalPrOfficer,
         isTechnicalOfficer,
+        hasRole,
       }}
     >
       {children}

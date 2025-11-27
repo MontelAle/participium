@@ -27,7 +27,7 @@ import {
 } from './dto/report.dto';
 import { RolesResponseDto } from './dto/role.dto';
 import { CategoriesResponseDto } from 'dto/category.dto';
-import { UpdateProfileDto, UpdateProfileResponseDto } from 'dto/user.dto';
+import { UpdateProfileDto, ProfileResponseDto } from 'dto/profile.dto';
 
 export {
   type MunicipalityUsersResponseDto,
@@ -55,5 +55,5 @@ export {
   type Office,
   type CategoriesResponseDto,
   type UpdateProfileDto,
-  type UpdateProfileResponseDto,
+  type ProfileResponseDto,
 };

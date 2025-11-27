@@ -57,6 +57,8 @@ export class Report implements ReportInterface {
   @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
+  @Column({ type: 'boolean', default: false })
+  isAnonymous: boolean;
 
   @Column('varchar', { nullable: true })
   categoryId: string;

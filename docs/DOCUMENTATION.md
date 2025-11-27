@@ -176,7 +176,7 @@ participium/
 | POST   | `/municipality`          | Create municipal user       |
 | POST   | `/municipality/user/:id` | Update user                 |
 | DELETE | `/municipality/user/:id` | Delete user                 |
-| PATCH  | `/profile`               | Update regular user profile |
+| PATCH  | `/profile/me`            | Update regular user profile |
 
 **Functionality**:
 
@@ -187,7 +187,7 @@ participium/
 - File upload handling with Multer
 - MinIO integration for profile picture storage
 
-**Profile Management** (`PATCH /profile`):
+**Profile Management** (`PATCH /profile/me`):
 
 - **Telegram Username**: Optional Telegram handle (`@username`)
   - Validated format: `@[a-zA-Z0-9_]{4,31}` (5-32 characters)
@@ -377,7 +377,7 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 | Field                     | Type    | Description              | Nullable | Notes                        |
 | ------------------------- | ------- | ------------------------ | -------- | ---------------------------- |
-| id                        | string  | Primary key              | No       |                              |
+| id                        | string  | Primary key              | No       | varchar                      |
 | email                     | string  | User email               | No       | Unique                       |
 | username                  | string  | Username                 | No       | Unique                       |
 | firstName                 | string  | First name               | No       |                              |
@@ -389,78 +389,84 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 | telegramUsername          | string  | Telegram handle          | Yes      | Format: @username            |
 | emailNotificationsEnabled | boolean | Email notifications flag | No       | Default: false               |
 | profilePictureUrl         | string  | Profile picture URL      | Yes      | MinIO storage URL            |
-| createdAt                 | Date    | Creation timestamp       | No       | Auto-generated               |
-| updatedAt                 | Date    | Last update timestamp    | No       | Auto-generated               |
+| createdAt                 | Date    | Creation timestamp       | No       | timestamptz, auto-generated  |
+| updatedAt                 | Date    | Last update timestamp    | No       | timestamptz, auto-generated  |
 
 #### Role
 
 | Field       | Type    | Description            | Nullable | Notes                   |
 | ----------- | ------- | ---------------------- | -------- | ----------------------- |
-| id          | string  | Primary key            | No       |                         |
-| name        | string  | Role name              | No       |                         |
-| label       | string  | Display label          | No       |                         |
+| id          | string  | Primary key            | No       | varchar                 |
+| name        | string  | Role name              | No       | varchar                 |
+| label       | string  | Display label          | No       | varchar                 |
 | isMunicipal | boolean | Municipality user flag | No       | true for admin/officers |
 
 #### Office
 
-| Field | Type   | Description  | Nullable | Notes |
-| ----- | ------ | ------------ | -------- | ----- |
-| id    | string | Primary key  | No       |       |
-| name  | string | Office name  | No       |       |
-| label | string | Office label | No       |       |
+| Field      | Type       | Description             | Nullable | Notes                           |
+| ---------- | ---------- | ----------------------- | -------- | ------------------------------- |
+| id         | string     | Primary key             | No       | varchar                         |
+| name       | string     | Office name             | No       | varchar                         |
+| label      | string     | Office label            | No       | varchar                         |
+| categories | Category[] | Related categories list | -        | One-to-many with Category table |
 
 #### Account
 
 | Field      | Type   | Description           | Nullable | Notes                       |
 | ---------- | ------ | --------------------- | -------- | --------------------------- |
-| id         | string | Primary key           | No       |                             |
-| accountId  | string | Account identifier    | No       |                             |
-| providerId | string | Provider identifier   | No       |                             |
+| id         | string | Primary key           | No       | varchar                     |
+| accountId  | string | Account identifier    | No       | varchar                     |
+| providerId | string | Provider identifier   | No       | varchar                     |
 | userId     | string | Linked user ID        | No       | Foreign key to User entity  |
 | user       | User   | User entity relation  | No       | Many-to-one, cascade delete |
-| password   | string | Account password      | Yes      | Optional, hashed            |
-| createdAt  | Date   | Creation timestamp    | No       | Auto-generated              |
-| updatedAt  | Date   | Last update timestamp | No       | Auto-generated              |
+| password   | string | Account password      | Yes      | varchar, optional, hashed   |
+| createdAt  | Date   | Creation timestamp    | No       | timestamptz, auto-generated |
+| updatedAt  | Date   | Last update timestamp | No       | timestamptz, auto-generated |
 
 #### Session
 
 | Field          | Type   | Description              | Nullable | Notes                       |
 | -------------- | ------ | ------------------------ | -------- | --------------------------- |
-| id             | string | Primary key              | No       |                             |
-| expiresAt      | Date   | Session expiry timestamp | No       |                             |
-| hashedSecret   | string | Hashed session secret    | No       | Excluded from serialization |
-| createdAt      | Date   | Creation timestamp       | No       | Auto-generated              |
-| updatedAt      | Date   | Last update timestamp    | No       | Auto-generated              |
-| ipAddress      | string | IP address               | Yes      | Optional                    |
-| userAgent      | string | User agent string        | Yes      | Optional                    |
+| id             | string | Primary key              | No       | varchar                     |
+| expiresAt      | Date   | Session expiry timestamp | No       | timestamptz                 |
+| hashedSecret   | string | Hashed session secret    | No       | varchar, excluded from JSON |
+| createdAt      | Date   | Creation timestamp       | No       | timestamptz, auto-generated |
+| updatedAt      | Date   | Last update timestamp    | No       | timestamptz, auto-generated |
+| ipAddress      | string | IP address               | Yes      | varchar, optional           |
+| userAgent      | string | User agent string        | Yes      | varchar, optional           |
 | userId         | string | Linked user ID           | No       | Foreign key to User entity  |
 | user           | User   | User entity relation     | No       | Many-to-one, cascade delete |
-| impersonatedBy | string | Impersonator user ID     | Yes      | Optional                    |
+| impersonatedBy | string | Impersonator user ID     | Yes      | varchar, optional           |
 
 #### Category
 
-| Field | Type   | Description   | Nullable | Notes |
-| ----- | ------ | ------------- | -------- | ----- |
-| id    | string | Primary key   | No       |       |
-| name  | string | Category name | No       |       |
+| Field  | Type   | Description              | Nullable | Notes                           |
+| ------ | ------ | ------------------------ | -------- | ------------------------------- |
+| id     | string | Primary key              | No       | varchar                         |
+| name   | string | Category name            | No       | varchar                         |
+| office | Office | Linked office            | -        | Many-to-one with Office entity  |
 
 #### Report
 
-| Field       | Type     | Description               | Nullable | Notes                                                              |
-| ----------- | -------- | ------------------------- | -------- | ------------------------------------------------------------------ |
-| id          | string   | Primary key               | No       |                                                                    |
-| title       | string   | Report title              | No       |                                                                    |
-| description | string   | Report description        | No       | Text type for longer content                                       |
-| status      | enum     | Report status             | No       | Values: pending, in_progress, resolved, rejected. Default: pending |
-| location    | string   | Geographic coordinates    | No       | PostGIS geometry(Point, 4326), stored as WKT format                |
-| address     | string   | Physical address          | Yes      | Optional                                                           |
-| images      | string[] | Array of image paths/URLs | Yes      | Optional                                                           |
-| userId      | string   | Linked user ID            | No       | Foreign key to User entity                                         |
-| user        | User     | User entity relation      | No       | Many-to-one, cascade delete                                        |
-| categoryId  | string   | Linked category ID        | No       | Foreign key to Category entity                                     |
-| category    | Category | Category entity relation  | No       | Many-to-one, not nullable                                          |
-| createdAt   | Date     | Creation timestamp        | No       | Auto-generated                                                     |
-| updatedAt   | Date     | Last update timestamp     | No       | Auto-generated                                                     |
+| Field             | Type     | Description               | Nullable | Notes                                                                          |
+| ----------------- | -------- | ------------------------- | -------- | ------------------------------------------------------------------------------ |
+| id                | string   | Primary key               | No       | varchar                                                                        |
+| title             | string   | Report title              | Yes      | varchar, optional                                                              |
+| description       | string   | Report description        | Yes      | text type, optional                                                            |
+| status            | enum     | Report status             | No       | Values: pending, in_progress, resolved, rejected, assigned. Default: pending   |
+| location          | Point    | Geographic coordinates    | No       | PostGIS geometry(Point, 4326)                                                  |
+| address           | string   | Physical address          | Yes      | varchar, optional                                                              |
+| images            | string[] | Array of image paths/URLs | No       | varchar array                                                                  |
+| userId            | string   | Linked user ID            | No       | Foreign key to User entity                                                     |
+| user              | User     | User entity relation      | No       | Many-to-one, cascade delete                                                    |
+| isAnonymous       | boolean  | Anonymous report flag     | No       | Default: false                                                                 |
+| categoryId        | string   | Linked category ID        | Yes      | Foreign key to Category entity, optional                                       |
+| category          | Category | Category entity relation  | Yes      | Many-to-one, optional                                                          |
+| createdAt         | Date     | Creation timestamp        | No       | timestamptz, auto-generated                                                    |
+| updatedAt         | Date     | Last update timestamp     | No       | timestamptz, auto-generated                                                    |
+| explanation       | string   | Rejection/action reason   | Yes      | text type, optional                                                            |
+| assignedOfficerId | string   | Assigned officer ID       | Yes      | Foreign key to User entity, optional                                           |
+| assignedOfficer   | User     | Assigned officer relation | Yes      | Many-to-one with User entity, optional                                         |
 
 **PostGIS Integration**:
 
@@ -471,12 +477,15 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 ### Relations
 
-- User ⟷ Role (ManyToOne)
+- User ⟷ Role (ManyToOne, required)
 - User ⟷ Office (ManyToOne, optional)
-- User ⟷ Account (OneToMany)
-- User ⟷ Session (OneToMany)
-- Report ⟷ User (ManyToOne)
-- Report ⟷ Category (ManyToOne)
+- User ⟷ Account (OneToMany, cascade delete)
+- User ⟷ Session (OneToMany, cascade delete)
+- Report ⟷ User (ManyToOne, cascade delete)
+- Report ⟷ Category (ManyToOne, optional)
+- Report ⟷ User (as assignedOfficer, ManyToOne, optional)
+- Category ⟷ Office (ManyToOne)
+- Office ⟷ Category (OneToMany)
 
 ### PostGIS Geospatial Features
 
@@ -551,16 +560,15 @@ radiusMeters = 5000;
 
 **Content**:
 
-- `entities/`: TypeORM definitions (User, Role, Account, Session, Category, Report)
+- `entities/`: TypeORM definitions (User, Role, Office, Account, Session, Category, Report)
 - `dto/`: Data Transfer Objects
-  - `login.dto.ts`
-  - `register.dto.ts`
-  - `create-municipality-user.dto.ts`
-  - `update-municipality-user.dto.ts`
-  - `user.dto.ts` (UpdateProfileDto, UpdateProfileResponseDto)
-  - `create-report.dto.ts`
-  - `update-report.dto.ts`
-  - `filter-reports.dto.ts`
+  - `auth.dto.ts` (RegisterDto, LoginDto, LoginResponseDto, LogoutResponseDto)
+  - `municipality-user.dto.ts` (CreateMunicipalityUserDto, UpdateMunicipalityUserDto, responses)
+  - `profile.dto.ts` (UpdateProfileDto, ProfileResponseDto)
+  - `report.dto.ts` (CreateReportDto, UpdateReportDto, FilterReportsDto, responses)
+  - `role.dto.ts` (RolesResponseDto)
+  - `category.dto.ts` (CategoriesResponseDto)
+  - `response.dto.ts` (Base ResponseDto interface)
 
 ### @repo/eslint-config
 
@@ -614,6 +622,7 @@ This table shows which office is competent for specific problem categories
 | **Environment Quality**                 | `environment`     | Waste                                              |
 | **Green Areas and Parks**               | `green_parks`     | Public Green Areas and Playgrounds                 |
 | **Decentralization and Civic Services** | `civic_services`  | Other (General issues)                             |
+| **Organizational Office**               | `organization`    | No category                                        |
 
 ### Report Status Lifecycle
 
@@ -636,7 +645,11 @@ The system follows a workflow where the **Organization Office** (PR Officers) ac
     - The report appears in the dashboard of the **PR Officers**
     - A PR Officer performs a preliminary verification of the content and image
     - **Action**: The PR Officer marks the report as **Accepted** (or Rejected with motivations)
-    - **Outcome**: Upon acceptance, the report status changes to **Assigned**. The system routes the report to the competent technical office determined by the problem category (e.g., a "Public Lighting" issue is sent to the _Infrastructure Office_).
+      - Upon acceptance, the system determines the competent technical office based on the report's category
+      - The PR Officer can choose between two assignment options:
+        - **Manual Assignment**: Select a specific technical officer from the competent office
+        - **Automatic Assignment**: Let the system assign the report to the officer with the lowest workload (fewest assigned reports)
+    - **Outcome**: The report status changes to **Assigned** and is routed to the designated technical officer in the competent office (e.g., a "Public Lighting" issue is sent to the _Infrastructure Office_).
 
 3.  **Technical View (Technical Officer)**:
     - The **Technical Officer** (e.g., `tech_infrastructure_1`) logs into the platform
@@ -647,14 +660,15 @@ The system follows a workflow where the **Organization Office** (PR Officers) ac
 
 This table lists the credentials (usernames) to use for testing the workflow
 
-| Office                                | Technical Officer                                 | PR Officer                                                  |
-| :------------------------------------ | :------------------------------------------------ | :---------------------------------------------------------- |
-| **Maintenance & Technical Services**  | `tech_maintenance_1` `tech_maintenance_2`         | `pr_officer_1` `pr_officer_2` `pr_officer_3` `pr_officer_4` |
-| **Infrastructure**                    | `tech_infrastructure_1` `tech_infrastructure_1`   | _Same as above_                                             |
-| **Local Public Services**             | `tech_public_services_1` `tech_public_services_2` | _Same as above_                                             |
-| **Environment Quality**               | `tech_environment_1` `tech_environment_2`         | _Same as above_                                             |
-| **Green Areas and Parks**             | `tech_green_parks_1` `tech_green_parks_2`         | _Same as above_                                             |
-| **Decentralization & Civic Services** | `tech_civic_services_1` `tech_civic_services_2`   | _Same as above_                                             |
+| Office                                  | User Type                        | Username                                                                |
+| :-------------------------------------- | :------------------------------- | :---------------------------------------------------------------------- |
+| **Maintenance & Technical Services**    | Maintenance Technician           | `tech_maintenance_1`, `tech_maintenance_2`                              |
+| **Infrastructure**                      | Infrastructure Technician        | `tech_infrastructure_1`, `tech_infrastructure_2`                        |
+| **Local Public Services**               | Public Services Technician       | `tech_public_services_1`, `tech_public_services_2`                      |
+| **Environment Quality**                 | Environment Technician           | `tech_environment_1`, `tech_environment_2`                              |
+| **Green Areas and Parks**               | Green Parks Technician           | `tech_green_parks_1`, `tech_green_parks_2`                              |
+| **Decentralization & Civic Services**   | Civic Services Technician        | `tech_civic_services_1`, `tech_civic_services_2`                        |
+| **Organizational**                      | System Admin, PR Officer         | `admin`, `pr_officer_1`, `pr_officer_2`, `pr_officer_3`, `pr_officer_4` |
 
 ---
 
@@ -897,6 +911,6 @@ The project is structured for future evolutions:
 
 ---
 
-**Document Version**: 1.1  
-**Last Update**: November 24, 2025  
+**Document Version**: 1.3  
+**Last Update**: November 27, 2025  
 **Project Status**: In Development

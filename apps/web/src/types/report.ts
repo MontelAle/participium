@@ -12,6 +12,7 @@ export type ReportData = {
 
 export type ReportsListProps = {
   onlyMyReports?: boolean;
+  setIsMobileExpanded?: (expanded: boolean) => void;
 };
 
 export type CreateReportFormData = (reportData: ReportData) => FormData;

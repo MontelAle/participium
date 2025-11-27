@@ -26,7 +26,7 @@ COPY --from=installer /app/node_modules ./node_modules
 
 COPY --from=installer /app/apps/api/dist ./apps/api/dist
 COPY --from=installer /app/apps/api/package.json ./apps/api/package.json
-
+COPY --from=installer /app/apps/api/src/providers/database/seed/images ./apps/api/dist/src/providers/database/seed/images
 
 COPY --from=installer /app/apps/api/node_modules ./apps/api/node_modules
 

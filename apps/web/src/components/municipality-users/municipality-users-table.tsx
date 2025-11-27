@@ -9,14 +9,17 @@ import {
   TableBody,
 } from '@/components/ui/shadcn-io/table';
 import type { User } from '@repo/api';
-import { EditMunicipalityUserDialog } from './edit-municipality-user-dialog';
 import { DeleteMunicipalityUserDialog } from './delete-municipality-user-dialog';
 import { prettifyRole, cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search } from 'lucide-react';
+import { Search, Pencil } from 'lucide-react';
 import { MunicipalityUsersTableProps } from '@/types/ui';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
+  const navigate = useNavigate();
+
   const columns = React.useMemo(
     () => [
       {
@@ -106,15 +109,25 @@ export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
         cell: ({ row }: any) => {
           const user = row.original as User;
           return (
-            <div className="text-base whitespace-nowrapflex items-center justify-end gap-1">
-              <EditMunicipalityUserDialog user={user} />
+            <div className="text-base items-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-muted-foreground"
+                onClick={() =>
+                  navigate(`/app/municipality-users/view/${user.id}`)
+                }
+                aria-label="Edit"
+              >
+                <Pencil className="h-5 w-5" />
+              </Button>
               <DeleteMunicipalityUserDialog user={user} />
             </div>
           );
         },
       },
     ],
-    [],
+    [navigate],
   );
 
   if (data.length === 0) {

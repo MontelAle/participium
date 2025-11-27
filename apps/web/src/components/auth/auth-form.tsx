@@ -13,15 +13,17 @@ import {
   InputGroupInput,
 } from '@/components/ui/input-group';
 import { Link, useNavigate } from 'react-router-dom';
-import { MailIcon, UserIcon, LockIcon } from 'lucide-react';
+import { MailIcon, UserIcon, LockIcon, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { toast } from 'sonner';
 import { AuthFormProps } from '@/types/ui';
+import { useState } from 'react';
 
 export function AuthForm({ mode, className, ...props }: AuthFormProps) {
   const { login, register, isLoading } = useAuth();
   const navigate = useNavigate();
   const isLogin = mode === 'login';
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -34,7 +36,7 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
       if (result.success) {
         toast.success('Login successful! Welcome back!');
         if (result.data?.role.name === 'user') {
-          navigate('/report-map');
+          navigate('/reports/map');
         } else {
           navigate('/app/dashboard');
         }
@@ -51,7 +53,7 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
       });
       if (result.success) {
         toast.success('Registration successful! Welcome!');
-        navigate('/report-map');
+        navigate('/reports/map');
       } else {
         toast.error(result.error || 'Registration failed. Please try again.');
       }
@@ -153,13 +155,20 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
                     <InputGroupInput
                       id="password"
                       name="password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       placeholder="Password"
                       className="h-12 text-lg"
                       required
                     />
-                    <InputGroupAddon>
-                      <LockIcon className="size-6" />
+                    <InputGroupAddon
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="cursor-pointer hover:bg-muted transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-6" />
+                      ) : (
+                        <Eye className="size-6" />
+                      )}
                     </InputGroupAddon>
                   </InputGroup>
                 </Field>

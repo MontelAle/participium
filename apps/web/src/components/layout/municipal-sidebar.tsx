@@ -1,4 +1,4 @@
-import { Home, Users, ChevronRight, ChevronLeft ,FileText } from 'lucide-react';
+import { Home, Users, ChevronRight, ChevronLeft, FileText } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -7,13 +7,13 @@ import { MunicipalSidebarProps } from '@/types/ui';
 
 export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
   const location = useLocation();
-  const { isAdminUser , isMunicipalPrOfficer , isTechnicalOfficer } = useAuth();
+  const { hasRole } = useAuth();
 
   const menuItems = [
     { title: 'Dashboard', href: '/app/dashboard', icon: Home },
   ];
 
-  if (isAdminUser) {
+  if (hasRole(['admin'])) {
     menuItems.push({
       title: 'Municipality Users',
       href: '/app/municipality-users',
@@ -21,18 +21,18 @@ export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
     });
   }
 
-  if (isMunicipalPrOfficer) {
+  if (hasRole(['pr_officer'])) {
     menuItems.push({
-      title: 'View Reports',
-      href: '/app/municipality-pr-officer',
+      title: 'Assign Reports',
+      href: '/app/assign-reports',
       icon: FileText,
     });
   }
 
-  if (isTechnicalOfficer) {
+  if (hasRole(['tech_officer'])) {
     menuItems.push({
-      title: 'View Reports',
-      href: '/app/technical-officer',
+      title: 'Assigned Reports',
+      href: '/app/assigned-reports',
       icon: FileText,
     });
   }

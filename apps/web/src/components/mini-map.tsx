@@ -6,7 +6,7 @@ import {
   injectStylesOnce,
   modernDivIcon,
   smallDivIcon,
-} from '@/components/report-map/map.utils';
+} from '@/components/reports-map/map.utils';
 import { cn } from '@/lib/utils';
 
 interface MiniMapProps {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Navbar } from '@/components/layout/navbar';
 import { MunicipalSidebar } from '@/components/layout/municipal-sidebar';
@@ -7,16 +7,25 @@ import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 
 export function DashboardLayout() {
-  const { isMunicipalityUser, isAdminUser, isCitizenUser, isGuestUser, isMunicipalPrOfficer } =
+  const { isMunicipalityUser, isAdminUser, isCitizenUser, isGuestUser } =
     useAuth();
   const [municipalSidebarOpen, setMunicipalSidebarOpen] = useState(true);
   const location = useLocation();
-  const isReportPage = location.pathname === '/new-report' || location.pathname.startsWith('/report/');
-  const isMapPage = location.pathname === '/report-map';
+  const isMapPage = location.pathname === '/reports/map';
   const RIGHT_SIDEBAR_WIDTH = '400px';
 
+  useEffect(() => {
+    const isReportViewPage =
+      location.pathname.includes('/app/assign-reports/') ||
+      location.pathname.includes('/app/assigned-reports/');
+
+    if (isReportViewPage && window.innerWidth >= 768) {
+      setMunicipalSidebarOpen(false);
+    }
+  }, [location.pathname]);
+
   const showLeftSidebar = isMunicipalityUser || isAdminUser;
-  const showRightSidebar = (isCitizenUser || isGuestUser) && !isReportPage;
+  const showRightSidebar = (isCitizenUser || isGuestUser) && isMapPage;
 
   return (
     <div className="h-screen bg-background flex flex-col font-sans text-base antialiased overflow-hidden">
@@ -30,7 +39,7 @@ export function DashboardLayout() {
         )}
         <main
           className={cn(
-            'flex-1 h-full relative transition-all duration-300 ease-out',
+            'flex-1 h-full relative transition-all duration-300 ease-out min-w-0',
             showLeftSidebar && (municipalSidebarOpen ? 'md:ml-72' : 'md:ml-20'),
             showRightSidebar && `md:mr-[${RIGHT_SIDEBAR_WIDTH}]`,
             showLeftSidebar ? 'pb-20 md:pb-0' : '',

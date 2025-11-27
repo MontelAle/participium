@@ -10,6 +10,7 @@ import { AppModule } from './app.module';
 import passport from 'passport';
 import { DataSource } from 'typeorm';
 import { seedDatabase } from './providers/database/seed/participium.seed';
+import { MinioProvider } from './providers/minio/minio.provider';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -49,16 +50,21 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
+  await app.listen(process.env.PORT || 5000);
+
+  // Run seed after application is fully initialized and listening
+  // This ensures MinioProvider.onModuleInit() has completed
   try {
     const dataSource = app.get(DataSource);
+    const minioProvider = app.get(MinioProvider);
+
     if (dataSource.isInitialized) {
-      await seedDatabase(dataSource);
+      console.log('Starting database seed...');
+      await seedDatabase(dataSource, minioProvider);
     }
   } catch (error) {
     console.error('Auto-seeding failed:', error);
   }
-
-  await app.listen(process.env.PORT || 5000);
 }
 
 void bootstrap();

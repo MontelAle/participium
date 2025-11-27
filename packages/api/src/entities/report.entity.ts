@@ -20,6 +20,7 @@ export interface Report {
   images?: string[];
   userId: string;
   user: User;
+  isAnonymous: boolean;
   categoryId: string;
   category: Category;
   createdAt: Date;
