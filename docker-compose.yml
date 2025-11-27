@@ -18,6 +18,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-participium}
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
+      MINIO_PUBLIC_ENDPOINT: localhost 
+      MINIO_PUBLIC_PORT: 9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET_NAME: participium-reports
@@ -65,7 +67,8 @@ services:
     networks:
       - participium-net
     ports:
-      - "9001:9001" 
+      - "9001:9001"
+      - "9000:9000"
 
 volumes:
   postgres_data:
