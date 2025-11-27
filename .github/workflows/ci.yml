@@ -29,15 +29,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: "pnpm" 
 
       - name: Install dependencies
         run: pnpm install
-      
+
       - name: Build packages (turbo)
         run: pnpm turbo run build
 
-      - name: Run tests (turbo)
+      - name: Install Playwright Browsers
+        run: pnpm --filter web exec playwright install --with-deps
+
+      - name: Run Unit Tests (turbo)
         run: pnpm turbo run test
-      
-      - name: Run e2e tests
+
+      - name: Run E2E tests
         run: pnpm turbo run test:e2e
+
+      - name: Upload Playwright Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 30
