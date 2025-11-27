@@ -40,7 +40,7 @@ test.describe('Auth Flow', () => {
     await authPage.gotoLogin();
     await authPage.login('mario_rossi', 'userPassword');
 
-    await expect(page).toHaveURL(/\/report-map/);
+    await expect(page).toHaveURL(/\/reports\/map/);
   });
 
   test('Login PR Officer: redirect a Dashboard', async ({ page }) => {
@@ -77,7 +77,7 @@ test.describe('Auth Flow', () => {
     });
 
     await expect(page.getByText('Registration successful!')).toBeVisible();
-    await expect(page).toHaveURL(/\/report-map/);
+    await expect(page).toHaveURL(/\/reports\/map/);
   });
 
   test('Manage Login: Invalid Credentials', async ({ page }) => {
