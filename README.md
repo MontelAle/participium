@@ -25,9 +25,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: ${POSTGRES_DB:-participium}
-
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
+      MINIO_PUBLIC_ENDPOINT: localhost
+      MINIO_PUBLIC_PORT: 9000
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET_NAME: participium-reports
@@ -50,6 +51,8 @@ services:
 
   postgres:
     image: postgis/postgis:18-3.6
+    platform: linux/amd64
+    container_name: participium-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-admin}
@@ -62,6 +65,7 @@ services:
 
   minio:
     image: minio/minio:latest
+    container_name: participium-minio
     restart: unless-stopped
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
@@ -69,10 +73,11 @@ services:
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
-    ports:
-      - "9001:9001"
     networks:
       - participium-net
+    ports:
+      - "9001:9001"
+      - "9000:9000"
 
 volumes:
   postgres_data:
@@ -138,10 +143,10 @@ On the first run, the system **automatically seeds** the database with sample ge
 
 You can customize the deployment by setting these variables in your docker-compose.yml or .env file
 
-| Variable            | Description         | Default               |
-| :------------------ | :------------------ | :-------------------- |
-| `POSTGRES_USER`     | Database username   | `admin`               |
-| `POSTGRES_PASSWORD` | Database password   | `password`            |
-| `MINIO_ROOT_USER`    | MinIO access key    | minioadmin            |
+| Variable              | Description         | Default               |
+| :-------------------- | :------------------ | :-------------------- |
+| `POSTGRES_USER`       | Database username   | `admin`               |
+| `POSTGRES_PASSWORD`   | Database password   | `password`            |
+| `MINIO_ROOT_USER`     | MinIO access key    | minioadmin            |
 | `MINIO_ROOT_PASSWORD` | MinIO secret key    | minioadmin            |
 | `FRONTEND_URL`        | CORS Allowed Origin | http://localhost:5173 |
