@@ -56,7 +56,6 @@ sections:
 |------------|------|-------|
 | Estimation |  2h 1m    |  2h 38m     | 
 | Actual     |  1h 45m    |  2h 22m     |
--------------------
 
 
 Normalized values:
@@ -123,7 +122,7 @@ This result improves on the previous's sprint 29.6%, meaning that our estimation
     - PRT-8/Technical officer view: sligtly overestimated review and testing
     - PRT-9/Citizen account config: overestimated the review
 
-    -  Overall assessment: e2e tests were overestimated for all the stories and the application didn't need any big last-minute fixes (PRT-54 and PRT-110). Since we haven't any other major errors we consider this sprint's estimation effort a success 
+    -  Overall assessment: e2e tests were overestimated for all the stories and the application didn't need any big last-minute fixes (PRT-54). Since we haven't any other major errors we consider this sprint's estimation effort a success 
 
 - What lessons did you learn (both positive and negative) in this sprint?
     - Increasing scrum meeting's frequency and communicating effectively during the sprint was very useful to keep everyone aligned and boost the team's efficiency
