@@ -172,6 +172,10 @@ export async function seedDatabase(
       name: 'civic_services',
       label: 'Decentralization and Civic Services',
     },
+    {
+      name: 'organization_office',
+      label: 'Organization Office',
+    },
   ];
 
   const officesMap = new Map<string, Office>();
@@ -281,7 +285,7 @@ export async function seedDatabase(
     'System',
     'Admin',
     'admin@participium.com',
-    'civic_services',
+    'organization_office',
   );
 
   for (const officeData of officesData) {
@@ -290,6 +294,7 @@ export async function seedDatabase(
       const fakeLastName = faker.person.lastName();
       const techUsername = `tech_${officeData.name}_${i}`;
 
+      if (officeData.name === 'organization_office') continue;
       await createUser(
         techUsername,
         'tech_officer',
@@ -309,7 +314,7 @@ export async function seedDatabase(
       'PR',
       `Officer ${i}`,
       `pr.officer.${i}@participium.com`,
-      'civic_services',
+      'organization_office',
     );
   }
 
@@ -322,10 +327,10 @@ export async function seedDatabase(
       email: 'mario.rossi@gmail.com',
     },
     {
-      username: 'luca_bianchi',
-      first: 'Luca',
-      last: 'Bianchi',
-      email: 'luca.b@libero.it',
+      username: 'luigi_verdi',
+      first: 'Luigi',
+      last: 'Verdi',
+      email: 'luigi.verdi@gmail.com',
     },
   ];
 
@@ -353,18 +358,36 @@ export async function seedDatabase(
 
     console.log('Looking for images in:', imagesDir);
 
-    for (const realReport of REAL_REPORTS) {
-      const randomUser =
-        citizenUsers[Math.floor(Math.random() * citizenUsers.length)];
+    // Get Luigi Verdi user (the second citizen user)
+    const luigiVerdi = citizenUsers.find((u) => u.username === 'luigi_verdi');
+
+    for (let idx = 0; idx < REAL_REPORTS.length; idx++) {
+      const realReport = REAL_REPORTS[idx];
+
+      // Assign first 2 reports to Luigi Verdi (one anonymous, one not)
+      let reportUser: User;
+      let isAnonymous: boolean;
+
+      if (idx === 0 && luigiVerdi) {
+        // First report: Luigi Verdi, not anonymous
+        reportUser = luigiVerdi;
+        isAnonymous = false;
+      } else if (idx === 1 && luigiVerdi) {
+        // Second report: Luigi Verdi, anonymous
+        reportUser = luigiVerdi;
+        isAnonymous = true;
+      } else {
+        // Other reports: random user with 20% chance of being anonymous
+        reportUser =
+          citizenUsers[Math.floor(Math.random() * citizenUsers.length)];
+        isAnonymous = Math.random() < 0.2;
+      }
 
       const category = categoriesMap.get(realReport.categoryName);
       if (!category) {
         console.warn(`Category not found for report: ${realReport.title}`);
         continue;
       }
-
-      const isResolved = Math.random() > 0.8;
-      const isAnonymous = Math.random() < 0.5;
 
       const reportId = nanoid();
 
@@ -406,14 +429,14 @@ export async function seedDatabase(
         id: reportId,
         title: realReport.title,
         description: realReport.description,
-        status: isResolved ? ReportStatus.RESOLVED : ReportStatus.PENDING,
+        status: ReportStatus.RESOLVED,
         address: realReport.address,
         location: {
           type: 'Point',
           coordinates: [realReport.lng, realReport.lat],
         },
         images: uploadedImageUrls,
-        user: randomUser,
+        user: reportUser,
         category: category,
         createdAt: faker.date.recent({ days: 30 }),
         isAnonymous: isAnonymous,
