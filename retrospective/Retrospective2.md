@@ -27,7 +27,7 @@ sections:
 - Unit Tests passing: 180/180
 - Code review completed: 16
 - Code present on VCS: Yes
-- End-to-End tests performed: 36
+- End-to-End tests performed: 114
 
 
 > Please refine your DoD if required (you cannot remove items!) 
@@ -56,6 +56,8 @@ sections:
 |------------|------|-------|
 | Estimation |  2h 1m    |  2h 38m     | 
 | Actual     |  1h 45m    |  2h 22m     |
+-------------------
+
 
 Normalized values:
 
@@ -95,7 +97,7 @@ This result improves on the previous's sprint 29.6%, meaning that our estimation
 - E2E testing:
   - Total hours estimated: 4h
   - Total hours spent: 1h45m
-  - Nr of test cases: 36
+  - Nr of test cases: 114
 - Code review 
   - Total hours estimated: 17h
   - Total hours spent: 13h10
