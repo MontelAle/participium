@@ -28,6 +28,7 @@ import {
 import { RolesResponseDto } from './dto/role.dto';
 import { CategoriesResponseDto } from 'dto/category.dto';
 import { UpdateProfileDto, ProfileResponseDto } from 'dto/profile.dto';
+import { Profile } from './entities/profile.entity';
 
 export {
   type MunicipalityUsersResponseDto,
@@ -56,4 +57,5 @@ export {
   type CategoriesResponseDto,
   type UpdateProfileDto,
   type ProfileResponseDto,
+  type Profile,
 };
