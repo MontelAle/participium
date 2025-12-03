@@ -25,7 +25,7 @@ export default function ProfilePage() {
   const { control, handleSubmit, setValue, watch, reset } = useForm<FormValues>(
     {
       defaultValues: {
-        emailNotificationsEnabled: false,
+        emailNotificationsEnabled: true,
         telegramUsername: '',
         profilePicture: null,
       },
