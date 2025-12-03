@@ -13,7 +13,4 @@ export interface User {
   updatedAt: Date;
   officeId?: string;
   office?: Office;
-  telegramUsername?: string | null;
-  emailNotificationsEnabled: boolean;
-  profilePictureUrl?: string | null;
 }
