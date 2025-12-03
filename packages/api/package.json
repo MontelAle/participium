@@ -23,7 +23,6 @@
     "typeorm": "^0.3.27"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.10.7",
     "ts-loader": "^9.4.3",
