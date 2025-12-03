@@ -277,6 +277,14 @@ export async function seedDatabase(
         accountId: username,
         password: commonPassword,
       });
+
+      await profileRepo.save(
+        profileRepo.create({
+          id: nanoid(),
+          userId: user.id,
+          user: user,
+        }),
+      );
     }
     return user;
   };
@@ -338,12 +346,6 @@ export async function seedDatabase(
 
   for (const c of citizensData) {
     const u = await createUser(c.username, 'user', c.first, c.last, c.email);
-    const p = profileRepo.create({
-      id: nanoid(),
-      userId: u.id,
-      user: u,
-    });
-    await profileRepo.save(p);
     citizenUsers.push(u);
   }
 
