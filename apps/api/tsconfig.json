@@ -9,6 +9,7 @@
     "noUncheckedIndexedAccess": true,
     "resolveJsonModule": true,
     "strict": true,
+    "strictNullChecks": false,
     "target": "ES2022",
 
     "allowSyntheticDefaultImports": true,
@@ -27,5 +28,6 @@
 
     "baseUrl": "./",
     "outDir": "./dist"
-  }
+  },
+  "references": [{ "path": "../../packages/api" }]
 }

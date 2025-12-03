@@ -10,20 +10,20 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { ProfilesService } from './profiles.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes } from '@nestjs/swagger';
 import {
-  UpdateProfileDto,
   ProfileResponseDto,
+  UpdateProfileDto,
 } from '../../common/dto/user.dto';
-import { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
+import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
 import { SessionGuard } from '../../modules/auth/guards/session-auth.guard';
 import {
-  USER_ERROR_MESSAGES,
   ALLOWED_PROFILE_PICTURE_MIMETYPES,
   MAX_PROFILE_PICTURE_SIZE,
+  USER_ERROR_MESSAGES,
 } from '../../modules/users/constants/error-messages';
+import { ProfilesService } from './profiles.service';
 
 @Controller('profiles')
 export class ProfilesController {

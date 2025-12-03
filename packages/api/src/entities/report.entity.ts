@@ -1,6 +1,6 @@
-import { Point } from 'typeorm';
-import { User } from './user.entity';
+import type { Point } from 'typeorm';
 import { Category } from './category.entity';
+import { User } from './user.entity';
 
 export enum ReportStatus {
   PENDING = 'pending',

@@ -8,9 +8,6 @@ importers:
 
   .:
     devDependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:packages/typescript-config
       globals:
         specifier: ^16.5.0
         version: 16.5.0
@@ -84,8 +81,8 @@ importers:
         specifier: ^2.0.2
         version: 2.0.2
       nanoid:
-        specifier: ^5.1.6
-        version: 5.1.6
+        specifier: ^3.3.11
+        version: 3.3.11
       passport:
         specifier: ^0.7.0
         version: 0.7.0
@@ -126,12 +123,6 @@ importers:
       '@nestjs/testing':
         specifier: ^11.0.0
         version: 11.1.8(@nestjs/common@11.1.8)(@nestjs/core@11.1.8)(@nestjs/platform-express@11.1.8)
-      '@repo/jest-config':
-        specifier: workspace:*
-        version: link:../../packages/jest-config
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
       '@types/bcrypt':
         specifier: ^6.0.0
         version: 6.0.0
@@ -313,9 +304,6 @@ importers:
       '@repo/api':
         specifier: workspace:*
         version: link:../../packages/api
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
       '@types/leaflet.markercluster':
         specifier: ^1.5.6
         version: 1.5.6
@@ -362,9 +350,6 @@ importers:
         specifier: ^0.3.27
         version: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(sqlite3@5.1.7)(ts-node@10.9.2)
     devDependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
       '@types/node':
         specifier: ^22.10.7
         version: 22.19.0
@@ -8408,12 +8393,6 @@ packages:
     resolution: {integrity: sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
-
-  /nanoid@5.1.6:
-    resolution: {integrity: sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==}
-    engines: {node: ^18 || >=20}
-    hasBin: true
-    dev: false
 
   /napi-build-utils@2.0.0:
     resolution: {integrity: sha512-GEbrYkbfF7MoNaoh2iGG84Mnf/WZfB0GdGEsM8wz7Expx/LlWf5U8t9nvJKXSp3qr5IsEbK04cBGhol/KwOsWA==}

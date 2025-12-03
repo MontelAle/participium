@@ -1,16 +1,16 @@
-import {
-  Entity,
-  PrimaryColumn,
-  Column,
-  ManyToOne,
-  CreateDateColumn,
-  UpdateDateColumn,
-  JoinColumn,
-  Point,
-} from 'typeorm';
-import { User } from './user.entity';
-import { Category } from './category.entity';
 import { Report as ReportInterface } from '@repo/api';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+  UpdateDateColumn,
+  type Point,
+} from 'typeorm';
+import { Category } from './category.entity';
+import { User } from './user.entity';
 
 export enum ReportStatus {
   PENDING = 'pending',

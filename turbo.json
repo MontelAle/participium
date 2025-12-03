@@ -1,22 +1,11 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "globalDependencies": ["**/.env.*local"],
-  "globalEnv": [
-    "DB_URL",
-    "FRONTEND_URL",
-    "PORT",
-    "BACKEND_URL",
-    "SESSION_EXPIRES",
-    "COOKIE_HTTP_ONLY",
-    "COOKIE_SECURE",
-    "COOKIE_SAME_SITE",
-    "CORS_ORIGIN"
-  ],
+  "globalEnv": [],
   "tasks": {
     "dev": {
       "cache": true,
-      "persistent": true,
-      "dependsOn": ["^build"]
+      "persistent": true
     },
     "build": {
       "dependsOn": ["^build"],

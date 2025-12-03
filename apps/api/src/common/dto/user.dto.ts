@@ -1,14 +1,8 @@
 import {
-  IsOptional,
-  IsString,
-  IsBoolean,
-  Matches,
-  ValidateIf,
-} from 'class-validator';
-import {
-  UpdateProfileDto as UpdateProfileDtoInterface,
   ProfileResponseDto as ProfileResponseDtoInterface,
+  UpdateProfileDto as UpdateProfileDtoInterface,
 } from '@repo/api';
+import { IsOptional, IsString, Matches, ValidateIf } from 'class-validator';
 import { Profile } from '../entities/profile.entity';
 
 export class UpdateProfileDto implements UpdateProfileDtoInterface {
