@@ -1,11 +1,32 @@
 {
-  "extends": "@repo/typescript-config/nestjs.json",
   "compilerOptions": {
-    "allowJs": true,
-    "module": "esnext",
-    "baseUrl": "src",
+    "declaration": true,
+    "declarationMap": true,
     "esModuleInterop": true,
-    "incremental": false,
+    "isolatedModules": true,
+    "lib": ["es2022"], // Remove DOM for backend
+    "module": "NodeNext", // Use NodeNext for ESM
+    "moduleDetection": "force",
+    "moduleResolution": "NodeNext",
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+
+    "allowSyntheticDefaultImports": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
+    "noFallthroughCasesInSwitch": false,
+    "noImplicitAny": false,
+    "removeComments": true,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "strictBindCallApply": false,
+
+    "baseUrl": "./",
     "outDir": "dist",
     "types": ["node"]
   },

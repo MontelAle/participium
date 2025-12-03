@@ -440,33 +440,33 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### Category
 
-| Field  | Type   | Description              | Nullable | Notes                           |
-| ------ | ------ | ------------------------ | -------- | ------------------------------- |
-| id     | string | Primary key              | No       | varchar                         |
-| name   | string | Category name            | No       | varchar                         |
-| office | Office | Linked office            | -        | Many-to-one with Office entity  |
+| Field  | Type   | Description   | Nullable | Notes                          |
+| ------ | ------ | ------------- | -------- | ------------------------------ |
+| id     | string | Primary key   | No       | varchar                        |
+| name   | string | Category name | No       | varchar                        |
+| office | Office | Linked office | -        | Many-to-one with Office entity |
 
 #### Report
 
-| Field             | Type     | Description               | Nullable | Notes                                                                          |
-| ----------------- | -------- | ------------------------- | -------- | ------------------------------------------------------------------------------ |
-| id                | string   | Primary key               | No       | varchar                                                                        |
-| title             | string   | Report title              | Yes      | varchar, optional                                                              |
-| description       | string   | Report description        | Yes      | text type, optional                                                            |
-| status            | enum     | Report status             | No       | Values: pending, in_progress, resolved, rejected, assigned. Default: pending   |
-| location          | Point    | Geographic coordinates    | No       | PostGIS geometry(Point, 4326)                                                  |
-| address           | string   | Physical address          | Yes      | varchar, optional                                                              |
-| images            | string[] | Array of image paths/URLs | No       | varchar array                                                                  |
-| userId            | string   | Linked user ID            | No       | Foreign key to User entity                                                     |
-| user              | User     | User entity relation      | No       | Many-to-one, cascade delete                                                    |
-| isAnonymous       | boolean  | Anonymous report flag     | No       | Default: false                                                                 |
-| categoryId        | string   | Linked category ID        | Yes      | Foreign key to Category entity, optional                                       |
-| category          | Category | Category entity relation  | Yes      | Many-to-one, optional                                                          |
-| createdAt         | Date     | Creation timestamp        | No       | timestamptz, auto-generated                                                    |
-| updatedAt         | Date     | Last update timestamp     | No       | timestamptz, auto-generated                                                    |
-| explanation       | string   | Rejection/action reason   | Yes      | text type, optional                                                            |
-| assignedOfficerId | string   | Assigned officer ID       | Yes      | Foreign key to User entity, optional                                           |
-| assignedOfficer   | User     | Assigned officer relation | Yes      | Many-to-one with User entity, optional                                         |
+| Field             | Type     | Description               | Nullable | Notes                                                                        |
+| ----------------- | -------- | ------------------------- | -------- | ---------------------------------------------------------------------------- |
+| id                | string   | Primary key               | No       | varchar                                                                      |
+| title             | string   | Report title              | Yes      | varchar, optional                                                            |
+| description       | string   | Report description        | Yes      | text type, optional                                                          |
+| status            | enum     | Report status             | No       | Values: pending, in_progress, resolved, rejected, assigned. Default: pending |
+| location          | Point    | Geographic coordinates    | No       | PostGIS geometry(Point, 4326)                                                |
+| address           | string   | Physical address          | Yes      | varchar, optional                                                            |
+| images            | string[] | Array of image paths/URLs | No       | varchar array                                                                |
+| userId            | string   | Linked user ID            | No       | Foreign key to User entity                                                   |
+| user              | User     | User entity relation      | No       | Many-to-one, cascade delete                                                  |
+| isAnonymous       | boolean  | Anonymous report flag     | No       | Default: false                                                               |
+| categoryId        | string   | Linked category ID        | Yes      | Foreign key to Category entity, optional                                     |
+| category          | Category | Category entity relation  | Yes      | Many-to-one, optional                                                        |
+| createdAt         | Date     | Creation timestamp        | No       | timestamptz, auto-generated                                                  |
+| updatedAt         | Date     | Last update timestamp     | No       | timestamptz, auto-generated                                                  |
+| explanation       | string   | Rejection/action reason   | Yes      | text type, optional                                                          |
+| assignedOfficerId | string   | Assigned officer ID       | Yes      | Foreign key to User entity, optional                                         |
+| assignedOfficer   | User     | Assigned officer relation | Yes      | Many-to-one with User entity, optional                                       |
 
 **PostGIS Integration**:
 
@@ -570,40 +570,6 @@ radiusMeters = 5000;
   - `category.dto.ts` (CategoriesResponseDto)
   - `response.dto.ts` (Base ResponseDto interface)
 
-### @repo/eslint-config
-
-**Purpose**: Standardized ESLint configurations
-
-**Files**:
-
-- `base.js`: Base config
-- `nest.js`: NestJS config
-- `react.js`: React config
-- `library.js`: Library config
-- `prettier-base.js`: Prettier integration
-
-### @repo/jest-config
-
-**Purpose**: Reusable Jest configurations
-
-**Exports**:
-
-- `base.ts`: Base configuration
-- `nest.ts`: NestJS config
-- `next.ts`: Next.js config (future-proof)
-
-### @repo/typescript-config
-
-**Purpose**: Shared TypeScript configurations
-
-**Files**:
-
-- `base.json`: Base config
-- `nestjs.json`: Backend config
-- `react.json`: React config
-- `react-library.json`: React library config
-- `vite.json`: Vite config
-
 ---
 
 ## Operational Model & Workflow
@@ -660,15 +626,15 @@ The system follows a workflow where the **Organization Office** (PR Officers) ac
 
 This table lists the credentials (usernames) to use for testing the workflow
 
-| Office                                  | User Type                        | Username                                                                |
-| :-------------------------------------- | :------------------------------- | :---------------------------------------------------------------------- |
-| **Maintenance & Technical Services**    | Maintenance Technician           | `tech_maintenance_1`, `tech_maintenance_2`                              |
-| **Infrastructure**                      | Infrastructure Technician        | `tech_infrastructure_1`, `tech_infrastructure_2`                        |
-| **Local Public Services**               | Public Services Technician       | `tech_public_services_1`, `tech_public_services_2`                      |
-| **Environment Quality**                 | Environment Technician           | `tech_environment_1`, `tech_environment_2`                              |
-| **Green Areas and Parks**               | Green Parks Technician           | `tech_green_parks_1`, `tech_green_parks_2`                              |
-| **Decentralization & Civic Services**   | Civic Services Technician        | `tech_civic_services_1`, `tech_civic_services_2`                        |
-| **Organizational**                      | System Admin, PR Officer         | `admin`, `pr_officer_1`, `pr_officer_2`, `pr_officer_3`, `pr_officer_4` |
+| Office                                | User Type                  | Username                                                                |
+| :------------------------------------ | :------------------------- | :---------------------------------------------------------------------- |
+| **Maintenance & Technical Services**  | Maintenance Technician     | `tech_maintenance_1`, `tech_maintenance_2`                              |
+| **Infrastructure**                    | Infrastructure Technician  | `tech_infrastructure_1`, `tech_infrastructure_2`                        |
+| **Local Public Services**             | Public Services Technician | `tech_public_services_1`, `tech_public_services_2`                      |
+| **Environment Quality**               | Environment Technician     | `tech_environment_1`, `tech_environment_2`                              |
+| **Green Areas and Parks**             | Green Parks Technician     | `tech_green_parks_1`, `tech_green_parks_2`                              |
+| **Decentralization & Civic Services** | Civic Services Technician  | `tech_civic_services_1`, `tech_civic_services_2`                        |
+| **Organizational**                    | System Admin, PR Officer   | `admin`, `pr_officer_1`, `pr_officer_2`, `pr_officer_3`, `pr_officer_4` |
 
 ---
 

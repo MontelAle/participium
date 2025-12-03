@@ -1,8 +1,18 @@
 {
-  "extends": "@repo/typescript-config/react-library.json",
   "include": ["src"],
   "exclude": ["node_modules"],
   "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "incremental": false,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "target": "ES2022",
+
     "jsx": "react-jsx",
     "baseUrl": ".",
     "outDir": "./dist",
@@ -16,7 +26,7 @@
     },
     "moduleResolution": "bundler",
     "module": "ESNext",
-    "lib": ["DOM", "es2021","DOM.Iterable"],
+    "lib": ["DOM", "es2021", "DOM.Iterable"],
     "skipLibCheck": true
   }
 }
