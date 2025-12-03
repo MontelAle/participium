@@ -12,6 +12,7 @@ import { Category } from '../src/common/entities/category.entity';
 import { Report } from '../src/common/entities/report.entity';
 import { Office } from '../src/common/entities/office.entity';
 import request = require('supertest');
+import { Profile } from '../src/common/entities/profile.entity';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
@@ -309,6 +310,25 @@ describe('AppController (e2e)', () => {
       hashedSecret: 'hashed_secret',
     };
 
+    const mockProfile = [
+      {
+        id: 'profile_1',
+        userId: 'user_1',
+        user: mockUsers[0],
+        telegramUsername: null,
+        emailNotificationsEnabled: false,
+        profilePictureUrl: null,
+      },
+      {
+        id: 'profile_2',
+        userId: 'user_2',
+        user: mockUsers[1],
+        telegramUsername: '@jane_smith',
+        emailNotificationsEnabled: true,
+        profilePictureUrl: null,
+      },
+    ];
+
     const mockCookie = {
       httpOnly: true,
       sameSite: 'lax',
@@ -358,6 +378,8 @@ describe('AppController (e2e)', () => {
       .useValue(reportsRepositoryMock)
       .overrideProvider(getRepositoryToken(Office))
       .useValue(createMockRepository(mockOffices))
+      .overrideProvider(getRepositoryToken(Profile))
+      .useValue(createMockRepository(mockProfile))
       .overrideProvider(MinioProvider)
       .useValue(mockMinioProvider);
 
@@ -385,15 +407,15 @@ describe('AppController (e2e)', () => {
 
           if (
             cookieValue === 'sess_muni.secret' &&
-            path === '/users/profile/me'
+            path === '/profiles/profile/me'
           ) {
             req.user = mockUsers[0]; // john - admin (municipal user)
             req.session = mockSession;
             return true;
           }
 
-          // Use regular user (user_2) for /users/profile/me endpoint
-          if (path === '/users/profile/me') {
+          // Use regular user (user_2) for /profiles/profile/me endpoint
+          if (path === '/profiles/profile/me') {
             req.user = mockUsers[1]; // jane - regular user
           } else {
             req.user = mockUser; // john - admin
@@ -667,25 +689,32 @@ describe('AppController (e2e)', () => {
   // ============================================================================
   // Regular User Profile Management
   // ============================================================================
-  it('PATCH /users/profile/me with telegram username returns 200 and updates profile', async () => {
+  it('GET /profiles/profile/me with authentication returns 200 and user profile', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile/me')
+      .get('/profiles/')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+  });
+
+  it('PATCH /profiles/profile/me with telegram username returns 200 and updates profile', async () => {
+    await request(app.getHttpServer())
+      .patch('/profiles/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '@newusername' })
       .expect(200);
   });
 
-  it('PATCH /users/profile/me with emailNotificationsEnabled returns 200 and updates profile', async () => {
+  it('PATCH /profiles/profile/me with emailNotificationsEnabled returns 200 and updates profile', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile/me')
+      .patch('/profiles/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ emailNotificationsEnabled: true })
       .expect(200);
   });
 
-  it('PATCH /users/profile/me with invalid file type returns 400', async () => {
+  it('PATCH /profiles/profile/me with invalid file type returns 400', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile/me')
+      .patch('/profiles/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .attach('profilePicture', Buffer.from('test'), {
         filename: 'test.txt',
@@ -694,56 +723,56 @@ describe('AppController (e2e)', () => {
       .expect(400);
   });
 
-  it('PATCH /users/profile/me without authentication returns 403', async () => {
+  it('PATCH /profiles/profile/me without authentication returns 403', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile/me')
+      .patch('/profiles/profile/me')
       .send({ telegramUsername: '@username' })
       .expect(403);
   });
 
-  it('PATCH /users/profile/me as municipality user returns 403', async () => {
+  it('PATCH /profiles/profile/me as municipality user returns 403', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile/me')
+      .patch('/profiles/profile/me')
       .set('Cookie', 'session_token=sess_muni.secret')
       .send({ telegramUsername: '@username' })
       .expect(403);
   });
 
-  it('PATCH /users/profile/me with invalid telegram username format returns 400', async () => {
+  it('PATCH /profiles/profile/me with invalid telegram username format returns 400', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile/me')
+      .patch('/profiles/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: 'invalid' })
       .expect(400);
   });
 
-  it('PATCH /users/profile/me with telegram username too short returns 400', async () => {
+  it('PATCH /profiles/profile/me with telegram username too short returns 400', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile/me')
+      .patch('/profiles/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '@abc' })
       .expect(400);
   });
 
-  it('PATCH /users/profile/me with telegram username too long returns 400', async () => {
+  it('PATCH /profiles/profile/me with telegram username too long returns 400', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile/me')
+      .patch('/profiles/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '@' + 'a'.repeat(32) })
       .expect(400);
   });
 
-  it('PATCH /users/profile/me with valid telegram username returns 200', async () => {
+  it('PATCH /profiles/profile/me with valid telegram username returns 200', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile/me')
+      .patch('/profiles/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '@valid_username' })
       .expect(200);
   });
 
-  it('PATCH /users/profile/me removes telegram username with empty string', async () => {
+  it('PATCH /profiles/profile/me removes telegram username with empty string', async () => {
     await request(app.getHttpServer())
-      .patch('/users/profile/me')
+      .patch('/profiles/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '' })
       .expect(200);
@@ -1211,10 +1240,10 @@ describe('AppController (e2e)', () => {
   // Profile Picture Upload
   // ============================================================================
 
-  it('PATCH /users/profile/me with valid profile picture returns 200', async () => {
+  it('PATCH /profiles/profile/me with valid profile picture returns 200', async () => {
     const imageBuffer = Buffer.from('fake-image-data');
     const res = await request(app.getHttpServer())
-      .patch('/users/profile/me')
+      .patch('/profiles/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .attach('profilePicture', imageBuffer, {
         filename: 'profile.jpg',
@@ -1309,9 +1338,9 @@ describe('AppController (e2e)', () => {
   // User Profile Update Edge Cases
   // ============================================================================
 
-  it('PATCH /users/profile/me with both telegram username and email notifications returns 200', async () => {
+  it('PATCH /profiles/profile/me with both telegram username and email notifications returns 200', async () => {
     const res = await request(app.getHttpServer())
-      .patch('/users/profile/me')
+      .patch('/profiles/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({
         telegramUsername: '@combined_test',
@@ -1323,9 +1352,9 @@ describe('AppController (e2e)', () => {
     expect(res.body.data.emailNotificationsEnabled).toBe(true);
   });
 
-  it('PATCH /users/profile/me with emailNotificationsEnabled=false returns 200', async () => {
+  it('PATCH /profiles/profile/me with emailNotificationsEnabled=false returns 200', async () => {
     const res = await request(app.getHttpServer())
-      .patch('/users/profile/me')
+      .patch('/profiles/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ emailNotificationsEnabled: false })
       .expect(200);
