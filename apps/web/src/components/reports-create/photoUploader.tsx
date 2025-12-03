@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { toast } from 'sonner';
-import { Camera, Plus, X, UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Camera, Plus, UploadCloud, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 interface PhotoUploaderProps {
   photos: File[];

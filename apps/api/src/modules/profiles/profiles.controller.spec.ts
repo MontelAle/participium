@@ -1,8 +1,8 @@
+import { ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Profile } from '../../common/entities/profile.entity';
 import { ProfilesController } from './profiles.controller';
 import { ProfilesService } from './profiles.service';
-import { Profile } from '../../common/entities/profile.entity';
-import { ForbiddenException } from '@nestjs/common';
 
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 

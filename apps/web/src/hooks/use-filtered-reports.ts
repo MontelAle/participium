@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
+import { useAuth } from '@/contexts/auth-context';
 import { useReports } from '@/hooks/use-reports';
 import { useFilterStore } from '@/store/filterStore';
-import { useAuth } from '@/contexts/auth-context';
-import { isSameDay, subWeeks, subMonths, isAfter } from 'date-fns';
+import { isAfter, isSameDay, subMonths, subWeeks } from 'date-fns';
+import { useMemo } from 'react';
 
 export function useFilteredReports() {
   const { user, isCitizenUser, isGuestUser } = useAuth();

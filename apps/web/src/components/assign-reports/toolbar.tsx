@@ -1,7 +1,4 @@
-import * as React from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronsUpDown, Search, X, RotateCcw } from 'lucide-react';
 import {
   Command,
   CommandEmpty,
@@ -10,12 +7,15 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { Check, ChevronsUpDown, RotateCcw, Search, X } from 'lucide-react';
+import * as React from 'react';
 
 export type ToolbarProps = {
   query: string;

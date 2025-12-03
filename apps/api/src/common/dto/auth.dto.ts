@@ -1,10 +1,10 @@
-import { IsNotEmpty, IsString, MinLength, IsEmail } from 'class-validator';
 import {
   LoginDto as LoginDtoInterface,
-  RegisterDto as RegisterDtoInterface,
   LoginResponseDto as LoginResponseDtoInterface,
   LogoutResponseDto as LogoutResponseDtoInterface,
+  RegisterDto as RegisterDtoInterface,
 } from '@repo/api';
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 import { Session } from '../entities/session.entity';
 import { User } from '../entities/user.entity';
 

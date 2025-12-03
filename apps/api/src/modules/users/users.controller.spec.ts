@@ -1,16 +1,12 @@
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersController } from './users.controller';
-import { UsersService } from './users.service';
-import { User } from '../../common/entities/user.entity';
 import {
   CreateMunicipalityUserDto,
   UpdateMunicipalityUserDto,
 } from '../../common/dto/municipality-user.dto';
-import {
-  NotFoundException,
-  ConflictException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { User } from '../../common/entities/user.entity';
+import { UsersController } from './users.controller';
+import { UsersService } from './users.service';
 
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 

@@ -11,33 +11,33 @@ import { fileURLToPath } from 'url';
 const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default [
-    js.configs.recommended,
-    reactHooks.configs.flat.recommended,
-    ...typescript.configs.recommended,
-    {
-        ...react.configs.flat.recommended,
-        ...react.configs.flat['jsx-runtime'], // Required for React 17+
-        languageOptions: {
-            globals: {
-                ...globals.browser,
-            },
-            parserOptions: {
-                tsconfigRootDir,
-            },
-        },
-        rules: {
-            'react/react-in-jsx-scope': 'off',
-            'react/prop-types': 'off',
-            'react/no-unescaped-entities': 'off',
-        },
-        settings: {
-            react: {
-                version: 'detect',
-            },
-        },
+  js.configs.recommended,
+  reactHooks.configs.flat.recommended,
+  ...typescript.configs.recommended,
+  {
+    ...react.configs.flat.recommended,
+    ...react.configs.flat['jsx-runtime'], // Required for React 17+
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+      },
+      parserOptions: {
+        tsconfigRootDir,
+      },
     },
-    {
-        ignores: ['node_modules'],
+    rules: {
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',
+      'react/no-unescaped-entities': 'off',
     },
-    prettier, // Turn off all rules that might conflict with Prettier
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
+  },
+  {
+    ignores: ['node_modules'],
+  },
+  prettier, // Turn off all rules that might conflict with Prettier
 ];

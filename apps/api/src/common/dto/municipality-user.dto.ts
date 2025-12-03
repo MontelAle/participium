@@ -1,11 +1,11 @@
-import { IsOptional, IsString, IsEmail } from 'class-validator';
 import {
-  UpdateMunicipalityUserDto as UpdateMunicipalityUserDtoInterface,
   CreateMunicipalityUserDto as CreateMunicipalityUserDtoInterface,
+  MunicipalityUserIdResponseDto as MunicipalityUserIdResponseDtoInterface,
   MunicipalityUserResponseDto as MunicipalityUserResponseDtoInterface,
   MunicipalityUsersResponseDto as MunicipalityUsersResponseDtoInterface,
-  MunicipalityUserIdResponseDto as MunicipalityUserIdResponseDtoInterface,
+  UpdateMunicipalityUserDto as UpdateMunicipalityUserDtoInterface,
 } from '@repo/api';
+import { IsEmail, IsOptional, IsString } from 'class-validator';
 import { User } from '../entities/user.entity';
 
 export class UpdateMunicipalityUserDto

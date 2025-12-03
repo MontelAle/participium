@@ -1,9 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { MinioProvider } from './minio.provider';
-import { ConfigService } from '@nestjs/config';
 import { InternalServerErrorException } from '@nestjs/common';
-import { MINIO_ERROR_MESSAGES } from './constants/error-messages';
+import { ConfigService } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as Minio from 'minio';
+import { MINIO_ERROR_MESSAGES } from './constants/error-messages';
+import { MinioProvider } from './minio.provider';
 
 jest.mock('minio');
 

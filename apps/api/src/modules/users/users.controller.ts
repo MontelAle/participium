@@ -1,43 +1,26 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  UseGuards,
-  Param,
+  Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
-  Patch,
-  Req,
-  UseInterceptors,
-  UploadedFile,
-  BadRequestException,
-  ForbiddenException,
+  Param,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiCookieAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
-import { UsersService } from './users.service';
-import { SessionGuard } from '../auth/guards/session-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import {
   CreateMunicipalityUserDto,
-  UpdateMunicipalityUserDto,
+  MunicipalityUserIdResponseDto,
   MunicipalityUserResponseDto,
   MunicipalityUsersResponseDto,
-  MunicipalityUserIdResponseDto,
+  UpdateMunicipalityUserDto,
 } from '../../common/dto/municipality-user.dto';
-import {
-  UpdateProfileDto,
-  ProfileResponseDto,
-} from '../../common/dto/user.dto';
-import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
-import {
-  USER_ERROR_MESSAGES,
-  ALLOWED_PROFILE_PICTURE_MIMETYPES,
-  MAX_PROFILE_PICTURE_SIZE,
-} from './constants/error-messages';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { SessionGuard } from '../auth/guards/session-auth.guard';
+import { UsersService } from './users.service';
 
 @ApiTags('Users')
 @Controller('users')

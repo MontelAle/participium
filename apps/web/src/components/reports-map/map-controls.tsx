@@ -1,23 +1,23 @@
-import {
-  Search,
-  Loader2,
-  X,
-  MapPin,
-  HelpCircle,
-  Layers,
-  Plus,
-  Minus,
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { STATUS_COLORS } from './map.utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
+import {
+  HelpCircle,
+  Layers,
+  Loader2,
+  MapPin,
+  Minus,
+  Plus,
+  Search,
+  X,
+} from 'lucide-react';
+import { STATUS_COLORS } from './map.utils';
 
 interface SearchBoxProps {
   searchQuery: string;

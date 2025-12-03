@@ -1,5 +1,5 @@
-import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
 import { Office as OfficeInterface } from '@repo/api';
+import { Column, Entity, OneToMany, PrimaryColumn } from 'typeorm';
 import { Category } from './category.entity';
 
 @Entity('office')

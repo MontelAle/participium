@@ -1,18 +1,18 @@
-import { useState } from 'react';
-import {
-  MapPin,
-  Tag,
-  Maximize2,
-  X,
-  Info,
-  Ghost,
-  User,
-  CalendarClock,
-} from 'lucide-react';
+import { MiniMap } from '@/components/mini-map';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import type { Report } from '@repo/api';
-import { MiniMap } from '@/components/mini-map';
+import {
+  CalendarClock,
+  Ghost,
+  Info,
+  MapPin,
+  Maximize2,
+  Tag,
+  User,
+  X,
+} from 'lucide-react';
+import { useState } from 'react';
 
 interface ReportDetailsProps {
   report: Report;

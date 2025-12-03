@@ -1,17 +1,17 @@
-import * as React from 'react';
+import { Button } from '@/components/ui/button';
 import {
-  TableProvider,
-  TableHeader,
-  TableHeaderGroup,
-  TableRow,
+  TableBody,
   TableCell,
   TableColumnHeader,
-  TableBody,
+  TableHeader,
+  TableHeaderGroup,
+  TableProvider,
+  TableRow,
 } from '@/components/ui/shadcn-io/table';
 import type { Report } from '@repo/api';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
 import { Eye } from 'lucide-react';
+import * as React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export type ReportsTableProps = {
   data: Report[];

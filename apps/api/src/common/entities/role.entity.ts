@@ -1,5 +1,5 @@
-import { Entity, PrimaryColumn, Column } from 'typeorm';
 import { Role as RoleInterface } from '@repo/api';
+import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('role')
 export class Role implements RoleInterface {

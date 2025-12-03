@@ -1,22 +1,22 @@
-import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsNumber,
-  Min,
-  Max,
-  IsArray,
-  IsBoolean,
-} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   CreateReportDto as CreateReportDtoInterface,
-  UpdateReportDto as UpdateReportDtoInterface,
   FilterReportsDto as FilterReportsDtoInterface,
   ReportResponseDto as ReportResponseDtoInterface,
   ReportsResponseDto as ReportsResponseDtoInterface,
+  UpdateReportDto as UpdateReportDtoInterface,
 } from '@repo/api';
-import { ReportStatus, Report } from '../entities/report.entity';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
+import { Report, ReportStatus } from '../entities/report.entity';
 
 export class CreateReportDto implements CreateReportDtoInterface {
   @IsString()

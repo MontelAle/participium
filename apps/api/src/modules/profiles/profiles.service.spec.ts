@@ -1,11 +1,11 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ProfilesService } from './profiles.service';
-import { MinioProvider } from '../../providers/minio/minio.provider';
-import { User } from '../../common/entities/user.entity';
-import { Profile } from '../../common/entities/profile.entity';
 import { Repository } from 'typeorm';
 import { UpdateProfileDto } from '../../common/dto/user.dto';
-import { NotFoundException } from '@nestjs/common';
+import { Profile } from '../../common/entities/profile.entity';
+import { User } from '../../common/entities/user.entity';
+import { MinioProvider } from '../../providers/minio/minio.provider';
+import { ProfilesService } from './profiles.service';
 
 import { getRepositoryToken } from '@nestjs/typeorm';
 

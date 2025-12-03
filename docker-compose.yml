@@ -21,9 +21,9 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET_NAME: participium-reports
-      MINIO_USE_SSL: "false"
+      MINIO_USE_SSL: 'false'
     ports:
-      - "5000:5000"
+      - '5000:5000'
     networks:
       - participium-net
 
@@ -32,7 +32,7 @@ services:
     container_name: participium-web
     restart: always
     ports:
-      - "5173:80"
+      - '5173:80'
     depends_on:
       - api
     networks:
@@ -65,7 +65,7 @@ services:
     networks:
       - participium-net
     ports:
-      - "9001:9001" 
+      - '9001:9001'
 
 volumes:
   postgres_data:

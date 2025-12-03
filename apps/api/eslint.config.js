@@ -10,28 +10,28 @@ const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
-    js.configs.recommended,
-    ...typescript.configs.recommended,
-    {
-        languageOptions: {
-            globals: {
-                ...globals.node,
-            },
-            sourceType: 'module',
-            parser: typescriptParser,
-            parserOptions: {
-                tsconfigRootDir,
-                project: ['./tsconfig.json'],
-            },
-        },
-        rules: {
-            // NestJS/Node-specific rules
-            '@typescript-eslint/no-explicit-any': 'off',
-            '@typescript-eslint/no-unsafe-argument': 'warn',
-        },
+  js.configs.recommended,
+  ...typescript.configs.recommended,
+  {
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+      sourceType: 'module',
+      parser: typescriptParser,
+      parserOptions: {
+        tsconfigRootDir,
+        project: ['./tsconfig.json'],
+      },
     },
-    {
-        ignores: ['node_modules', 'dist'],
+    rules: {
+      // NestJS/Node-specific rules
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
     },
-    eslintConfigPrettier, // Turn off all rules that might conflict with Prettier
+  },
+  {
+    ignores: ['node_modules', 'dist'],
+  },
+  eslintConfigPrettier, // Turn off all rules that might conflict with Prettier
 ];

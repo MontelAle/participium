@@ -1,18 +1,22 @@
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import { LocalAuthGuard } from './../src/modules/auth/guards/local-auth.guard';
-import { SessionGuard } from './../src/modules/auth/guards/session-auth.guard';
-import { RolesGuard } from './../src/modules/auth/guards/roles.guard';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Session } from '../src/common/entities/session.entity';
-import { User } from '../src/common/entities/user.entity';
-import { Role } from '../src/common/entities/role.entity';
+import cookieParser from 'cookie-parser';
+import request from 'supertest';
 import { Account } from '../src/common/entities/account.entity';
 import { Category } from '../src/common/entities/category.entity';
-import { Report } from '../src/common/entities/report.entity';
 import { Office } from '../src/common/entities/office.entity';
-import request = require('supertest');
 import { Profile } from '../src/common/entities/profile.entity';
+import { Report } from '../src/common/entities/report.entity';
+import { Role } from '../src/common/entities/role.entity';
+import { Session } from '../src/common/entities/session.entity';
+import { User } from '../src/common/entities/user.entity';
+import { AppModule } from './../src/app.module';
+import { LocalAuthGuard } from './../src/modules/auth/guards/local-auth.guard';
+import { RolesGuard } from './../src/modules/auth/guards/roles.guard';
+import { SessionGuard } from './../src/modules/auth/guards/session-auth.guard';
+import { DatabaseModule } from './../src/providers/database/database.module';
+import { MinioProvider } from './../src/providers/minio/minio.provider';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
@@ -138,20 +142,17 @@ const createMockRepository = (data: any[] = []) => {
       };
       return cb(mockManager);
     },
-    getRepository: (entity: any) => repo,
+    getRepository: () => repo,
   };
   return repo;
 };
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
-  let AppModule: any;
   let sessionCookie: string;
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
-    const importedModule = await import('./../src/app.module');
-    AppModule = importedModule.AppModule;
 
     const mockRoles = [
       { id: 'role_1', name: 'admin', label: 'Admin', isMunicipal: true },
@@ -329,6 +330,7 @@ describe('AppController (e2e)', () => {
       },
     ];
 
+    /*
     const mockCookie = {
       httpOnly: true,
       sameSite: 'lax',
@@ -336,13 +338,7 @@ describe('AppController (e2e)', () => {
       maxAge: 3600_000,
     };
     const mockToken = 'sess_1.secret';
-
-    const { DatabaseModule } = await import(
-      './../src/providers/database/database.module'
-    );
-    const { MinioProvider } = await import(
-      './../src/providers/minio/minio.provider'
-    );
+    */
 
     const mockMinioProvider = {
       uploadFile: jest
@@ -434,9 +430,7 @@ describe('AppController (e2e)', () => {
     const moduleFixture: TestingModule = await testingModuleBuilder.compile();
 
     app = moduleFixture.createNestApplication();
-    const { ValidationPipe } = await import('@nestjs/common');
-    const cookieParser = await import('cookie-parser');
-    app.use(cookieParser.default());
+    app.use(cookieParser());
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,

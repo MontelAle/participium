@@ -1,15 +1,15 @@
+import { Session as SessionInterface } from '@repo/api';
+import { Exclude } from 'class-transformer';
 import {
-  Entity,
-  PrimaryColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
-  ManyToOne,
+  Entity,
   JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from './user.entity';
-import { Exclude } from 'class-transformer';
-import { Session as SessionInterface } from '@repo/api';
 
 @Entity('session')
 export class Session implements SessionInterface {
