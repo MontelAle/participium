@@ -8,6 +8,7 @@ import { Category } from '../../common/entities/category.entity';
 import { Account } from '../../common/entities/account.entity';
 import { Report } from '../../common/entities/report.entity';
 import { Office } from '../../common/entities/office.entity';
+import { Profile } from '../../common/entities/profile.entity';
 
 @Module({
   imports: [
@@ -21,9 +22,18 @@ import { Office } from '../../common/entities/office.entity';
         username: configService.get<string>('db.username'),
         password: configService.get<string>('db.password'),
         database: configService.get<string>('db.database'),
-        entities: [User, Session, Role, Category, Account, Report, Office],
+        entities: [
+          User,
+          Session,
+          Role,
+          Category,
+          Account,
+          Report,
+          Office,
+          Profile,
+        ],
         synchronize: configService.get<string>('app.env') !== 'production',
-        logging: configService.get<string>('app.env') === 'development',
+        logging: false,
       }),
     }),
   ],
