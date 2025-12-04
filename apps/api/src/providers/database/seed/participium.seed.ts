@@ -185,12 +185,32 @@ const REAL_REPORTS = [
   {
     title: 'Severely Damaged Reflective Panel',
     description:
-      ' The sign is almost completely destroyed; the reflective film is no longer effective. Immediate replacement required.',
+      'The sign is almost completely destroyed; the reflective film is no longer effective. Immediate replacement required.',
     address: 'Corso Peschiera, Torino',
     lat: 45.062229,
     lng: 7.655716,
     categoryName: 'Road Signs and Traffic Lights',
     images: ['DamagedReflectivePanel.jpg'],
+  },
+  {
+    title: 'Skating Rink with Damaged Wooden Edges',
+    description:
+      'The skating rink located inside the park has low wooden edges that are severely damaged along the entire perimeter. In several areas, the wood is broken, unstable, or completely detached, and numerous pieces are scattered throughout the surrounding area. This situation poses a concrete risk to children and animals who frequent the park, as they may trip, get injured, or come into contact with sharp or unstable fragments.',
+    address: 'Via Osoppo, Torino',
+    lat: 45.053219,
+    lng: 7.639716,
+    categoryName: 'Public Green Areas and Playgrounds',
+    images: ['SkatingRink1.jpg', 'SkatingRink2.jpg', 'SkatingRink3.jpg'],
+  },
+  {
+    title: 'Bent Sign',
+    description:
+      'The sign in the area is bent, and the deformation makes it difficult to read, reducing the effectiveness of the signal.',
+    address: 'Via Paolo Braccini, 2, Torino',
+    lat: 45.059449,
+    lng: 7.656176,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['BentSign.jpg'],
   },
 ];
 
