@@ -24,10 +24,8 @@ export function ViewReportForm({ report }: ViewReportFormProps) {
   const [selectedImageIndex, setSelectedImageIndex] = React.useState<
     number | null
   >(null);
-  const { user } = useAuth();
 
   const categoryName = report.category?.name || 'Unknown';
-  const competentOfficeName = user?.office?.name || 'Unknown';
 
   const latitude = report.location.coordinates[1];
   const longitude = report.location.coordinates[0];

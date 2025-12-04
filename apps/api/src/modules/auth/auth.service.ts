@@ -9,7 +9,7 @@ import { RegisterDto } from '../../common/dto/auth.dto';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { ConfigService } from '@nestjs/config';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 import { instanceToPlain } from 'class-transformer';
 
 @Injectable()

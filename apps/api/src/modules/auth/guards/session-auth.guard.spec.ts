@@ -118,7 +118,7 @@ describe('SessionGuard', () => {
   });
 
   it('should allow access and attach user and session if session is valid', async () => {
-    const crypto = require('crypto');
+    const crypto = require('node:crypto');
     const correctHash = crypto
       .createHash('sha256')
       .update('secret123')

@@ -381,11 +381,10 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 {reportImages.map((imgUrl, index) => (
-                  <div
+                  <button
                     key={index}
+                    type="button"
                     onClick={() => setSelectedImageIndex(index)}
-                    role="button"
-                    tabIndex={0}
                     className="group relative aspect-4/3 rounded-lg border bg-background overflow-hidden shadow-sm cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <img
@@ -396,7 +395,7 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                       <Maximize2 className="text-white opacity-0 group-hover:opacity-100 size-6 drop-shadow-md" />
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -416,15 +415,19 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
         <input type="hidden" {...register('categoryId')} />
       </form>
       {selectedImageIndex !== null && reportImages.length > 0 && (
-        <div
+        <button
+          type="button"
           className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedImageIndex(null);
           }}
+          aria-label="Close image viewer"
         >
           <button
+            type="button"
             onClick={() => setSelectedImageIndex(null)}
             className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full"
+            aria-label="Close"
           >
             <XIcon className="size-8" />
           </button>
@@ -433,7 +436,7 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
             alt="Enlarged evidence view"
             className="max-w-full max-h-[85vh] object-contain rounded shadow-2xl"
           />
-        </div>
+        </button>
       )}
     </Card>
   );

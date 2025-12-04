@@ -21,7 +21,7 @@ const createMockRepository = (data: any[] = []) => {
   const repo: any = {
     find: jest.fn((options) => {
       let results = [...data];
-      if (options && options.where) {
+      if (options?.where) {
         results = results.filter((e) =>
           Object.entries(options.where).every(([k, v]) => {
             if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
@@ -56,8 +56,8 @@ const createMockRepository = (data: any[] = []) => {
         const existing = data.find((e) => e.id === entity.id);
         if (existing) {
           Object.assign(existing, entity);
-          if (entity.assignedOfficer && entity.assignedOfficer.id) {
-            (existing as any).assignedOfficerId = entity.assignedOfficer.id;
+          if (entity.assignedOfficer?.id) {
+            (existing).assignedOfficerId = entity.assignedOfficer.id;
           }
           return Promise.resolve(existing);
         }
@@ -66,12 +66,12 @@ const createMockRepository = (data: any[] = []) => {
         ...entity,
         id: entity.id || 'mocked-id',
         isAnonymous:
-          entity.isAnonymous !== undefined ? entity.isAnonymous : false,
+          entity.isAnonymous === undefined ? false : entity.isAnonymous,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      if (entity.assignedOfficer && entity.assignedOfficer.id) {
-        (newEntity as any).assignedOfficerId = entity.assignedOfficer.id;
+      if (entity.assignedOfficer?.id) {
+        (newEntity).assignedOfficerId = entity.assignedOfficer.id;
       }
       data.push(newEntity);
       return Promise.resolve(newEntity);
@@ -81,7 +81,7 @@ const createMockRepository = (data: any[] = []) => {
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
     count: jest.fn((options) => {
       let results = [...data];
-      if (options && options.where) {
+      if (options?.where) {
         results = results.filter((e) =>
           Object.entries(options.where).every(([k, v]) => {
             if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
@@ -275,7 +275,7 @@ describe('AppController (e2e)', () => {
         const existing = mockReports.find((e) => e.id === entity.id);
         if (existing) {
           Object.assign(existing, entity);
-          if (entity.assignedOfficer && entity.assignedOfficer.id) {
+          if (entity.assignedOfficer?.id) {
             existing.assignedOfficerId = entity.assignedOfficer.id;
           }
           return Promise.resolve(existing);
@@ -295,7 +295,7 @@ describe('AppController (e2e)', () => {
         newEntity.user = mockUsers.find((u) => u.id === newEntity.userId);
       }
 
-      if (entity.assignedOfficer && entity.assignedOfficer.id) {
+      if (entity.assignedOfficer?.id) {
         newEntity.assignedOfficerId = entity.assignedOfficer.id;
       }
 
@@ -308,14 +308,6 @@ describe('AppController (e2e)', () => {
       userId: 'user_1',
       hashedSecret: 'hashed_secret',
     };
-
-    const mockCookie = {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      maxAge: 3600_000,
-    };
-    const mockToken = 'sess_1.secret';
 
     const { DatabaseModule } = await import(
       './../src/providers/database/database.module'
@@ -372,7 +364,7 @@ describe('AppController (e2e)', () => {
     testingModuleBuilder.overrideGuard(SessionGuard).useValue({
       canActivate: (context: any) => {
         const req = context.switchToHttp().getRequest();
-        const hasCookie = req.cookies && req.cookies.session_token;
+        const hasCookie = req.cookies?.session_token;
         if (hasCookie) {
           const path = req.path;
           const cookieValue = req.cookies.session_token;
@@ -462,7 +454,7 @@ describe('AppController (e2e)', () => {
       ['DELETE', () => request(server).delete(path)],
       ['OPTIONS', () => request(server).options(path)],
     ] as const;
-    for (const [method, make] of cases) {
+    for (const [_method, make] of cases) {
       await make().set('Accept', 'application/json').expect(404);
     }
   });

@@ -17,9 +17,51 @@ export type ReportsTableProps = {
   data: Report[];
 };
 
-export function ReportsTable({ data }: ReportsTableProps) {
-  const navigate = useNavigate();
+const CategoryCell = ({ getValue }: any) => {
+  const category = getValue();
+  return typeof category === 'object' && category !== null
+    ? category.name
+    : String(category ?? '');
+};
 
+const StatusCell = ({ getValue }: any) => {
+  const status = getValue();
+  let bgColor = 'bg-gray-100 text-gray-700';
+  if (status === 'pending') bgColor = 'bg-yellow-100 text-yellow-800';
+  else if (status === 'in_progress') bgColor = 'bg-blue-100 text-blue-800';
+  else if (status === 'closed' || status === 'resolved')
+    bgColor = 'bg-green-100 text-green-800';
+  else if (status === 'rejected') bgColor = 'bg-red-100 text-red-800';
+  else if (status === 'assigned') bgColor = 'bg-purple-100 text-purple-800';
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium ${bgColor} border whitespace-nowrap`}
+    >
+      {status.replaceAll('_', ' ')}
+    </span>
+  );
+};
+
+const OperationsCell = ({ row }: any) => {
+  const navigate = useNavigate();
+  const report = row.original as Report;
+  return (
+    <div className="text-base items-center">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-9 w-9 text-muted-foreground"
+        onClick={() => navigate(`/app/assigned-reports/view/${report.id}`)}
+        aria-label="View"
+      >
+        <Eye className="h-5 w-5" />
+      </Button>
+    </div>
+  );
+};
+
+export function ReportsTable({ data }: ReportsTableProps) {
   const columns = React.useMemo(
     () => [
       {
@@ -29,58 +71,17 @@ export function ReportsTable({ data }: ReportsTableProps) {
       {
         accessorKey: 'category',
         header: 'Category',
-        cell: ({ getValue }: any) => {
-          const category = getValue();
-          return typeof category === 'object' && category !== null
-            ? category.name
-            : String(category ?? '');
-        },
+        cell: CategoryCell,
       },
       {
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ getValue }: any) => {
-          const status = getValue();
-          let bgColor = 'bg-gray-100 text-gray-700';
-          if (status === 'pending') bgColor = 'bg-yellow-100 text-yellow-800';
-          else if (status === 'in_progress')
-            bgColor = 'bg-blue-100 text-blue-800';
-          else if (status === 'closed' || status === 'resolved')
-            bgColor = 'bg-green-100 text-green-800';
-          else if (status === 'rejected') bgColor = 'bg-red-100 text-red-800';
-          else if (status === 'assigned')
-            bgColor = 'bg-purple-100 text-purple-800';
-
-          return (
-            <span
-              className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium ${bgColor} border whitespace-nowrap`}
-            >
-              {status.replaceAll('_', ' ')}
-            </span>
-          );
-        },
+        cell: StatusCell,
       },
       {
         id: 'operations',
         header: 'Operations',
-        cell: ({ row }: any) => {
-          const report = row.original as Report;
-          return (
-            <div className="text-base items-center">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 text-muted-foreground"
-                onClick={() =>
-                  navigate(`/app/assigned-reports/view/${report.id}`)
-                }
-                aria-label="View"
-              >
-                <Eye className="h-5 w-5" />
-              </Button>
-            </div>
-          );
-        },
+        cell: OperationsCell,
       },
     ],
     [],

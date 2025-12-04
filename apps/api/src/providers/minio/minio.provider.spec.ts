@@ -9,7 +9,6 @@ jest.mock('minio');
 
 describe('MinioProvider', () => {
   let provider: MinioProvider;
-  let configService: ConfigService;
   let mockMinioClient: jest.Mocked<Minio.Client>;
 
   beforeEach(async () => {
@@ -49,7 +48,6 @@ describe('MinioProvider', () => {
     }).compile();
 
     provider = module.get<MinioProvider>(MinioProvider);
-    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {

@@ -8,7 +8,7 @@ import { Role } from '../../common/entities/role.entity';
 import { RegisterDto } from '../../common/dto/auth.dto';
 import { ConfigService } from '@nestjs/config';
 import bcrypt from 'bcrypt';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',

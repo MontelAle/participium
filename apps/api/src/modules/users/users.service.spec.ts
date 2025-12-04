@@ -334,7 +334,7 @@ describe('UsersService', () => {
       minioProvider.extractFileNameFromUrl.mockReturnValue('old_filename');
       minioProvider.deleteFile.mockResolvedValue(undefined);
 
-      const result = await service.updateProfile(
+      await service.updateProfile(
         'user-1',
         profileDto,
         mockFile,

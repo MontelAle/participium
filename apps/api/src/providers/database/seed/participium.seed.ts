@@ -9,8 +9,8 @@ import { nanoid } from 'nanoid';
 import * as bcrypt from 'bcrypt';
 import { faker } from '@faker-js/faker';
 import { MinioProvider } from '../../minio/minio.provider';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 const REAL_REPORTS = [
   {

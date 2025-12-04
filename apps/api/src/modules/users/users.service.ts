@@ -12,7 +12,7 @@ import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dt
 import { UpdateProfileDto } from '../../common/dto/user.dto';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
-import path from 'path';
+import path from 'node:path';
 import { Office } from '../../common/entities/office.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { USER_ERROR_MESSAGES } from './constants/error-messages';
