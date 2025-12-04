@@ -25,6 +25,18 @@ export function useFilteredReports() {
         if (report.status === 'pending') {
           return false;
         }
+
+        //the user can only see his rejected reports
+        if (report.status === 'rejected' && report.userId !== user?.id) {
+          return false;
+        }
+        
+        //the user does not view rejected reports
+        /*
+        if(report.status === 'rejected'){
+          return false;
+        }
+        */
       }
 
       if (searchTerm.trim() !== '') {
