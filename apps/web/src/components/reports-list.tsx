@@ -27,15 +27,15 @@ export function ReportsList({
     if (isGuestUser) return [];
     if (!isCitizenUser || !user) return baseFilteredReports;
 
+    /*
     const myRejectedReports = allReports.filter((report) => {
-      ////
       if (report.status !== 'rejected') return false;
       if (report.userId !== user.id) return false;
 
       if (!report.userId) return false;
 
       if (showOnlyMyReports && report.userId !== user.id) return false;
-      ////
+     
       
       if (searchTerm.trim() !== '') {
         const term = searchTerm.toLowerCase();
@@ -52,8 +52,9 @@ export function ReportsList({
 
       return true;
     });
+    */
 
-    return [...baseFilteredReports, ...myRejectedReports];
+    return [...baseFilteredReports /*, ...myRejectedReports*/];
   }, [
     baseFilteredReports,
     allReports,
