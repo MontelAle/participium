@@ -5,7 +5,6 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
-  ManyToOne,
   OneToOne,
 } from 'typeorm';
 import { Profile as ProfileInterface } from '@repo/api';

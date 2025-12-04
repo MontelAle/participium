@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateProfileDto } from '@repo/api';
 import { nanoid } from 'nanoid';
-import path from 'path';
+import path from 'node:path';
 import { Profile } from '../../common/entities/profile.entity';
 import { Repository } from 'typeorm';
 import { USER_ERROR_MESSAGES } from '../users/constants/error-messages';
@@ -42,7 +42,7 @@ export class ProfilesService {
     if (file) {
       const sanitizedFilename = path
         .basename(file.originalname)
-        .replace(/[^a-zA-Z0-9.-]/g, '_');
+        .replaceAll(/[^a-zA-Z0-9.-]/g, '_');
       const fileName = `profile-pictures/${userId}/${nanoid()}-${sanitizedFilename}`;
       const fileUrl = await this.minioProvider.uploadFile(
         fileName,

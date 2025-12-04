@@ -28,12 +28,6 @@ import {
 @Controller('profiles')
 export class ProfilesController {
   constructor(private readonly profilesService: ProfilesService) {}
-
-  @Get()
-  getHello(): string {
-    return 'Hello from ProfilesController!';
-  }
-
   /**
    * Updates the current user's profile.
    *

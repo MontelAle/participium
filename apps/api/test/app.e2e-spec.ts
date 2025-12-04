@@ -691,7 +691,7 @@ describe('AppController (e2e)', () => {
   // ============================================================================
   it('GET /profiles/profile/me with authentication returns 200 and user profile', async () => {
     await request(app.getHttpServer())
-      .get('/profiles/')
+      .get('/profiles/profile/me')
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(200);
   });

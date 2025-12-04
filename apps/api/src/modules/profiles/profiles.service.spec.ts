@@ -90,8 +90,6 @@ describe('ProfilesService', () => {
     } as Express.Multer.File;
 
     it('should update profile fields and upload picture', async () => {
-      // const userWithOldPic = { ...mockUser, profilePictureUrl: 'old_url' };
-
       const profileWithOldPic = {
         user: mockUser,
         profilePictureUrl: 'old_url',
@@ -102,11 +100,7 @@ describe('ProfilesService', () => {
       minioProvider.extractFileNameFromUrl.mockReturnValue('old_filename');
       minioProvider.deleteFile.mockResolvedValue(undefined);
 
-      const result = await service.updateProfile(
-        'user-1',
-        profileDto,
-        mockFile,
-      );
+      await service.updateProfile('user-1', profileDto, mockFile);
 
       expect(minioProvider.deleteFile).toHaveBeenCalledWith('old_filename');
       expect(minioProvider.uploadFile).toHaveBeenCalled();
