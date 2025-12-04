@@ -82,7 +82,7 @@ export default function ProfilePage() {
         formData.append('profilePicture', data.profilePicture);
 
       const updated = await updateProfile(formData);
-      setPreviewUrl(updated?.data?.profilePictureUrl ?? previewUrl);
+      setPreviewUrl(updated?.profilePictureUrl ?? previewUrl);
       toast.success('Profile updated successfully');
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to update profile');
