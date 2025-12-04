@@ -132,6 +132,66 @@ const REAL_REPORTS = [
     categoryName: 'Roads and Urban Furnishings',
     images: ['PoleOnTheGround1.jpg', 'PoleOnTheGround2.jpg'],
   },
+  {
+    title: 'Faded Pedestrian Crossing',
+    description:
+      'Poorly visible crosswalk that needs repainting to ensure pedestrian safety. The faded markings make it difficult for drivers to notice pedestrians, especially at night or in bad weather, increasing the risk of accidents.',
+    address: 'Via Osoppo, 20e, Torino',
+    lat: 45.052893,
+    lng: 7.638379,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['FadedPedestrianCrossing1.jpg', 'FadedPedestrianCrossing2.jpg'],
+  },
+  {
+    title: 'Faded Bike Line Markings',
+    description:
+      'The bike lane markings on the road are no longer clearly visible, making it difficult for both cyclists and drivers to notice them. This increases the risk of accidents, especially during low-light conditions or heavy traffic.',
+    address: 'Via Tolmino, Torino',
+    lat: 45.054293,
+    lng: 7.642011,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['FadedBikeLine1.jpg', 'FadedBikeLine2.jpg', 'FadedBikeLine3.jpg' ],
+  },
+  {
+    title: 'Damaged Pedestrian Railing',
+    description:
+      'The green railing along the sidewalk is damaged. Repair needed to ensure pedestrian safety.',
+    address: 'Corso Racconigi, 208, Torino',
+    lat: 45.056554,
+    lng: 7.647711,
+    categoryName: 'Architectural Barriers',
+    images: ['DamagedPedestrianRailing.jpg'],
+  },
+  {
+    title: 'Vandalized road sign',
+    description:
+      'The sign has graffiti that compromises its visibility and effectiveness.',
+    address: 'Via Spalato, Torino',
+    lat: 45.059737,
+    lng: 7.652716,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['VandalizedRoadSign.jpg'],
+  },
+  {
+    title: 'Damaged Road Signs with Graffiti',
+    description:
+      'Two road signs have graffiti, reducing their readability and compromising road safety for drivers and pedestrians. Immediate cleaning or replacement is recommended.',
+    address: 'Via Paolo Braccini, Torino',
+    lat: 45.059915,
+    lng: 7.652474,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['RoadSignWithGraffiti.jpg'],
+  },
+  {
+    title: 'Severely Damaged Reflective Panel',
+    description:
+      ' The sign is almost completely destroyed; the reflective film is no longer effective. Immediate replacement required.',
+    address: 'Corso Peschiera, Torino',
+    lat: 45.062229,
+    lng: 7.655716,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['DamagedReflectivePanel.jpg'],
+  },
 ];
 
 export async function seedDatabase(
