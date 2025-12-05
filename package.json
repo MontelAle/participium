@@ -5,7 +5,6 @@
   "description": "",
   "author": "",
   "license": "UNLICENSED",
-  "type": "module",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",

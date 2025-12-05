@@ -334,6 +334,9 @@ importers:
 
   packages/api:
     dependencies:
+      class-validator:
+        specifier: ^0.14.2
+        version: 0.14.2
       typeorm:
         specifier: ^0.3.27
         version: 0.3.27(pg@8.16.3)(reflect-metadata@0.2.2)(sqlite3@5.1.7)(ts-node@10.9.2)
