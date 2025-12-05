@@ -79,7 +79,9 @@ export function Navbar() {
                   <p className="text-base font-medium truncate">
                     {user.firstName} {user.lastName}
                   </p>
-                  <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {user.email}
+                  </p>
                   <p className="text-sm text-muted-foreground capitalize truncate">
                     {user.role.label}
                   </p>

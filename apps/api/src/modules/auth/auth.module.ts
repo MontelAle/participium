@@ -8,9 +8,10 @@ import { Role } from '../../common/entities/role.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LocalStrategy } from './strategies/local.strategy';
 import { SessionGuard } from './guards/session-auth.guard';
+import { Profile } from '../../common/entities/profile.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Account, Session, Role])],
+  imports: [TypeOrmModule.forFeature([User, Account, Session, Role, Profile])],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, SessionGuard],
 })
