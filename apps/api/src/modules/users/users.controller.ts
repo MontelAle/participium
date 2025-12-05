@@ -8,15 +8,8 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
-  Patch,
-  Req,
-  UseInterceptors,
-  UploadedFile,
-  BadRequestException,
-  ForbiddenException,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiCookieAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -28,16 +21,6 @@ import {
   MunicipalityUsersResponseDto,
   MunicipalityUserIdResponseDto,
 } from '../../common/dto/municipality-user.dto';
-import {
-  UpdateProfileDto,
-  ProfileResponseDto,
-} from '../../common/dto/user.dto';
-import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
-import {
-  USER_ERROR_MESSAGES,
-  ALLOWED_PROFILE_PICTURE_MIMETYPES,
-  MAX_PROFILE_PICTURE_SIZE,
-} from './constants/error-messages';
 
 @ApiTags('Users')
 @Controller('users')

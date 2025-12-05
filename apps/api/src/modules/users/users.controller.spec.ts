@@ -6,11 +6,7 @@ import {
   CreateMunicipalityUserDto,
   UpdateMunicipalityUserDto,
 } from '../../common/dto/municipality-user.dto';
-import {
-  NotFoundException,
-  ConflictException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { NotFoundException, ConflictException } from '@nestjs/common';
 
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 

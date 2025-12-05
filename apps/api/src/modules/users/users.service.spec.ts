@@ -9,7 +9,6 @@ import { MinioProvider } from '../../providers/minio/minio.provider';
 import { Repository } from 'typeorm';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
-import { UpdateProfileDto } from '../../common/dto/user.dto';
 
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
@@ -23,8 +22,6 @@ describe('UsersService', () => {
   let accountRepository: jest.Mocked<Repository<Account>>;
   let roleRepository: jest.Mocked<Repository<Role>>;
   let officeRepository: jest.Mocked<Repository<Office>>;
-  let minioProvider: jest.Mocked<MinioProvider>;
-
   const mockManager = {
     getRepository: jest.fn(),
   };
@@ -90,7 +87,6 @@ describe('UsersService', () => {
     accountRepository = module.get(getRepositoryToken(Account));
     roleRepository = module.get(getRepositoryToken(Role));
     officeRepository = module.get(getRepositoryToken(Office));
-    minioProvider = module.get(MinioProvider);
 
     mockManager.getRepository.mockImplementation((entity) => {
       if (entity === User) return userRepository;
