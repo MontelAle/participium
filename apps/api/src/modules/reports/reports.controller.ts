@@ -110,8 +110,8 @@ export class ReportsController {
     const reports = await this.reportsService.findNearby(
       Number.parseFloat(longitude),
       Number.parseFloat(latitude),
-      radiusMeters,
       req.user,
+      radiusMeters
     );
     return { success: true, data: reports };
   }
