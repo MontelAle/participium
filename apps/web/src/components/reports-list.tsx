@@ -21,12 +21,10 @@ export function ReportsList({
   const sidebarReports = useMemo(() => {
     if (isGuestUser) return [];
     if (!isCitizenUser || !user) return baseFilteredReports;
-
     return [...baseFilteredReports];
   }, [baseFilteredReports, isCitizenUser, isGuestUser, user]);
 
   const handleReportClick = (e: React.MouseEvent, report: Report) => {
-    e.stopPropagation();
     setIsMobileExpanded(false);
     setLocation({
       latitude: report.location.coordinates[1] ?? 0,
@@ -64,16 +62,7 @@ export function ReportsList({
         return (
           <div
             key={report.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => handleShowDetails(report.id)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleShowDetails(report.id);
-              }
-            }}
-            className="group relative w-full text-left rounded-lg border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/50 bg-white cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="group relative w-full text-left rounded-lg border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/50 bg-white"
           >
             <div className="flex items-start justify-between mb-2">
               <div className="text-sm text-muted-foreground uppercase font-semibold tracking-wider">
@@ -91,9 +80,13 @@ export function ReportsList({
             </div>
 
             <div className="mb-3">
-              <h3 className="font-bold text-xl leading-tight text-foreground mb-1 group-hover:text-primary transition-colors">
+              <button
+                onClick={() => handleShowDetails(report.id)}
+                className="text-left w-full font-bold text-xl leading-tight text-foreground mb-1 group-hover:text-primary transition-colors after:absolute after:inset-0 outline-none focus-visible:underline"
+              >
                 {report.title}
-              </h3>
+              </button>
+
               <div className="flex items-center gap-1 text-sm text-muted-foreground mt-4 mb-2">
                 <Tag className="size-3" />
                 <span className="truncate max-w-[250px] text-sm font-medium">
@@ -135,7 +128,7 @@ export function ReportsList({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 text-base rounded-md border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 z-10"
+                  className="relative z-10 h-7 text-base rounded-md border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                   onClick={(e) => handleReportClick(e, report)}
                 >
                   Show on Map
