@@ -8,6 +8,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { ConfigModule } from '@nestjs/config';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { OfficesModule } from './modules/offices/offices.module';
+import { ProfilesModule } from './modules/profiles/profiles.module';
 
 import appConfig from './config/app.config';
 
@@ -24,7 +25,8 @@ import appConfig from './config/app.config';
     UsersModule,
     ReportsModule,
     CategoriesModule,
-    OfficesModule
+    OfficesModule,
+    ProfilesModule,
   ],
   controllers: [],
   providers: [],

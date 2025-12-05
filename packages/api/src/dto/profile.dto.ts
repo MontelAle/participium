@@ -1,5 +1,5 @@
+import { Profile } from 'entities/profile.entity';
 import { ResponseDto } from './response.dto';
-import { User } from '../entities/user.entity';
 
 export interface UpdateProfileDto {
   telegramUsername?: string;
@@ -7,5 +7,5 @@ export interface UpdateProfileDto {
 }
 
 export interface ProfileResponseDto extends ResponseDto {
-  data: User;
+  data: Profile;
 }
