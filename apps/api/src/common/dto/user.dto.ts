@@ -9,7 +9,7 @@ import {
   UpdateProfileDto as UpdateProfileDtoInterface,
   ProfileResponseDto as ProfileResponseDtoInterface,
 } from '@repo/api';
-import { User } from '../entities/user.entity';
+import { Profile } from '../entities/profile.entity';
 
 export class UpdateProfileDto implements UpdateProfileDtoInterface {
   @IsString()
@@ -28,5 +28,5 @@ export class UpdateProfileDto implements UpdateProfileDtoInterface {
 
 export class ProfileResponseDto implements ProfileResponseDtoInterface {
   success: boolean;
-  data: User;
+  data: Profile;
 }

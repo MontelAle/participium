@@ -1,59 +1,32 @@
-import {
+export type { User } from './entities/user.entity';
+export type { Account } from './entities/account.entity';
+export type { Session } from './entities/session.entity';
+export type { Role } from './entities/role.entity';
+export type { Category } from './entities/category.entity';
+export type { Office } from './entities/office.entity';
+export type { Profile } from './entities/profile.entity';
+export { ReportStatus, type Report } from './entities/report.entity';
+
+export type {
   RegisterDto,
   LoginDto,
   LoginResponseDto,
   LogoutResponseDto,
 } from 'dto/auth.dto';
-import { User } from './entities/user.entity';
-import { Account } from './entities/account.entity';
-import { Session } from './entities/session.entity';
-import { Role } from './entities/role.entity';
-import { Category } from './entities/category.entity';
-import { Office } from './entities/office.entity';
-import { Report, ReportStatus } from './entities/report.entity';
-import {
+export type {
   CreateMunicipalityUserDto,
   UpdateMunicipalityUserDto,
   MunicipalityUserResponseDto,
   MunicipalityUsersResponseDto,
   MunicipalityUserIdResponseDto,
 } from './dto/municipality-user.dto';
-import {
+export type {
   CreateReportDto,
   UpdateReportDto,
   FilterReportsDto,
   ReportResponseDto,
   ReportsResponseDto,
 } from './dto/report.dto';
-import { RolesResponseDto } from './dto/role.dto';
-import { CategoriesResponseDto } from 'dto/category.dto';
-import { UpdateProfileDto, ProfileResponseDto } from 'dto/profile.dto';
-
-export {
-  type MunicipalityUsersResponseDto,
-  type MunicipalityUserIdResponseDto,
-  type RolesResponseDto,
-  type ReportsResponseDto,
-  type MunicipalityUserResponseDto,
-  type LoginResponseDto,
-  type LogoutResponseDto,
-  type RegisterDto,
-  type User,
-  type Account,
-  type Session,
-  type LoginDto,
-  type Role,
-  type Category,
-  type Report,
-  ReportStatus,
-  type CreateMunicipalityUserDto,
-  type UpdateMunicipalityUserDto,
-  type CreateReportDto,
-  type UpdateReportDto,
-  type FilterReportsDto,
-  type ReportResponseDto,
-  type Office,
-  type CategoriesResponseDto,
-  type UpdateProfileDto,
-  type ProfileResponseDto,
-};
+export type { RolesResponseDto } from './dto/role.dto';
+export type { CategoriesResponseDto } from 'dto/category.dto';
+export type { UpdateProfileDto, ProfileResponseDto } from 'dto/profile.dto';
