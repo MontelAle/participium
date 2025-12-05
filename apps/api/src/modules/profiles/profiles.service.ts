@@ -23,7 +23,8 @@ export class ProfilesService {
     file?: Express.Multer.File,
   ): Promise<Profile> {
     const profile = await this.profileRepository.findOne({
-      where: { userId: userId },
+      where: { userId: userId  },
+      relations: ['user'],
     });
 
     if (!profile) {

@@ -9,25 +9,35 @@ import {
   InputGroupInput,
   InputGroupAddon,
 } from '@/components/ui/input-group';
-import { Image as ImageIcon, Send, ArrowLeft } from 'lucide-react';
+import { Image as ImageIcon, Send, ArrowLeft , UserIcon , MailIcon } from 'lucide-react';
 import { data, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/auth-context';
 
 type FormValues = {
   telegramUsername?: string;
   emailNotificationsEnabled: boolean;
   profilePicture?: File | null;
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
 };
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { data: profile, updateProfile } = useProfile();
+  const { user } = useAuth();
   const { control, handleSubmit, setValue, watch, reset } = useForm<FormValues>(
     {
       defaultValues: {
         emailNotificationsEnabled: true,
         telegramUsername: '',
         profilePicture: null,
+        firstName: '',
+        lastName: '',
+        username: '',
+        email: '',
       },
     },
   );
@@ -40,6 +50,10 @@ export default function ProfilePage() {
         telegramUsername: profile.telegramUsername ?? '',
         emailNotificationsEnabled: !!profile.emailNotificationsEnabled,
         profilePicture: null,
+        firstName: user?.firstName ?? '',
+        lastName: user?.lastName ?? '',
+        username: user?.username ?? '',
+        email: user?.email ?? '',
       });
       setPreviewUrl(profile.profilePictureUrl ?? null);
     }
@@ -157,7 +171,91 @@ export default function ProfilePage() {
                   </Field>
                 </div>
               </div>
+                        
+                        
+              <div className="flex gap-6">
+                <Field className="flex-1">
+                  <FieldLabel className="mb-2">First Name</FieldLabel>
+                  <InputGroup>
+                    <Controller
+                      control={control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <InputGroupInput
+                          {...field}
+                          placeholder="First name"
+                          className="h-10"
+                        />
+                      )}
+                    />
+                  <InputGroupAddon>
+                    <UserIcon className="size-5 text-muted-foreground" />
+                  </InputGroupAddon>
+                </InputGroup>
+                </Field>
 
+                <Field className="flex-1">
+                  <FieldLabel className="mb-2">Last Name</FieldLabel>
+                  <InputGroup>
+                    <Controller
+                      control={control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <InputGroupInput
+                          {...field}
+                          placeholder="Last name"
+                          className="h-10"
+                        />
+                      )}
+                      />
+                    <InputGroupAddon>
+                      <UserIcon className="size-5 text-muted-foreground" />
+                    </InputGroupAddon>
+                  </InputGroup>
+                </Field>
+              </div>
+
+              <Field className="flex-1">
+                  <FieldLabel className="mb-2">Username</FieldLabel>
+                  <InputGroup>
+                    <Controller
+                      control={control}
+                      name="username"
+                      render={({ field }) => (
+                        <InputGroupInput
+                          {...field}
+                          placeholder="Username"
+                          className="h-10"
+                        />
+                      )}
+                      />
+                    <InputGroupAddon>
+                      <UserIcon className="size-5 text-muted-foreground" />
+                    </InputGroupAddon>
+                  </InputGroup>
+              </Field>
+
+              <Field className="flex-1">
+                  <FieldLabel className="mb-2">Email</FieldLabel>
+                  <InputGroup>
+                    <Controller
+                      control={control}
+                      name="email"
+                      render={({ field }) => (
+                        <InputGroupInput
+                          {...field}
+                          placeholder="Email"
+                          className="h-10"
+                        />
+                      )}
+                      />
+                    <InputGroupAddon>
+                      <MailIcon className="size-5 text-muted-foreground" />
+                    </InputGroupAddon>
+                  </InputGroup>
+              </Field>
+
+              
               <Field>
                 <FieldLabel className="mb-2">Telegram username</FieldLabel>
                 <InputGroup>
