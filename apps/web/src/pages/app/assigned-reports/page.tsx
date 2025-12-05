@@ -26,7 +26,7 @@ const AssignedReportsPage = () => {
         </div>
       </div>
       <div className="overflow-hidden">
-        <ReportsTable data={filteredData} />
+        <ReportsTable data={filteredData} viewBasePath="/app/assigned-reports/view" />
       </div>
     </div>
   );
