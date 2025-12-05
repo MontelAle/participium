@@ -1,25 +1,20 @@
-import { useReports } from '@/hooks/use-reports';
-import { useActiveReportStore } from '@/store/activeReportStore';
-import { useFilterStore } from '@/store/filterStore';
-import { useAuth } from '@/contexts/auth-context';
 import type { Report } from '@repo/api';
+import { CalendarDays, Ghost, MapPin, Tag, User } from 'lucide-react';
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
 import { useFilteredReports } from '@/hooks/use-filtered-reports';
-import { getStatusConfig } from '@/lib/utils';
-import { MapPin, CalendarDays, Tag, User, Ghost } from 'lucide-react';
-import { ReportsListProps } from '@/types/report';
-import { useNavigate } from 'react-router-dom';
-import { useMemo } from 'react';
+import { cn, getStatusConfig } from '@/lib/utils';
+import { useActiveReportStore } from '@/store/activeReportStore';
+import type { ReportsListProps } from '@/types/report';
 
 export function ReportsList({
   setIsMobileExpanded = () => {},
 }: ReportsListProps) {
   const { reports: baseFilteredReports } = useFilteredReports();
-  const { data: allReports = [] } = useReports({ enabled: true });
   const { user, isCitizenUser, isGuestUser } = useAuth();
-  const { searchTerm, filters, showOnlyMyReports } = useFilterStore();
   const navigate = useNavigate();
   const setLocation = useActiveReportStore((state) => state.setLocation);
 
@@ -27,44 +22,8 @@ export function ReportsList({
     if (isGuestUser) return [];
     if (!isCitizenUser || !user) return baseFilteredReports;
 
-    /*
-    const myRejectedReports = allReports.filter((report) => {
-      if (report.status !== 'rejected') return false;
-      if (report.userId !== user.id) return false;
-
-      if (!report.userId) return false;
-
-      if (showOnlyMyReports && report.userId !== user.id) return false;
-     
-      
-      if (searchTerm.trim() !== '') {
-        const term = searchTerm.toLowerCase();
-        const matches =
-          report.title.toLowerCase().includes(term) ||
-          (report.address && report.address.toLowerCase().includes(term)) ||
-          report.category.name.toLowerCase().includes(term);
-        if (!matches) return false;
-      }
-
-      if (filters?.status && report.status !== filters.status) return false;
-      if (filters?.category && report.category.name !== filters.category)
-        return false;
-
-      return true;
-    });
-    */
-
-    return [...baseFilteredReports /*, ...myRejectedReports*/];
-  }, [
-    baseFilteredReports,
-    allReports,
-    isCitizenUser,
-    isGuestUser,
-    user,
-    searchTerm,
-    filters,
-    showOnlyMyReports,
-  ]);
+    return [...baseFilteredReports];
+  }, [baseFilteredReports, isCitizenUser, isGuestUser, user]);
 
   const handleReportClick = (e: React.MouseEvent, report: Report) => {
     e.stopPropagation();
@@ -105,8 +64,16 @@ export function ReportsList({
         return (
           <div
             key={report.id}
+            role="button"
+            tabIndex={0}
             onClick={() => handleShowDetails(report.id)}
-            className="group relative w-full rounded-lg border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/50 bg-white cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleShowDetails(report.id);
+              }
+            }}
+            className="group relative w-full text-left rounded-lg border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/50 bg-white cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <div className="flex items-start justify-between mb-2">
               <div className="text-sm text-muted-foreground uppercase font-semibold tracking-wider">

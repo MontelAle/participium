@@ -1,8 +1,8 @@
+import { isAfter, isSameDay, subMonths, subWeeks } from 'date-fns';
 import { useMemo } from 'react';
+import { useAuth } from '@/contexts/auth-context';
 import { useReports } from '@/hooks/use-reports';
 import { useFilterStore } from '@/store/filterStore';
-import { useAuth } from '@/contexts/auth-context';
-import { isSameDay, subWeeks, subMonths, isAfter } from 'date-fns';
 
 export function useFilteredReports() {
   const { user, isCitizenUser, isGuestUser } = useAuth();
@@ -30,20 +30,13 @@ export function useFilteredReports() {
         if (report.status === 'rejected' && report.userId !== user?.id) {
           return false;
         }
-        
-        //the user does not view rejected reports
-        /*
-        if(report.status === 'rejected'){
-          return false;
-        }
-        */
       }
 
       if (searchTerm.trim() !== '') {
         const term = searchTerm.toLowerCase();
         const matches =
           report.title.toLowerCase().includes(term) ||
-          (report.address && report.address.toLowerCase().includes(term)) ||
+          report.address?.toLowerCase().includes(term) ||
           report.category.name.toLowerCase().includes(term);
         if (!matches) return false;
       }
