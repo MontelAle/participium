@@ -9,10 +9,10 @@ import {
   CreateReportDto,
   FilterReportsDto,
   Report,
-  ReportStatus,
   UpdateReportDto,
   User,
 } from '@repo/api';
+import { ReportStatus } from '@repo/api/constants';
 import { Repository } from 'typeorm';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';

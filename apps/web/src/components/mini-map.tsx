@@ -4,7 +4,7 @@ import {
   smallDivIcon,
 } from '@/components/reports-map/map.utils';
 import { cn } from '@/lib/utils';
-import { ReportStatus } from '@repo/api';
+import { ReportStatus } from '@repo/api/constants';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useEffect, useRef } from 'react';

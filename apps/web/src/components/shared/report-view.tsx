@@ -2,7 +2,7 @@ import { MiniMap } from '@/components/mini-map';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import type { Report } from '@repo/api';
-import { ReportStatus } from '@repo/api';
+import { ReportStatus } from '@repo/api/constants';
 import {
   CalendarClock,
   Ghost,

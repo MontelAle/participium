@@ -4,10 +4,10 @@ import {
   Office,
   Profile,
   Report,
-  ReportStatus,
   Role,
   User,
 } from '@repo/api';
+import { ReportStatus } from '@repo/api/constants';
 import * as bcrypt from 'bcrypt';
 import * as fs from 'fs';
 import { nanoid } from 'nanoid';

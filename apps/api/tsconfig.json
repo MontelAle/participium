@@ -10,7 +10,8 @@
 
     // 2. MONOREPO LINKING (Required for your shared folder)
     "paths": {
-      "@repo/api": ["../../packages/api/src/index"]
+      "@repo/api": ["../../packages/api/src/index.ts"],
+      "@repo/api/constants": ["../../packages/api/src/constants.ts"]
     },
 
     // 3. DECORATORS (Required for TypeORM & NestJS)

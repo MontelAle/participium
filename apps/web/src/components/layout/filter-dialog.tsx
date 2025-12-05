@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { ReportStatus } from '@repo/api';
+import { ReportStatus } from '@repo/api/constants';
 import { format } from 'date-fns';
 import { CalendarIcon, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useState } from 'react';

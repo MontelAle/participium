@@ -13,5 +13,3 @@ export * from './entities/report.entity';
 export * from './entities/role.entity';
 export * from './entities/session.entity';
 export * from './entities/user.entity';
-
-export * from './constants/report-status.const';

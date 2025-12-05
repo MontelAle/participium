@@ -4,9 +4,9 @@ import {
   CreateReportDto,
   FilterReportsDto,
   Report,
-  ReportStatus,
   UpdateReportDto,
 } from '@repo/api';
+import { ReportStatus } from '@repo/api/constants';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';

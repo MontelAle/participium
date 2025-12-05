@@ -23,7 +23,8 @@
       "@web/hooks/*": ["hooks/*"],
       "@web/contexts/*": ["contexts/*"],
       "@web/lib/*": ["lib/*"],
-      "@repo/api": ["../../packages/api/src/index.ts"]
+      "@repo/api": ["../../packages/api/src/index.ts"],
+      "@repo/api/constants": ["../../packages/api/src/constants.ts"]
     },
     "moduleResolution": "bundler",
     "module": "ESNext",

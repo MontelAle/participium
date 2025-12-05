@@ -14,7 +14,7 @@ import { useCategories } from '@/hooks/use-categories';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
 import { useUpdateReport } from '@/hooks/use-reports';
 import type { Report, UpdateReportDto, User } from '@repo/api';
-import { ReportStatus } from '@repo/api';
+import { ReportStatus } from '@repo/api/constants';
 import {
   CalendarClock,
   MapPin,
