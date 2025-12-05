@@ -29,5 +29,5 @@
     "strictNullChecks": false, // You had this off in your original config
     "noImplicitAny": false // You had this off in your original config
   },
-  "include": ["src"]
+  "include": ["src", "test", "jest.config.ts"]
 }

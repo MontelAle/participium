@@ -12,6 +12,10 @@ export const nestConfig = {
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
+  moduleNameMapper: {
+    '^@repo/api/constants$': '<rootDir>/../../../packages/api/src/constants.ts',
+    '^@repo/api$': '<rootDir>/../../../packages/api/src/index.ts',
+  },
 } as const satisfies Config;
 
 const config: Config = {
@@ -23,8 +27,6 @@ const config: Config = {
     '!<rootDir>/main.ts',
     '!<rootDir>/**/seed/**/*.ts',
     '!<rootDir>/**/*.type.ts',
-    '!<rootDir>/common/dto/**/*.ts',
-    '!<rootDir>/common/entities/**/*.ts',
     '!<rootDir>/**/constants/error-messages.ts',
   ],
 };

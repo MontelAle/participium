@@ -1,16 +1,18 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import {
+  Account,
+  Category,
+  Office,
+  Profile,
+  Report,
+  Role,
+  Session,
+  User,
+} from '@repo/api';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
-import { Account } from '../src/common/entities/account.entity';
-import { Category } from '../src/common/entities/category.entity';
-import { Office } from '../src/common/entities/office.entity';
-import { Profile } from '../src/common/entities/profile.entity';
-import { Report } from '../src/common/entities/report.entity';
-import { Role } from '../src/common/entities/role.entity';
-import { Session } from '../src/common/entities/session.entity';
-import { User } from '../src/common/entities/user.entity';
 import { AppModule } from './../src/app.module';
 import { LocalAuthGuard } from './../src/modules/auth/guards/local-auth.guard';
 import { RolesGuard } from './../src/modules/auth/guards/roles.guard';
