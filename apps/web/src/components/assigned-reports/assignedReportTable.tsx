@@ -1,4 +1,5 @@
 import * as React from 'react';
+import type { CellContext } from '@tanstack/react-table';
 import {
   TableProvider,
   TableHeader,
@@ -17,19 +18,19 @@ export type ReportsTableProps = {
   data: Report[];
 };
 
-const CategoryCell = ({ getValue }: any) => {
+const CategoryCell = ({ getValue }: CellContext<Report, Report['category']>) => {
   const category = getValue();
   return typeof category === 'object' && category !== null
     ? category.name
     : String(category ?? '');
 };
 
-const StatusCell = ({ getValue }: any) => {
+const StatusCell = ({ getValue }: CellContext<Report, Report['status']>) => {
   const status = getValue();
   let bgColor = 'bg-gray-100 text-gray-700';
   if (status === 'pending') bgColor = 'bg-yellow-100 text-yellow-800';
   else if (status === 'in_progress') bgColor = 'bg-blue-100 text-blue-800';
-  else if (status === 'closed' || status === 'resolved')
+  else if (status === 'resolved')
     bgColor = 'bg-green-100 text-green-800';
   else if (status === 'rejected') bgColor = 'bg-red-100 text-red-800';
   else if (status === 'assigned') bgColor = 'bg-purple-100 text-purple-800';
@@ -43,9 +44,9 @@ const StatusCell = ({ getValue }: any) => {
   );
 };
 
-const OperationsCell = ({ row }: any) => {
+const OperationsCell = ({ row }: CellContext<Report, void>) => {
   const navigate = useNavigate();
-  const report = row.original as Report;
+  const report = row.original;
   return (
     <div className="text-base items-center">
       <Button
@@ -61,7 +62,7 @@ const OperationsCell = ({ row }: any) => {
   );
 };
 
-export function ReportsTable({ data }: ReportsTableProps) {
+export function ReportsTable({ data }: Readonly<ReportsTableProps>) {
   const columns = React.useMemo(
     () => [
       {
@@ -99,7 +100,7 @@ export function ReportsTable({ data }: ReportsTableProps) {
               >
                 {({ header }) => (
                   <TableColumnHeader
-                    column={header.column as any}
+                    column={header.column}
                     title={
                       typeof header.column.columnDef.header === 'function'
                         ? (header.column.columnDef.header as any)()
