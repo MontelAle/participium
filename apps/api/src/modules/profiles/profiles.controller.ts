@@ -12,10 +12,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes } from '@nestjs/swagger';
-import {
-  ProfileResponseDto,
-  UpdateProfileDto,
-} from '../../common/dto/user.dto';
+import { ProfileResponseDto, UpdateProfileDto } from '@repo/api';
 import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
 import { SessionGuard } from '../../modules/auth/guards/session-auth.guard';
 import {

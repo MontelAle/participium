@@ -11,13 +11,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import type { Response } from 'express';
 import {
   LoginDto,
   LoginResponseDto,
   LogoutResponseDto,
   RegisterDto,
-} from '../../common/dto/auth.dto';
+} from '@repo/api';
+import type { Response } from 'express';
 import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';

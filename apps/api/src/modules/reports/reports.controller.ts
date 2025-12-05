@@ -22,7 +22,7 @@ import {
   ReportResponseDto,
   ReportsResponseDto,
   UpdateReportDto,
-} from '../../common/dto/report.dto';
+} from '@repo/api';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { SessionGuard } from '../auth/guards/session-auth.guard';

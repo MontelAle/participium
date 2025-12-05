@@ -3,9 +3,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import {
   CreateReportDto,
   FilterReportsDto,
+  Report,
+  ReportStatus,
   UpdateReportDto,
-} from '../../common/dto/report.dto';
-import { Report, ReportStatus } from '../../common/entities/report.entity';
+} from '@repo/api';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';

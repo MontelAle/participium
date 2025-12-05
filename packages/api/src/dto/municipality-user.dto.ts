@@ -1,33 +1,67 @@
+import { IsEmail, IsOptional, IsString } from 'class-validator';
 import { User } from '../entities/user.entity';
-import { ResponseDto } from './response.dto';
 
-export interface UpdateMunicipalityUserDto {
+export class UpdateMunicipalityUserDto {
+  @IsEmail()
+  @IsOptional()
   email?: string;
+
+  @IsString()
+  @IsOptional()
   username?: string;
+
+  @IsString()
+  @IsOptional()
   firstName?: string;
+
+  @IsString()
+  @IsOptional()
   lastName?: string;
+
+  @IsString()
+  @IsOptional()
   roleId?: string;
+
+  @IsString()
+  @IsOptional()
   officeId?: string;
 }
 
-export interface CreateMunicipalityUserDto {
-  email: string;
-  username: string;
-  firstName: string;
-  lastName: string;
+export class CreateMunicipalityUserDto {
+  @IsString()
   password: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  username: string;
+
+  @IsString()
+  firstName: string;
+
+  @IsString()
+  lastName: string;
+
+  @IsString()
   roleId: string;
+
+  @IsString()
+  @IsOptional()
   officeId?: string;
 }
 
-export interface MunicipalityUserResponseDto extends ResponseDto {
+export class MunicipalityUserResponseDto {
   data: User;
+  success: boolean;
 }
 
-export interface MunicipalityUsersResponseDto extends ResponseDto {
+export class MunicipalityUsersResponseDto {
   data: User[];
+  success: boolean;
 }
 
-export interface MunicipalityUserIdResponseDto extends ResponseDto {
+export class MunicipalityUserIdResponseDto {
   data: { id: string };
+  success: boolean;
 }

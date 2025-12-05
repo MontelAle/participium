@@ -1,46 +1,145 @@
-import { Report, ReportStatus } from '../entities/report.entity';
-import { ResponseDto } from './response.dto';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
+import { ReportStatus } from '../constants/report-status.const';
+import { Report } from '../entities/report.entity';
 
-export interface CreateReportDto {
+export class CreateReportDto {
+  @IsString()
   title: string;
+
+  @IsString()
   description: string;
+
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
   longitude: number;
+
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
   latitude: number;
+
+  @IsString()
+  @IsOptional()
   address?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  images?: string[];
+
+  @IsString()
   categoryId: string;
+
+  @IsBoolean()
+  @IsOptional()
   isAnonymous?: boolean;
 }
 
-export interface UpdateReportDto {
+export class UpdateReportDto {
+  @IsString()
+  @IsOptional()
   title?: string;
+
+  @IsString()
+  @IsOptional()
   description?: string;
+
+  @IsEnum(ReportStatus)
+  @IsOptional()
   status?: ReportStatus;
+
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  @IsOptional()
   longitude?: number;
+
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  @IsOptional()
   latitude?: number;
+
+  @IsString()
+  @IsOptional()
   address?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
   images?: string[];
+
+  @IsString()
+  @IsOptional()
   categoryId?: string;
+
+  @IsString()
+  @IsOptional()
   explanation?: string;
+
+  @IsString()
+  @IsOptional()
   assignedOfficerId?: string;
 }
 
-export interface FilterReportsDto {
+export class FilterReportsDto {
+  @IsEnum(ReportStatus)
+  @IsOptional()
   status?: ReportStatus;
+
+  @IsString()
+  @IsOptional()
   categoryId?: string;
+
+  @IsString()
+  @IsOptional()
   userId?: string;
+
+  @IsNumber()
+  @IsOptional()
   minLongitude?: number;
+
+  @IsNumber()
+  @IsOptional()
   maxLongitude?: number;
+
+  @IsNumber()
+  @IsOptional()
   minLatitude?: number;
+
+  @IsNumber()
+  @IsOptional()
   maxLatitude?: number;
+
+  @IsNumber()
+  @IsOptional()
   searchLongitude?: number;
+
+  @IsNumber()
+  @IsOptional()
   searchLatitude?: number;
+
+  @IsNumber()
+  @IsOptional()
   radiusMeters?: number;
 }
 
-export interface ReportsResponseDto extends ResponseDto {
-  data: Report[];
+export class ReportResponseDto {
+  success: boolean;
+  data: Report;
 }
 
-export interface ReportResponseDto extends ResponseDto {
-  data: Report;
+export class ReportsResponseDto {
+  success: boolean;
+  data: Report[];
 }

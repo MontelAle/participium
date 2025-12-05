@@ -1,9 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Category } from '../../common/entities/category.entity';
-import { Report } from '../../common/entities/report.entity';
-import { Session } from '../../common/entities/session.entity';
-import { User } from '../../common/entities/user.entity';
+import { Category, Report, Session, User } from '@repo/api';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';

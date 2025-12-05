@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { Office } from '@repo/api';
 import { Repository } from 'typeorm';
-import { Office } from '../../common/entities/office.entity';
 import { OfficesService } from './offices.service';
 
 describe('OfficesService', () => {

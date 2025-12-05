@@ -1,9 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Profile, UpdateProfileDto, User } from '@repo/api';
 import { Repository } from 'typeorm';
-import { UpdateProfileDto } from '../../common/dto/user.dto';
-import { Profile } from '../../common/entities/profile.entity';
-import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { ProfilesService } from './profiles.service';
 

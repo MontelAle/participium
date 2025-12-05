@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CategoriesResponseDto } from '../../common/dto/category.dto';
-import { Category } from '../../common/entities/category.entity';
+import { CategoriesResponseDto, Category } from '@repo/api';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
 import { CategoriesController } from './categories.controller';
 import { CategoriesService } from './categories.service';

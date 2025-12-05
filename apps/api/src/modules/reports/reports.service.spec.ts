@@ -4,15 +4,16 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import {
+  Category,
   CreateReportDto,
   FilterReportsDto,
+  Report,
+  ReportStatus,
   UpdateReportDto,
-} from '../../common/dto/report.dto';
-import { Category } from '../../common/entities/category.entity';
-import { Report, ReportStatus } from '../../common/entities/report.entity';
-import { User } from '../../common/entities/user.entity';
+  User,
+} from '@repo/api';
+import { Repository } from 'typeorm';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 import { ReportsService } from './reports.service';

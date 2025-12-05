@@ -4,14 +4,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import {
+  Account,
+  CreateMunicipalityUserDto,
+  Office,
+  Role,
+  User,
+} from '@repo/api';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { Repository } from 'typeorm';
-import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
-import { Account } from '../../common/entities/account.entity';
-import { Office } from '../../common/entities/office.entity';
-import { Role } from '../../common/entities/role.entity';
-import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { USER_ERROR_MESSAGES } from './constants/error-messages';
 

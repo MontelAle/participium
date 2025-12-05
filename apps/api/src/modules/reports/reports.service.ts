@@ -4,17 +4,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import {
+  Category,
+  CreateReportDto,
+  FilterReportsDto,
+  Report,
+  UpdateReportDto,
+  User,
+} from '@repo/api';
 import { nanoid } from 'nanoid';
 import path from 'path';
 import { Point, Repository } from 'typeorm';
-import {
-  CreateReportDto,
-  FilterReportsDto,
-  UpdateReportDto,
-} from '../../common/dto/report.dto';
-import { Category } from '../../common/entities/category.entity';
-import { Report } from '../../common/entities/report.entity';
-import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 const PRIVILEGED_ROLES = ['pr_officer', 'officer'];

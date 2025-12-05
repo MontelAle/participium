@@ -1,12 +1,38 @@
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  OneToOne,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { User } from './user.entity';
 
-export interface Profile {
+@Entity('profile')
+export class Profile {
+  @PrimaryColumn('varchar')
   id: string;
-  telegramUsername?: string | null;
-  emailNotificationsEnabled: boolean;
-  profilePictureUrl?: string | null;
+
+  @Column({ nullable: false })
   userId: string;
+
+  @OneToOne(() => User, { nullable: false })
+  @JoinColumn({ name: 'userId' })
   user: User;
+
+  @Column({ nullable: true })
+  telegramUsername: string | null;
+
+  @Column({ default: false })
+  emailNotificationsEnabled: boolean;
+
+  @Column({ nullable: true })
+  profilePictureUrl: string | null;
+
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }

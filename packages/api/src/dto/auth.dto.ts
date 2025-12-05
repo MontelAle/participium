@@ -1,25 +1,49 @@
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 import { Session } from '../entities/session.entity';
 import { User } from '../entities/user.entity';
-import { ResponseDto } from './response.dto';
 
-export interface RegisterDto {
+export class LoginDto {
+  @IsString()
+  @IsNotEmpty()
+  username: string;
+
+  @IsString()
+  @MinLength(6)
+  @IsNotEmpty()
+  password: string;
+}
+
+export class RegisterDto {
+  @IsEmail()
+  @IsNotEmpty()
   email: string;
+
+  @IsString()
+  @IsNotEmpty()
   username: string;
+
+  @IsString()
+  @IsNotEmpty()
   firstName: string;
+
+  @IsString()
+  @IsNotEmpty()
   lastName: string;
+
+  @IsString()
+  @MinLength(6)
+  @IsNotEmpty()
   password: string;
 }
 
-export interface LoginDto {
-  username: string;
-  password: string;
-}
-
-export interface LoginResponseDto extends ResponseDto {
+export class LoginResponseDto {
+  success: boolean;
   data: {
     user: User;
     session: Partial<Session>;
   };
 }
 
-export interface LogoutResponseDto extends ResponseDto {}
+export class LogoutResponseDto {
+  success: boolean;
+}

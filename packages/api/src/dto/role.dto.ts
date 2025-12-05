@@ -1,6 +1,6 @@
 import { Role } from '../entities/role.entity';
-import { ResponseDto } from './response.dto';
 
-export interface RolesResponseDto extends ResponseDto {
+export class RolesResponseDto {
+  success: boolean;
   data: Role[];
 }

@@ -1,7 +1,14 @@
+import { Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm';
 import { Office } from './office.entity';
 
-export interface Category {
+@Entity('category')
+export class Category {
+  @PrimaryColumn('varchar')
   id: string;
+
+  @Column('varchar')
   name: string;
+
+  @ManyToOne(() => Office, (office) => office.categories)
   office: Office;
 }

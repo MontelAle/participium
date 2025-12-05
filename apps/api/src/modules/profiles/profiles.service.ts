@@ -1,10 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UpdateProfileDto } from '@repo/api';
+import { Profile, UpdateProfileDto } from '@repo/api';
 import { nanoid } from 'nanoid';
 import path from 'node:path';
 import { Repository } from 'typeorm';
-import { Profile } from '../../common/entities/profile.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { USER_ERROR_MESSAGES } from '../users/constants/error-messages';
 

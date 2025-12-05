@@ -3,8 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import {
   CreateMunicipalityUserDto,
   UpdateMunicipalityUserDto,
-} from '../../common/dto/municipality-user.dto';
-import { User } from '../../common/entities/user.entity';
+  User,
+} from '@repo/api';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 

@@ -4,7 +4,6 @@
   "compilerOptions": {
     "assets": ["**/*.jpg", "**/*.png", "**/*.jpeg"],
     "watchAssets": true,
-    "webpack": true,
     "plugins": [
       {
         "name": "@nestjs/swagger",

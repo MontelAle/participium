@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Office } from '../../common/entities/office.entity';
-import { Session } from '../../common/entities/session.entity';
+import { Office, Session } from '@repo/api';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { OfficesController } from './offices.controller';
 import { OfficesService } from './offices.service';
