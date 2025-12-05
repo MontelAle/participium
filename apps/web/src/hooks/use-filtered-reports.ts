@@ -25,13 +25,18 @@ export function useFilteredReports() {
         if (report.status === 'pending') {
           return false;
         }
+
+        //the user can only see his rejected reports
+        if (report.status === 'rejected' && report.userId !== user?.id) {
+          return false;
+        }
       }
 
       if (searchTerm.trim() !== '') {
         const term = searchTerm.toLowerCase();
         const matches =
           report.title.toLowerCase().includes(term) ||
-          (report.address && report.address.toLowerCase().includes(term)) ||
+          report.address?.toLowerCase().includes(term) ||
           report.category.name.toLowerCase().includes(term);
         if (!matches) return false;
       }

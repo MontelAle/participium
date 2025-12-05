@@ -24,8 +24,6 @@ describe('UsersService', () => {
   let accountRepository: jest.Mocked<Repository<Account>>;
   let roleRepository: jest.Mocked<Repository<Role>>;
   let officeRepository: jest.Mocked<Repository<Office>>;
-  let minioProvider: jest.Mocked<MinioProvider>;
-
   const mockManager = {
     getRepository: jest.fn(),
   };
@@ -91,7 +89,6 @@ describe('UsersService', () => {
     accountRepository = module.get(getRepositoryToken(Account));
     roleRepository = module.get(getRepositoryToken(Role));
     officeRepository = module.get(getRepositoryToken(Office));
-    minioProvider = module.get(MinioProvider);
 
     mockManager.getRepository.mockImplementation((entity) => {
       if (entity === User) return userRepository;

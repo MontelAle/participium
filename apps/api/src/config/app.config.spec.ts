@@ -41,12 +41,14 @@ describe('appConfig', () => {
           database: 'participium',
         },
         minio: {
+          accessKey: 'minioadmin',
+          bucketName: 'participium-reports',
           endPoint: 'localhost',
           port: 9000,
-          useSSL: false,
-          accessKey: 'minioadmin',
+          publicEndPoint: undefined,
+          publicPort: 9000,
           secretKey: 'minioadmin',
-          bucketName: 'participium-reports',
+          useSSL: false,
         },
       });
     });
