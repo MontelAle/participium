@@ -1,9 +1,0 @@
-{
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@repo/api": ["./packages/api/src"]
-    }
-  },
-  "include": ["./packages/api/src"]
-}

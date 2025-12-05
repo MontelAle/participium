@@ -1,5 +1,4 @@
 {
-  "extends": "../../tsconfig.json",
   "include": ["src"],
   "exclude": ["node_modules"],
   "compilerOptions": {
@@ -23,7 +22,8 @@
       "@web/components/*": ["components/*"],
       "@web/hooks/*": ["hooks/*"],
       "@web/contexts/*": ["contexts/*"],
-      "@web/lib/*": ["lib/*"]
+      "@web/lib/*": ["lib/*"],
+      "@repo/api": ["../../packages/api/src/index.ts"]
     },
     "moduleResolution": "bundler",
     "module": "ESNext",
