@@ -11,6 +11,7 @@ import { nanoid } from 'nanoid';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'node:crypto';
 import { instanceToPlain } from 'class-transformer';
+import { Profile } from '../../common/entities/profile.entity';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +27,9 @@ export class AuthService {
 
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
+
+    @InjectRepository(Profile)
+    private readonly profileRepository: Repository<Profile>,
 
     private readonly configService: ConfigService,
   ) {}
@@ -93,6 +97,14 @@ export class AuthService {
         });
 
         user = await manager.getRepository(User).save(newUser);
+
+        const profile = manager.getRepository(Profile).create({
+          id: nanoid(),
+          user: user,
+          userId: user.id,
+        });
+
+        await manager.getRepository(Profile).save(profile);
 
         const newAccount = manager.getRepository(Account).create({
           id: nanoid(),

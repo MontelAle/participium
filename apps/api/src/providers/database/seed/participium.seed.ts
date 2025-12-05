@@ -11,6 +11,7 @@ import { faker } from '@faker-js/faker';
 import { MinioProvider } from '../../minio/minio.provider';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { Profile } from '../../../common/entities/profile.entity';
 
 const REAL_REPORTS = [
   {
@@ -144,6 +145,7 @@ export async function seedDatabase(
   const categoryRepo = dataSource.getRepository(Category);
   const reportRepo = dataSource.getRepository(Report);
   const officeRepo = dataSource.getRepository(Office);
+  const profileRepo = dataSource.getRepository(Profile);
 
   const commonPassword = await bcrypt.hash('password', 10);
 
@@ -275,6 +277,14 @@ export async function seedDatabase(
         accountId: username,
         password: commonPassword,
       });
+
+      await profileRepo.save(
+        profileRepo.create({
+          id: nanoid(),
+          userId: user.id,
+          user: user,
+        }),
+      );
     }
     return user;
   };

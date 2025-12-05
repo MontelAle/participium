@@ -5,6 +5,7 @@ import { User } from '../../common/entities/user.entity';
 import { Account } from '../../common/entities/account.entity';
 import { Session } from '../../common/entities/session.entity';
 import { Role } from '../../common/entities/role.entity';
+import { Profile } from '../../common/entities/profile.entity';
 import { RegisterDto } from '../../common/dto/auth.dto';
 import { ConfigService } from '@nestjs/config';
 import bcrypt from 'bcrypt';
@@ -26,6 +27,7 @@ describe('AuthService', () => {
   let sessionRepository: any;
   let configService: any;
   let roleRepository: any;
+  let profileRepository: any;
 
   beforeEach(async () => {
     userRepository = {
@@ -48,6 +50,10 @@ describe('AuthService', () => {
       save: jest.fn(),
       findOne: jest.fn(),
       remove: jest.fn(),
+    };
+    profileRepository = {
+      create: jest.fn(),
+      save: jest.fn(),
     };
     roleRepository = {
       findOne: jest.fn(),
@@ -73,6 +79,7 @@ describe('AuthService', () => {
         { provide: getRepositoryToken(Account), useValue: accountRepository },
         { provide: getRepositoryToken(Session), useValue: sessionRepository },
         { provide: getRepositoryToken(Role), useValue: roleRepository },
+        { provide: getRepositoryToken(Profile), useValue: profileRepository },
         { provide: ConfigService, useValue: configService },
       ],
     }).compile();
@@ -130,6 +137,11 @@ describe('AuthService', () => {
         password: 'hashed',
         user: savedUser,
       };
+      const savedProfile = {
+        id: 'mocked-id',
+        user: savedUser,
+        userId: savedUser.id,
+      };
 
       (jest.spyOn(bcrypt, 'hash') as jest.Mock).mockResolvedValue('hashed');
 
@@ -154,6 +166,12 @@ describe('AuthService', () => {
               findOne: jest.fn().mockResolvedValue(null),
               create: jest.fn().mockReturnValue(savedAccount),
               save: jest.fn().mockResolvedValue(savedAccount),
+            };
+          }
+          if (entity === Profile) {
+            return {
+              create: jest.fn().mockReturnValue(savedProfile),
+              save: jest.fn().mockResolvedValue(savedProfile),
             };
           }
         }),
@@ -244,6 +262,11 @@ describe('AuthService', () => {
         password: 'hashed',
         user: savedUser,
       };
+      const savedProfile = {
+        id: 'mocked-id',
+        user: savedUser,
+        userId: savedUser.id,
+      };
 
       (jest.spyOn(bcrypt, 'hash') as jest.Mock).mockResolvedValue('hashed');
 
@@ -271,6 +294,12 @@ describe('AuthService', () => {
               findOne: jest.fn().mockResolvedValue(null),
               create: jest.fn().mockReturnValue(savedAccount),
               save: jest.fn().mockResolvedValue(savedAccount),
+            };
+          }
+          if (entity === Profile) {
+            return {
+              create: jest.fn().mockReturnValue(savedProfile),
+              save: jest.fn().mockResolvedValue(savedProfile),
             };
           }
         }),
