@@ -232,7 +232,7 @@ export function filterReportsLogic(
       const term = debouncedSearchTerm.toLowerCase();
       const matches =
         report.title.toLowerCase().includes(term) ||
-        (report.address && report.address.toLowerCase().includes(term)) ||
+        (report.address?.toLowerCase().includes(term)) ||
         report.category.name.toLowerCase().includes(term);
       if (!matches) return false;
     }

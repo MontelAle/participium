@@ -13,7 +13,7 @@ import {
 import { Report } from '../../common/entities/report.entity';
 import { nanoid } from 'nanoid';
 import { MinioProvider } from '../../providers/minio/minio.provider';
-import path from 'path';
+import path from 'node:path';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 import { Category } from '../../common/entities/category.entity';
 import { User } from '../../common/entities/user.entity';
@@ -333,7 +333,7 @@ export class ReportsService {
       const sanitizedEntity = this.sanitizeReport(entity, viewer);
       return {
         ...sanitizedEntity,
-        distance: parseFloat(reports.raw[index].distance),
+        distance: Number.parseFloat(reports.raw[index].distance),
       };
     });
   }

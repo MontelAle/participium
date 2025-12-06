@@ -16,7 +16,7 @@ export function PhotoUploader({
   photos,
   onChange,
   maxPhotos = 3,
-}: PhotoUploaderProps) {
+}: Readonly<PhotoUploaderProps>) {
   const [previews, setPreviews] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -119,13 +119,12 @@ export function PhotoUploader({
         ))}
 
         {photos.length < maxPhotos && (
-          <div
+          <button
+            type="button"
             onClick={triggerInput}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            role="button"
-            tabIndex={0}
             onKeyDown={handleKeyDown}
             className={cn(
               'aspect-4/3 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 ease-out flex flex-col items-center justify-center gap-3 p-4 outline-none focus-visible:ring-2 focus-visible:ring-primary',
@@ -143,11 +142,11 @@ export function PhotoUploader({
                   : 'bg-white text-primary group-hover:scale-110',
               )}
             >
-              {isDragging ? (
-                <UploadCloud className="size-7" />
-              ) : photos.length === 0 ? (
+              {isDragging && <UploadCloud className="size-7" />}
+              {!isDragging && photos.length === 0 && (
                 <Camera className="size-7" />
-              ) : (
+              )}
+              {!isDragging && photos.length > 0 && (
                 <Plus className="size-6" />
               )}
             </div>
@@ -159,11 +158,9 @@ export function PhotoUploader({
                   isDragging ? 'text-primary' : 'text-foreground/80',
                 )}
               >
-                {isDragging
-                  ? 'Drop files here'
-                  : photos.length === 0
-                    ? 'Upload Photos'
-                    : 'Add More'}
+                {isDragging && 'Drop files here'}
+                {!isDragging && photos.length === 0 && 'Upload Photos'}
+                {!isDragging && photos.length > 0 && 'Add More'}
               </span>
               {photos.length === 0 && (
                 <span className="text-xs md:text-sm text-muted-foreground block">
@@ -171,7 +168,7 @@ export function PhotoUploader({
                 </span>
               )}
             </div>
-          </div>
+          </button>
         )}
       </div>
 

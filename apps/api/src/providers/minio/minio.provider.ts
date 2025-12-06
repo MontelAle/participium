@@ -11,10 +11,10 @@ import { MINIO_ERROR_MESSAGES } from './constants/error-messages';
 @Injectable()
 export class MinioProvider implements OnModuleInit {
   private readonly logger = new Logger(MinioProvider.name);
-  private minioClient: Minio.Client;
-  private bucketName: string;
+  private readonly minioClient: Minio.Client;
+  private readonly bucketName: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(private readonly configService: ConfigService) {
     this.bucketName = this.configService.get<string>(
       'minio.bucketName',
       'participium-reports',

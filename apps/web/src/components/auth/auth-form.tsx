@@ -179,7 +179,9 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
                     disabled={isLoading}
                     className="h-12 text-lg w-full"
                   >
-                    {isLoading ? 'Loading...' : isLogin ? 'Login' : 'Sign up'}
+                    {isLoading && 'Loading...'}
+                    {!isLoading && isLogin && 'Login'}
+                    {!isLoading && !isLogin && 'Sign up'}
                   </Button>
                 </Field>
 
