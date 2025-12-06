@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Check, ChevronsUpDown, RotateCcw, Search, X } from 'lucide-react';
-import * as React from 'react';
+import { useCallback, useState } from 'react';
 
 export type ToolbarProps = {
   query: string;
@@ -39,11 +39,11 @@ export function Toolbar({
   onCategoriesChange,
   availableCategories,
   className,
-}: ToolbarProps) {
-  const [openStatus, setOpenStatus] = React.useState(false);
-  const [openCategory, setOpenCategory] = React.useState(false);
+}: Readonly<ToolbarProps>) {
+  const [openStatus, setOpenStatus] = useState(false);
+  const [openCategory, setOpenCategory] = useState(false);
 
-  const toggleStatus = React.useCallback(
+  const toggleStatus = useCallback(
     (status: string) => {
       onStatusesChange(
         selectedStatuses.includes(status)
@@ -54,7 +54,7 @@ export function Toolbar({
     [onStatusesChange, selectedStatuses],
   );
 
-  const toggleCategory = React.useCallback(
+  const toggleCategory = useCallback(
     (category: string) => {
       onCategoriesChange(
         selectedCategories.includes(category)
@@ -65,7 +65,7 @@ export function Toolbar({
     [onCategoriesChange, selectedCategories],
   );
 
-  const clearAll = React.useCallback(() => {
+  const clearAll = useCallback(() => {
     onStatusesChange([]);
     onCategoriesChange([]);
   }, [onStatusesChange, onCategoriesChange]);
@@ -98,7 +98,6 @@ export function Toolbar({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                role="combobox"
                 className="h-12 w-full lg:w-[200px] justify-between text-base border-slate-200 px-4"
               >
                 <div className="flex items-center gap-2 truncate mr-2">
@@ -153,7 +152,6 @@ export function Toolbar({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                role="combobox"
                 className="h-12 w-full lg:w-[220px] justify-between text-base border-slate-200 px-4"
               >
                 <div className="flex items-center gap-2 truncate mr-2">

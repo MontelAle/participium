@@ -13,14 +13,14 @@ import { cn, prettifyRole } from '@/lib/utils';
 import { MunicipalityUsersTableProps } from '@/types/ui';
 import type { User } from '@repo/api';
 import { Pencil, Search } from 'lucide-react';
-import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DeleteMunicipalityUserDialog } from './delete-municipality-user-dialog';
+import { useMemo } from 'react';
 
 export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
   const navigate = useNavigate();
 
-  const columns = React.useMemo(
+  const columns = useMemo(
     () => [
       {
         accessorKey: 'username',
