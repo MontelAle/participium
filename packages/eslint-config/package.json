@@ -7,8 +7,7 @@
     "./base": "./base.js",
     "./library": "./library.js",
     "./nest-js": "./nest.js",
-    "./react": "./react.js",
-    "./prettier-base": "./prettier-base.js"
+    "./react": "./react.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",
