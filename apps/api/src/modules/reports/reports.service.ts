@@ -17,17 +17,15 @@ import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import path from 'node:path';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
+
 const PRIVILEGED_ROLES = ['pr_officer', 'officer'];
 
 @Injectable()
 export class ReportsService {
   constructor(
-    @InjectRepository(Report)
-    private readonly reportRepository: Repository<Report>,
-    @InjectRepository(Category)
-    private readonly categoryRepository: Repository<Category>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectRepository(Report) private readonly reportRepository: Repository<Report>,
+    @InjectRepository(Category) private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly minioProvider: MinioProvider,
   ) {}
 
@@ -195,75 +193,101 @@ export class ReportsService {
   async update(id: string, updateReportDto: UpdateReportDto): Promise<Report> {
     const report = await this.findReportEntity(id);
 
-    const {
-      longitude,
-      latitude,
-      title,
-      description,
-      status,
-      address,
-      images,
-      categoryId,
-      explanation,
-      assignedOfficerId,
-    } = updateReportDto;
+    this.updateReportLocation(report, updateReportDto);
 
-    if (longitude !== undefined && latitude !== undefined) {
-      report.location = this.createPointGeometry(longitude, latitude);
+    await this.updateReportCategory(report, updateReportDto);
+
+    if (updateReportDto.status === 'assigned') {
+      await this.assignOfficerToReport(
+        report,
+        updateReportDto.assignedOfficerId,
+      );
     }
 
-    if (categoryId !== undefined) {
+    this.applyBasicUpdates(report, updateReportDto);
+
+    return await this.reportRepository.save(report);
+  }
+
+  private updateReportLocation(report: Report, dto: UpdateReportDto): void {
+    if (dto.longitude !== undefined && dto.latitude !== undefined) {
+      report.location = this.createPointGeometry(dto.longitude, dto.latitude);
+    }
+  }
+
+  private async updateReportCategory(
+    report: Report,
+    dto: UpdateReportDto,
+  ): Promise<void> {
+    if (dto.categoryId !== undefined) {
       const category = await this.categoryRepository.findOne({
-        where: { id: updateReportDto.categoryId },
+        where: { id: dto.categoryId },
         relations: ['office'],
       });
-
       report.category = category;
     }
+  }
 
-    if (status === 'assigned') {
-      if (assignedOfficerId !== undefined && assignedOfficerId !== '') {
-        const officer = await this.userRepository.findOne({
-          where: { id: assignedOfficerId },
-        });
-        if (officer) {
-          report.assignedOfficer = officer;
-          report.assignedOfficerId = officer.id;
-        }
-      } else {
-        const category =
-          report.category ||
-          (await this.categoryRepository.findOne({
-            where: { id: report.categoryId },
-            relations: ['office'],
-          }));
-
-        if (category?.office?.id) {
-          const officerWithFewestReports =
-            await this.findOfficerWithFewestReports(category.office.id);
-
-          if (officerWithFewestReports) {
-            report.assignedOfficer = officerWithFewestReports;
-            report.assignedOfficerId = officerWithFewestReports.id;
-          }
-        }
-      }
-    }
-
-    Object.entries({
+  private applyBasicUpdates(report: Report, dto: UpdateReportDto): void {
+    const { title, description, status, address, images, explanation } = dto;
+    const fieldsToUpdate = {
       title,
       description,
       status,
       address,
       images,
       explanation,
-    }).forEach(([key, value]) => {
+    };
+
+    Object.entries(fieldsToUpdate).forEach(([key, value]) => {
       if (value !== undefined) {
         (report as any)[key] = value;
       }
     });
+  }
 
-    return await this.reportRepository.save(report);
+  private async assignOfficerToReport(
+    report: Report,
+    assignedOfficerId?: string,
+  ): Promise<void> {
+    if (assignedOfficerId !== undefined && assignedOfficerId !== '') {
+      await this.assignSpecificOfficer(report, assignedOfficerId);
+    } else {
+      await this.assignOfficerAutomatically(report);
+    }
+  }
+
+  private async assignSpecificOfficer(
+    report: Report,
+    officerId: string,
+  ): Promise<void> {
+    const officer = await this.userRepository.findOne({
+      where: { id: officerId },
+    });
+    if (officer) {
+      report.assignedOfficer = officer;
+      report.assignedOfficerId = officer.id;
+    }
+  }
+
+  private async assignOfficerAutomatically(report: Report): Promise<void> {
+    const category =
+      report.category ||
+      (await this.categoryRepository.findOne({
+        where: { id: report.categoryId },
+        relations: ['office'],
+      }));
+
+    if (category?.office?.id) {
+      const officerWithFewestReports = await this.findOfficerWithFewestReports(
+        category.office.id,
+      );
+
+      if (officerWithFewestReports) {
+        report.assignedOfficer = officerWithFewestReports;
+        report.assignedOfficerId = officerWithFewestReports.id;
+      }
+    }
   }
 
   private async findOfficerWithFewestReports(
@@ -284,19 +308,27 @@ export class ReportsService {
       return null;
     }
 
-    const officerReportCounts = await Promise.all(
-      technicalOfficers.map(async (officer) => {
-        const count = await this.reportRepository.count({
-          where: {
-            assignedOfficerId: officer.id,
-            status: 'assigned' as any,
-          },
-        });
-        return { officer, count };
-      }),
+    const officerIds = technicalOfficers.map((o) => o.id);
+    const rawCounts = await this.reportRepository
+      .createQueryBuilder('report')
+      .select('report.assignedOfficerId', 'id')
+      .addSelect('COUNT(report.id)', 'count')
+      .where('report.assignedOfficerId IN (:...ids)', { ids: officerIds })
+      .andWhere('report.status = :status', { status: 'assigned' })
+      .groupBy('report.assignedOfficerId')
+      .getRawMany();
+
+    const countsMap = new Map<string, number>(
+      rawCounts.map((r) => [r.id, Number.parseInt(r.count, 10)]),
     );
 
+    const officerReportCounts = technicalOfficers.map((officer) => ({
+      officer,
+      count: countsMap.get(officer.id) || 0,
+    }));
+
     officerReportCounts.sort((a, b) => a.count - b.count);
+
     return officerReportCounts[0].officer;
   }
 
