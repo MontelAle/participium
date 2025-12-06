@@ -12,7 +12,6 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { atom, useAtom } from 'jotai';
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 import {
   Fragment,
@@ -153,6 +152,16 @@ export const TableHeader = ({ className, children }: TableHeaderProps) => {
   );
 };
 
+interface SortIconProps {
+  sortState: false | 'asc' | 'desc';
+}
+
+const SortIcon = ({ sortState }: SortIconProps) => {
+  if (sortState === 'desc') return <ArrowDownIcon className="ml-2 h-4 w-4" />;
+  if (sortState === 'asc') return <ArrowUpIcon className="ml-2 h-4 w-4" />;
+  return <ChevronsUpDownIcon className="ml-2 h-4 w-4" />;
+};
+
 export interface TableColumnHeaderProps<TData, TValue>
   extends Readonly<HTMLAttributes<HTMLDivElement>> {
   column: Column<TData, TValue>;
@@ -175,15 +184,6 @@ export function TableColumnHeader<TData, TValue>({
   if (!column.getCanSort()) {
     return <TableHeadRaw className={className}>{title}</TableHeadRaw>;
   }
-
-  interface SortIconProps {
-    sortState: false | 'asc' | 'desc';
-  }
-  const SortIcon = ({ sortState }: SortIconProps) => {
-    if (sortState === 'desc') return <ArrowDownIcon className="ml-2 h-4 w-4" />;
-    if (sortState === 'asc') return <ArrowUpIcon className="ml-2 h-4 w-4" />;
-    return <ChevronsUpDownIcon className="ml-2 h-4 w-4" />;
-  };
 
   return (
     <TableHeadRaw className={className}>
