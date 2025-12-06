@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Account } from '../src/common/entities/account.entity';
+import { Boundary } from '../src/common/entities/boundary.entity';
 import { Category } from '../src/common/entities/category.entity';
 import { Office } from '../src/common/entities/office.entity';
 import { Profile } from '../src/common/entities/profile.entity';
@@ -375,6 +376,20 @@ describe('AppController (e2e)', () => {
       .useValue(createMockRepository(mockOffices))
       .overrideProvider(getRepositoryToken(Profile))
       .useValue(createMockRepository(mockProfile))
+      .overrideProvider(getRepositoryToken(Boundary))
+      .useValue(
+        createMockRepository([
+          {
+            id: 'boundary_1',
+            name: 'torino',
+            label: 'Comune di Torino',
+            geometry: {
+              type: 'MultiPolygon',
+              coordinates: [[[[7.5, 45.0], [7.8, 45.0], [7.8, 45.2], [7.5, 45.2], [7.5, 45.0]]]],
+            },
+          },
+        ]),
+      )
       .overrideProvider(MinioProvider)
       .useValue(mockMinioProvider);
 
