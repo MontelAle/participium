@@ -661,10 +661,6 @@ describe('ReportsService', () => {
 
   describe('findNearby', () => {
     it('should return nearby reports with distances', async () => {
-      const mockNearbyReports = [
-        { ...mockReport, distance: 150.5 },
-        { ...mockReport, id: 'report-2', distance: 825.3 },
-      ];
 
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),

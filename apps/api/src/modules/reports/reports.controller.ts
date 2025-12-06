@@ -106,10 +106,10 @@ export class ReportsController {
     @Query('latitude') latitude: string,
     @Query('radius') radius?: string,
   ): Promise<ReportsResponseDto> {
-    const radiusMeters = radius ? parseFloat(radius) : 5000;
+    const radiusMeters = radius ? Number.parseFloat(radius) : 5000;
     const reports = await this.reportsService.findNearby(
-      parseFloat(longitude),
-      parseFloat(latitude),
+      Number.parseFloat(longitude),
+      Number.parseFloat(latitude),
       radiusMeters,
       req.user,
     );

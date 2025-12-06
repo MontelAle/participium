@@ -94,7 +94,6 @@ export function UsersToolbar({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                role="combobox"
                 className="h-12 w-full lg:w-[200px] justify-between text-base border-slate-200 px-4"
               >
                 <div className="flex items-center gap-2 truncate mr-2">
@@ -151,7 +150,6 @@ export function UsersToolbar({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                role="combobox"
                 className="h-12 w-full lg:w-[220px] justify-between text-base border-slate-200 px-4"
               >
                 <div className="flex items-center gap-2 truncate mr-2">

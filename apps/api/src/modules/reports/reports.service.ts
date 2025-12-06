@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { nanoid } from 'nanoid';
-import path from 'path';
 import { Point, Repository } from 'typeorm';
 import {
   CreateReportDto,
@@ -16,6 +15,7 @@ import { Category } from '../../common/entities/category.entity';
 import { Report } from '../../common/entities/report.entity';
 import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
+import path from 'node:path';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 const PRIVILEGED_ROLES = ['pr_officer', 'officer'];
 
@@ -333,7 +333,7 @@ export class ReportsService {
       const sanitizedEntity = this.sanitizeReport(entity, viewer);
       return {
         ...sanitizedEntity,
-        distance: parseFloat(reports.raw[index].distance),
+        distance: Number.parseFloat(reports.raw[index].distance),
       };
     });
   }

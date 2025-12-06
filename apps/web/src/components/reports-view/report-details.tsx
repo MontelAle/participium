@@ -18,7 +18,7 @@ interface ReportDetailsProps {
   report: Report;
 }
 
-export function ReportDetails({ report }: ReportDetailsProps) {
+export function ReportDetails({ report }: Readonly<ReportDetailsProps>) {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null,
   );
@@ -183,11 +183,10 @@ export function ReportDetails({ report }: ReportDetailsProps) {
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 {reportImages.map((imgUrl, index) => (
-                  <div
-                    key={index}
+                  <button
+                    key={imgUrl}
+                    type="button"
                     onClick={() => setSelectedImageIndex(index)}
-                    role="button"
-                    tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
@@ -204,7 +203,7 @@ export function ReportDetails({ report }: ReportDetailsProps) {
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                       <Maximize2 className="text-white opacity-0 group-hover:opacity-100 size-6 drop-shadow-md" />
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -213,15 +212,14 @@ export function ReportDetails({ report }: ReportDetailsProps) {
       </Card>
 
       {selectedImageIndex !== null && reportImages.length > 0 && (
-        <div
+        <button
+          type="button"
           className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setSelectedImageIndex(null);
             }
           }}
-          role="button"
-          tabIndex={0}
           aria-label="Close preview"
           onKeyDown={(e) => {
             if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
@@ -241,7 +239,7 @@ export function ReportDetails({ report }: ReportDetailsProps) {
             alt="Enlarged evidence view"
             className="max-w-full max-h-[85vh] object-contain rounded shadow-2xl"
           />
-        </div>
+        </button>
       )}
     </>
   );

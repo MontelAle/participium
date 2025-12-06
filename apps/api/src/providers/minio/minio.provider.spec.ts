@@ -53,7 +53,6 @@ describe('MinioProvider', () => {
     }).compile();
 
     provider = module.get<MinioProvider>(MinioProvider);
-    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {
