@@ -66,7 +66,7 @@ const OperationsCell = ({
   );
 };
 
-export function ReportsTable({ data, viewBasePath }: ReportsTableProps) {
+export function ReportsTable({ data, viewBasePath }: Readonly<ReportsTableProps>) {
   const columns = React.useMemo(
     () => [
       {

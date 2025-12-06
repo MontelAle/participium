@@ -5,6 +5,6 @@ interface ReportDetailsProps {
   report: Report;
 }
 
-export function ReportDetails({ report }: ReportDetailsProps) {
+export function ReportDetails({ report }: Readonly<ReportDetailsProps>) {
   return <ReportView report={report} showAnonymous />;
 }
