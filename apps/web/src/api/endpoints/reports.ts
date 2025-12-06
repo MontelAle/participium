@@ -14,40 +14,24 @@ export async function getReports(): Promise<Report[]> {
 export async function postReportWithImages(reportData: ReportData) {
   const formData = createReportFormData(reportData);
 
-  const res = await fetch('http://localhost:5000/api/reports/', {
+  const res = await apiFetch<ReportResponseDto>('/reports/', {
     method: 'POST',
     body: formData,
-    credentials: 'include',
   });
 
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: 'Network error' }));
-    const errorMessage = Array.isArray(error.message)
-      ? error.message[0]
-      : error.message || `Request failed with status ${res.status}`;
-    throw new Error(errorMessage);
-  }
-
-  return res.json();
+  return res.data;
 }
-
 
 export async function updateReport(
   reportId: string,
   data: UpdateReportDto,
-): Promise<ReportResponseDto> {
-  const response = await apiFetch<ReportResponseDto>(
-    `/reports/${reportId}`,
-    {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    },
-  );
+): Promise<Report> {
+  const response = await apiFetch<ReportResponseDto>(`/reports/${reportId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
 
-  return response;
+  return response.data;
 }
 
 export async function getReport(reportId: string): Promise<Report> {

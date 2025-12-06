@@ -17,7 +17,7 @@ export async function register(data: RegisterDto): Promise<LoginResponseDto> {
 }
 
 export async function logout(): Promise<LogoutResponseDto> {
-  return apiFetch<void>('/auth/logout', {
+  return apiFetch<LogoutResponseDto>('/auth/logout', {
     method: 'POST',
   });
 }

@@ -48,9 +48,6 @@ export async function updateMunicipalityUser(
     `/users/municipality/user/${userId}`,
     {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(data),
     },
   );
@@ -67,10 +64,6 @@ export async function deleteMunicipalityUser(
       method: 'DELETE',
     },
   );
-
-  if (!response.success) {
-    throw new Error('An error occurred while deleting the user');
-  }
 
   return response.data;
 }

@@ -12,11 +12,7 @@ export function useProfile(options?: { enabled?: boolean }) {
   });
 
   // Update profile (with file support)
-  const updateMutation = useMutation<
-    ProfileResponseDto,
-    Error,
-    UpdateProfileDto
-  >({
+  const updateMutation = useMutation<ProfileResponseDto, Error, FormData>({
     mutationFn: (dto) => updateProfileWithFile(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
