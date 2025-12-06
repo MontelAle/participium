@@ -13,7 +13,7 @@ import {
 import { Report } from '../../common/entities/report.entity';
 import { nanoid } from 'nanoid';
 import { MinioProvider } from '../../providers/minio/minio.provider';
-import path from 'path';
+import * as path from 'path';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 import { Category } from '../../common/entities/category.entity';
 import { User } from '../../common/entities/user.entity';
@@ -22,12 +22,9 @@ const PRIVILEGED_ROLES = ['pr_officer', 'officer'];
 @Injectable()
 export class ReportsService {
   constructor(
-    @InjectRepository(Report)
-    private readonly reportRepository: Repository<Report>,
-    @InjectRepository(Category)
-    private readonly categoryRepository: Repository<Category>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectRepository(Report) private readonly reportRepository: Repository<Report>,
+    @InjectRepository(Category) private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
     private readonly minioProvider: MinioProvider,
   ) {}
 
@@ -222,32 +219,7 @@ export class ReportsService {
     }
 
     if (status === 'assigned') {
-      if (assignedOfficerId !== undefined && assignedOfficerId !== '') {
-        const officer = await this.userRepository.findOne({
-          where: { id: assignedOfficerId },
-        });
-        if (officer) {
-          report.assignedOfficer = officer;
-          report.assignedOfficerId = officer.id;
-        }
-      } else {
-        const category =
-          report.category ||
-          (await this.categoryRepository.findOne({
-            where: { id: report.categoryId },
-            relations: ['office'],
-          }));
-
-        if (category?.office?.id) {
-          const officerWithFewestReports =
-            await this.findOfficerWithFewestReports(category.office.id);
-
-          if (officerWithFewestReports) {
-            report.assignedOfficer = officerWithFewestReports;
-            report.assignedOfficerId = officerWithFewestReports.id;
-          }
-        }
-      }
+      await this.assignOfficerToReport(report, assignedOfficerId);
     }
 
     Object.entries({
@@ -264,6 +236,50 @@ export class ReportsService {
     });
 
     return await this.reportRepository.save(report);
+  }
+
+  private async assignOfficerToReport(
+    report: Report,
+    assignedOfficerId?: string,
+  ): Promise<void> {
+    if (assignedOfficerId !== undefined && assignedOfficerId !== '') {
+      await this.assignSpecificOfficer(report, assignedOfficerId);
+    } else {
+      await this.assignOfficerAutomatically(report);
+    }
+  }
+
+  private async assignSpecificOfficer(
+    report: Report,
+    officerId: string,
+  ): Promise<void> {
+    const officer = await this.userRepository.findOne({
+      where: { id: officerId },
+    });
+    if (officer) {
+      report.assignedOfficer = officer;
+      report.assignedOfficerId = officer.id;
+    }
+  }
+
+  private async assignOfficerAutomatically(report: Report): Promise<void> {
+    const category =
+      report.category ||
+      (await this.categoryRepository.findOne({
+        where: { id: report.categoryId },
+        relations: ['office'],
+      }));
+
+    if (category?.office?.id) {
+      const officerWithFewestReports = await this.findOfficerWithFewestReports(
+        category.office.id,
+      );
+
+      if (officerWithFewestReports) {
+        report.assignedOfficer = officerWithFewestReports;
+        report.assignedOfficerId = officerWithFewestReports.id;
+      }
+    }
   }
 
   private async findOfficerWithFewestReports(

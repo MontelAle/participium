@@ -179,40 +179,110 @@ export function getStatusBadgeHTML(status: ReportStatus) {
   return `<span class="popup-badge ${config.badgeClass}">${config.label}</span>`;
 }
 
-export function isPointInGeoJSON(lat: number, lng: number, geoJson: any) {
-  if (!geoJson) return true;
-  const x = lng;
-  const y = lat;
-  let inside = false;
-  const polygons =
-    geoJson.type === 'MultiPolygon'
-      ? geoJson.coordinates
-      : [geoJson.coordinates];
-  for (const polygon of polygons) {
-    const rings = geoJson.type === 'Polygon' ? polygons : polygon;
-    for (const ring of rings) {
-      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-        const xi = ring[i][0],
-          yi = ring[i][1];
-        const xj = ring[j][0],
-          yj = ring[j][1];
-        const intersect =
-          yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-        if (intersect) inside = !inside;
-      }
-    }
-    if (inside) return true;
+type Coordinate = [number, number];
+type Ring = Coordinate[];
+type Polygon = Ring[];
+
+interface GeoJSON {
+  type: 'Polygon' | 'MultiPolygon';
+  coordinates: Polygon | Polygon[];
+}
+
+function normalizeGeoJSONPolygons(geoJson: GeoJSON): Polygon[] {
+  if (geoJson.type === 'MultiPolygon') {
+    return geoJson.coordinates as Polygon[];
   }
-  return inside;
+  return [geoJson.coordinates as Polygon];
+}
+
+function extractRingsFromPolygon(polygon: Polygon): Ring[] {
+  if (Array.isArray(polygon[0]) && typeof polygon[0][0] === 'number') {
+    return [polygon] as unknown as Ring[];
+  }
+  return polygon;
+}
+
+function rayIntersectsEdge(
+  pointX: number,
+  pointY: number,
+  edgeStart: Coordinate,
+  edgeEnd: Coordinate,
+): boolean {
+  const [x1, y1] = edgeStart;
+  const [x2, y2] = edgeEnd;
+
+  const crossesVertically = y1 > pointY !== y2 > pointY;
+  if (!crossesVertically) {
+    return false;
+  }
+
+  const intersectionX = ((x2 - x1) * (pointY - y1)) / (y2 - y1) + x1;
+  
+  return pointX < intersectionX;
+}
+
+function isPointInRing(pointX: number, pointY: number, ring: Ring): boolean {
+  let isInside = false;
+
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const currentVertex = ring[i];
+    const previousVertex = ring[j];
+
+    if (!currentVertex || !previousVertex) {
+      continue;
+    }
+
+    if (rayIntersectsEdge(pointX, pointY, previousVertex, currentVertex)) {
+      isInside = !isInside;
+    }
+  }
+
+  return isInside;
+}
+
+function isPointInPolygonRings(
+  pointX: number,
+  pointY: number,
+  rings: Ring[],
+): boolean {
+  for (const ring of rings) {
+    if (isPointInRing(pointX, pointY, ring)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function isPointInGeoJSON(
+  lat: number,
+  lng: number,
+  geoJson: GeoJSON | null | undefined,
+): boolean {
+  if (!geoJson) {
+    return true;
+  }
+
+  const pointX = lng;
+  const pointY = lat;
+  const polygons = normalizeGeoJSONPolygons(geoJson);
+
+  for (const polygon of polygons) {
+    const rings = extractRingsFromPolygon(polygon);
+    if (isPointInPolygonRings(pointX, pointY, rings)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export function escapeHtml(str: string) {
   return str
-    .replaceAll(/&/g, '&amp;')
-    .replaceAll(/</g, '&lt;')
-    .replaceAll(/>/g, '&gt;')
-    .replaceAll(/"/g, '&quot;')
-    .replaceAll(/'/g, '&#039;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 export function formatShortAddress(addr: any, raw: string) {
@@ -232,7 +302,7 @@ export function filterReportsLogic(
       const term = debouncedSearchTerm.toLowerCase();
       const matches =
         report.title.toLowerCase().includes(term) ||
-        (report.address && report.address.toLowerCase().includes(term)) ||
+        (report.address?.toLowerCase().includes(term)) ||
         report.category.name.toLowerCase().includes(term);
       if (!matches) return false;
     }
