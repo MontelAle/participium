@@ -1,27 +1,27 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import type { User, UpdateMunicipalityUserDto } from '@repo/api';
-import { MailIcon, UserIcon, Briefcase, Building2 } from 'lucide-react';
-import { useRoles } from '@/hooks/use-roles';
-import { useOffices } from '@/hooks/use-offices';
-import { useUpdateMunicipalityUser } from '@/hooks/use-municipality-users';
+import { Card } from '@/components/ui/card';
 import { Field, FieldLabel } from '@/components/ui/field';
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from '@/components/ui/select';
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from '@/components/ui/input-group';
-import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useUpdateMunicipalityUser } from '@/hooks/use-municipality-users';
+import { useOffices } from '@/hooks/use-offices';
+import { useRoles } from '@/hooks/use-roles';
 import { prettifyRole } from '@/lib/utils';
-import { Card } from '@/components/ui/card';
+import type { UpdateMunicipalityUserDto, User } from '@repo/api';
+import { Briefcase, Building2, MailIcon, UserIcon } from 'lucide-react';
+import { ChangeEvent, FormEvent, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export function EditMunicipalityUserForm({ user }: { user: User }) {
   const navigate = useNavigate();
@@ -41,7 +41,7 @@ export function EditMunicipalityUserForm({ user }: { user: User }) {
   const [form, setForm] = useState<UpdateMunicipalityUserDto>(initialForm);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -53,7 +53,7 @@ export function EditMunicipalityUserForm({ user }: { user: User }) {
     setForm({ ...form, officeId: value });
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isLoading) return;
     setIsLoading(true);

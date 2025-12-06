@@ -1,17 +1,17 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
-import { User } from '../../common/entities/user.entity';
 import { Account } from '../../common/entities/account.entity';
 import { Session } from '../../common/entities/session.entity';
 import { Role } from '../../common/entities/role.entity';
 import { RegisterDto } from '../../common/dto/auth.dto';
-import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { ConfigService } from '@nestjs/config';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 import { instanceToPlain } from 'class-transformer';
 import { Profile } from '../../common/entities/profile.entity';
+import { User } from '../../common/entities/user.entity';
 
 @Injectable()
 export class AuthService {

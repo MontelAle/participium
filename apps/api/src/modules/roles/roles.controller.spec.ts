@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { SessionGuard } from '../auth/guards/session-auth.guard';
 import { RolesController } from './roles.controller';
 import { RolesService } from './roles.service';
-import { SessionGuard } from '../auth/guards/session-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
 
 describe('RolesController', () => {
   let controller: RolesController;

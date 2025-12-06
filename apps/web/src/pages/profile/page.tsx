@@ -1,17 +1,17 @@
+import { ArrowLeft, Image as ImageIcon, Send } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { useProfile } from '@/hooks/use-profile';
-import { Card } from '@/components/ui/card';
+import { Controller, useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Field, FieldLabel } from '@/components/ui/field';
 import {
   InputGroup,
-  InputGroupInput,
   InputGroupAddon,
+  InputGroupInput,
 } from '@/components/ui/input-group';
-import { Image as ImageIcon, Send, ArrowLeft } from 'lucide-react';
-import { data, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { useProfile } from '@/hooks/use-profile';
 
 type FormValues = {
   telegramUsername?: string;
@@ -22,15 +22,13 @@ type FormValues = {
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { data: profile, updateProfile } = useProfile();
-  const { control, handleSubmit, setValue, watch, reset } = useForm<FormValues>(
-    {
-      defaultValues: {
-        emailNotificationsEnabled: true,
-        telegramUsername: '',
-        profilePicture: null,
-      },
+  const { control, handleSubmit, watch, reset } = useForm<FormValues>({
+    defaultValues: {
+      emailNotificationsEnabled: true,
+      telegramUsername: '',
+      profilePicture: null,
     },
-  );
+  });
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -183,14 +181,16 @@ export default function ProfilePage() {
                   control={control}
                   name="emailNotificationsEnabled"
                   render={({ field }) => (
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
                       <input
                         type="checkbox"
                         checked={!!field.value}
                         onChange={(e) => field.onChange(e.target.checked)}
-                        className="accent-primary"
+                        className="accent-primary size-4 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       />
-                      Enable email notifications
+                      <span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Enable email notifications
+                      </span>
                     </label>
                   )}
                 />

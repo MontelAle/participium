@@ -1,6 +1,6 @@
-import L from 'leaflet';
 import { ReportStatus } from '@repo/api';
-import { isSameDay, subWeeks, subMonths, isAfter } from 'date-fns';
+import { isAfter, isSameDay, subMonths, subWeeks } from 'date-fns';
+import L from 'leaflet';
 
 export const STATUS_COLORS = {
   [ReportStatus.PENDING]: {
@@ -232,7 +232,7 @@ export function filterReportsLogic(
       const term = debouncedSearchTerm.toLowerCase();
       const matches =
         report.title.toLowerCase().includes(term) ||
-        (report.address && report.address.toLowerCase().includes(term)) ||
+        (report.address?.toLowerCase().includes(term)) ||
         report.category.name.toLowerCase().includes(term);
       if (!matches) return false;
     }

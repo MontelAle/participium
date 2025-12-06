@@ -1,5 +1,5 @@
-import { create } from 'zustand';
 import { LocationData } from '@/types/location';
+import { create } from 'zustand';
 
 interface ActiveReportStore {
   locationData?: LocationData;
