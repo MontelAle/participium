@@ -3,6 +3,8 @@ import type { Config } from 'jest';
 
 const config: Config = {
   ...nestConfig,
+  coverageDirectory: './coverage',
+  coverageReporters: ['lcov', 'text-summary'],
   collectCoverageFrom: [
     '<rootDir>/**/*.(t|j)s',
     '!<rootDir>/**/*.spec.ts',
