@@ -182,30 +182,24 @@ export function ReportDetails({ report }: Readonly<ReportDetailsProps>) {
                 Photos ({reportImages.length})
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                {reportImages.map((imgUrl, index) => (
-                  <button
-                    key={imgUrl}
-                    type="button"
-                    onClick={() => setSelectedImageIndex(index)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setSelectedImageIndex(index);
-                      }
-                    }}
-                    className="group relative aspect-4/3 rounded-lg border bg-background overflow-hidden shadow-sm cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  >
-                    <img
-                      src={imgUrl}
-                      alt={`Evidence ${index + 1}`}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <Maximize2 className="text-white opacity-0 group-hover:opacity-100 size-6 drop-shadow-md" />
-                    </div>
-                  </button>
-                ))}
-              </div>
+              {reportImages.map((imgUrl, index) => (
+                <button
+                  key={`${imgUrl}-${index}`}
+                  type="button"
+                  onClick={() => setSelectedImageIndex(index)}
+                  className="group relative aspect-4/3 rounded-lg border bg-background overflow-hidden shadow-sm cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <img
+                    src={imgUrl}
+                    alt={`Evidence ${index + 1}`}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                    <Maximize2 className="text-white opacity-0 group-hover:opacity-100 size-6 drop-shadow-md" />
+                  </div>
+                </button>
+              ))}
+            </div>
             </div>
           </div>
         </div>
