@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -11,6 +12,7 @@ import {
   FilterReportsDto,
   UpdateReportDto,
 } from '../../common/dto/report.dto';
+import { Boundary } from '../../common/entities/boundary.entity';
 import { Category } from '../../common/entities/category.entity';
 import { Report } from '../../common/entities/report.entity';
 import { User } from '../../common/entities/user.entity';
@@ -26,6 +28,7 @@ export class ReportsService {
     @InjectRepository(Report) private readonly reportRepository: Repository<Report>,
     @InjectRepository(Category) private readonly categoryRepository: Repository<Category>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(Boundary) private readonly boundaryRepository: Repository<Boundary>,
     private readonly minioProvider: MinioProvider,
   ) {}
 
@@ -67,12 +70,33 @@ export class ReportsService {
     return sanitized as Report;
   }
 
+  private async validateCoordinatesWithinBoundary(
+    longitude: number,
+    latitude: number,
+  ): Promise<void> {
+    const result = await this.boundaryRepository
+      .createQueryBuilder('boundary')
+      .where(
+        `ST_Contains(boundary.geometry, ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326))`,
+        { longitude, latitude },
+      )
+      .getOne();
+
+    if (!result) {
+      throw new BadRequestException(
+        REPORT_ERROR_MESSAGES.COORDINATES_OUTSIDE_BOUNDARY,
+      );
+    }
+  }
+
   async create(
     createReportDto: CreateReportDto,
     userId: string,
     images: Express.Multer.File[],
   ): Promise<Report> {
     const { longitude, latitude, isAnonymous, ...reportData } = createReportDto;
+
+    await this.validateCoordinatesWithinBoundary(longitude, latitude);
 
     const reportId = nanoid();
     const imageUrls: string[] = [];

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,6 +11,7 @@ import {
   FilterReportsDto,
   UpdateReportDto,
 } from '../../common/dto/report.dto';
+import { Boundary } from '../../common/entities/boundary.entity';
 import { Category } from '../../common/entities/category.entity';
 import { Report, ReportStatus } from '../../common/entities/report.entity';
 import { User } from '../../common/entities/user.entity';
@@ -30,6 +32,14 @@ const createMockQueryBuilder = () => ({
   getMany: jest.fn().mockResolvedValue([]),
   getRawMany: jest.fn().mockResolvedValue([]),
   getRawAndEntities: jest.fn().mockResolvedValue({ entities: [], raw: [] }),
+  getOne: jest.fn().mockResolvedValue(null),
+});
+
+const createMockBoundaryQueryBuilder = (withinBoundary: boolean = true) => ({
+  where: jest.fn().mockReturnThis(),
+  getOne: jest.fn().mockResolvedValue(
+    withinBoundary ? { id: 'torino', name: 'torino', label: 'Comune di Torino' } : null,
+  ),
 });
 
 describe('ReportsService', () => {
@@ -37,6 +47,7 @@ describe('ReportsService', () => {
   let reportRepository: jest.Mocked<Repository<Report>>;
   let categoryRepository: jest.Mocked<Repository<Category>>;
   let userRepository: jest.Mocked<Repository<User>>;
+  let boundaryRepository: jest.Mocked<Repository<Boundary>>;
   let minioProvider: jest.Mocked<MinioProvider>;
 
   const mockCitizenUser = { id: 'user-123', role: { name: 'user' } } as User;
@@ -93,6 +104,12 @@ describe('ReportsService', () => {
           },
         },
         {
+          provide: getRepositoryToken(Boundary),
+          useValue: {
+            createQueryBuilder: jest.fn(() => createMockBoundaryQueryBuilder(true)),
+          },
+        },
+        {
           provide: MinioProvider,
           useValue: {
             uploadFile: jest.fn(),
@@ -107,6 +124,7 @@ describe('ReportsService', () => {
     service = module.get<ReportsService>(ReportsService);
     reportRepository = module.get(getRepositoryToken(Report));
     categoryRepository = module.get(getRepositoryToken(Category));
+    boundaryRepository = module.get(getRepositoryToken(Boundary));
     minioProvider = module.get(MinioProvider);
     userRepository = module.get(getRepositoryToken(User));
   });
@@ -346,6 +364,37 @@ describe('ReportsService', () => {
       await expect(
         service.create(createDto, 'user-123', mockFiles),
       ).rejects.toThrow(REPORT_ERROR_MESSAGES.IMAGE_UPLOAD_FAILED);
+    });
+
+    it('should throw BadRequestException if coordinates are outside municipal boundaries', async () => {
+      const createDto: CreateReportDto = {
+        title: 'Report outside boundary',
+        description: 'Description outside boundary',
+        longitude: 10.0,
+        latitude: 44.0,
+        categoryId: 'cat-123',
+        isAnonymous: false,
+      };
+
+      const mockFiles = [
+        {
+          originalname: 'test.jpg',
+          buffer: Buffer.from('test'),
+          mimetype: 'image/jpeg',
+        },
+      ] as Express.Multer.File[];
+
+      boundaryRepository.createQueryBuilder = jest.fn(() =>
+        createMockBoundaryQueryBuilder(false),
+      ) as any;
+
+      await expect(
+        service.create(createDto, 'user-123', mockFiles),
+      ).rejects.toThrow(
+        new BadRequestException(
+          REPORT_ERROR_MESSAGES.COORDINATES_OUTSIDE_BOUNDARY,
+        ),
+      );
     });
   });
 

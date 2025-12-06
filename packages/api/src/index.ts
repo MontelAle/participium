@@ -1,4 +1,5 @@
 export * from './entities/account.entity';
+export * from './entities/boundary.entity';
 export * from './entities/category.entity';
 export * from './entities/office.entity';
 export * from './entities/profile.entity';
