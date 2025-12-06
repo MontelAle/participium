@@ -61,3 +61,5 @@ export type MunicipalGuardProps = Readonly<{
 export type CitizenGuardProps = Readonly<{
   children: ReactNode;
 }>;
+
+export type DateCheckStrategy = (date: Date, today: Date) => boolean;

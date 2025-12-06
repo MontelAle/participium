@@ -107,9 +107,12 @@ const createMockRepository = (data: any[] = []) => {
       andWhere: jest.fn().mockReturnThis(),
       leftJoinAndSelect: jest.fn().mockReturnThis(),
       addSelect: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       getOne: jest.fn().mockResolvedValue(data[0] || null),
       getMany: jest.fn().mockResolvedValue(data),
+      getRawMany: jest.fn().mockResolvedValue([]),
       getRawAndEntities: jest.fn().mockResolvedValue({
         entities: data,
         raw: data.map(() => ({ distance: 100 })),

@@ -212,6 +212,7 @@ export default function ReportsMap() {
           });
           const dominantStatus = Object.keys(counts).reduce((a, b) =>
             (counts[a] || 0) >= (counts[b] || 0) ? a : b,
+            ''
           );
           const statusClass =
             STATUS_COLORS[dominantStatus as ReportStatus]?.class ||
