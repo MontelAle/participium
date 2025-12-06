@@ -1,39 +1,39 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
   Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Query,
-  UseGuards,
-  Request,
-  HttpStatus,
   HttpCode,
-  UseInterceptors,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Request,
   UploadedFiles,
-  BadRequestException,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
-import { ReportsService } from './reports.service';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import {
   CreateReportDto,
-  UpdateReportDto,
   FilterReportsDto,
   ReportResponseDto,
   ReportsResponseDto,
+  UpdateReportDto,
 } from '../../common/dto/report.dto';
-import { SessionGuard } from '../auth/guards/session-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { SessionGuard } from '../auth/guards/session-auth.guard';
 import {
-  REPORT_ERROR_MESSAGES,
   ALLOWED_IMAGE_MIMETYPES,
   MAX_IMAGE_SIZE,
-  MIN_IMAGES,
   MAX_IMAGES,
+  MIN_IMAGES,
+  REPORT_ERROR_MESSAGES,
 } from './constants/error-messages';
+import { ReportsService } from './reports.service';
 
 @ApiTags('Reports')
 @Controller('reports')

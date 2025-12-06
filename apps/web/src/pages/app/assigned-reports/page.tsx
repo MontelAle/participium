@@ -1,7 +1,7 @@
-import { useAuth } from '@/contexts/auth-context';
-import { useMemo } from 'react';
 import { ReportsTable } from '@/components/assigned-reports/assignedReportTable';
+import { useAuth } from '@/contexts/auth-context';
 import { useReports } from '@/hooks/use-reports';
+import { useMemo } from 'react';
 
 const AssignedReportsPage = () => {
   const { data: reports = [], isLoading } = useReports(); // Recupera i report dal server
@@ -12,7 +12,7 @@ const AssignedReportsPage = () => {
     if (!user) return [];
     return reports.filter((report) => report.assignedOfficerId === user.id);
   }, [reports, user]);
-  
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">

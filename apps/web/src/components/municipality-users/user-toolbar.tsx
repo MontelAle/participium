@@ -1,16 +1,4 @@
-import * as React from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import {
-  Check,
-  ChevronsUpDown,
-  Search,
-  X,
-  Filter,
-  Building2,
-  RotateCcw,
-  Briefcase,
-} from 'lucide-react';
 import {
   Command,
   CommandEmpty,
@@ -19,6 +7,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
@@ -26,6 +15,16 @@ import {
 } from '@/components/ui/popover';
 import { cn, prettifyRole } from '@/lib/utils';
 import { UsersToolbarProps } from '@/types/ui';
+import {
+  Briefcase,
+  Building2,
+  Check,
+  ChevronsUpDown,
+  RotateCcw,
+  Search,
+  X,
+} from 'lucide-react';
+import * as React from 'react';
 
 export function UsersToolbar({
   query,

@@ -1,14 +1,14 @@
 import 'dotenv/config';
 
-import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import pkg from '../package.json';
-import { AppModule } from './app.module';
+import helmet from 'helmet';
 import passport from 'passport';
 import { DataSource } from 'typeorm';
+import pkg from '../package.json';
+import { AppModule } from './app.module';
 import { seedDatabase } from './providers/database/seed/participium.seed';
 import { MinioProvider } from './providers/minio/minio.provider';
 

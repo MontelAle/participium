@@ -1,16 +1,16 @@
+import type { Report as ReportType } from '@repo/api';
 import {
-  Entity,
-  PrimaryColumn,
   Column,
-  ManyToOne,
   CreateDateColumn,
-  UpdateDateColumn,
+  Entity,
   JoinColumn,
+  ManyToOne,
   Point,
+  PrimaryColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { User } from './user.entity';
 import { Category } from './category.entity';
-import { Report as ReportInterface } from '@repo/api';
+import { User } from './user.entity';
 
 export enum ReportStatus {
   PENDING = 'pending',
@@ -21,7 +21,7 @@ export enum ReportStatus {
 }
 
 @Entity('report')
-export class Report implements ReportInterface {
+export class Report implements ReportType {
   @PrimaryColumn('varchar')
   id: string;
 

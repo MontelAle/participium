@@ -1,6 +1,6 @@
-import { Category } from "@repo/api";
+import { Category } from '@repo/api';
 
 export type CategoryResponse = {
-    success: boolean;
-    data: Category[];
+  success: boolean;
+  data: Category[];
 };

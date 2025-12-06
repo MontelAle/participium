@@ -1,12 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  getMunicipalityUsers,
-  createMunicipalityUser,
-  deleteMunicipalityUser,
-  updateMunicipalityUser,
-} from '../api/endpoints/municipality-users';
 import type { User } from '@repo/api';
 import { UpdateMunicipalityUserDto } from '@repo/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  createMunicipalityUser,
+  deleteMunicipalityUser,
+  getMunicipalityUsers,
+  updateMunicipalityUser,
+} from '../api/endpoints/municipality-users';
 
 export function useMunicipalityUsers() {
   return useQuery<User[]>({

@@ -1,10 +1,10 @@
-import { useParams, Navigate, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
 import { EditMunicipalityUserForm } from '@/components/municipality-users/edit-municipality-user-form';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
+import { cn } from '@/lib/utils';
+import { ArrowLeft } from 'lucide-react';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 
 function MunicipalityUserDetailsPage() {
   const { id } = useParams<{ id: string }>();

@@ -1,6 +1,10 @@
+import {
+  LoginDto,
+  LoginResponseDto,
+  LogoutResponseDto,
+  RegisterDto,
+} from '@repo/api';
 import { apiFetch } from '../client';
-import { LoginDto, RegisterDto } from '@repo/api';
-import { LoginResponseDto, LogoutResponseDto } from '@repo/api';
 
 export async function login(credentials: LoginDto): Promise<LoginResponseDto> {
   return apiFetch<LoginResponseDto>('/auth/login', {

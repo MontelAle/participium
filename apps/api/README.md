@@ -143,11 +143,13 @@ src/
 The API includes PostGIS integration for location-based features:
 
 ### Reports with Location
+
 - Store report locations using WGS84 coordinates (SRID 4326)
 - Compatible with OpenStreetMap data
 - Spatial indexing for fast queries
 
 ### Spatial Queries
+
 ```bash
 # Find reports in bounding box
 GET /api/reports?minLongitude=7.5&maxLongitude=7.8&minLatitude=44.9&maxLatitude=45.2
@@ -194,4 +196,3 @@ pnpm build --filter @repo/api
 - [TypeORM Documentation](https://typeorm.io)
 - [PostGIS Documentation](https://postgis.net/documentation/)
 - [PostGIS Integration Guide](./POSTGIS_INTEGRATION.md)
-

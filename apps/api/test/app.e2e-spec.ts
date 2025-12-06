@@ -1,18 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import { LocalAuthGuard } from './../src/modules/auth/guards/local-auth.guard';
-import { SessionGuard } from './../src/modules/auth/guards/session-auth.guard';
-import { RolesGuard } from './../src/modules/auth/guards/roles.guard';
+import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Session } from '../src/common/entities/session.entity';
-import { User } from '../src/common/entities/user.entity';
-import { Role } from '../src/common/entities/role.entity';
 import { Account } from '../src/common/entities/account.entity';
 import { Category } from '../src/common/entities/category.entity';
-import { Report } from '../src/common/entities/report.entity';
 import { Office } from '../src/common/entities/office.entity';
-import request = require('supertest');
 import { Profile } from '../src/common/entities/profile.entity';
+import { Report } from '../src/common/entities/report.entity';
+import { Role } from '../src/common/entities/role.entity';
+import { Session } from '../src/common/entities/session.entity';
+import { User } from '../src/common/entities/user.entity';
+import { LocalAuthGuard } from './../src/modules/auth/guards/local-auth.guard';
+import { RolesGuard } from './../src/modules/auth/guards/roles.guard';
+import { SessionGuard } from './../src/modules/auth/guards/session-auth.guard';
+import request = require('supertest');
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',

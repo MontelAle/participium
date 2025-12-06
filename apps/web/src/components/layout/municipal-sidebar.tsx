@@ -1,9 +1,9 @@
-import { Home, Users, ChevronRight, ChevronLeft, FileText } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
+import { cn } from '@/lib/utils';
 import { MunicipalSidebarProps } from '@/types/ui';
+import { ChevronLeft, ChevronRight, FileText, Home, Users } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 
 export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
   const location = useLocation();

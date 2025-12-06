@@ -1,17 +1,17 @@
 import {
-  Injectable,
   ConflictException,
+  Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../../common/entities/user.entity';
-import { Account } from '../../common/entities/account.entity';
-import { Role } from '../../common/entities/role.entity';
-import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
+import { Repository } from 'typeorm';
+import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
+import { Account } from '../../common/entities/account.entity';
 import { Office } from '../../common/entities/office.entity';
+import { Role } from '../../common/entities/role.entity';
+import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { USER_ERROR_MESSAGES } from './constants/error-messages';
 
