@@ -1,20 +1,18 @@
 import { ReportsTable } from '@/components/assign-reports/report-list-table';
 import { Toolbar } from '@/components/assign-reports/toolbar';
 import { useReports } from '@/hooks/use-reports';
-import * as React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
 
 const AssignReportsPage = () => {
   const { data: reports = [] } = useReports();
-  const navigate = useNavigate();
 
-  const [query, setQuery] = React.useState('');
-  const [selectedStatuses, setSelectedStatuses] = React.useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = React.useState<string[]>(
+  const [query, setQuery] = useState('');
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
     [],
   );
 
-  const availableStatuses = React.useMemo(() => {
+  const availableStatuses = useMemo(() => {
     const setStatus = new Set<string>();
     for (const r of reports) {
       if (r.status) setStatus.add(r.status);
@@ -22,7 +20,7 @@ const AssignReportsPage = () => {
     return Array.from(setStatus).sort();
   }, [reports]);
 
-  const availableCategories = React.useMemo(() => {
+  const availableCategories = useMemo(() => {
     const setCategories = new Set<string>();
     for (const r of reports) {
       if (r.category?.name) setCategories.add(r.category.name);
@@ -30,7 +28,7 @@ const AssignReportsPage = () => {
     return Array.from(setCategories).sort();
   }, [reports]);
 
-  const filteredReports = React.useMemo(() => {
+  const filteredReports = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     return reports.filter((r) => {
@@ -50,10 +48,6 @@ const AssignReportsPage = () => {
       return matchesQuery && matchesStatus && matchesCategory;
     });
   }, [reports, query, selectedStatuses, selectedCategories]);
-
-  const handleViewReport = (report: any) => {
-    navigate(`/app/reports/${report.id}`);
-  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">
