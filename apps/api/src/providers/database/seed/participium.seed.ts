@@ -261,7 +261,7 @@ async function seedOffices(
 function getBoundariesGeoJsonPath(): string {
   let assetsDir = path.join(__dirname, 'assets');
 
-  if (__dirname.includes('/dist/')) {
+  if (__dirname.includes('/dist/') || __dirname.includes('\\dist\\')) {
     assetsDir = path.join(
       __dirname,
       '../../../../../src/providers/database/seed/assets',
@@ -448,7 +448,7 @@ async function seedCitizenUsers(
 function getImagesDirectory(): string {
   let imagesDir = path.join(__dirname, 'images');
 
-  if (__dirname.includes('/dist/')) {
+  if (__dirname.includes('/dist/') || __dirname.includes('\\dist\\')) {
     imagesDir = path.join(
       __dirname,
       '../../../../../src/providers/database/seed/images',
