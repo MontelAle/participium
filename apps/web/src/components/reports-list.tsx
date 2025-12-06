@@ -7,9 +7,8 @@ import { useActiveReportStore } from '@/store/activeReportStore';
 import type { ReportsListProps } from '@/types/report';
 import type { Report } from '@repo/api';
 import { CalendarDays, Ghost, MapPin, Tag, User } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MouseEvent } from 'react';
 
 export function ReportsList({
   setIsMobileExpanded = () => {},

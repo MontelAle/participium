@@ -1,5 +1,5 @@
 import { CreateMunicipalityUserDto, Role, User } from '@repo/api';
-import { ComponentProps, ElementType } from 'react';
+import { ComponentProps, ElementType, type ReactNode } from 'react';
 
 export type SidebarProps = {
   isOpen: boolean;
@@ -53,3 +53,11 @@ export type UsersToolbarProps = {
 
   className?: string;
 };
+
+export type MunicipalGuardProps = Readonly<{
+  children: ReactNode;
+}>;
+
+export type CitizenGuardProps = Readonly<{
+  children: ReactNode;
+}>;

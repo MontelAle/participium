@@ -14,7 +14,7 @@ import {
 } from '@tanstack/react-table';
 import { atom, useAtom } from 'jotai';
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
-import React, {
+import {
   Fragment,
   type HTMLAttributes,
   type ReactNode,
@@ -23,6 +23,7 @@ import React, {
   useCallback,
   useContext,
   useMemo,
+  useState,
 } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -41,8 +42,6 @@ import {
 } from '@/components/ui/table';
 
 export type { ColumnDef } from '@tanstack/react-table';
-
-const sortingAtom = atom<SortingState>([]);
 
 interface TableContextValue {
   data: unknown[];
@@ -69,7 +68,7 @@ export function TableProvider<TData, TValue>({
   children,
   className,
 }: TableProviderProps<TData, TValue>) {
-  const [sorting, setSorting] = useAtom(sortingAtom);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const table = useReactTable({
     data,
@@ -177,8 +176,10 @@ export function TableColumnHeader<TData, TValue>({
     return <TableHeadRaw className={className}>{title}</TableHeadRaw>;
   }
 
-  const SortIcon = () => {
-    const sortState = column.getIsSorted();
+  interface SortIconProps {
+    sortState: false | 'asc' | 'desc';
+  }
+  const SortIcon = ({ sortState }: SortIconProps) => {
     if (sortState === 'desc') return <ArrowDownIcon className="ml-2 h-4 w-4" />;
     if (sortState === 'asc') return <ArrowUpIcon className="ml-2 h-4 w-4" />;
     return <ChevronsUpDownIcon className="ml-2 h-4 w-4" />;
@@ -195,7 +196,7 @@ export function TableColumnHeader<TData, TValue>({
               variant="ghost"
             >
               <span>{title}</span>
-              <SortIcon />
+              <SortIcon sortState={column.getIsSorted()} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">

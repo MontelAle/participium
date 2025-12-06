@@ -1,8 +1,8 @@
 import { useAuth } from '@/contexts/auth-context';
-import { ReactNode } from 'react';
+import { CitizenGuardProps } from '@/types/ui';
 import { Navigate, useLocation } from 'react-router-dom';
 
-export function CitizenGuard({ children }: { children: ReactNode }) {
+export function CitizenGuard({ children }: CitizenGuardProps) {
   const { isMunicipalityUser } = useAuth();
   const location = useLocation();
 
@@ -10,5 +10,6 @@ export function CitizenGuard({ children }: { children: ReactNode }) {
     return <Navigate to="/app/dashboard" state={{ from: location }} replace />;
   }
 
-  return <>{children}</>;
+  // RITORNA IL NODO PULITO. <>{children}</> è overhead inutile.
+  return children;
 }
