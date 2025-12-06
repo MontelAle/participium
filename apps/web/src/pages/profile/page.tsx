@@ -50,14 +50,14 @@ export default function ProfilePage() {
         telegramUsername: profile.telegramUsername ?? '',
         emailNotificationsEnabled: !!profile.emailNotificationsEnabled,
         profilePicture: null,
-        firstName: user?.firstName ?? '',
-        lastName: user?.lastName ?? '',
-        username: user?.username ?? '',
-        email: user?.email ?? '',
+        firstName: profile.user.firstName ?? '',
+        lastName: profile.user.lastName ?? '',
+        username: profile.user.username ?? '',
+        email: profile.user.email ?? '',
       });
       setPreviewUrl(profile.profilePictureUrl ?? null);
     }
-  }, [profile, reset]);
+  }, [profile,user, reset]);
 
   const watchedPhoto = watch('profilePicture');
   useEffect(() => {
@@ -92,6 +92,12 @@ export default function ProfilePage() {
         'emailNotificationsEnabled',
         String(data.emailNotificationsEnabled),
       );
+
+      formData.append('firstName',data.firstName);
+      formData.append('lastName',data.lastName);
+      formData.append('username',data.username);
+      formData.append('email',data.email);
+
       if (data.profilePicture)
         formData.append('profilePicture', data.profilePicture);
 

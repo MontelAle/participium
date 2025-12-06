@@ -7,12 +7,17 @@ import { Profile } from '../../common/entities/profile.entity';
 import { Repository } from 'typeorm';
 import { USER_ERROR_MESSAGES } from '../users/constants/error-messages';
 import { MinioProvider } from '../../providers/minio/minio.provider';
+import { User } from '../../common/entities/user.entity';
+import { Account } from 'src/common/entities/account.entity';
 
 @Injectable()
 export class ProfilesService {
   constructor(
     @InjectRepository(Profile)
     private readonly profileRepository: Repository<Profile>,
+
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
 
     private readonly minioProvider: MinioProvider,
   ) {}
@@ -26,6 +31,7 @@ export class ProfilesService {
       where: { userId: userId  },
       relations: ['user'],
     });
+
 
     if (!profile) {
       throw new NotFoundException(USER_ERROR_MESSAGES.PROFILE_NOT_FOUND);
@@ -64,6 +70,20 @@ export class ProfilesService {
 
       profile.profilePictureUrl = fileUrl;
     }
+
+  
+  const user = await this.userRepository.findOne({ where: { id: userId } });
+  
+  if (!user) {
+    throw new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND);
+  }
+
+  if (dto.email) {user.email = dto.email; profile.user.email=dto.email; }
+  if (dto.username) {user.username = dto.username; profile.user.username=dto.username;}
+  if (dto.firstName) {user.firstName = dto.firstName; profile.user.firstName=dto.firstName;  }
+  if (dto.lastName) {user.lastName = dto.lastName; profile.user.lastName=dto.lastName; }
+  
+    await this.userRepository.save(user);
 
     return this.profileRepository.save(profile);
   }

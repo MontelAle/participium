@@ -4,6 +4,8 @@ import {
   IsBoolean,
   Matches,
   ValidateIf,
+  IsEmail,
+  IsNotEmpty,
 } from 'class-validator';
 import {
   UpdateProfileDto as UpdateProfileDtoInterface,
@@ -24,6 +26,22 @@ export class UpdateProfileDto implements UpdateProfileDtoInterface {
   @IsString()
   @IsOptional()
   emailNotificationsEnabled?: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+  
+  @IsString()
+  @IsOptional()
+  username?: string;
+  
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+  
+  @IsString()
+  @IsOptional()
+  lastName?: string;
 }
 
 export class ProfileResponseDto implements ProfileResponseDtoInterface {

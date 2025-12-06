@@ -18,7 +18,7 @@ export class Profile implements ProfileInterface {
   @Column({ nullable: false })
   userId: string;
 
-  @OneToOne(() => User, { nullable: false })
+  @OneToOne(() => User, { nullable: false , eager: true })
   @JoinColumn({ name: 'userId' })
   user: User;
 
