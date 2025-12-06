@@ -1,24 +1,24 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type {
+  CreateReportDto as CreateReportDtoType,
+  FilterReportsDto as FilterReportsDtoType,
+  ReportResponseDto as ReportResponseDtoType,
+  ReportsResponseDto as ReportsResponseDtoType,
+  UpdateReportDto as UpdateReportDtoType,
+} from '@repo/api';
 import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsNumber,
-  Min,
-  Max,
   IsArray,
   IsBoolean,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  CreateReportDto as CreateReportDtoInterface,
-  UpdateReportDto as UpdateReportDtoInterface,
-  FilterReportsDto as FilterReportsDtoInterface,
-  ReportResponseDto as ReportResponseDtoInterface,
-  ReportsResponseDto as ReportsResponseDtoInterface,
-} from '@repo/api';
-import { ReportStatus, Report } from '../entities/report.entity';
+import { Report, ReportStatus } from '../entities/report.entity';
 
-export class CreateReportDto implements CreateReportDtoInterface {
+export class CreateReportDto implements CreateReportDtoType {
   @IsString()
   title: string;
 
@@ -61,7 +61,7 @@ export class CreateReportDto implements CreateReportDtoInterface {
   isAnonymous?: boolean;
 }
 
-export class UpdateReportDto implements UpdateReportDtoInterface {
+export class UpdateReportDto implements UpdateReportDtoType {
   @IsString()
   @IsOptional()
   title?: string;
@@ -116,7 +116,7 @@ export class UpdateReportDto implements UpdateReportDtoInterface {
   assignedOfficerId?: string;
 }
 
-export class FilterReportsDto implements FilterReportsDtoInterface {
+export class FilterReportsDto implements FilterReportsDtoType {
   @IsEnum(ReportStatus)
   @IsOptional()
   status?: ReportStatus;
@@ -158,12 +158,12 @@ export class FilterReportsDto implements FilterReportsDtoInterface {
   radiusMeters?: number;
 }
 
-export class ReportResponseDto implements ReportResponseDtoInterface {
+export class ReportResponseDto implements ReportResponseDtoType {
   success: boolean;
   data: Report;
 }
 
-export class ReportsResponseDto implements ReportsResponseDtoInterface {
+export class ReportsResponseDto implements ReportsResponseDtoType {
   success: boolean;
   data: Report[];
 }
