@@ -1,14 +1,14 @@
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersService } from './users.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { User } from '../../common/entities/user.entity';
-import { Account } from '../../common/entities/account.entity';
-import { Role } from '../../common/entities/role.entity';
-import { Office } from '../../common/entities/office.entity';
-import { MinioProvider } from '../../providers/minio/minio.provider';
 import { Repository } from 'typeorm';
-import { NotFoundException, ConflictException } from '@nestjs/common';
 import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
+import { Account } from '../../common/entities/account.entity';
+import { Office } from '../../common/entities/office.entity';
+import { Role } from '../../common/entities/role.entity';
+import { User } from '../../common/entities/user.entity';
+import { MinioProvider } from '../../providers/minio/minio.provider';
+import { UsersService } from './users.service';
 
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 

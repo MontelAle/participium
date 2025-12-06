@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProfile, updateProfileWithFile } from '@/api/endpoints/profile';
-import type { UpdateProfileDto, ProfileResponseDto, Profile } from '@repo/api';
+import type { Profile, ProfileResponseDto, UpdateProfileDto } from '@repo/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useProfile(options?: { enabled?: boolean }) {
   const queryClient = useQueryClient();

@@ -1,17 +1,17 @@
+import { faker } from '@faker-js/faker';
+import * as bcrypt from 'bcrypt';
+import * as fs from 'fs';
+import { nanoid } from 'nanoid';
+import * as path from 'path';
 import { DataSource } from 'typeorm';
-import { Role } from '../../../common/entities/role.entity';
-import { User } from '../../../common/entities/user.entity';
 import { Account } from '../../../common/entities/account.entity';
 import { Category } from '../../../common/entities/category.entity';
-import { Report, ReportStatus } from '../../../common/entities/report.entity';
 import { Office } from '../../../common/entities/office.entity';
-import { nanoid } from 'nanoid';
-import * as bcrypt from 'bcrypt';
-import { faker } from '@faker-js/faker';
-import { MinioProvider } from '../../minio/minio.provider';
-import * as fs from 'fs';
-import * as path from 'path';
 import { Profile } from '../../../common/entities/profile.entity';
+import { Report, ReportStatus } from '../../../common/entities/report.entity';
+import { Role } from '../../../common/entities/role.entity';
+import { User } from '../../../common/entities/user.entity';
+import { MinioProvider } from '../../minio/minio.provider';
 
 const REAL_REPORTS = [
   {

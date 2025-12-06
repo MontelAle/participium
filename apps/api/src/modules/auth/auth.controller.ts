@@ -1,27 +1,27 @@
 import {
-  Post,
   Body,
   Controller,
-  Request,
-  UseGuards,
-  Res,
-  Req,
   HttpCode,
   HttpStatus,
+  Post,
+  Req,
+  Request,
+  Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
+import type { Response } from 'express';
 import {
-  RegisterDto,
   LoginDto,
   LoginResponseDto,
   LogoutResponseDto,
+  RegisterDto,
 } from '../../common/dto/auth.dto';
+import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
+import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { SessionGuard } from './guards/session-auth.guard';
-import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
-import type { Response } from 'express';
 
 @ApiTags('Authentication')
 @Controller('auth')

@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { CreateMunicipalityUserForm } from '@/components/municipality-users/create-municipality-user-form';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 function ReportPage() {
   const navigate = useNavigate();

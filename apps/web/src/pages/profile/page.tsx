@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { useProfile } from '@/hooks/use-profile';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Field, FieldLabel } from '@/components/ui/field';
 import {
   InputGroup,
-  InputGroupInput,
   InputGroupAddon,
+  InputGroupInput,
 } from '@/components/ui/input-group';
-import { Image as ImageIcon, Send, ArrowLeft } from 'lucide-react';
-import { data, useNavigate } from 'react-router-dom';
+import { useProfile } from '@/hooks/use-profile';
+import { ArrowLeft, Image as ImageIcon, Send } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 type FormValues = {

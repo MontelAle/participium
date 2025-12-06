@@ -1,5 +1,4 @@
 import type { Config } from 'jest';
-import type { Config as ConfigNamespace } from '@jest/types';
 import nextJest from 'next/jest';
 import { config as baseConfig } from './base';
 

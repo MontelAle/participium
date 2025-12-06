@@ -1,19 +1,19 @@
+import { StatCard } from '@/components/dashboard/stat-card';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth-context';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
 import { useReports } from '@/hooks/use-reports';
 import {
-  Users,
-  FileText,
-  Timer,
   AlertCircle,
-  Plus,
   CheckCircle,
-  XCircle,
+  FileText,
+  Plus,
+  Timer,
   UserCheck,
+  Users,
+  XCircle,
 } from 'lucide-react';
-import { StatCard } from '@/components/dashboard/stat-card';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardPage = () => {
   const navigate = useNavigate();

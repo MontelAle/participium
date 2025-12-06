@@ -1,17 +1,17 @@
-import * as React from 'react';
+import { MiniMap } from '@/components/mini-map';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/auth-context';
 import {
-  XIcon,
-  MapPin,
-  Tag,
-  Maximize2,
-  User,
   CalendarClock,
   Info,
+  MapPin,
+  Maximize2,
+  Tag,
+  User,
+  XIcon,
 } from 'lucide-react';
-import { MiniMap } from '@/components/mini-map';
-import { useAuth } from '@/contexts/auth-context';
+import * as React from 'react';
 
 import type { Report } from '@repo/api';
 import { ReportStatus } from '@repo/api';
@@ -38,101 +38,101 @@ export function ViewReportForm({ report }: ViewReportFormProps) {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
         <div className="md:col-span-7 p-6 flex flex-col bg-white overflow-y-auto h-full border-b md:border-b-0 md:border-r border-gray-100 order-2 md:order-1 min-w-0">
           <div className="space-y-4 flex-1 flex flex-col min-w-0">
-          <div className="w-full">
-            <h4 className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wider">
-              Title
-            </h4>
-            <p className="text-xl font-bold text-foreground leading-tight break-words">
-              {report.title}
-            </p>
-          </div>
-          <Separator className="bg-gray-100" />
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
-              Category
-            </h4>
-            <div className="inline-flex items-center px-3 py-2 rounded-lg bg-purple-50 text-purple-700 font-medium text-sm border border-purple-200 w-fit">
-              <Tag className="size-4 mr-2" />
-              {categoryName}
+            <div className="w-full">
+              <h4 className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wider">
+                Title
+              </h4>
+              <p className="text-xl font-bold text-foreground leading-tight break-words">
+                {report.title}
+              </p>
             </div>
-          </div>
-          <div className="flex-1 w-full">
-            <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">
-              Description
-            </h4>
-            <div className="bg-gray-50/50 rounded-lg p-4 border text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words w-full min-h-[100px]">
-              {report.description}
+            <Separator className="bg-gray-100" />
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
+                Category
+              </h4>
+              <div className="inline-flex items-center px-3 py-2 rounded-lg bg-purple-50 text-purple-700 font-medium text-sm border border-purple-200 w-fit">
+                <Tag className="size-4 mr-2" />
+                {categoryName}
+              </div>
             </div>
-          </div>
-          {report.explanation && (
-            <div
-              className={`rounded-lg border p-3 text-sm animate-in fade-in w-full ${
-                report.status === ReportStatus.REJECTED
-                  ? 'border-red-200 bg-red-50'
-                  : 'border-amber-200 bg-amber-50'
-              }`}
-            >
-              <div className="flex gap-2">
-                <Info
-                  className={`h-4 w-4 mt-0.5 shrink-0 ${
-                    report.status === ReportStatus.REJECTED
-                      ? 'text-red-600'
-                      : 'text-amber-600'
-                  }`}
-                />
-                <div className="space-y-0.5 w-full">
-                  <h5
-                    className={`font-semibold ${
+            <div className="flex-1 w-full">
+              <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+                Description
+              </h4>
+              <div className="bg-gray-50/50 rounded-lg p-4 border text-sm text-gray-700 leading-relaxed whitespace-pre-wrap break-words w-full min-h-[100px]">
+                {report.description}
+              </div>
+            </div>
+            {report.explanation && (
+              <div
+                className={`rounded-lg border p-3 text-sm animate-in fade-in w-full ${
+                  report.status === ReportStatus.REJECTED
+                    ? 'border-red-200 bg-red-50'
+                    : 'border-amber-200 bg-amber-50'
+                }`}
+              >
+                <div className="flex gap-2">
+                  <Info
+                    className={`h-4 w-4 mt-0.5 shrink-0 ${
                       report.status === ReportStatus.REJECTED
-                        ? 'text-red-900'
-                        : 'text-amber-900'
+                        ? 'text-red-600'
+                        : 'text-amber-600'
                     }`}
-                  >
-                    {report.status === ReportStatus.REJECTED
-                      ? 'Rejection Reason'
-                      : 'Admin Note'}
-                  </h5>
-                  <p
-                    className={`leading-relaxed break-words ${
-                      report.status === ReportStatus.REJECTED
-                        ? 'text-red-800'
-                        : 'text-amber-800'
-                    }`}
-                  >
-                    {report.explanation}
-                  </p>
+                  />
+                  <div className="space-y-0.5 w-full">
+                    <h5
+                      className={`font-semibold ${
+                        report.status === ReportStatus.REJECTED
+                          ? 'text-red-900'
+                          : 'text-amber-900'
+                      }`}
+                    >
+                      {report.status === ReportStatus.REJECTED
+                        ? 'Rejection Reason'
+                        : 'Admin Note'}
+                    </h5>
+                    <p
+                      className={`leading-relaxed break-words ${
+                        report.status === ReportStatus.REJECTED
+                          ? 'text-red-800'
+                          : 'text-amber-800'
+                      }`}
+                    >
+                      {report.explanation}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="pt-4 mt-auto flex flex-wrap items-center justify-between gap-4 border-t border-dashed w-full">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest hidden sm:inline-block shrink-0">
+                  Reported By
+                </span>
+                <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-medium text-sm truncate">
+                  <User className="size-3.5 text-slate-500 shrink-0" />
+                  <span className="capitalize truncate max-w-[120px]">
+                    {report.user.firstName} {report.user.lastName}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest hidden sm:inline-block text-right">
+                  Last Updated
+                </span>
+                <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-gray-50 border border-gray-200 text-gray-600 font-medium text-sm">
+                  <CalendarClock className="size-3.5 text-gray-400" />
+                  <span>
+                    {new Date(report.updatedAt).toLocaleDateString(undefined, {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </span>
                 </div>
               </div>
             </div>
-          )}
-          <div className="pt-4 mt-auto flex flex-wrap items-center justify-between gap-4 border-t border-dashed w-full">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest hidden sm:inline-block shrink-0">
-                Reported By
-              </span>
-              <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 font-medium text-sm truncate">
-                <User className="size-3.5 text-slate-500 shrink-0" />
-                <span className="capitalize truncate max-w-[120px]">
-                  {report.user.firstName} {report.user.lastName}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest hidden sm:inline-block text-right">
-                Last Updated
-              </span>
-              <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-gray-50 border border-gray-200 text-gray-600 font-medium text-sm">
-                <CalendarClock className="size-3.5 text-gray-400" />
-                <span>
-                  {new Date(report.updatedAt).toLocaleDateString(undefined, {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
-                </span>
-              </div>
-            </div>
-          </div>
           </div>
         </div>
         <div className="md:col-span-5 flex flex-col gap-6 overflow-y-auto order-1 md:order-2 p-6">
