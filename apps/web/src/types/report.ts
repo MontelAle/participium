@@ -1,5 +1,3 @@
-import { DateRange } from 'react-day-picker';
-
 export type ReportData = {
   title: string;
   description: string;

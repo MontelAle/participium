@@ -1,9 +1,9 @@
-import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
-import { Office as OfficeInterface } from '@repo/api';
+import type { Office as OfficeType } from '@repo/api';
+import { Column, Entity, OneToMany, PrimaryColumn } from 'typeorm';
 import { Category } from './category.entity';
 
 @Entity('office')
-export class Office implements OfficeInterface {
+export class Office implements OfficeType {
   @PrimaryColumn('varchar')
   id: string;
 

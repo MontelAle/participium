@@ -1,10 +1,9 @@
-import { useLocation } from 'react-router-dom';
-import * as React from 'react';
-import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
-import { UsersToolbar } from '@/components/municipality-users/user-toolbar';
 import { MunicipalityUsersTable } from '@/components/municipality-users/municipality-users-table';
+import { UsersToolbar } from '@/components/municipality-users/user-toolbar';
 import { Button } from '@/components/ui/button';
+import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
 import { Plus } from 'lucide-react';
+import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const MunicipalityUsersPage = () => {

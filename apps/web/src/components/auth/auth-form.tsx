@@ -1,4 +1,3 @@
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -12,12 +11,13 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from '@/components/ui/input-group';
-import { Link, useNavigate } from 'react-router-dom';
-import { MailIcon, UserIcon, LockIcon, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
-import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { AuthFormProps } from '@/types/ui';
+import { Eye, EyeOff, MailIcon, UserIcon } from 'lucide-react';
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export function AuthForm({ mode, className, ...props }: AuthFormProps) {
   const { login, register, isLoading } = useAuth();

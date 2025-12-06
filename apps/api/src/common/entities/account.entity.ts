@@ -1,17 +1,17 @@
+import type { Account as AccountType } from '@repo/api';
 import {
-  Entity,
-  PrimaryColumn,
   Column,
-  ManyToOne,
-  JoinColumn,
   CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from './user.entity';
-import { Account as AccountInterface } from '@repo/api';
 
 @Entity('account')
-export class Account implements AccountInterface {
+export class Account implements AccountType {
   @PrimaryColumn('varchar')
   id: string;
 

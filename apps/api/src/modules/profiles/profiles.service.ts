@@ -3,10 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateProfileDto } from '@repo/api';
 import { nanoid } from 'nanoid';
 import path from 'node:path';
-import { Profile } from '../../common/entities/profile.entity';
 import { Repository } from 'typeorm';
-import { USER_ERROR_MESSAGES } from '../users/constants/error-messages';
+import { Profile } from '../../common/entities/profile.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
+import { USER_ERROR_MESSAGES } from '../users/constants/error-messages';
 
 @Injectable()
 export class ProfilesService {

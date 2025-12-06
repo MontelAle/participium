@@ -1,14 +1,19 @@
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -16,16 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { SlidersHorizontal, CalendarIcon } from 'lucide-react';
-import { ReportStatus } from '@repo/api';
 import { cn } from '@/lib/utils';
+import { ReportStatus } from '@repo/api';
 import { format } from 'date-fns';
+import { CalendarIcon, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 
 type FilterState = {

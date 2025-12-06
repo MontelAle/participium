@@ -1,15 +1,15 @@
-import { IsOptional, IsString, IsEmail } from 'class-validator';
-import {
-  UpdateMunicipalityUserDto as UpdateMunicipalityUserDtoInterface,
-  CreateMunicipalityUserDto as CreateMunicipalityUserDtoInterface,
-  MunicipalityUserResponseDto as MunicipalityUserResponseDtoInterface,
-  MunicipalityUsersResponseDto as MunicipalityUsersResponseDtoInterface,
-  MunicipalityUserIdResponseDto as MunicipalityUserIdResponseDtoInterface,
+import type {
+  CreateMunicipalityUserDto as CreateMunicipalityUserDtoType,
+  MunicipalityUserIdResponseDto as MunicipalityUserIdResponseDtoType,
+  MunicipalityUserResponseDto as MunicipalityUserResponseDtoType,
+  MunicipalityUsersResponseDto as MunicipalityUsersResponseDtoType,
+  UpdateMunicipalityUserDto as UpdateMunicipalityUserDtoType,
 } from '@repo/api';
+import { IsEmail, IsOptional, IsString } from 'class-validator';
 import { User } from '../entities/user.entity';
 
 export class UpdateMunicipalityUserDto
-  implements UpdateMunicipalityUserDtoInterface
+  implements UpdateMunicipalityUserDtoType
 {
   @IsEmail()
   @IsOptional()
@@ -37,7 +37,7 @@ export class UpdateMunicipalityUserDto
 }
 
 export class CreateMunicipalityUserDto
-  implements CreateMunicipalityUserDtoInterface
+  implements CreateMunicipalityUserDtoType
 {
   @IsString()
   password: string;
@@ -63,21 +63,21 @@ export class CreateMunicipalityUserDto
 }
 
 export class MunicipalityUserResponseDto
-  implements MunicipalityUserResponseDtoInterface
+  implements MunicipalityUserResponseDtoType
 {
   data: User;
   success: boolean;
 }
 
 export class MunicipalityUsersResponseDto
-  implements MunicipalityUsersResponseDtoInterface
+  implements MunicipalityUsersResponseDtoType
 {
   data: User[];
   success: boolean;
 }
 
 export class MunicipalityUserIdResponseDto
-  implements MunicipalityUserIdResponseDtoInterface
+  implements MunicipalityUserIdResponseDtoType
 {
   data: { id: string };
   success: boolean;

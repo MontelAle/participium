@@ -1,10 +1,10 @@
-import { SessionGuard } from './session-auth.guard';
+import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { Session } from '../../../common/entities/session.entity';
 import { User } from '../../../common/entities/user.entity';
-import { UnauthorizedException } from '@nestjs/common';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
+import { SessionGuard } from './session-auth.guard';
 
 type MockRepository<T = any> = {
   findOne: jest.Mock;
