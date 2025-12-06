@@ -24,7 +24,7 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import * as React from 'react';
+import { useCallback, useState } from 'react';
 
 export function UsersToolbar({
   query,
@@ -37,10 +37,10 @@ export function UsersToolbar({
   availableOffices,
   className,
 }: UsersToolbarProps) {
-  const [openRoles, setOpenRoles] = React.useState(false);
-  const [openOffices, setOpenOffices] = React.useState(false);
+  const [openRoles, setOpenRoles] = useState(false);
+  const [openOffices, setOpenOffices] = useState(false);
 
-  const toggleRole = React.useCallback(
+  const toggleRole = useCallback(
     (role: string) => {
       onRolesChange(
         selectedRoles.includes(role)
@@ -51,7 +51,7 @@ export function UsersToolbar({
     [onRolesChange, selectedRoles],
   );
 
-  const toggleOffice = React.useCallback(
+  const toggleOffice = useCallback(
     (office: string) => {
       onOfficesChange(
         selectedOffices.includes(office)
@@ -62,7 +62,7 @@ export function UsersToolbar({
     [onOfficesChange, selectedOffices],
   );
 
-  const clearAll = React.useCallback(() => {
+  const clearAll = useCallback(() => {
     onRolesChange([]);
     onOfficesChange([]);
   }, [onRolesChange, onOfficesChange]);

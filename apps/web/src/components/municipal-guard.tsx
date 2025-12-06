@@ -1,7 +1,8 @@
 import { useAuth } from '@/contexts/auth-context';
+import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 
-export function MunicipalGuard({ children }: { children: React.ReactNode }) {
+export function MunicipalGuard({ children }: { children: ReactNode }) {
   const { isAuthenticated, isMunicipalityUser } = useAuth();
   const location = useLocation();
 

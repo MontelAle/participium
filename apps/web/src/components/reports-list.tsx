@@ -9,6 +9,7 @@ import type { Report } from '@repo/api';
 import { CalendarDays, Ghost, MapPin, Tag, User } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { MouseEvent } from 'react';
 
 export function ReportsList({
   setIsMobileExpanded = () => {},
@@ -24,7 +25,7 @@ export function ReportsList({
     return [...baseFilteredReports];
   }, [baseFilteredReports, isCitizenUser, isGuestUser, user]);
 
-  const handleReportClick = (e: React.MouseEvent, report: Report) => {
+  const handleReportClick = (e: MouseEvent, report: Report) => {
     setIsMobileExpanded(false);
     setLocation({
       latitude: report.location.coordinates[1] ?? 0,

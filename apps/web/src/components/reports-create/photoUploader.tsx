@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Camera, Plus, UploadCloud, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useRef, useState, DragEvent, KeyboardEvent } from 'react';
 import { toast } from 'sonner';
 
 interface PhotoUploaderProps {
@@ -56,24 +56,24 @@ export function PhotoUploader({
     [photos, maxPhotos, onChange],
   );
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       processFiles(Array.from(e.target.files));
       if (inputRef.current) inputRef.current.value = '';
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = (e: DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -86,7 +86,7 @@ export function PhotoUploader({
     onChange(photos.filter((_, i) => i !== index));
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       triggerInput();

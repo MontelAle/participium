@@ -25,7 +25,7 @@ import {
   MailIcon,
   UserIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { ChangeEvent, FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -47,7 +47,7 @@ export function CreateMunicipalityUserForm() {
   const [form, setForm] = useState<CreateMunicipalityUserDto>(emptyForm);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -59,7 +59,7 @@ export function CreateMunicipalityUserForm() {
     setForm({ ...form, officeId: value });
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isLoading) return;
     setIsLoading(true);

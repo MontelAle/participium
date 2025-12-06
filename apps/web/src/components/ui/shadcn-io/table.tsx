@@ -15,6 +15,7 @@ import {
 import { atom, useAtom } from 'jotai';
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
 import React, {
+  Fragment,
   type HTMLAttributes,
   type ReactNode,
   createContext,
@@ -23,7 +24,6 @@ import React, {
   useContext,
   useMemo,
 } from 'react';
-
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -130,7 +130,7 @@ export const TableHeaderGroup = ({
 }: TableHeaderGroupProps) => (
   <TableRowRaw key={headerGroup.id} className={className}>
     {headerGroup.headers.map((header) => (
-      <React.Fragment key={header.id}>{children({ header })}</React.Fragment>
+      <Fragment key={header.id}>{children({ header })}</Fragment>
     ))}
   </TableRowRaw>
 );
@@ -146,9 +146,9 @@ export const TableHeader = ({ className, children }: TableHeaderProps) => {
   return (
     <TableHeaderRaw className={className}>
       {table?.getHeaderGroups().map((headerGroup) => (
-        <React.Fragment key={headerGroup.id}>
+        <Fragment key={headerGroup.id}>
           {children({ headerGroup })}
-        </React.Fragment>
+        </Fragment>
       ))}
     </TableHeaderRaw>
   );
@@ -237,7 +237,7 @@ export const TableRow = ({ row, children, className }: TableRowProps) => (
     data-state={row.getIsSelected() && 'selected'}
   >
     {row.getVisibleCells().map((cell) => (
-      <React.Fragment key={cell.id}>{children({ cell })}</React.Fragment>
+      <Fragment key={cell.id}>{children({ cell })}</Fragment>
     ))}
   </TableRowRaw>
 );
@@ -255,7 +255,7 @@ export const TableBody = ({ children, className }: TableBodyProps) => {
     <TableBodyRaw className={className}>
       {rows?.length ? (
         rows.map((row) => (
-          <React.Fragment key={row.id}>{children({ row })}</React.Fragment>
+          <Fragment key={row.id}>{children({ row })}</Fragment>
         ))
       ) : (
         <TableRowRaw>

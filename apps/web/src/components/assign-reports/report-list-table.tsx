@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/shadcn-io/table';
 import type { Report } from '@repo/api';
 import { Eye } from 'lucide-react';
-import * as React from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export type ReportsTableProps = {
@@ -20,7 +20,7 @@ export type ReportsTableProps = {
 export function ReportsTable({ data }: ReportsTableProps) {
   const navigate = useNavigate();
 
-  const columns = React.useMemo(
+  const columns = useMemo(
     () => [
       {
         accessorKey: 'title',
