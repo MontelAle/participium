@@ -1,5 +1,5 @@
-import { User } from '../entities/user.entity';
 import { Session } from '../entities/session.entity';
+import { User } from '../entities/user.entity';
 import { ResponseDto } from './response.dto';
 
 export interface RegisterDto {

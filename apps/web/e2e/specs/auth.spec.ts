@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test';
-import { AuthPage } from '../pages/AuthPage.js';
+import { expect, test } from '@playwright/test';
 import {
   createLoginResponse,
   createRegisterResponse,
 } from '../fixtures/auth-municipal-data.js';
+import { AuthPage } from '../pages/AuthPage.js';
 
 test.describe('Auth Flow', () => {
   let authPage: AuthPage;

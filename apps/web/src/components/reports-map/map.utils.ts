@@ -1,6 +1,6 @@
-import L from 'leaflet';
 import { ReportStatus } from '@repo/api';
-import { isSameDay, subWeeks, subMonths, isAfter } from 'date-fns';
+import { isAfter, isSameDay, subMonths, subWeeks } from 'date-fns';
+import L from 'leaflet';
 
 export const STATUS_COLORS = {
   [ReportStatus.PENDING]: {

@@ -1,13 +1,13 @@
-import { useEffect, useRef } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { ReportStatus } from '@repo/api';
 import {
   injectStylesOnce,
   modernDivIcon,
   smallDivIcon,
 } from '@/components/reports-map/map.utils';
 import { cn } from '@/lib/utils';
+import { ReportStatus } from '@repo/api';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { useEffect, useRef } from 'react';
 
 interface MiniMapProps {
   latitude: number;

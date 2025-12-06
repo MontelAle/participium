@@ -1,22 +1,22 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'sonner';
-import { AuthProvider } from '@/contexts/auth-context';
+import { CitizenGuard } from '@/components/citizen-guard';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { MunicipalGuard } from '@/components/municipal-guard';
-import { CitizenGuard } from '@/components/citizen-guard';
+import { AuthProvider } from '@/contexts/auth-context';
+import AssignReportsPage from '@/pages/app/assign-reports/page';
+import AssignReportsViewPage from '@/pages/app/assign-reports/view/page';
+import DashboardPage from '@/pages/app/dashboard/page';
+import MunicipalityUsersCreatePage from '@/pages/app/municipality-users/create/page';
+import MunicipalityUsersPage from '@/pages/app/municipality-users/page';
+import MunicipalityUsersViewPage from '@/pages/app/municipality-users/view/page';
 import LoginPage from '@/pages/auth/login/page';
 import RegistrationPage from '@/pages/auth/registration/page';
-import MapPage from '@/pages/reports/map/page';
-import CreateReportPage from '@/pages/reports/create/page';
-import ReportDetailsPage from '@/pages/reports/view/page';
-import DashboardPage from '@/pages/app/dashboard/page';
-import MunicipalityUsersPage from '@/pages/app/municipality-users/page';
-import MunicipalityUsersCreatePage from '@/pages/app/municipality-users/create/page';
-import MunicipalityUsersViewPage from '@/pages/app/municipality-users/view/page';
-import AssignReportsPage from '@/pages/app/assign-reports/page';
 import ProfilePage from '@/pages/profile/page';
+import CreateReportPage from '@/pages/reports/create/page';
+import MapPage from '@/pages/reports/map/page';
+import ReportDetailsPage from '@/pages/reports/view/page';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import AssignedReportsPage from './pages/app/assigned-reports/page';
-import AssignReportsViewPage from '@/pages/app/assign-reports/view/page';
 import AssignedReportsViewPage from './pages/app/assigned-reports/view/page';
 
 const App = () => {

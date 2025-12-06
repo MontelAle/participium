@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CategoriesController } from './categories.controller';
-import { CategoriesService } from './categories.service';
 import { CategoriesResponseDto } from '../../common/dto/category.dto';
 import { Category } from '../../common/entities/category.entity';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
+import { CategoriesController } from './categories.controller';
+import { CategoriesService } from './categories.service';
 
 class MockSessionGuard {
   canActivate() {

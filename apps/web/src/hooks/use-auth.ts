@@ -1,10 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as authApi from '@/api/endpoints/auth';
-import type { LoginDto, RegisterDto, User } from '@repo/api';
+import type { LoginDto, RegisterDto } from '@repo/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useLogin() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (credentials: LoginDto) => authApi.login(credentials),
     onSuccess: (response) => {
@@ -17,7 +17,7 @@ export function useLogin() {
 
 export function useRegister() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: RegisterDto) => authApi.register(data),
     onSuccess: (response) => {
@@ -30,7 +30,7 @@ export function useRegister() {
 
 export function useLogout() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: () => authApi.logout(),
     onSuccess: () => {

@@ -1,26 +1,26 @@
-import * as React from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
-  TableProvider,
-  TableHeader,
-  TableHeaderGroup,
-  TableRow,
+  TableBody,
   TableCell,
   TableColumnHeader,
-  TableBody,
+  TableHeader,
+  TableHeaderGroup,
+  TableProvider,
+  TableRow,
 } from '@/components/ui/shadcn-io/table';
-import type { User } from '@repo/api';
-import { DeleteMunicipalityUserDialog } from './delete-municipality-user-dialog';
-import { prettifyRole, cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Pencil } from 'lucide-react';
+import { cn, prettifyRole } from '@/lib/utils';
 import { MunicipalityUsersTableProps } from '@/types/ui';
+import type { User } from '@repo/api';
+import { Pencil, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { DeleteMunicipalityUserDialog } from './delete-municipality-user-dialog';
+import { useMemo } from 'react';
 
 export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
   const navigate = useNavigate();
 
-  const columns = React.useMemo(
+  const columns = useMemo(
     () => [
       {
         accessorKey: 'username',

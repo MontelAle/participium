@@ -1,6 +1,6 @@
-import { apiFetch } from '../client';
-import { ProfileResponseDto } from '@repo/api';
 import type { Profile } from '@repo/api';
+import { ProfileResponseDto } from '@repo/api';
+import { apiFetch } from '../client';
 
 export async function updateProfileWithFile(formData: FormData) {
   const res = await fetch('http://localhost:5000/api/profiles/profile/me', {

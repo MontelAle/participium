@@ -1,7 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, ChevronsUpDown, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +10,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/auth-context';
 import { useProfile } from '@/hooks/use-profile';
+import { ChevronsUpDown, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 export function Navbar() {
   const { user, logout, isMunicipalityUser } = useAuth();

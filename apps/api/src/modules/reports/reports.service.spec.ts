@@ -1,21 +1,21 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ReportsService } from './reports.service';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Report, ReportStatus } from '../../common/entities/report.entity';
-import { Category } from '../../common/entities/category.entity';
-import { User } from '../../common/entities/user.entity';
 import {
-  CreateReportDto,
-  UpdateReportDto,
-  FilterReportsDto,
-} from '../../common/dto/report.dto';
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
-  NotFoundException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+  CreateReportDto,
+  FilterReportsDto,
+  UpdateReportDto,
+} from '../../common/dto/report.dto';
+import { Category } from '../../common/entities/category.entity';
+import { Report, ReportStatus } from '../../common/entities/report.entity';
+import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
+import { ReportsService } from './reports.service';
 
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
@@ -661,10 +661,6 @@ describe('ReportsService', () => {
 
   describe('findNearby', () => {
     it('should return nearby reports with distances', async () => {
-      const mockNearbyReports = [
-        { ...mockReport, distance: 150.5 },
-        { ...mockReport, id: 'report-2', distance: 825.3 },
-      ];
 
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
