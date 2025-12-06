@@ -12,6 +12,7 @@ import { MinioProvider } from '../../minio/minio.provider';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { Profile } from '../../../common/entities/profile.entity';
+import { randomInt } from 'node:crypto';
 
 // ============================================================================
 // Constants
@@ -427,9 +428,8 @@ function determineReportUser(
     return { user: luigiVerdi, isAnonymous: true };
   }
 
-  const randomUser =
-    citizenUsers[Math.floor(Math.random() * citizenUsers.length)];
-  const isAnonymous = Math.random() < 0.2;
+  const randomUser = citizenUsers[randomInt(0, citizenUsers.length)];
+  const isAnonymous = randomInt(0, 100) < 20;
 
   return { user: randomUser, isAnonymous };
 }

@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useReports } from '@/hooks/use-reports';
 import { useFilterStore } from '@/store/filterStore';
+import { DateCheckStrategy } from '@/types/ui';
 import type { Report, User } from '@repo/api';
 import { isAfter, isSameDay, subMonths, subWeeks, startOfDay, endOfDay } from 'date-fns';
 import { useMemo } from 'react';
@@ -47,34 +48,40 @@ const failsStaticFilters = (report: Report, filters: any): boolean => {
   return false;
 };
 
+const DATE_RANGE_STRATEGIES: Record<string, DateCheckStrategy> = {
+  'Today': (date, today) => !isSameDay(date, today),
+  'Last Week': (date, today) => !isAfter(date, subWeeks(today, 1)),
+  'This Month': (date, today) => !isAfter(date, subMonths(today, 1)),
+};
+
+const failsCustomDateCheck = (reportDate: Date, customDate: any): boolean => {
+  if (!customDate?.from) return false;
+
+  const fromDate = startOfDay(new Date(customDate.from));
+  if (reportDate < fromDate) return true;
+
+  if (customDate.to) {
+    const toDate = endOfDay(new Date(customDate.to));
+    if (reportDate > toDate) return true;
+  }
+
+  return false;
+};
+
 const failsDateCheck = (report: Report, filters: any, today: Date): boolean => {
   if (!filters) return false;
 
   const reportDate = new Date(report.createdAt);
 
   if (filters.dateRange) {
-    switch (filters.dateRange) {
-      case 'Today':
-        if (!isSameDay(reportDate, today)) return true;
-        break;
-      case 'Last Week':
-        if (!isAfter(reportDate, subWeeks(today, 1))) return true;
-        break;
-      case 'This Month':
-        if (!isAfter(reportDate, subMonths(today, 1))) return true;
-        break;
+    const strategy = DATE_RANGE_STRATEGIES[filters.dateRange];
+    if (strategy && strategy(reportDate, today)) {
+      return true;
     }
   }
 
-  if (filters.customDate?.from) {
-    const fromDate = startOfDay(new Date(filters.customDate.from));
-    
-    if (reportDate < fromDate) return true;
-
-    if (filters.customDate.to) {
-      const toDate = endOfDay(new Date(filters.customDate.to));
-      if (reportDate > toDate) return true;
-    }
+  if (failsCustomDateCheck(reportDate, filters.customDate)) {
+    return true;
   }
 
   return false;
