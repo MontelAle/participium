@@ -75,7 +75,7 @@ const failsDateCheck = (report: Report, filters: any, today: Date): boolean => {
 
   if (filters.dateRange) {
     const strategy = DATE_RANGE_STRATEGIES[filters.dateRange];
-    if (strategy && strategy(reportDate, today)) {
+    if (strategy?.(reportDate, today)) {
       return true;
     }
   }
