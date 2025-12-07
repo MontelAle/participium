@@ -178,7 +178,7 @@ describe('AppController (e2e)', () => {
       {
         id: 'user_1',
         email: 'john@example.com',
-        username: 'john',
+        username: 'john01',
         firstName: 'John',
         lastName: 'Doe',
         roleId: 'role_1',
@@ -192,7 +192,7 @@ describe('AppController (e2e)', () => {
       {
         id: 'user_2',
         email: 'jane@example.com',
-        username: 'jane',
+        username: 'jane01',
         firstName: 'Jane',
         lastName: 'Smith',
         roleId: 'role_2',
@@ -506,7 +506,7 @@ describe('AppController (e2e)', () => {
       .post('/auth/register')
       .send({
         email: 'john@example.com',
-        username: 'john',
+        username: 'john01',
         firstName: 'John',
         lastName: 'Doe',
         password: 'StrongP@ssw0rd',
@@ -519,7 +519,7 @@ describe('AppController (e2e)', () => {
         data: expect.objectContaining({
           user: expect.objectContaining({
             email: 'john@example.com',
-            username: 'john',
+            username: 'john01',
             firstName: 'John',
             lastName: 'Doe',
             id: expect.any(String),
@@ -550,7 +550,7 @@ describe('AppController (e2e)', () => {
   it('POST /auth/login returns user and session when guard passes', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ username: 'john', password: 'StrongP@ssw0rd' })
+      .send({ username: 'john01', password: 'StrongP@ssw0rd' })
       .expect(200);
 
     expect(res.body).toEqual(
@@ -559,7 +559,7 @@ describe('AppController (e2e)', () => {
         data: expect.objectContaining({
           user: expect.objectContaining({
             email: 'john@example.com',
-            username: 'john',
+            username: 'john01',
             firstName: 'John',
             lastName: 'Doe',
             id: expect.any(String),
@@ -1155,6 +1155,94 @@ describe('AppController (e2e)', () => {
   });
 
   // ============================================================================
+  // Report Rejected Access Control
+  // ============================================================================
+
+  it('GET /reports/:id with rejected report from another user returns 404 for citizen', async () => {
+    const createRes = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Rejected Report')
+      .field('description', 'This will be rejected')
+      .field('longitude', '7.6869')
+      .field('latitude', '45.0703')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('fake-image'), 'test.jpg')
+      .expect(201);
+
+    const rejectedReportId = createRes.body.data.id;
+
+    await request(app.getHttpServer())
+      .patch(`/reports/${rejectedReportId}`)
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ status: 'rejected' })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get(`/reports/${rejectedReportId}`)
+      .set('Cookie', 'session_token=sess_2.secret')
+      .expect(404);
+  });
+
+  it('GET /reports/:id with rejected report allows owner citizen to access', async () => {
+    const createRes = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'My Rejected Report')
+      .field('description', 'Owner should see this')
+      .field('longitude', '7.6869')
+      .field('latitude', '45.0703')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('fake-image'), 'test.jpg')
+      .expect(201);
+
+    const rejectedReportId = createRes.body.data.id;
+
+    await request(app.getHttpServer())
+      .patch(`/reports/${rejectedReportId}`)
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ status: 'rejected' })
+      .expect(200);
+
+    const res = await request(app.getHttpServer())
+      .get(`/reports/${rejectedReportId}`)
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.data.id).toBe(rejectedReportId);
+    expect(res.body.data.status).toBe('rejected');
+  });
+
+  it('GET /reports/:id with rejected report allows municipal user to access', async () => {
+    const createRes = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_2.secret')
+      .field('title', 'Report for Municipal Access')
+      .field('description', 'Municipal user should see this')
+      .field('longitude', '7.6869')
+      .field('latitude', '45.0703')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('fake-image'), 'test.jpg')
+      .expect(201);
+
+    const rejectedReportId = createRes.body.data.id;
+
+    await request(app.getHttpServer())
+      .patch(`/reports/${rejectedReportId}`)
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({ status: 'rejected' })
+      .expect(200);
+
+    const res = await request(app.getHttpServer())
+      .get(`/reports/${rejectedReportId}`)
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.data.id).toBe(rejectedReportId);
+    expect(res.body.data.status).toBe('rejected');
+  });
+
+  // ============================================================================
   // User Registration Edge Cases
   // ============================================================================
 
@@ -1163,14 +1251,14 @@ describe('AppController (e2e)', () => {
       .post('/auth/register')
       .send({
         email: 'different@example.com',
-        username: 'john',
+        username: 'john01',
         firstName: 'John',
         lastName: 'Doe',
         password: 'StrongP@ssw0rd',
       })
       .expect(201);
 
-    expect(res.body.data.user.username).toBe('john');
+    expect(res.body.data.user.username).toBe('john01');
   });
 
   it('POST /auth/register with duplicate email can succeed if username exists', async () => {
@@ -1231,7 +1319,7 @@ describe('AppController (e2e)', () => {
   it('POST /auth/login with incorrect credentials returns 200 (mocked guard)', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ username: 'john', password: 'WrongPassword123' })
+      .send({ username: 'john01', password: 'WrongPassword123' })
       .expect(200);
 
     expect(res.body.success).toBe(true);

@@ -632,6 +632,96 @@ describe('ReportsService', () => {
       );
       expect(result).toEqual(mockReports);
     });
+
+    it('should exclude rejected reports from other users for citizen users', async () => {
+      const filters: FilterReportsDto = {};
+      const mockReports = [
+        { ...mockReport, status: ReportStatus.PENDING },
+        { ...mockReport, id: 'own-rejected', status: ReportStatus.REJECTED, userId: 'user-123' },
+      ];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      const result = await service.findAll(mockCitizenUser, filters);
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        `(report.status != 'rejected' OR report.userId = :viewerId)`,
+        { viewerId: 'user-123' },
+      );
+      expect(result).toEqual(mockReports);
+    });
+
+    it('should include own rejected reports for citizen users', async () => {
+      const filters: FilterReportsDto = {};
+      const ownRejectedReport = {
+        ...mockReport,
+        id: 'own-rejected',
+        status: ReportStatus.REJECTED,
+        userId: 'user-123',
+      };
+      const mockReports = [ownRejectedReport];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      const result = await service.findAll(mockCitizenUser, filters);
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        `(report.status != 'rejected' OR report.userId = :viewerId)`,
+        { viewerId: 'user-123' },
+      );
+      expect(result).toEqual(mockReports);
+    });
+
+    it('should NOT filter rejected reports for municipal users', async () => {
+      const mockMunicipalUser = {
+        id: 'officer-999',
+        role: { name: 'officer' },
+      } as User;
+
+      const filters: FilterReportsDto = {};
+      const mockReports = [
+        { ...mockReport, status: ReportStatus.PENDING },
+        { ...mockReport, id: 'rejected-1', status: ReportStatus.REJECTED, userId: 'user-123' },
+        { ...mockReport, id: 'rejected-2', status: ReportStatus.REJECTED, userId: 'other-user' },
+      ];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      const result = await service.findAll(mockMunicipalUser, filters);
+
+      expect(mockQueryBuilder.andWhere).not.toHaveBeenCalledWith(
+        `(report.status != 'rejected' OR report.userId = :viewerId)`,
+        expect.any(Object),
+      );
+      expect(result).toEqual(mockReports);
+    });
   });
 
   describe('findOne', () => {
@@ -719,6 +809,71 @@ describe('ReportsService', () => {
         REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('non-existent-id'),
       );
     });
+
+    it('should throw NotFoundException for citizen trying to access rejected report of another user', async () => {
+      const rejectedReport = {
+        ...mockReport,
+        id: 'rejected-123',
+        status: ReportStatus.REJECTED,
+        userId: 'other-user-456',
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        rejectedReport as unknown as Report,
+      );
+
+      await expect(
+        service.findOne('rejected-123', mockCitizenUser),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.findOne('rejected-123', mockCitizenUser),
+      ).rejects.toThrow(
+        REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('rejected-123'),
+      );
+    });
+
+    it('should allow citizen to access their own rejected report', async () => {
+      const ownRejectedReport = {
+        ...mockReport,
+        id: 'own-rejected',
+        status: ReportStatus.REJECTED,
+        userId: 'user-123',
+        user: mockCitizenUser,
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        ownRejectedReport as unknown as Report,
+      );
+
+      const result = await service.findOne('own-rejected', mockCitizenUser);
+
+      expect(result.id).toBe('own-rejected');
+      expect(result.status).toBe(ReportStatus.REJECTED);
+      expect(result.userId).toBe('user-123');
+    });
+
+    it('should allow municipal user to access any rejected report', async () => {
+      const mockMunicipalUser = {
+        id: 'officer-999',
+        role: { name: 'officer' },
+      } as User;
+
+      const rejectedReport = {
+        ...mockReport,
+        id: 'rejected-123',
+        status: ReportStatus.REJECTED,
+        userId: 'other-user-456',
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        rejectedReport as unknown as Report,
+      );
+
+      const result = await service.findOne('rejected-123', mockMunicipalUser);
+
+      expect(result.id).toBe('rejected-123');
+      expect(result.status).toBe(ReportStatus.REJECTED);
+    });
   });
 
   describe('findNearby', () => {
@@ -791,6 +946,31 @@ describe('ReportsService', () => {
       const result = await service.findNearby(0, 0, 1000, mockCitizenUser);
 
       expect(result).toEqual([]);
+    });
+
+    it('should exclude all rejected reports from nearby search', async () => {
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getRawAndEntities: jest.fn().mockResolvedValue({
+          entities: [],
+          raw: [],
+        }),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      await service.findNearby(7.686864, 45.070312, 5000, mockCitizenUser);
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.status != :rejectedStatus',
+        { rejectedStatus: 'rejected' },
+      );
     });
   });
 
