@@ -212,6 +212,96 @@ const REAL_REPORTS = [
     categoryName: 'Road Signs and Traffic Lights',
     images: ['BentSign.jpg'],
   },
+  {
+    title: 'Bent and Illegible Road Sign',
+    description:
+      'I report a bent road sign that is crooked and difficult to read, causing confusion for drivers. Intervention is requested to restore the sign and ensure it is clearly visible.',
+    address: 'Via Bobbio, 3, Torino',
+    lat: 45.057927,
+    lng: 7.654953,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['BentAndIllegibleRoadSign1.jpg','BentAndIllegibleRoadSign2.jpg'],
+  },
+  {
+    title: 'Damaged Wall in the Park',
+    description:
+      'I am reporting a wall in a park that is in poor condition, visibly damaged and deteriorated, requiring maintenance and restoration.',
+    address: 'Corso Mediterraneo, Torino',
+    lat: 45.060608,
+    lng: 7.657127,
+    categoryName: 'Public Green Areas and Playgrounds',
+    images: ['DamagedWallInThePark1.jpg','DamagedWallInThePark2.jpg','DamagedWallInThePark3.jpg'],
+  },
+  {
+    title: 'Wall Covered with Graffiti',
+    description:
+      'I am reporting a wall covered with graffiti, which damages its appearance. Cleaning or restoration of the surface would be advisable.',
+    address: 'Via Gorizia, 9a, Torino',
+    lat: 45.051959,
+    lng: 7.641575,
+    categoryName: 'Other',
+    images: ['WallWithGraffiti.jpg'],
+  },
+  {
+    title: 'Vegetation Encroaching on the Sidewalk',
+    description:
+      'I am reporting vegetation encroaching on the sidewalk from the side, obstructing pedestrian passage. Pruning or removal would be advisable.',
+    address: 'Via Tolmino, 80a, Torino',
+    lat: 45.054390,
+    lng: 7.642114,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['VegetationOnSidewalk1.jpg','VegetationOnSidewalk2.jpg'],
+  },
+  {
+    title: 'Scattered Trash',
+    description:
+      'I am reporting scattered trash in the area, which makes the place look neglected and in need of cleaning.',
+    address: 'Corso Carlo e Nello Rosselli, 153, Torino',
+    lat: 45.055148,
+    lng: 7.646663,
+    categoryName: 'Waste',
+    images: ['ScatteredTrash1.jpg','ScatteredTrash2.jpg','ScatteredTrash3.jpg'],
+  },
+  {
+    title: 'Confusing Road Markings',
+    description:
+      'I am reporting that after construction work, new pedestrian crossings and stop lines were painted without removing the old ones. The presence of double lines causes confusion for both pedestrians and drivers, and the markings need clarification.',
+    address: 'Via Gorizia, 9a, Torino',
+    lat: 45.052070,
+    lng: 7.641613,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['ConfusingRoadMarking.jpg'],
+  },
+  {
+    title: 'Vegetation Occupying Parking Spaces',
+    description:
+      'I am reporting vegetation growing from the ground in the parking lot, occupying some parking spaces and reducing the available area.',
+    address: 'Via Spalato, 14, Torino',
+    lat: 45.061404,
+    lng: 7.653820,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['VegetationParkingSpace.jpg'],
+  },
+  {
+    title: 'Traffic Lights with Damaged or Missing Sun Protection',
+    description:
+      'I am reporting traffic lights with damaged or missing sun protection, making the signals harder to see for drivers.',
+    address: 'Corso Luigi Einaudi, Torino',
+    lat: 45.061338,
+    lng: 7.658394,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['TrafficLightsDamaged1.jpg','TrafficLightsDamaged2.jpg','TrafficLightsDamaged3.jpg'],
+  },
+  {
+    title: 'Damaged Traffic Lights and Road Sign',
+    description:
+      'I am reporting that some traffic lights have damaged or missing sun protection, reducing the visibility of the signals for drivers. Additionally, a road sign is damaged and has graffiti on it, affecting the clarity of the information.',
+    address: 'Corso Peschiera, Torino',
+    lat: 45.061494,
+    lng: 7.657612,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['TrafficLightAndRoadSign1.jpg','TrafficLightAndRoadSign2.jpg','TrafficLightAndRoadSign3.jpg'],
+  },
 ];
 
 export async function seedDatabase(
