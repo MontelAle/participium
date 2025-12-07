@@ -1,8 +1,8 @@
+import { ActionButton } from '@/components/dashboard/action-button';
 import { StatCard } from '@/components/dashboard/stat-card';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
-import { useReports } from '@/hooks/use-reports';
+import { useReportStats } from '@/hooks/use-reports';
 import {
   AlertCircle,
   CheckCircle,
@@ -17,33 +17,108 @@ import { useNavigate } from 'react-router-dom';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const { isAdminUser, user, isMunicipalPrOfficer, isTechnicalOfficer } =
-    useAuth();
-  const { data: municipalityUsers = [] } = isAdminUser
-    ? useMunicipalityUsers()
-    : { data: [] };
+  const { isAdminUser, isMunicipalPrOfficer, isTechnicalOfficer } = useAuth();
 
-  const { data: reports = [] } = useReports();
+  const { data: allUsers = [] } = useMunicipalityUsers();
+  const municipalityUsers = isAdminUser ? allUsers : [];
 
-  const inProgressCount = reports.filter(
-    (r) => r.status === 'in_progress',
-  ).length;
-  const pendingCount = reports.filter((r) => r.status === 'pending').length;
-  const assignedCount = reports.filter((r) => r.status === 'assigned').length;
-  const rejectedCount = reports.filter((r) => r.status === 'rejected').length;
-  const resolvedCount = reports.filter((r) => r.status === 'resolved').length;
+  const { data: serverStats } = useReportStats();
 
-  ////
-  const inProgressCountUser = reports.filter(
-    (r) => r.status === 'in_progress' && r.assignedOfficerId === user?.id,
-  ).length;
-  const assignedCountUser = reports.filter(
-    (r) => r.status === 'assigned' && r.assignedOfficerId === user?.id,
-  ).length;
-  const resolvedCountUser = reports.filter(
-    (r) => r.status === 'resolved' && r.assignedOfficerId === user?.id,
-  ).length;
-  ////
+  const stats = serverStats || {
+    total: 0,
+    pending: 0,
+    in_progress: 0,
+    assigned: 0,
+    rejected: 0,
+    resolved: 0,
+    user_assigned: 0,
+    user_rejected: 0,
+    user_in_progress: 0,
+    user_resolved: 0,
+  };
+
+  const statCardsConfig = [
+    {
+      title: 'Municipality Users',
+      value: municipalityUsers.filter((u) => u.role?.name !== 'admin').length,
+      icon: Users,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-500/10',
+      isVisible: isAdminUser,
+    },
+    {
+      title: 'Total Reports',
+      value: stats.total,
+      icon: FileText,
+      color: 'text-violet-600',
+      bgColor: 'bg-violet-500/10',
+      isVisible: !isTechnicalOfficer,
+    },
+    {
+      title: 'In Progress',
+      value: stats.in_progress,
+      icon: Timer,
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-500/10',
+      isVisible: !isTechnicalOfficer && !isMunicipalPrOfficer,
+    },
+    {
+      title: 'Pending Approval',
+      value: stats.pending,
+      icon: AlertCircle,
+      color: 'text-rose-600',
+      bgColor: 'bg-rose-500/10',
+      isVisible: !isTechnicalOfficer,
+    },
+    {
+      title: isMunicipalPrOfficer ? 'My Assigned' : 'Assigned',
+      value: isMunicipalPrOfficer ? stats.user_assigned : stats.assigned,
+      icon: UserCheck,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-500/10',
+      isVisible: !isTechnicalOfficer,
+    },
+    {
+      title: isMunicipalPrOfficer ? 'My Rejected' : 'Rejected',
+      value: isMunicipalPrOfficer ? stats.user_rejected : stats.rejected,
+      icon: XCircle,
+      color: 'text-red-600',
+      bgColor: 'bg-red-500/10',
+      isVisible: !isTechnicalOfficer,
+    },
+    {
+      title: 'Resolved',
+      value: stats.resolved,
+      icon: CheckCircle,
+      color: 'text-green-600',
+      bgColor: 'bg-green-500/10',
+      isVisible: !isTechnicalOfficer && !isMunicipalPrOfficer,
+    },
+    {
+      title: 'My In Progress',
+      value: stats.user_in_progress,
+      icon: Timer,
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-500/10',
+      isVisible: isTechnicalOfficer,
+    },
+    {
+      title: 'My Assigned',
+      value: stats.user_assigned,
+      icon: UserCheck,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-500/10',
+      isVisible: isTechnicalOfficer,
+    },
+    {
+      title: 'My Resolved',
+      value: stats.user_resolved,
+      icon: CheckCircle,
+      color: 'text-green-600',
+      bgColor: 'bg-green-500/10',
+      isVisible: isTechnicalOfficer,
+    },
+  ];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -57,97 +132,18 @@ const DashboardPage = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {isAdminUser && (
-          <StatCard
-            title="Municipality Users"
-            value={
-              municipalityUsers.filter((u) => u.role?.name !== 'admin').length
-            }
-            icon={Users}
-            color="text-blue-600"
-            bgColor="bg-blue-500/10"
-          />
-        )}
-
-        {!isTechnicalOfficer && (
-          <>
+        {statCardsConfig
+          .filter((card) => card.isVisible)
+          .map((card, index) => (
             <StatCard
-              title="Total Reports"
-              value={reports.length}
-              icon={FileText}
-              color="text-violet-600"
-              bgColor="bg-violet-500/10"
+              key={index}
+              title={card.title}
+              value={card.value}
+              icon={card.icon}
+              color={card.color}
+              bgColor={card.bgColor}
             />
-
-            <StatCard
-              title="In Progress"
-              value={inProgressCount}
-              icon={Timer}
-              color="text-amber-600"
-              bgColor="bg-amber-500/10"
-            />
-
-            <StatCard
-              title="Pending Approval"
-              value={pendingCount}
-              icon={AlertCircle}
-              color="text-rose-600"
-              bgColor="bg-rose-500/10"
-            />
-
-            <StatCard
-              title="Assigned"
-              value={assignedCount}
-              icon={UserCheck}
-              color="text-purple-600"
-              bgColor="bg-purple-500/10"
-            />
-
-            <StatCard
-              title="Rejected"
-              value={rejectedCount}
-              icon={XCircle}
-              color="text-red-600"
-              bgColor="bg-red-500/10"
-            />
-
-            <StatCard
-              title="Resolved"
-              value={resolvedCount}
-              icon={CheckCircle}
-              color="text-green-600"
-              bgColor="bg-green-500/10"
-            />
-          </>
-        )}
-
-        {isTechnicalOfficer && (
-          <>
-            <StatCard
-              title="In Progress"
-              value={inProgressCountUser}
-              icon={Timer}
-              color="text-amber-600"
-              bgColor="bg-amber-500/10"
-            />
-
-            <StatCard
-              title="Assigned"
-              value={assignedCountUser}
-              icon={UserCheck}
-              color="text-purple-600"
-              bgColor="bg-purple-500/10"
-            />
-
-            <StatCard
-              title="Resolved"
-              value={resolvedCountUser}
-              icon={CheckCircle}
-              color="text-green-600"
-              bgColor="bg-green-500/10"
-            />
-          </>
-        )}
+          ))}
       </div>
 
       <div className="rounded-xl border bg-linear-to-br from-card to-muted/30 p-8 shadow-sm">
@@ -162,34 +158,27 @@ const DashboardPage = () => {
 
         <div className="flex flex-wrap gap-4">
           {isAdminUser && (
-            <Button
-              size="lg"
-              className="h-12 rounded-lg shadow-md transition-transform active:scale-95 cursor-pointer"
+            <ActionButton
+              icon={Plus}
+              label="Create New User"
               onClick={() => navigate('/app/municipality-users/create')}
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              Create New User
-            </Button>
+            />
           )}
+
           {isMunicipalPrOfficer && (
-            <Button
-              size="lg"
-              className="h-12 rounded-lg shadow-md transition-transform active:scale-95 cursor-pointer"
+            <ActionButton
+              icon={FileText}
+              label="Assign Reports"
               onClick={() => navigate('/app/assign-reports')}
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              View Reports
-            </Button>
+            />
           )}
+
           {isTechnicalOfficer && (
-            <Button
-              size="lg"
-              className="h-12 rounded-lg shadow-md transition-transform active:scale-95 cursor-pointer"
+            <ActionButton
+              icon={FileText}
+              label="View My Reports"
               onClick={() => navigate('/app/assigned-reports')}
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              View Reports
-            </Button>
+            />
           )}
         </div>
       </div>

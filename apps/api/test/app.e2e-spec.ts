@@ -110,9 +110,22 @@ const createMockRepository = (data: any[] = []) => {
       select: jest.fn().mockReturnThis(),
       groupBy: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
+      setParameters: jest.fn().mockReturnThis(),
       getOne: jest.fn().mockResolvedValue(data[0] || null),
       getMany: jest.fn().mockResolvedValue(data),
       getRawMany: jest.fn().mockResolvedValue([]),
+      getRawOne: jest.fn().mockResolvedValue({
+        total: '5',
+        pending: '2',
+        in_progress: '1',
+        resolved: '1',
+        assigned_global: '1',
+        rejected_global: '0',
+        user_assigned: '0',
+        user_rejected: '0',
+        user_in_progress: '0',
+        user_resolved: '0',
+      }),
       getRawAndEntities: jest.fn().mockResolvedValue({
         entities: data,
         raw: data.map(() => ({ distance: 100 })),
@@ -205,6 +218,20 @@ describe('AppController (e2e)', () => {
         lastName: 'Smith',
         roleId: 'role_2',
         role: { id: 'role_2', name: 'user', label: 'User', isMunicipal: false },
+      },
+      {
+        id: 'pr_officer_1',
+        email: 'pr@municipality.gov',
+        username: 'pr_officer',
+        firstName: 'Paul',
+        lastName: 'Rogers',
+        roleId: 'role_3',
+        role: {
+          id: 'role_3', // Questo ID deve corrispondere a quello definito in mockRoles
+          name: 'municipal_pr_officer', // CRITICO: Deve matchare la stringa nel codice
+          label: 'PR Officer',
+          isMunicipal: true,
+        },
       },
       {
         id: 'officer_1',
@@ -425,6 +452,13 @@ describe('AppController (e2e)', () => {
           ) {
             req.user = mockUsers[0]; // john - admin (municipal user)
             req.session = mockSession;
+            return true;
+          }
+
+          if (cookieValue === 'sess_pr.secret') {
+            const prUser = mockUsers.find((u) => u.username === 'pr_officer');
+            req.user = prUser;
+            req.session = { ...mockSession, userId: prUser.id };
             return true;
           }
 
@@ -1485,5 +1519,118 @@ describe('AppController (e2e)', () => {
     expect(res.body.data.address).toBe('456 Test Ave');
     expect(res.body.data.isAnonymous).toBe(false);
     expect(res.body.data.images).toHaveLength(2);
+  });
+
+  // ============================================================================
+  // Dashboard Statistics (New Logic)
+  // ============================================================================
+
+  it('GET /reports/stats returns dashboard statistics structure correctly', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/stats')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toEqual(
+      expect.objectContaining({
+        total: expect.any(Number),
+        pending: expect.any(Number),
+        in_progress: expect.any(Number),
+        resolved: expect.any(Number),
+        assigned: expect.any(Number),
+        rejected: expect.any(Number),
+        user_assigned: expect.any(Number),
+        user_rejected: expect.any(Number),
+        user_in_progress: expect.any(Number),
+        user_resolved: expect.any(Number),
+      }),
+    );
+  });
+
+  // ============================================================================
+  // PR Officer Logic (Assignment & Audit)
+  // ============================================================================
+
+  it('PATCH /reports/:id as PR Officer sets processedById when assigning', async () => {
+    const reportRes = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'To be assigned')
+      .field('description', 'Pending report')
+      .field('longitude', '10.0')
+      .field('latitude', '10.0')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('img'), 'test.jpg')
+      .expect(201);
+
+    const reportId = reportRes.body.data.id;
+
+    const updateRes = await request(app.getHttpServer())
+      .patch(`/reports/${reportId}`)
+      .set('Cookie', 'session_token=sess_pr.secret')
+      .send({
+        status: 'assigned',
+        assignedOfficerId: 'officer_1',
+      })
+      .expect(200);
+
+    expect(updateRes.body.data.status).toBe('assigned');
+    expect(updateRes.body.data.assignedOfficerId).toBe('officer_1');
+
+    expect(updateRes.body.data.processedById).toBe('pr_officer_1');
+  });
+
+  it('PATCH /reports/:id as PR Officer sets processedById when rejecting', async () => {
+    const reportRes = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'To be rejected')
+      .attach('images', Buffer.from('img'), 'test.jpg')
+      .field('description', 'Bad report')
+      .field('longitude', '10.0')
+      .field('latitude', '10.0')
+      .field('categoryId', 'cat_1')
+      .expect(201);
+
+    const reportId = reportRes.body.data.id;
+
+    const updateRes = await request(app.getHttpServer())
+      .patch(`/reports/${reportId}`)
+      .set('Cookie', 'session_token=sess_pr.secret')
+      .send({
+        status: 'rejected',
+        explanation: 'Duplicate report',
+      })
+      .expect(200);
+
+    expect(updateRes.body.data.status).toBe('rejected');
+    expect(updateRes.body.data.processedById).toBe('pr_officer_1');
+  });
+
+  it('PATCH /reports/:id as Admin does NOT set processedById (Logic Check)', async () => {
+    const reportRes = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Admin assign')
+      .attach('images', Buffer.from('img'), 'test.jpg')
+      .field('description', '...')
+      .field('longitude', '10.0')
+      .field('latitude', '10.0')
+      .field('categoryId', 'cat_1')
+      .expect(201);
+
+    const reportId = reportRes.body.data.id;
+
+    const updateRes = await request(app.getHttpServer())
+      .patch(`/reports/${reportId}`)
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        status: 'assigned',
+        assignedOfficerId: 'officer_1',
+      })
+      .expect(200);
+
+    expect(updateRes.body.data.processedById).toBe('user_1');
   });
 });
