@@ -7,6 +7,8 @@ import { Repository } from 'typeorm';
 import { Profile } from '../../common/entities/profile.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { USER_ERROR_MESSAGES } from '../users/constants/error-messages';
+import { User } from 'src/common/entities/user.entity';
+import { Account } from 'src/common/entities/account.entity';
 
 @Injectable()
 export class ProfilesService {

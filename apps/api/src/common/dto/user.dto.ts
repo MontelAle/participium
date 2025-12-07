@@ -2,7 +2,7 @@ import type {
   ProfileResponseDto as ProfileResponseDtoType,
   UpdateProfileDto as UpdateProfileDtoType,
 } from '@repo/api';
-import { IsOptional, IsString, Matches, ValidateIf } from 'class-validator';
+import { IsEmail, IsOptional, IsString, Matches, ValidateIf } from 'class-validator';
 import { Profile } from '../entities/profile.entity';
 
 export class UpdateProfileDto implements UpdateProfileDtoType {
