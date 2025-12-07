@@ -1,24 +1,27 @@
-import { useReports } from '@/hooks/use-reports';
 import { ReportsTable } from '@/components/assign-reports/report-list-table';
-import { useMemo, useState } from 'react';
 import { Toolbar } from '@/components/assign-reports/toolbar';
+import { useAuth } from '@/contexts/auth-context';
+import { useReports } from '@/hooks/use-reports';
+import { useMemo, useState } from 'react';
 
 const AssignReportsPage = () => {
   const { data: reports = [] } = useReports();
+  const { isMunicipalPrOfficer } = useAuth();
 
   const [query, setQuery] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    [],
-  );
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const availableStatuses = useMemo(() => {
+    if (isMunicipalPrOfficer) {
+      return [];
+    }
     const setStatus = new Set<string>();
     for (const r of reports) {
       if (r.status) setStatus.add(r.status);
     }
     return Array.from(setStatus).sort();
-  }, [reports]);
+  }, [reports, isMunicipalPrOfficer]);
 
   const availableCategories = useMemo(() => {
     const setCategories = new Set<string>();
@@ -39,7 +42,9 @@ const AssignReportsPage = () => {
           .includes(normalizedQuery);
 
       const matchesStatus =
-        selectedStatuses.length === 0 || selectedStatuses.includes(r.status);
+        isMunicipalPrOfficer ||
+        selectedStatuses.length === 0 ||
+        selectedStatuses.includes(r.status);
 
       const matchesCategory =
         selectedCategories.length === 0 ||
@@ -47,7 +52,13 @@ const AssignReportsPage = () => {
 
       return matchesQuery && matchesStatus && matchesCategory;
     });
-  }, [reports, query, selectedStatuses, selectedCategories]);
+  }, [
+    reports,
+    query,
+    selectedStatuses,
+    selectedCategories,
+    isMunicipalPrOfficer,
+  ]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">

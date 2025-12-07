@@ -3,14 +3,21 @@ import { useReports } from '@/hooks/use-reports';
 import { useFilterStore } from '@/store/filterStore';
 import { DateCheckStrategy } from '@/types/ui';
 import type { Report, User } from '@repo/api';
-import { isAfter, isSameDay, subMonths, subWeeks, startOfDay, endOfDay } from 'date-fns';
+import {
+  endOfDay,
+  isAfter,
+  isSameDay,
+  startOfDay,
+  subMonths,
+  subWeeks,
+} from 'date-fns';
 import { useMemo } from 'react';
 
 const failsPermissionCheck = (
   report: Report,
   user: User | null,
   isCitizenUser: boolean,
-  showOnlyMyReports: boolean
+  showOnlyMyReports: boolean,
 ): boolean => {
   if (showOnlyMyReports && user && report.userId !== user.id) {
     return true;
@@ -20,7 +27,7 @@ const failsPermissionCheck = (
     if (report.status === 'pending') {
       return true;
     }
-if (report.status === 'rejected' && report.userId !== user?.id) {
+    if (report.status === 'rejected' && report.userId !== user?.id) {
       return true;
     }
   }
@@ -41,15 +48,16 @@ const failsSearchCheck = (report: Report, searchTerm: string): boolean => {
 
 const failsStaticFilters = (report: Report, filters: any): boolean => {
   if (!filters) return false;
-  
+
   if (filters.status && report.status !== filters.status) return true;
-  if (filters.category && report.category?.name !== filters.category) return true;
+  if (filters.category && report.category?.name !== filters.category)
+    return true;
 
   return false;
 };
 
 const DATE_RANGE_STRATEGIES: Record<string, DateCheckStrategy> = {
-  'Today': (date, today) => !isSameDay(date, today),
+  Today: (date, today) => !isSameDay(date, today),
   'Last Week': (date, today) => !isAfter(date, subWeeks(today, 1)),
   'This Month': (date, today) => !isAfter(date, subMonths(today, 1)),
 };
@@ -89,8 +97,8 @@ const failsDateCheck = (report: Report, filters: any, today: Date): boolean => {
 
 export function useFilteredReports() {
   const { user, isCitizenUser, isGuestUser } = useAuth();
-  
-  const { data: reports = [], isLoading } = useReports({
+
+  const { data: reports = [], isLoading } = useReports(undefined, {
     enabled: !isGuestUser,
   });
 
@@ -100,11 +108,12 @@ export function useFilteredReports() {
     if (isGuestUser) return [];
     if (!reports.length) return [];
 
-    const today = new Date(); 
+    const today = new Date();
 
     return reports.filter((report) => {
-      
-      if (failsPermissionCheck(report, user, isCitizenUser, showOnlyMyReports)) {
+      if (
+        failsPermissionCheck(report, user, isCitizenUser, showOnlyMyReports)
+      ) {
         return false;
       }
 
