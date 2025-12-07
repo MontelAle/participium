@@ -1,14 +1,18 @@
-import { Injectable, NotFoundException , ConflictException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateProfileDto } from '@repo/api';
 import { nanoid } from 'nanoid';
 import path from 'node:path';
 import { Repository } from 'typeorm';
+import { Account } from '../../common/entities/account.entity';
 import { Profile } from '../../common/entities/profile.entity';
+import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { USER_ERROR_MESSAGES } from '../users/constants/error-messages';
-import { User } from 'src/common/entities/user.entity';
-import { Account } from 'src/common/entities/account.entity';
 
 @Injectable()
 export class ProfilesService {
@@ -31,10 +35,9 @@ export class ProfilesService {
     file?: Express.Multer.File,
   ): Promise<Profile> {
     const profile = await this.profileRepository.findOne({
-      where: { userId: userId  },
+      where: { userId: userId },
       relations: ['user'],
     });
-
 
     if (!profile) {
       throw new NotFoundException(USER_ERROR_MESSAGES.PROFILE_NOT_FOUND);
@@ -74,67 +77,68 @@ export class ProfilesService {
       profile.profilePictureUrl = fileUrl;
     }
 
-  
-  const user = await this.userRepository.findOne({ where: { id: userId } });
-  if (!user) {
-    throw new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND);
-  }
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND);
+    }
 
-  const account = await this.accountRepository.findOne({ where: { userId:userId , providerId: 'local'} , relations: ['user'], });
-  if (!account) {
-    throw new NotFoundException('Account not found');
-  }
-
-  if (dto.username && dto.username !== user.username) {
-    const existingUsername = await this.userRepository.findOne({
-      where: { username: dto.username },
+    const account = await this.accountRepository.findOne({
+      where: { userId: userId, providerId: 'local' },
+      relations: ['user'],
     });
+    if (!account) {
+      throw new NotFoundException('Account not found');
+    }
 
-  if (existingUsername) {
-    throw new ConflictException('Username already in use');
-  }
+    if (dto.username && dto.username !== user.username) {
+      const existingUsername = await this.userRepository.findOne({
+        where: { username: dto.username },
+      });
 
-  user.username = dto.username;
-  profile.user.username = dto.username;
-  account.user.username = dto.username;
-  
-  const existingAccountId = await this.accountRepository.findOne({
-    where: { accountId: dto.username },
-  });
+      if (existingUsername) {
+        throw new ConflictException('Username already in use');
+      }
 
-  if (existingAccountId && existingAccountId.id !== account.id) {
-    throw new ConflictException('AccountId already in use');
-  }
+      user.username = dto.username;
+      profile.user.username = dto.username;
+      account.user.username = dto.username;
 
-  account.accountId = dto.username;
-}
+      const existingAccountId = await this.accountRepository.findOne({
+        where: { accountId: dto.username },
+      });
 
+      if (existingAccountId && existingAccountId.id !== account.id) {
+        throw new ConflictException('AccountId already in use');
+      }
 
-if (dto.email && dto.email !== user.email) {
-  const existingEmail = await this.userRepository.findOne({
-    where: { email: dto.email },
-  });
+      account.accountId = dto.username;
+    }
 
-  if (existingEmail) {
-    throw new ConflictException('Email already in use');
-  }
+    if (dto.email && dto.email !== user.email) {
+      const existingEmail = await this.userRepository.findOne({
+        where: { email: dto.email },
+      });
 
-  user.email = dto.email;
-  profile.user.email = dto.email;
-  account.user.email=dto.email;
-}
+      if (existingEmail) {
+        throw new ConflictException('Email already in use');
+      }
 
-  if (dto.firstName && dto.firstName!== user.firstName) {
-    user.firstName = dto.firstName; 
-    profile.user.firstName=dto.firstName; 
-    account.user.firstName=dto.firstName;
-  }
-  if (dto.lastName && dto.lastName !== user.lastName) {
-    user.lastName = dto.lastName; 
-    profile.user.lastName=dto.lastName; 
-    account.user.lastName=dto.lastName;
-  }
-  
+      user.email = dto.email;
+      profile.user.email = dto.email;
+      account.user.email = dto.email;
+    }
+
+    if (dto.firstName && dto.firstName !== user.firstName) {
+      user.firstName = dto.firstName;
+      profile.user.firstName = dto.firstName;
+      account.user.firstName = dto.firstName;
+    }
+    if (dto.lastName && dto.lastName !== user.lastName) {
+      user.lastName = dto.lastName;
+      profile.user.lastName = dto.lastName;
+      account.user.lastName = dto.lastName;
+    }
+
     await this.accountRepository.save(account);
 
     await this.userRepository.save(user);
@@ -145,7 +149,7 @@ if (dto.email && dto.email !== user.email) {
   async findProfileById(userId: string): Promise<Profile> {
     const profile = await this.profileRepository.findOne({
       where: { userId: userId },
-      relations: ['user','user.role'],
+      relations: ['user', 'user.role'],
     });
 
     if (!profile) {
