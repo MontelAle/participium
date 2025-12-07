@@ -86,6 +86,10 @@ export default function ProfilePage() {
         }
       }
 
+    if (!data.firstName || !data.lastName || !data.username || !data.email) {
+      toast.error('Please fill all required fields');
+      return;
+    }
       const formData = new FormData();
       formData.append('telegramUsername', data.telegramUsername ?? '');
       formData.append(
