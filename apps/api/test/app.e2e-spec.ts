@@ -58,7 +58,7 @@ const createMockRepository = (data: any[] = []) => {
         if (existing) {
           Object.assign(existing, entity);
           if (entity.assignedOfficer?.id) {
-            (existing).assignedOfficerId = entity.assignedOfficer.id;
+            existing.assignedOfficerId = entity.assignedOfficer.id;
           }
           return Promise.resolve(existing);
         }
@@ -72,7 +72,7 @@ const createMockRepository = (data: any[] = []) => {
         updatedAt: new Date(),
       };
       if (entity.assignedOfficer?.id) {
-        (newEntity).assignedOfficerId = entity.assignedOfficer.id;
+        newEntity.assignedOfficerId = entity.assignedOfficer.id;
       }
       data.push(newEntity);
       return Promise.resolve(newEntity);
@@ -151,12 +151,21 @@ describe('AppController (e2e)', () => {
   let AppModule: any;
   let sessionCookie: string;
 
+  let mockUsers: any[];
+  let mockAccounts: any[];
+  let mockRoles: any[];
+  let mockOffices: any[];
+  let mockCategories: any[];
+  let mockReports: any[];
+  let mockSession: any;
+  let mockProfile: any[];
+
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
     const importedModule = await import('./../src/app.module');
     AppModule = importedModule.AppModule;
 
-    const mockRoles = [
+    mockRoles = [
       { id: 'role_1', name: 'admin', label: 'Admin', isMunicipal: true },
       { id: 'role_2', name: 'user', label: 'User', isMunicipal: false },
       {
@@ -173,7 +182,7 @@ describe('AppController (e2e)', () => {
       },
     ];
 
-    const mockUsers = [
+    mockUsers = [
       {
         id: 'user_1',
         email: 'john@example.com',
@@ -231,15 +240,26 @@ describe('AppController (e2e)', () => {
 
     const mockUser = mockUsers[0];
 
-    const mockAccounts = [
+    mockAccounts = [
       {
         id: 'account_1',
         userId: 'user_1',
+        providerId: 'local',
+        accountId: 'john',
         hashedPassword: 'hashed_password_1',
+        user: mockUsers[0],
+      },
+      {
+        id: 'account_2',
+        userId: 'user_2',
+        providerId: 'local',
+        accountId: 'jane',
+        hashedPassword: 'hashed_password_2',
+        user: mockUsers[1],
       },
     ];
 
-    const mockOffices = [
+    mockOffices = [
       {
         id: 'office_1',
         name: 'administration',
@@ -247,7 +267,7 @@ describe('AppController (e2e)', () => {
       },
     ];
 
-    const mockCategories = [
+    mockCategories = [
       {
         id: 'cat_1',
         name: 'Infrastructure',
@@ -257,7 +277,7 @@ describe('AppController (e2e)', () => {
       { id: 'cat_2', name: 'Environment' },
     ];
 
-    const mockReports: any[] = [
+    mockReports = [
       {
         id: 'report_1',
         title: 'Test Report',
@@ -307,13 +327,13 @@ describe('AppController (e2e)', () => {
       return Promise.resolve(newEntity);
     });
 
-    const mockSession = {
+    mockSession = {
       id: 'sess_1',
       userId: 'user_1',
       hashedSecret: 'hashed_secret',
     };
 
-    const mockProfile = [
+    mockProfile = [
       {
         id: 'profile_1',
         userId: 'user_1',
@@ -770,6 +790,94 @@ describe('AppController (e2e)', () => {
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '' })
       .expect(200);
+  });
+
+  // ---------------------------------------------------------
+  // Core Data Sync & Conflict Tests
+  // ---------------------------------------------------------
+
+  it('PATCH /profiles/profile/me updates core user data (username, email) and syncs account', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/profiles/profile/me')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        username: 'john_updated',
+        email: 'john_new@example.com',
+        firstName: 'Johnny',
+      })
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.user.username).toBe('john_updated');
+    expect(res.body.data.user.email).toBe('john_new@example.com');
+    expect(res.body.data.user.firstName).toBe('Johnny');
+
+    const user = mockUsers.find((u) => u.id === 'user_1');
+    if (user) {
+      user.username = 'john';
+      user.email = 'john@example.com';
+    }
+    const account = mockAccounts.find((a) => a.userId === 'user_1');
+    if (account) {
+      account.accountId = 'john';
+    }
+  });
+
+  it('PATCH /profiles/profile/me syncs username change to Account entity', async () => {
+    await request(app.getHttpServer())
+      .patch('/profiles/profile/me')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        username: 'jane_sync_test',
+      })
+      .expect(200);
+
+    const account = mockAccounts.find((a) => a.userId === 'user_2');
+
+    expect(account).toBeDefined();
+    expect(account.accountId).toBe('jane_sync_test');
+  });
+
+  it('PATCH /profiles/profile/me throws 400 if profile picture is too large', async () => {
+    const largeBuffer = Buffer.alloc(6 * 1024 * 1024);
+
+    await request(app.getHttpServer())
+      .patch('/profiles/profile/me')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .attach('profilePicture', largeBuffer, {
+        filename: 'large.jpg',
+        contentType: 'image/jpeg',
+      })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBeDefined();
+      });
+  });
+
+  it('PATCH /profiles/profile/me throws 409 Conflict if username is taken', async () => {
+    await request(app.getHttpServer())
+      .patch('/profiles/profile/me')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        username: 'john',
+      })
+      .expect(409)
+      .expect((res) => {
+        expect(res.body.message).toContain('Username already in use');
+      });
+  });
+
+  it('PATCH /profiles/profile/me throws 409 Conflict if email is taken', async () => {
+    await request(app.getHttpServer())
+      .patch('/profiles/profile/me')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        email: 'john@example.com',
+      })
+      .expect(409)
+      .expect((res) => {
+        expect(res.body.message).toContain('Email already in use');
+      });
   });
 
   // ============================================================================

@@ -1,7 +1,8 @@
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
 import { UpdateProfileDto } from '../../common/dto/user.dto';
+import { Account } from '../../common/entities/account.entity';
 import { Profile } from '../../common/entities/profile.entity';
 import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
@@ -19,6 +20,8 @@ describe('ProfilesService', () => {
   let service: ProfilesService;
   let minioProvider: jest.Mocked<MinioProvider>;
   let profileRepository: jest.Mocked<Repository<Profile>>;
+  let userRepository: jest.Mocked<Repository<User>>;
+  let accountRepository: jest.Mocked<Repository<Account>>;
 
   const mockManager = {
     getRepository: jest.fn(),
@@ -37,7 +40,29 @@ describe('ProfilesService', () => {
     userId: 'user-1',
     telegramUsername: '@testuser',
     emailNotificationsEnabled: true,
+    profilePictureUrl: 'old_url',
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
+
+  const mockAccount = {
+    id: 'account-1',
+    userId: 'user-1',
+    providerId: 'local',
+    accountId: 'testuser',
+    user: mockUser,
+  } as Account;
+
+  const createMockRepository = () => ({
+    find: jest.fn(),
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+    delete: jest.fn(),
+    manager: {
+      transaction: jest.fn((cb) => cb(mockManager)),
+    },
+  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -45,16 +70,15 @@ describe('ProfilesService', () => {
         ProfilesService,
         {
           provide: getRepositoryToken(Profile),
-          useValue: {
-            find: jest.fn(),
-            findOne: jest.fn(),
-            create: jest.fn(),
-            save: jest.fn(),
-            delete: jest.fn(),
-            manager: {
-              transaction: jest.fn((cb) => cb(mockManager)),
-            },
-          },
+          useValue: createMockRepository(),
+        },
+        {
+          provide: getRepositoryToken(User),
+          useValue: createMockRepository(),
+        },
+        {
+          provide: getRepositoryToken(Account),
+          useValue: createMockRepository(),
         },
         {
           provide: MinioProvider,
@@ -69,13 +93,24 @@ describe('ProfilesService', () => {
 
     service = module.get<ProfilesService>(ProfilesService);
     minioProvider = module.get(MinioProvider);
+    profileRepository = module.get(getRepositoryToken(Profile));
+    userRepository = module.get(getRepositoryToken(User));
+    accountRepository = module.get(getRepositoryToken(Account));
+
+    userRepository.findOne.mockResolvedValue(mockUser);
+    accountRepository.findOne.mockResolvedValue(mockAccount);
+    profileRepository.findOne.mockResolvedValue(mockProfile);
+
+    userRepository.save.mockResolvedValue(mockUser);
+    accountRepository.save.mockResolvedValue(mockAccount);
+    profileRepository.save.mockImplementation(async (p) => p as Profile);
 
     mockManager.getRepository.mockImplementation((entity) => {
       if (entity === Profile) return profileRepository;
+      if (entity === User) return userRepository;
+      if (entity === Account) return accountRepository;
       return null;
     });
-
-    profileRepository = module.get(getRepositoryToken(Profile));
   });
 
   describe('updateProfile', () => {
@@ -89,38 +124,65 @@ describe('ProfilesService', () => {
       mimetype: 'image/jpeg',
     } as Express.Multer.File;
 
-    it('should update profile fields and upload picture', async () => {
-      const profileWithOldPic = {
-        user: mockUser,
-        profilePictureUrl: 'old_url',
-      } as Profile;
+    it('should update firstName, lastName and email successfully', async () => {
+      const dto: UpdateProfileDto = {
+        firstName: 'NewName',
+        lastName: 'NewLast',
+        email: 'new@email.com',
+      };
 
-      profileRepository.findOne.mockResolvedValue(profileWithOldPic);
-      minioProvider.uploadFile.mockResolvedValue('new_url');
-      minioProvider.extractFileNameFromUrl.mockReturnValue('old_filename');
-      minioProvider.deleteFile.mockResolvedValue(undefined);
+      userRepository.findOne
+        .mockResolvedValueOnce(mockUser)
+        .mockResolvedValueOnce(null);
 
-      await service.updateProfile('user-1', profileDto, mockFile);
+      accountRepository.findOne.mockResolvedValue(mockAccount);
 
-      expect(minioProvider.deleteFile).toHaveBeenCalledWith('old_filename');
-      expect(minioProvider.uploadFile).toHaveBeenCalled();
-      expect(profileRepository.save).toHaveBeenCalledWith(
+      await service.updateProfile('user-1', dto);
+
+      expect(userRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
-          telegramUsername: '@tele',
-          emailNotificationsEnabled: true,
-          profilePictureUrl: 'new_url',
+          firstName: 'NewName',
+          lastName: 'NewLast',
+          email: 'new@email.com',
+        }),
+      );
+
+      expect(accountRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user: expect.objectContaining({
+            firstName: 'NewName',
+            email: 'new@email.com',
+          }),
+        }),
+      );
+    });
+
+    it('should update username and accountId successfully when no conflicts exist', async () => {
+      const dto = { username: 'brand_new_username' };
+
+      userRepository.findOne
+        .mockResolvedValueOnce(mockUser)
+        .mockResolvedValueOnce(null);
+
+      accountRepository.findOne
+        .mockResolvedValueOnce(mockAccount)
+        .mockResolvedValueOnce(null);
+
+      await service.updateProfile('user-1', dto);
+
+      expect(accountRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          accountId: 'brand_new_username',
+          user: expect.objectContaining({
+            username: 'brand_new_username',
+          }),
         }),
       );
     });
 
     it('should ignore error if deleting old profile picture fails', async () => {
-      const profileWithOldPic = {
-        user: mockUser,
-        profilePictureUrl: 'old_url',
-      } as Profile;
-
-      profileRepository.findOne.mockResolvedValue(profileWithOldPic);
       minioProvider.uploadFile.mockResolvedValue('new_url');
+      minioProvider.extractFileNameFromUrl.mockReturnValue('old_filename');
       minioProvider.deleteFile.mockRejectedValue(new Error('MinIO error'));
 
       await expect(
@@ -131,8 +193,6 @@ describe('ProfilesService', () => {
     });
 
     it('should handle optional fields correctly (set null/false)', async () => {
-      profileRepository.findOne.mockResolvedValue(mockProfile as Profile);
-
       await service.updateProfile('user-1', {
         telegramUsername: '',
         emailNotificationsEnabled: 'false',
@@ -146,23 +206,89 @@ describe('ProfilesService', () => {
       );
     });
 
-    it('should throw NotFoundException if profile user not found', async () => {
+    it('should throw NotFoundException if profile not found', async () => {
       profileRepository.findOne.mockResolvedValue(null);
+
       await expect(service.updateProfile('bad', {})).rejects.toThrow(
         NotFoundException,
+      );
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.updateProfile('user-1', {})).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw NotFoundException if account is not found', async () => {
+      profileRepository.findOne.mockResolvedValue(mockProfile);
+      userRepository.findOne.mockResolvedValue(mockUser);
+      accountRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.updateProfile('user-1', {})).rejects.toThrow(
+        new NotFoundException('Account not found'),
+      );
+    });
+
+    it('should throw ConflictException if new username is already taken', async () => {
+      const dto = { username: 'taken_user' };
+
+      userRepository.findOne
+        .mockResolvedValueOnce(mockUser)
+        .mockResolvedValueOnce({ id: 'other-user' } as User);
+
+      await expect(service.updateProfile('user-1', dto)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('should throw ConflictException if new email is already taken', async () => {
+      const dto: UpdateProfileDto = { email: 'taken@test.com' };
+
+      userRepository.findOne
+        .mockResolvedValueOnce(mockUser)
+        .mockResolvedValueOnce({
+          id: 'other-user',
+          email: 'taken@test.com',
+        } as User);
+
+      accountRepository.findOne.mockResolvedValue(mockAccount);
+
+      await expect(service.updateProfile('user-1', dto)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('should throw ConflictException if accountId is already taken (even if username is free)', async () => {
+      const dto: UpdateProfileDto = { username: 'sneaky_user' };
+
+      userRepository.findOne
+        .mockResolvedValueOnce(mockUser)
+        .mockResolvedValueOnce(null);
+
+      accountRepository.findOne
+        .mockResolvedValueOnce(mockAccount)
+        .mockResolvedValueOnce({
+          id: 'other-account-id',
+          accountId: 'sneaky_user',
+        } as Account);
+
+      await expect(service.updateProfile('user-1', dto)).rejects.toThrow(
+        ConflictException,
       );
     });
   });
 
   describe('findUserById', () => {
-    it('should return user', async () => {
-      profileRepository.findOne.mockResolvedValue(mockProfile as Profile);
-      expect(await service.findProfileById('profile-1')).toEqual(mockProfile);
+    it('should return profile', async () => {
+      expect(await service.findProfileById('user-1')).toEqual(mockProfile);
     });
 
     it('should throw NotFoundException', async () => {
       profileRepository.findOne.mockResolvedValue(null);
-      await expect(service.findProfileById('profile-1')).rejects.toThrow(
+      await expect(service.findProfileById('user-1')).rejects.toThrow(
         NotFoundException,
       );
     });
