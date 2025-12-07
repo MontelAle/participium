@@ -16,7 +16,7 @@
     },
     "moduleResolution": "bundler",
     "module": "ESNext",
-    "lib": ["DOM", "es2021","DOM.Iterable"],
+    "lib": ["DOM", "es2021", "DOM.Iterable"],
     "skipLibCheck": true
   }
 }

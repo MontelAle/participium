@@ -1,31 +1,29 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/auth-context';
+import { useFilteredReports } from '@/hooks/use-filtered-reports';
+import { useActiveReportStore } from '@/store/activeReportStore';
+import { ReportStatus } from '@repo/api';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import 'leaflet.markercluster';
-import { useActiveReportStore } from '@/store/activeReportStore';
-import { useFilterStore } from '@/store/filterStore';
-import { useFilteredReports } from '@/hooks/use-filtered-reports';
-import { useReports } from '@/hooks/use-reports';
-import { useAuth } from '@/contexts/auth-context';
-import { ReportStatus } from '@repo/api';
+import 'leaflet/dist/leaflet.css';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { MapControls, SearchBox } from './map-controls';
 import {
-  injectStylesOnce,
-  modernDivIcon,
-  smallDivIcon,
+  DEFAULT_COLOR,
+  escapeHtml,
+  formatShortAddress,
   getStatusBadgeHTML,
   getSvgIcon,
+  injectStylesOnce,
   isPointInGeoJSON,
-  formatShortAddress,
-  escapeHtml,
+  modernDivIcon,
+  smallDivIcon,
   STATUS_COLORS,
-  DEFAULT_COLOR,
 } from './map.utils';
-import { SearchBox, MapControls } from './map-controls';
 
 export default function ReportsMap() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -202,8 +200,7 @@ export default function ReportsMap() {
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    if (!markerClusterGroupRef.current) {
-      markerClusterGroupRef.current = L.markerClusterGroup({
+    markerClusterGroupRef.current ??= L.markerClusterGroup({
         showCoverageOnHover: false,
         maxClusterRadius: 45,
         iconCreateFunction: (cluster) => {
@@ -215,6 +212,7 @@ export default function ReportsMap() {
           });
           const dominantStatus = Object.keys(counts).reduce((a, b) =>
             (counts[a] || 0) >= (counts[b] || 0) ? a : b,
+            ''
           );
           const statusClass =
             STATUS_COLORS[dominantStatus as ReportStatus]?.class ||
@@ -226,7 +224,6 @@ export default function ReportsMap() {
           });
         },
       }).addTo(map);
-    }
 
     const clusterGroup = markerClusterGroupRef.current;
     clusterGroup.clearLayers();

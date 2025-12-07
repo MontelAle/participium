@@ -1,18 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import { LocalAuthGuard } from './../src/modules/auth/guards/local-auth.guard';
-import { SessionGuard } from './../src/modules/auth/guards/session-auth.guard';
-import { RolesGuard } from './../src/modules/auth/guards/roles.guard';
+import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Session } from '../src/common/entities/session.entity';
-import { User } from '../src/common/entities/user.entity';
-import { Role } from '../src/common/entities/role.entity';
 import { Account } from '../src/common/entities/account.entity';
 import { Category } from '../src/common/entities/category.entity';
-import { Report } from '../src/common/entities/report.entity';
 import { Office } from '../src/common/entities/office.entity';
-import request = require('supertest');
 import { Profile } from '../src/common/entities/profile.entity';
+import { Report } from '../src/common/entities/report.entity';
+import { Role } from '../src/common/entities/role.entity';
+import { Session } from '../src/common/entities/session.entity';
+import { User } from '../src/common/entities/user.entity';
+import { LocalAuthGuard } from './../src/modules/auth/guards/local-auth.guard';
+import { RolesGuard } from './../src/modules/auth/guards/roles.guard';
+import { SessionGuard } from './../src/modules/auth/guards/session-auth.guard';
+import request = require('supertest');
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
@@ -22,7 +22,7 @@ const createMockRepository = (data: any[] = []) => {
   const repo: any = {
     find: jest.fn((options) => {
       let results = [...data];
-      if (options && options.where) {
+      if (options?.where) {
         results = results.filter((e) =>
           Object.entries(options.where).every(([k, v]) => {
             if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
@@ -57,8 +57,8 @@ const createMockRepository = (data: any[] = []) => {
         const existing = data.find((e) => e.id === entity.id);
         if (existing) {
           Object.assign(existing, entity);
-          if (entity.assignedOfficer && entity.assignedOfficer.id) {
-            (existing as any).assignedOfficerId = entity.assignedOfficer.id;
+          if (entity.assignedOfficer?.id) {
+            (existing).assignedOfficerId = entity.assignedOfficer.id;
           }
           return Promise.resolve(existing);
         }
@@ -67,12 +67,12 @@ const createMockRepository = (data: any[] = []) => {
         ...entity,
         id: entity.id || 'mocked-id',
         isAnonymous:
-          entity.isAnonymous !== undefined ? entity.isAnonymous : false,
+          entity.isAnonymous === undefined ? false : entity.isAnonymous,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      if (entity.assignedOfficer && entity.assignedOfficer.id) {
-        (newEntity as any).assignedOfficerId = entity.assignedOfficer.id;
+      if (entity.assignedOfficer?.id) {
+        (newEntity).assignedOfficerId = entity.assignedOfficer.id;
       }
       data.push(newEntity);
       return Promise.resolve(newEntity);
@@ -82,7 +82,7 @@ const createMockRepository = (data: any[] = []) => {
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
     count: jest.fn((options) => {
       let results = [...data];
-      if (options && options.where) {
+      if (options?.where) {
         results = results.filter((e) =>
           Object.entries(options.where).every(([k, v]) => {
             if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
@@ -107,9 +107,12 @@ const createMockRepository = (data: any[] = []) => {
       andWhere: jest.fn().mockReturnThis(),
       leftJoinAndSelect: jest.fn().mockReturnThis(),
       addSelect: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       getOne: jest.fn().mockResolvedValue(data[0] || null),
       getMany: jest.fn().mockResolvedValue(data),
+      getRawMany: jest.fn().mockResolvedValue([]),
       getRawAndEntities: jest.fn().mockResolvedValue({
         entities: data,
         raw: data.map(() => ({ distance: 100 })),
@@ -276,7 +279,7 @@ describe('AppController (e2e)', () => {
         const existing = mockReports.find((e) => e.id === entity.id);
         if (existing) {
           Object.assign(existing, entity);
-          if (entity.assignedOfficer && entity.assignedOfficer.id) {
+          if (entity.assignedOfficer?.id) {
             existing.assignedOfficerId = entity.assignedOfficer.id;
           }
           return Promise.resolve(existing);
@@ -296,7 +299,7 @@ describe('AppController (e2e)', () => {
         newEntity.user = mockUsers.find((u) => u.id === newEntity.userId);
       }
 
-      if (entity.assignedOfficer && entity.assignedOfficer.id) {
+      if (entity.assignedOfficer?.id) {
         newEntity.assignedOfficerId = entity.assignedOfficer.id;
       }
 
@@ -328,14 +331,6 @@ describe('AppController (e2e)', () => {
         profilePictureUrl: null,
       },
     ];
-
-    const mockCookie = {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      maxAge: 3600_000,
-    };
-    const mockToken = 'sess_1.secret';
 
     const { DatabaseModule } = await import(
       './../src/providers/database/database.module'
@@ -394,8 +389,7 @@ describe('AppController (e2e)', () => {
     testingModuleBuilder.overrideGuard(SessionGuard).useValue({
       canActivate: (context: any) => {
         const req = context.switchToHttp().getRequest();
-        const hasCookie = req.cookies && req.cookies.session_token;
-        if (hasCookie) {
+        if (req.cookies?.session_token) {
           const path = req.path;
           const cookieValue = req.cookies.session_token;
 
@@ -484,7 +478,7 @@ describe('AppController (e2e)', () => {
       ['DELETE', () => request(server).delete(path)],
       ['OPTIONS', () => request(server).options(path)],
     ] as const;
-    for (const [method, make] of cases) {
+    for (const [, make] of cases) {
       await make().set('Accept', 'application/json').expect(404);
     }
   });

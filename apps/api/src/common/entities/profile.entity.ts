@@ -1,17 +1,17 @@
+import type { Profile as ProfileType } from '@repo/api';
 import {
-  Entity,
-  PrimaryColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
+  Entity,
   JoinColumn,
   OneToOne,
+  PrimaryColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { Profile as ProfileInterface } from '@repo/api';
 import { User } from './user.entity';
 
 @Entity('profile')
-export class Profile implements ProfileInterface {
+export class Profile implements ProfileType {
   @PrimaryColumn('varchar')
   id: string;
 

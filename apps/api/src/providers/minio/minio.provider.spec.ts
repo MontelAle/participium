@@ -1,9 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { MinioProvider } from './minio.provider';
+import { InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InternalServerErrorException } from '@nestjs/common';
-import { MINIO_ERROR_MESSAGES } from './constants/error-messages';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as Minio from 'minio';
+import { MINIO_ERROR_MESSAGES } from './constants/error-messages';
+import { MinioProvider } from './minio.provider';
 
 jest.mock('minio');
 
@@ -25,6 +25,8 @@ describe('MinioProvider', () => {
     (Minio.Client as jest.MockedClass<typeof Minio.Client>).mockImplementation(
       () => mockMinioClient,
     );
+    
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -53,7 +55,6 @@ describe('MinioProvider', () => {
     }).compile();
 
     provider = module.get<MinioProvider>(MinioProvider);
-    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {

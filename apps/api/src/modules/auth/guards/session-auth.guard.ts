@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Session } from '../../../common/entities/session.entity';
 import type { RequestWithUserSession } from '../../../common/types/request-with-user-session.type';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()

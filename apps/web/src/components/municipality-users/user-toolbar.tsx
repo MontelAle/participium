@@ -1,16 +1,4 @@
-import * as React from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import {
-  Check,
-  ChevronsUpDown,
-  Search,
-  X,
-  Filter,
-  Building2,
-  RotateCcw,
-  Briefcase,
-} from 'lucide-react';
 import {
   Command,
   CommandEmpty,
@@ -19,6 +7,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
@@ -26,6 +15,16 @@ import {
 } from '@/components/ui/popover';
 import { cn, prettifyRole } from '@/lib/utils';
 import { UsersToolbarProps } from '@/types/ui';
+import {
+  Briefcase,
+  Building2,
+  Check,
+  ChevronsUpDown,
+  RotateCcw,
+  Search,
+  X,
+} from 'lucide-react';
+import { useCallback, useState } from 'react';
 
 export function UsersToolbar({
   query,
@@ -38,10 +37,10 @@ export function UsersToolbar({
   availableOffices,
   className,
 }: UsersToolbarProps) {
-  const [openRoles, setOpenRoles] = React.useState(false);
-  const [openOffices, setOpenOffices] = React.useState(false);
+  const [openRoles, setOpenRoles] = useState(false);
+  const [openOffices, setOpenOffices] = useState(false);
 
-  const toggleRole = React.useCallback(
+  const toggleRole = useCallback(
     (role: string) => {
       onRolesChange(
         selectedRoles.includes(role)
@@ -52,7 +51,7 @@ export function UsersToolbar({
     [onRolesChange, selectedRoles],
   );
 
-  const toggleOffice = React.useCallback(
+  const toggleOffice = useCallback(
     (office: string) => {
       onOfficesChange(
         selectedOffices.includes(office)
@@ -63,7 +62,7 @@ export function UsersToolbar({
     [onOfficesChange, selectedOffices],
   );
 
-  const clearAll = React.useCallback(() => {
+  const clearAll = useCallback(() => {
     onRolesChange([]);
     onOfficesChange([]);
   }, [onRolesChange, onOfficesChange]);
@@ -95,7 +94,6 @@ export function UsersToolbar({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                role="combobox"
                 className="h-12 w-full lg:w-[200px] justify-between text-base border-slate-200 px-4"
               >
                 <div className="flex items-center gap-2 truncate mr-2">
@@ -152,7 +150,6 @@ export function UsersToolbar({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                role="combobox"
                 className="h-12 w-full lg:w-[220px] justify-between text-base border-slate-200 px-4"
               >
                 <div className="flex items-center gap-2 truncate mr-2">

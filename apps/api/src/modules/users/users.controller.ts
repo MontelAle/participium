@@ -1,26 +1,26 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  UseGuards,
-  Param,
+  Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
-import { UsersService } from './users.service';
-import { SessionGuard } from '../auth/guards/session-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import {
   CreateMunicipalityUserDto,
-  UpdateMunicipalityUserDto,
+  MunicipalityUserIdResponseDto,
   MunicipalityUserResponseDto,
   MunicipalityUsersResponseDto,
-  MunicipalityUserIdResponseDto,
+  UpdateMunicipalityUserDto,
 } from '../../common/dto/municipality-user.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { SessionGuard } from '../auth/guards/session-auth.guard';
+import { UsersService } from './users.service';
 
 @ApiTags('Users')
 @Controller('users')

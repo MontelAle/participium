@@ -1,6 +1,6 @@
-import L from 'leaflet';
 import { ReportStatus } from '@repo/api';
-import { isSameDay, subWeeks, subMonths, isAfter } from 'date-fns';
+import { isAfter, isSameDay, subMonths, subWeeks, startOfDay, endOfDay } from 'date-fns';
+import L from 'leaflet';
 
 export const STATUS_COLORS = {
   [ReportStatus.PENDING]: {
@@ -159,19 +159,13 @@ export const injectStylesOnce = (() => {
 })();
 
 export function getSvgIcon(type: 'calendar' | 'pin' | 'user' | 'ghost') {
-  if (type === 'calendar') {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>`;
-  }
-  if (type === 'pin') {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
-  }
-  if (type === 'user') {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
-  }
-  if (type === 'ghost') {
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>`;
-  }
-  return '';
+  const icons = {
+    calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>`,
+    pin: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
+    user: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+    ghost: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>`
+  };
+  return icons[type] || '';
 }
 
 export function getStatusBadgeHTML(status: ReportStatus) {
@@ -179,40 +173,13 @@ export function getStatusBadgeHTML(status: ReportStatus) {
   return `<span class="popup-badge ${config.badgeClass}">${config.label}</span>`;
 }
 
-export function isPointInGeoJSON(lat: number, lng: number, geoJson: any) {
-  if (!geoJson) return true;
-  const x = lng;
-  const y = lat;
-  let inside = false;
-  const polygons =
-    geoJson.type === 'MultiPolygon'
-      ? geoJson.coordinates
-      : [geoJson.coordinates];
-  for (const polygon of polygons) {
-    const rings = geoJson.type === 'Polygon' ? polygons : polygon;
-    for (const ring of rings) {
-      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-        const xi = ring[i][0],
-          yi = ring[i][1];
-        const xj = ring[j][0],
-          yj = ring[j][1];
-        const intersect =
-          yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-        if (intersect) inside = !inside;
-      }
-    }
-    if (inside) return true;
-  }
-  return inside;
-}
-
 export function escapeHtml(str: string) {
   return str
-    .replaceAll(/&/g, '&amp;')
-    .replaceAll(/</g, '&lt;')
-    .replaceAll(/>/g, '&gt;')
-    .replaceAll(/"/g, '&quot;')
-    .replaceAll(/'/g, '&#039;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 export function formatShortAddress(addr: any, raw: string) {
@@ -222,52 +189,134 @@ export function formatShortAddress(addr: any, raw: string) {
   return street || raw.split(',')[0];
 }
 
+type Coordinate = [number, number];
+type Ring = Coordinate[];
+type Polygon = Ring[];
+
+interface GeoJSON {
+  type: 'Polygon' | 'MultiPolygon';
+  coordinates: Polygon | Polygon[];
+}
+
+function normalizePolygons(geoJson: GeoJSON): Polygon[] {
+  if (geoJson.type === 'MultiPolygon') {
+    return geoJson.coordinates as Polygon[];
+  }
+  return [geoJson.coordinates as Polygon];
+}
+
+function isPointInRing(pointX: number, pointY: number, ring: Ring): boolean {
+  let isInside = false;
+  
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const vertexA = ring[i];
+    const vertexB = ring[j];
+
+    if (!vertexA || !vertexB) {
+      continue;
+    }
+
+    const [xi, yi] = vertexA;
+    const [xj, yj] = vertexB;
+
+    const intersect = ((yi > pointY) !== (yj > pointY)) &&
+      (pointX < (xj - xi) * (pointY - yi) / (yj - yi) + xi);
+    
+    if (intersect) isInside = !isInside;
+  }
+  
+  return isInside;
+}
+
+function isPointInPolygonStructure(pointX: number, pointY: number, polygon: Polygon): boolean {
+  let inside = false;
+  for (const ring of polygon) {
+    if (isPointInRing(pointX, pointY, ring)) {
+        inside = !inside; 
+    }
+  }
+  return inside;
+}
+
+export function isPointInGeoJSON(
+  lat: number,
+  lng: number,
+  geoJson: GeoJSON | null | undefined,
+): boolean {
+  if (!geoJson) return true;
+
+  const polygons = normalizePolygons(geoJson);
+
+  for (const polygon of polygons) {
+    if (isPointInPolygonStructure(lng, lat, polygon)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+const failsSearchCheck = (report: any, term: string) => {
+  if (!term) return false;
+  const t = term.toLowerCase();
+  return !(
+    report.title.toLowerCase().includes(t) ||
+    report.address?.toLowerCase().includes(t) ||
+    report.category.name.toLowerCase().includes(t)
+  );
+};
+
+const failsStaticCheck = (report: any, filters: any) => {
+  if (filters.status && report.status !== filters.status) return true;
+  if (filters.category && report.category.name !== filters.category) return true;
+  return false;
+};
+
+const failsDateRangeCheck = (reportDate: Date, filters: any, today: Date) => {
+  if (!filters.dateRange) return false;
+  
+  switch (filters.dateRange) {
+    case 'Today': return !isSameDay(reportDate, today);
+    case 'Last Week': return !isAfter(reportDate, subWeeks(today, 1));
+    case 'This Month': return !isAfter(reportDate, subMonths(today, 1));
+    default: return false;
+  }
+};
+
+const failsCustomDateCheck = (reportDate: Date, filters: any) => {
+  const { from, to } = filters.customDate || {};
+  if (!from) return false;
+
+  const cleanFrom = startOfDay(new Date(from));
+  if (reportDate < cleanFrom) return true;
+
+  if (to) {
+    const cleanTo = endOfDay(new Date(to));
+    if (reportDate > cleanTo) return true;
+  }
+
+  return false;
+};
+
 export function filterReportsLogic(
   reports: any[],
   debouncedSearchTerm: string,
   filters: any,
 ) {
-  return reports.filter((report) => {
-    if (debouncedSearchTerm.trim() !== '') {
-      const term = debouncedSearchTerm.toLowerCase();
-      const matches =
-        report.title.toLowerCase().includes(term) ||
-        (report.address && report.address.toLowerCase().includes(term)) ||
-        report.category.name.toLowerCase().includes(term);
-      if (!matches) return false;
-    }
+  const today = new Date();
+  const term = debouncedSearchTerm.trim();
 
-    if (filters.status && report.status !== filters.status) return false;
-    if (filters.category && report.category.name !== filters.category)
-      return false;
+  return reports.filter((report) => {
+    if (term && failsSearchCheck(report, term)) return false;
+
+    if (failsStaticCheck(report, filters)) return false;
 
     const reportDate = new Date(report.createdAt);
-    const today = new Date();
 
-    if (filters.dateRange) {
-      if (filters.dateRange === 'Today') {
-        if (!isSameDay(reportDate, today)) return false;
-      } else if (filters.dateRange === 'Last Week') {
-        if (!isAfter(reportDate, subWeeks(today, 1))) return false;
-      } else if (filters.dateRange === 'This Month') {
-        if (!isAfter(reportDate, subMonths(today, 1))) return false;
-      }
-    }
+    if (failsDateRangeCheck(reportDate, filters, today)) return false;
 
-    if (filters.customDate?.from) {
-      const { from, to } = filters.customDate;
-      const cleanFrom = new Date(from);
-      cleanFrom.setHours(0, 0, 0, 0);
-      const cleanReportDate = new Date(reportDate);
-      cleanReportDate.setHours(0, 0, 0, 0);
+    if (failsCustomDateCheck(reportDate, filters)) return false;
 
-      if (cleanReportDate < cleanFrom) return false;
-      if (to) {
-        const cleanTo = new Date(to);
-        cleanTo.setHours(23, 59, 59, 999);
-        if (reportDate > cleanTo) return false;
-      }
-    }
     return true;
   });
 }

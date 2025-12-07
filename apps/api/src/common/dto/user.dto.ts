@@ -1,19 +1,11 @@
-import {
-  IsOptional,
-  IsString,
-  IsBoolean,
-  Matches,
-  ValidateIf,
-  IsEmail,
-  IsNotEmpty,
-} from 'class-validator';
-import {
-  UpdateProfileDto as UpdateProfileDtoInterface,
-  ProfileResponseDto as ProfileResponseDtoInterface,
+import type {
+  ProfileResponseDto as ProfileResponseDtoType,
+  UpdateProfileDto as UpdateProfileDtoType,
 } from '@repo/api';
+import { IsOptional, IsString, Matches, ValidateIf } from 'class-validator';
 import { Profile } from '../entities/profile.entity';
 
-export class UpdateProfileDto implements UpdateProfileDtoInterface {
+export class UpdateProfileDto implements UpdateProfileDtoType {
   @IsString()
   @IsOptional()
   @ValidateIf((o) => o.telegramUsername !== '')
@@ -44,7 +36,7 @@ export class UpdateProfileDto implements UpdateProfileDtoInterface {
   lastName?: string;
 }
 
-export class ProfileResponseDto implements ProfileResponseDtoInterface {
+export class ProfileResponseDto implements ProfileResponseDtoType {
   success: boolean;
   data: Profile;
 }

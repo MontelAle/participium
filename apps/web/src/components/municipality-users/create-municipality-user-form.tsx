@@ -1,14 +1,4 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import {
-  MailIcon,
-  UserIcon,
-  LockIcon,
-  Briefcase,
-  Building2,
-} from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Field, FieldLabel } from '@/components/ui/field';
 import {
@@ -18,16 +8,26 @@ import {
 } from '@/components/ui/input-group';
 import {
   Select,
-  SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
-import { useRoles } from '@/hooks/use-roles';
-import { useOffices } from '@/hooks/use-offices';
 import { useCreateMunicipalityUser } from '@/hooks/use-municipality-users';
-import type { CreateMunicipalityUserDto } from '@repo/api';
+import { useOffices } from '@/hooks/use-offices';
+import { useRoles } from '@/hooks/use-roles';
 import { prettifyRole } from '@/lib/utils';
+import type { CreateMunicipalityUserDto } from '@repo/api';
+import {
+  Briefcase,
+  Building2,
+  LockIcon,
+  MailIcon,
+  UserIcon,
+} from 'lucide-react';
+import { ChangeEvent, FormEvent, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export function CreateMunicipalityUserForm() {
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ export function CreateMunicipalityUserForm() {
   const [form, setForm] = useState<CreateMunicipalityUserDto>(emptyForm);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -59,7 +59,7 @@ export function CreateMunicipalityUserForm() {
     setForm({ ...form, officeId: value });
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isLoading) return;
     setIsLoading(true);
