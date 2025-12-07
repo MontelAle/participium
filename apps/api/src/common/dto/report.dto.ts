@@ -10,6 +10,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -20,9 +21,11 @@ import { Report, ReportStatus } from '../entities/report.entity';
 
 export class CreateReportDto implements CreateReportDtoType {
   @IsString()
+  @IsNotEmpty()
   title: string;
 
   @IsString()
+  @IsNotEmpty()
   description: string;
 
   @ApiProperty({
@@ -53,6 +56,7 @@ export class CreateReportDto implements CreateReportDtoType {
   images?: string[];
 
   @IsString()
+  @IsNotEmpty()
   categoryId: string;
 
   @ApiPropertyOptional()
