@@ -25,7 +25,7 @@ export class Profile implements ProfileType {
   @Column({ nullable: true })
   telegramUsername: string | null;
 
-  @Column({ default: false })
+  @Column({ default: true })
   emailNotificationsEnabled: boolean;
 
   @Column({ nullable: true })
