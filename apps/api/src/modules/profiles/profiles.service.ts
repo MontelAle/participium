@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException , ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UpdateProfileDto } from '@repo/api';
 import { nanoid } from 'nanoid';
@@ -78,10 +78,42 @@ export class ProfilesService {
     throw new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND);
   }
 
-  if (dto.email) {user.email = dto.email; profile.user.email=dto.email; }
-  if (dto.username) {user.username = dto.username; profile.user.username=dto.username;}
-  if (dto.firstName) {user.firstName = dto.firstName; profile.user.firstName=dto.firstName;  }
-  if (dto.lastName) {user.lastName = dto.lastName; profile.user.lastName=dto.lastName; }
+
+if (dto.username && dto.username !== user.username) {
+  const existingUsername = await this.userRepository.findOne({
+    where: { username: dto.username },
+  });
+
+  if (existingUsername) {
+    throw new ConflictException('Username already in use');
+  }
+
+  user.username = dto.username;
+  profile.user.username = dto.username;
+}
+
+
+if (dto.email && dto.email !== user.email) {
+  const existingEmail = await this.userRepository.findOne({
+    where: { email: dto.email },
+  });
+
+  if (existingEmail) {
+    throw new ConflictException('Email already in use');
+  }
+
+  user.email = dto.email;
+  profile.user.email = dto.email;
+}
+
+  if (dto.firstName && dto.firstName!== user.firstName) {
+    user.firstName = dto.firstName; 
+    profile.user.firstName=dto.firstName;  
+  }
+  if (dto.lastName && dto.lastName !== user.lastName) {
+    user.lastName = dto.lastName; 
+    profile.user.lastName=dto.lastName; 
+  }
   
     await this.userRepository.save(user);
 
@@ -91,6 +123,7 @@ export class ProfilesService {
   async findProfileById(userId: string): Promise<Profile> {
     const profile = await this.profileRepository.findOne({
       where: { userId: userId },
+      relations: ['user','user.role'],
     });
 
     if (!profile) {
