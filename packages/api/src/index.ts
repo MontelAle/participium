@@ -11,6 +11,7 @@ export * from './entities/user.entity';
 export * from './dto/auth.dto';
 export * from './dto/category.dto';
 export * from './dto/municipality-user.dto';
+export * from './dto/office.dto';
 export * from './dto/profile.dto';
 export * from './dto/report.dto';
 export * from './dto/response.dto';
