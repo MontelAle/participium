@@ -19,6 +19,9 @@ export class ProfilesService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
 
+    @InjectRepository(Account)
+    private readonly accountRepository: Repository<Account>,
+
     private readonly minioProvider: MinioProvider,
   ) {}
 
@@ -73,16 +76,19 @@ export class ProfilesService {
 
   
   const user = await this.userRepository.findOne({ where: { id: userId } });
-  
   if (!user) {
     throw new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND);
   }
 
+  const account = await this.accountRepository.findOne({ where: { userId:userId , providerId: 'local'} , relations: ['user'], });
+  if (!account) {
+    throw new NotFoundException('Account not found');
+  }
 
-if (dto.username && dto.username !== user.username) {
-  const existingUsername = await this.userRepository.findOne({
-    where: { username: dto.username },
-  });
+  if (dto.username && dto.username !== user.username) {
+    const existingUsername = await this.userRepository.findOne({
+      where: { username: dto.username },
+    });
 
   if (existingUsername) {
     throw new ConflictException('Username already in use');
@@ -90,6 +96,17 @@ if (dto.username && dto.username !== user.username) {
 
   user.username = dto.username;
   profile.user.username = dto.username;
+  account.user.username = dto.username;
+  
+  const existingAccountId = await this.accountRepository.findOne({
+    where: { accountId: dto.username },
+  });
+
+  if (existingAccountId && existingAccountId.id !== account.id) {
+    throw new ConflictException('AccountId already in use');
+  }
+
+  account.accountId = dto.username;
 }
 
 
@@ -104,17 +121,22 @@ if (dto.email && dto.email !== user.email) {
 
   user.email = dto.email;
   profile.user.email = dto.email;
+  account.user.email=dto.email;
 }
 
   if (dto.firstName && dto.firstName!== user.firstName) {
     user.firstName = dto.firstName; 
-    profile.user.firstName=dto.firstName;  
+    profile.user.firstName=dto.firstName; 
+    account.user.firstName=dto.firstName;
   }
   if (dto.lastName && dto.lastName !== user.lastName) {
     user.lastName = dto.lastName; 
     profile.user.lastName=dto.lastName; 
+    account.user.lastName=dto.lastName;
   }
   
+    await this.accountRepository.save(account);
+
     await this.userRepository.save(user);
 
     return this.profileRepository.save(profile);
