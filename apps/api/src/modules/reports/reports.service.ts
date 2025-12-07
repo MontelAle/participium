@@ -141,6 +141,13 @@ export class ReportsService {
       .leftJoinAndSelect('report.category', 'category')
       .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer');
 
+    if (viewer.role?.name === 'user') {
+      query.andWhere(
+        `(report.status != 'rejected' OR report.userId = :viewerId)`,
+        { viewerId: viewer.id },
+      );
+    }
+
     if (filters?.status) {
       query.andWhere('report.status = :status', { status: filters.status });
     }
@@ -208,6 +215,14 @@ export class ReportsService {
     });
 
     if (!report) {
+      throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
+    }
+
+    if (
+      viewer.role?.name === 'user' &&
+      report.status === 'rejected' &&
+      report.userId !== viewer.id
+    ) {
       throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
     }
 
@@ -382,6 +397,7 @@ export class ReportsService {
         )`,
         { lng: longitude, lat: latitude, radius: radiusMeters },
       )
+      .andWhere('report.status != :rejectedStatus', { rejectedStatus: 'rejected' })
       .orderBy('distance', 'ASC')
       .getRawAndEntities();
 
