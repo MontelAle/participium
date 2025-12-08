@@ -142,13 +142,20 @@ export class ReportsService {
       .leftJoinAndSelect('report.user', 'user')
       .leftJoinAndSelect('user.role', 'role')
       .leftJoinAndSelect('report.category', 'category')
-      .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer');
+      .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer')
+      .leftJoinAndSelect('report.assignedExternalMaintainer', 'assignedExternalMaintainer');
 
     if (viewer.role?.name === 'user') {
       query.andWhere(
         `(report.status != 'rejected' OR report.userId = :viewerId)`,
         { viewerId: viewer.id },
       );
+    }
+
+    if (viewer.role?.name === 'external_maintainer') {
+      query.andWhere('report.assignedExternalMaintainerId = :viewerId', {
+        viewerId: viewer.id,
+      });
     }
 
     if (viewer.role?.name === 'pr_officer') {
@@ -218,7 +225,7 @@ export class ReportsService {
   async findOne(id: string, viewer: User): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ['user', 'user.role', 'category', 'assignedOfficer'],
+      relations: ['user', 'user.role', 'category', 'assignedOfficer', 'assignedExternalMaintainer'],
     });
 
     if (!report) {
@@ -233,6 +240,13 @@ export class ReportsService {
       throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
     }
 
+    if (
+      viewer.role?.name === 'external_maintainer' &&
+      report.assignedExternalMaintainerId !== viewer.id
+    ) {
+      throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
+    }
+
     return this.sanitizeReport(report, viewer);
   }
 
@@ -243,6 +257,10 @@ export class ReportsService {
   ): Promise<Report> {
     const report = await this.findReportEntity(id);
 
+    if (actor?.role?.name === 'external_maintainer') {
+      this.validateExternalMaintainerStatusChange(report, updateReportDto);
+    }
+
     this.updateReportLocation(report, updateReportDto);
 
     await this.updateReportCategory(report, updateReportDto);
@@ -251,6 +269,13 @@ export class ReportsService {
       await this.assignOfficerToReport(
         report,
         updateReportDto.assignedOfficerId,
+      );
+    }
+
+    if (updateReportDto.assignedExternalMaintainerId !== undefined) {
+      await this.assignExternalMaintainerToReport(
+        report,
+        updateReportDto.assignedExternalMaintainerId,
       );
     }
 
@@ -344,6 +369,55 @@ export class ReportsService {
         report.assignedOfficer = officerWithFewestReports;
         report.assignedOfficerId = officerWithFewestReports.id;
       }
+    }
+  }
+
+  private async assignExternalMaintainerToReport(
+    report: Report,
+    assignedExternalMaintainerId?: string,
+  ): Promise<void> {
+    if (assignedExternalMaintainerId) {
+      const externalMaintainer = await this.userRepository.findOne({
+        where: { id: assignedExternalMaintainerId },
+        relations: ['role'],
+      });
+
+      if (
+        externalMaintainer &&
+        externalMaintainer.role?.name === 'external_maintainer'
+      ) {
+        report.assignedExternalMaintainer = externalMaintainer;
+        report.assignedExternalMaintainerId = externalMaintainer.id;
+      } else {
+        throw new BadRequestException(
+          'Invalid external maintainer ID or user is not an external maintainer',
+        );
+      }
+    } else {
+      report.assignedExternalMaintainer = null;
+      report.assignedExternalMaintainerId = null;
+    }
+  }
+
+  private validateExternalMaintainerStatusChange(
+    report: Report,
+    updateDto: UpdateReportDto,
+  ): void {
+    if (!updateDto.status) {
+      return;
+    }
+
+    const allowedTransitions = {
+      assigned: ['in_progress'],
+      in_progress: ['resolved'],
+    };
+
+    const allowedNextStatuses = allowedTransitions[report.status];
+
+    if (!allowedNextStatuses || !allowedNextStatuses.includes(updateDto.status)) {
+      throw new BadRequestException(
+        `External maintainers can only change status from 'assigned' to 'in_progress' or from 'in_progress' to 'resolved'. Current status: ${report.status}`,
+      );
     }
   }
 

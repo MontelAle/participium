@@ -22,6 +22,7 @@ export interface UpdateReportDto {
   categoryId?: string;
   explanation?: string;
   assignedOfficerId?: string;
+  assignedExternalMaintainerId?: string;
 }
 
 export interface FilterReportsDto {

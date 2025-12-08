@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -83,6 +84,8 @@ export class UsersService {
       const dbOffice = await officeRepo.findOne({
         where: { id: dto.officeId },
       });
+
+      this.validateOfficeRoleMatch(dbRole, dbOffice);
 
       const existingUser = await manager.getRepository(User).findOne({
         where: { username },
@@ -192,6 +195,9 @@ export class UsersService {
       if (dto.firstName) user.firstName = dto.firstName;
       if (dto.lastName) user.lastName = dto.lastName;
 
+      let updatedRole = user.role;
+      let updatedOffice = user.office;
+
       if (dto.roleId) {
         const role = await this.roleRepository.findOne({
           where: { id: dto.roleId },
@@ -202,6 +208,7 @@ export class UsersService {
         }
 
         user.roleId = role.id;
+        updatedRole = role;
       }
 
       if (dto.officeId) {
@@ -210,7 +217,10 @@ export class UsersService {
         });
 
         user.officeId = office ? office.id : null;
+        updatedOffice = office;
       }
+
+      this.validateOfficeRoleMatch(updatedRole, updatedOffice);
 
       await manager.getRepository(User).save(user);
 
@@ -225,5 +235,32 @@ export class UsersService {
         }
       }
     });
+  }
+
+  private validateOfficeRoleMatch(role: Role, office: Office | null): void {
+    if (!role) {
+      return;
+    }
+
+    const isExternalMaintainer = role.name === 'external_maintainer';
+    const hasExternalOffice = office && office.isExternal;
+
+    if (isExternalMaintainer && !hasExternalOffice) {
+      throw new BadRequestException(
+        'External maintainers must be assigned to an external office',
+      );
+    }
+
+    if (!isExternalMaintainer && hasExternalOffice) {
+      throw new BadRequestException(
+        'Only external maintainers can be assigned to external offices',
+      );
+    }
+
+    if (isExternalMaintainer && !office) {
+      throw new BadRequestException(
+        'External maintainers must have an office assigned',
+      );
+    }
   }
 }

@@ -151,7 +151,7 @@ export class ReportsController {
    */
   @Patch(':id')
   @UseGuards(SessionGuard, RolesGuard)
-  @Roles('pr_officer', 'officer')
+  @Roles('pr_officer', 'officer', 'external_maintainer')
   async update(
     @Param('id') id: string,
     @Body() updateReportDto: UpdateReportDto,
