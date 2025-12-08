@@ -1,5 +1,13 @@
-import { ReportStatus } from '@repo/api';
-import { isAfter, isSameDay, subMonths, subWeeks, startOfDay, endOfDay } from 'date-fns';
+import { Filters, OSMAddress } from '@/types';
+import { Report, ReportStatus } from '@repo/api';
+import {
+  endOfDay,
+  isAfter,
+  isSameDay,
+  startOfDay,
+  subMonths,
+  subWeeks,
+} from 'date-fns';
 import L from 'leaflet';
 
 export const STATUS_COLORS = {
@@ -163,7 +171,7 @@ export function getSvgIcon(type: 'calendar' | 'pin' | 'user' | 'ghost') {
     calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>`,
     pin: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
     user: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-    ghost: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>`
+    ghost: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>`,
   };
   return icons[type] || '';
 }
@@ -182,9 +190,14 @@ export function escapeHtml(str: string) {
     .replaceAll("'", '&#039;');
 }
 
-export function formatShortAddress(addr: any, raw: string) {
-  const street = (addr?.road || addr?.pedestrian || addr?.path || '').trim();
-  const number = (addr?.house_number || '').toString().trim();
+export function formatShortAddress(addr: OSMAddress, raw: string) {
+  const street = (
+    addr?.address.road ||
+    addr?.address.pedestrian ||
+    addr?.address.path ||
+    ''
+  ).trim();
+  const number = (addr?.address.house_number || '').toString().trim();
   if (street && number) return `${street}, ${number}`;
   return street || raw.split(',')[0];
 }
@@ -207,7 +220,7 @@ function normalizePolygons(geoJson: GeoJSON): Polygon[] {
 
 function isPointInRing(pointX: number, pointY: number, ring: Ring): boolean {
   let isInside = false;
-  
+
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
     const vertexA = ring[i];
     const vertexB = ring[j];
@@ -219,20 +232,25 @@ function isPointInRing(pointX: number, pointY: number, ring: Ring): boolean {
     const [xi, yi] = vertexA;
     const [xj, yj] = vertexB;
 
-    const intersect = ((yi > pointY) !== (yj > pointY)) &&
-      (pointX < (xj - xi) * (pointY - yi) / (yj - yi) + xi);
-    
+    const intersect =
+      yi > pointY !== yj > pointY &&
+      pointX < ((xj - xi) * (pointY - yi)) / (yj - yi) + xi;
+
     if (intersect) isInside = !isInside;
   }
-  
+
   return isInside;
 }
 
-function isPointInPolygonStructure(pointX: number, pointY: number, polygon: Polygon): boolean {
+function isPointInPolygonStructure(
+  pointX: number,
+  pointY: number,
+  polygon: Polygon,
+): boolean {
   let inside = false;
   for (const ring of polygon) {
     if (isPointInRing(pointX, pointY, ring)) {
-        inside = !inside; 
+      inside = !inside;
     }
   }
   return inside;
@@ -256,7 +274,7 @@ export function isPointInGeoJSON(
   return false;
 }
 
-const failsSearchCheck = (report: any, term: string) => {
+const failsSearchCheck = (report: Report, term: string) => {
   if (!term) return false;
   const t = term.toLowerCase();
   return !(
@@ -266,24 +284,33 @@ const failsSearchCheck = (report: any, term: string) => {
   );
 };
 
-const failsStaticCheck = (report: any, filters: any) => {
+const failsStaticCheck = (report: Report, filters: Filters) => {
   if (filters.status && report.status !== filters.status) return true;
-  if (filters.category && report.category.name !== filters.category) return true;
+  if (filters.category && report.category.name !== filters.category)
+    return true;
   return false;
 };
 
-const failsDateRangeCheck = (reportDate: Date, filters: any, today: Date) => {
+const failsDateRangeCheck = (
+  reportDate: Date,
+  filters: Filters,
+  today: Date,
+) => {
   if (!filters.dateRange) return false;
-  
+
   switch (filters.dateRange) {
-    case 'Today': return !isSameDay(reportDate, today);
-    case 'Last Week': return !isAfter(reportDate, subWeeks(today, 1));
-    case 'This Month': return !isAfter(reportDate, subMonths(today, 1));
-    default: return false;
+    case 'Today':
+      return !isSameDay(reportDate, today);
+    case 'Last Week':
+      return !isAfter(reportDate, subWeeks(today, 1));
+    case 'This Month':
+      return !isAfter(reportDate, subMonths(today, 1));
+    default:
+      return false;
   }
 };
 
-const failsCustomDateCheck = (reportDate: Date, filters: any) => {
+const failsCustomDateCheck = (reportDate: Date, filters: Filters) => {
   const { from, to } = filters.customDate || {};
   if (!from) return false;
 
@@ -299,9 +326,9 @@ const failsCustomDateCheck = (reportDate: Date, filters: any) => {
 };
 
 export function filterReportsLogic(
-  reports: any[],
+  reports: Report[],
   debouncedSearchTerm: string,
-  filters: any,
+  filters: Filters,
 ) {
   const today = new Date();
   const term = debouncedSearchTerm.trim();

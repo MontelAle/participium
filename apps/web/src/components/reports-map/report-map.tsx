@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useFilteredReports } from '@/hooks/use-filtered-reports';
 import { useActiveReportStore } from '@/store/activeReportStore';
-import { ReportStatus } from '@repo/api';
+import { Report, ReportStatus } from '@repo/api';
 import L from 'leaflet';
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import type { OSMAddress, OSMSearchResult, StatusMarker } from '@/types';
 import { MapControls, SearchBox } from './map-controls';
 import {
   DEFAULT_COLOR,
@@ -48,7 +49,7 @@ export default function ReportsMap() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<OSMSearchResult[]>([]);
   const [mapType, setMapType] = useState<'standard' | 'satellite'>('standard');
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -160,7 +161,7 @@ export default function ReportsMap() {
   const handleLocationSelect = async (
     lat: number,
     lng: number,
-    prefilledAddress?: any,
+    prefilledAddress?: OSMAddress,
     skipBoundaryCheck = false,
   ) => {
     const map = mapInstanceRef.current;
@@ -190,8 +191,10 @@ export default function ReportsMap() {
     }
 
     const rawAddress = addressData?.display_name || 'Unknown Location';
-    const city = addressData?.address?.city || 'Torino';
-    const shortAddress = formatShortAddress(addressData?.address, rawAddress);
+    const city = addressData?.address.city || 'Torino';
+    const shortAddress = addressData
+      ? formatShortAddress(addressData, rawAddress)
+      : rawAddress;
 
     setLocation({ latitude: lat, longitude: lng, address: shortAddress, city });
   };
@@ -201,29 +204,29 @@ export default function ReportsMap() {
     if (!map) return;
 
     markerClusterGroupRef.current ??= L.markerClusterGroup({
-        showCoverageOnHover: false,
-        maxClusterRadius: 45,
-        iconCreateFunction: (cluster) => {
-          const children = cluster.getAllChildMarkers();
-          const counts: Record<string, number> = {};
-          children.forEach((marker: any) => {
-            const s = (marker.options.status as string) || 'UNKNOWN';
-            counts[s] = (counts[s] || 0) + 1;
-          });
-          const dominantStatus = Object.keys(counts).reduce((a, b) =>
-            (counts[a] || 0) >= (counts[b] || 0) ? a : b,
-            ''
-          );
-          const statusClass =
-            STATUS_COLORS[dominantStatus as ReportStatus]?.class ||
-            DEFAULT_COLOR.class;
-          return L.divIcon({
-            html: `<div><span>${cluster.getChildCount()}</span></div>`,
-            className: `marker-cluster-custom ${statusClass}`,
-            iconSize: L.point(40, 40),
-          });
-        },
-      }).addTo(map);
+      showCoverageOnHover: false,
+      maxClusterRadius: 45,
+      iconCreateFunction: (cluster) => {
+        const children = cluster.getAllChildMarkers();
+        const counts: Record<string, number> = {};
+        children.forEach((marker: StatusMarker) => {
+          const s = marker.status || 'UNKNOWN';
+          counts[s] = (counts[s] || 0) + 1;
+        });
+        const dominantStatus = Object.keys(counts).reduce(
+          (a, b) => ((counts[a] || 0) >= (counts[b] || 0) ? a : b),
+          '',
+        );
+        const statusClass =
+          STATUS_COLORS[dominantStatus as ReportStatus]?.class ||
+          DEFAULT_COLOR.class;
+        return L.divIcon({
+          html: `<div><span>${cluster.getChildCount()}</span></div>`,
+          className: `marker-cluster-custom ${statusClass}`,
+          iconSize: L.point(40, 40),
+        });
+      },
+    }).addTo(map);
 
     const clusterGroup = markerClusterGroupRef.current;
     clusterGroup.clearLayers();
@@ -231,7 +234,7 @@ export default function ReportsMap() {
 
     if (!mapReports?.length) return;
 
-    mapReports.forEach((report: any) => {
+    mapReports.forEach((report: Report) => {
       const [lng, lat] = report.location?.coordinates ?? [0, 0];
       if (!lat || !lng) return;
 
@@ -300,9 +303,9 @@ export default function ReportsMap() {
 
       const m = L.marker([lat, lng], {
         icon: smallDivIcon({ status: report.status }),
-        status: report.status,
         title: report.title,
-      } as any);
+      }) as StatusMarker;
+      m.status = report.status;
 
       m.bindPopup(popupDiv, { className: 'my-popup', maxWidth: 320 });
 
@@ -423,9 +426,9 @@ export default function ReportsMap() {
         setSearchResults={setSearchResults}
         searchResults={searchResults}
         onSelect={(lat, lon, item) => {
-          handleLocationSelect(lat, lon, item, false);
+          handleLocationSelect(lat, lon, item.address, false);
           setSearchResults([]);
-          setSearchQuery(item.display_name.split(',')[0]);
+          setSearchQuery(item.display_name.split(',')[0] ?? '');
         }}
       />
 

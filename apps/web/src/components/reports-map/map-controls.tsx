@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/popover';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import type { OSMSearchResult } from '@/types';
 import {
   HelpCircle,
   Layers,
@@ -23,9 +24,9 @@ interface SearchBoxProps {
   searchQuery: string;
   setSearchQuery: (val: string) => void;
   isSearching: boolean;
-  setSearchResults: (val: any[]) => void;
-  searchResults: any[];
-  onSelect: (lat: number, lon: number, item: any) => void;
+  setSearchResults: (val: OSMSearchResult[]) => void;
+  searchResults: OSMSearchResult[];
+  onSelect: (lat: number, lon: number, item: OSMSearchResult) => void;
 }
 
 export function SearchBox({
@@ -76,14 +77,15 @@ export function SearchBox({
                 onSelect(
                   Number.parseFloat(item.lat),
                   Number.parseFloat(item.lon),
-                  item
+                  item,
                 )
               }
             >
               <MapPin className="w-4 h-4 mt-1 text-slate-400 shrink-0" />
               <div className="min-w-0">
                 <p className="text-sm font-medium text-slate-800 truncate">
-                  {item.address?.road || item.display_name.split(',')[0]}
+                  {item.address?.address.road ||
+                    item.display_name.split(',')[0]}
                 </p>
                 <p className="text-xs text-slate-500 truncate">
                   {item.display_name}
@@ -115,7 +117,7 @@ export function MapControls({
     <div
       className={cn(
         'absolute left-6 z-20 flex flex-col',
-        isMobile ? 'bottom-48' : 'bottom-8'
+        isMobile ? 'bottom-48' : 'bottom-8',
       )}
     >
       <div className="mb-6">
@@ -167,7 +169,7 @@ export function MapControls({
             'h-10 w-10 rounded-full shadow-xl border transition-colors',
             mapType === 'satellite'
               ? 'bg-blue-600 text-white border-blue-600'
-              : 'bg-white text-slate-700 border-slate-200'
+              : 'bg-white text-slate-700 border-slate-200',
           )}
         >
           <Layers className="w-5 h-5" />

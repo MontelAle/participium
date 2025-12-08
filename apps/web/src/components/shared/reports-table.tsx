@@ -19,7 +19,9 @@ export type ReportsTableProps = {
   viewBasePath: string;
 };
 
-const CategoryCell = ({ getValue }: CellContext<Report, Report['category']>) => {
+const CategoryCell = ({
+  getValue,
+}: CellContext<Report, Report['category']>) => {
   const category = getValue();
   return typeof category === 'object' && category !== null
     ? category.name
@@ -66,7 +68,10 @@ const OperationsCell = ({
   );
 };
 
-export function ReportsTable({ data, viewBasePath }: Readonly<ReportsTableProps>) {
+export function ReportsTable({
+  data,
+  viewBasePath,
+}: Readonly<ReportsTableProps>) {
   const columns = React.useMemo(
     () => [
       {
@@ -106,11 +111,11 @@ export function ReportsTable({ data, viewBasePath }: Readonly<ReportsTableProps>
               >
                 {({ header }) => (
                   <TableColumnHeader
-                    column={header.column as any}
+                    column={header.column}
                     title={
                       typeof header.column.columnDef.header === 'function'
-                        ? (header.column.columnDef.header as any)()
-                        : (header.column.columnDef.header as string)
+                        ? header.column.columnDef.header(header.getContext())
+                        : header.column.columnDef.header
                     }
                     className="h-12 text-sm font-semibold text-muted-foreground px-4 first:pl-6"
                   />

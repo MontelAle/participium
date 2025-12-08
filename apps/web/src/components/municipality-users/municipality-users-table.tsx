@@ -11,11 +11,12 @@ import {
 } from '@/components/ui/shadcn-io/table';
 import { cn, prettifyRole } from '@/lib/utils';
 import { MunicipalityUsersTableProps } from '@/types/ui';
-import type { User } from '@repo/api';
+import type { Office, Role, User } from '@repo/api';
+import type { CellContext } from '@tanstack/react-table';
 import { Pencil, Search } from 'lucide-react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DeleteMunicipalityUserDialog } from './delete-municipality-user-dialog';
-import { useMemo } from 'react';
 
 export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
   const navigate = useNavigate();
@@ -26,8 +27,8 @@ export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
         accessorKey: 'username',
         header: 'User',
         size: 250,
-        cell: ({ row }: any) => {
-          const user = row.original as User;
+        cell: ({ row }: CellContext<User, string>) => {
+          const user = row.original;
           const initials =
             (
               (user.firstName?.charAt(0) || '') +
@@ -57,7 +58,7 @@ export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
       {
         accessorKey: 'firstName',
         header: 'Full Name',
-        cell: ({ row }: any) => {
+        cell: ({ row }: CellContext<User, string>) => {
           const user = row.original;
           return (
             <span className="text-base whitespace-nowrap">
@@ -69,10 +70,9 @@ export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
       {
         accessorKey: 'role',
         header: 'Role',
-        cell: ({ getValue }: any) => {
+        cell: ({ getValue }: CellContext<User, Role>) => {
           const v = getValue();
-          const name =
-            typeof v === 'object' ? (v?.name ?? '') : String(v ?? '');
+          const name = v?.name || '';
           const isSuperAdmin = name === 'super_admin';
 
           return (
@@ -92,10 +92,9 @@ export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
       {
         accessorKey: 'office',
         header: 'Office',
-        cell: ({ getValue }: any) => {
+        cell: ({ getValue }: CellContext<User, Office>) => {
           const v = getValue();
-          const label =
-            typeof v === 'object' ? (v?.label ?? '-') : String(v ?? '-');
+          const label = v?.label || '-';
           return (
             <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
               {label}
@@ -106,8 +105,8 @@ export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
       {
         id: 'operations',
         header: 'Operations',
-        cell: ({ row }: any) => {
-          const user = row.original as User;
+        cell: ({ row }: CellContext<User, string>) => {
+          const user = row.original;
           return (
             <div className="text-base items-center">
               <Button
@@ -156,11 +155,11 @@ export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
               >
                 {({ header }) => (
                   <TableColumnHeader
-                    column={header.column as any}
+                    column={header.column}
                     title={
                       typeof header.column.columnDef.header === 'function'
-                        ? (header.column.columnDef.header as any)()
-                        : (header.column.columnDef.header as string)
+                        ? header.column.columnDef.header(header.getContext())
+                        : header.column.columnDef.header
                     }
                     className="h-12 text-sm font-semibold text-muted-foreground px-4 first:pl-6"
                   />
