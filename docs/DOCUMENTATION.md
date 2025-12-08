@@ -427,21 +427,22 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### Role
 
-| Field       | Type    | Description            | Nullable | Notes                   |
-| ----------- | ------- | ---------------------- | -------- | ----------------------- |
-| id          | string  | Primary key            | No       | varchar                 |
-| name        | string  | Role name              | No       | varchar                 |
-| label       | string  | Display label          | No       | varchar                 |
-| isMunicipal | boolean | Municipality user flag | No       | true for admin/officers |
+| Field       | Type    | Description            | Nullable | Notes                                           |
+| ----------- | ------- | ---------------------- | -------- | ----------------------------------------------- |
+| id          | string  | Primary key            | No       | varchar                                         |
+| name        | string  | Role name              | No       | varchar                                         |
+| label       | string  | Display label          | No       | varchar                                         |
+| isMunicipal | boolean | Municipality user flag | No       | true for admin/officers, false for external users |
 
 #### Office
 
-| Field      | Type       | Description             | Nullable | Notes                           |
-| ---------- | ---------- | ----------------------- | -------- | ------------------------------- |
-| id         | string     | Primary key             | No       | varchar                         |
-| name       | string     | Office name             | No       | varchar                         |
-| label      | string     | Office label            | No       | varchar                         |
-| categories | Category[] | Related categories list | -        | One-to-many with Category table |
+| Field      | Type       | Description                  | Nullable | Notes                                                     |
+| ---------- | ---------- | ---------------------------- | -------- | --------------------------------------------------------- |
+| id         | string     | Primary key                  | No       | varchar                                                   |
+| name       | string     | Office name                  | No       | varchar                                                   |
+| label      | string     | Office label                 | No       | varchar                                                   |
+| isExternal | boolean    | External company office flag | No       | true for external companies, false for municipal offices  |
+| categories | Category[] | Related categories list      | -        | One-to-many with Category table                           |
 
 #### Account
 
@@ -473,11 +474,12 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### Category
 
-| Field  | Type   | Description   | Nullable | Notes                          |
-| ------ | ------ | ------------- | -------- | ------------------------------ |
-| id     | string | Primary key   | No       | varchar                        |
-| name   | string | Category name | No       | varchar                        |
-| office | Office | Linked office | -        | Many-to-one with Office entity |
+| Field           | Type   | Description                      | Nullable | Notes                                                              |
+| --------------- | ------ | -------------------------------- | -------- | ------------------------------------------------------------------ |
+| id              | string | Primary key                      | No       | varchar                                                            |
+| name            | string | Category name                    | No       | varchar                                                            |
+| office          | Office | Linked municipal office          | -        | Many-to-one with Office entity                                     |
+| externalOfficeId| string | Linked external company ID       | Yes      | Foreign key to Office entity. For categories handled by external companies |
 
 #### Boundary
 
@@ -516,7 +518,8 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 | explanation       | string   | Rejection/action reason   | Yes      | text type, optional                                                                                        |
 | assignedOfficerId | string   | Assigned officer ID       | Yes      | Foreign key to User entity, optional                                                                       |
 | assignedOfficer   | User     | Assigned officer relation | Yes      | Many-to-one with User entity, optional                                                                     |
-| processedById     | string   | Processing officer ID     | Yes      | Foreign key to User entity. Set when report is assigned or rejected. Tracks who handled the initial review |
+| processedById                | string   | Processing officer ID          | Yes      | Foreign key to User entity. Set when report is assigned or rejected. Tracks who handled the initial review |
+| assignedExternalMaintainerId | string   | Assigned external maintainer ID| Yes      | Foreign key to User entity. For reports assigned to external companies                                     |
 
 **PostGIS Integration**:
 
@@ -669,15 +672,16 @@ This section outlines how the platform manages departments, categories, and the 
 
 This table shows which office is competent for specific problem categories
 
-| Office Name                             | ID (Database)     | Competent Categories                               |
-| :-------------------------------------- | :---------------- | :------------------------------------------------- |
-| **Maintenance and Technical Services**  | `maintenance`     | Roads and Urban Furnishings Architectural Barriers |
-| **Infrastructure**                      | `infrastructure`  | Road Signs and Traffic Lights Public Lighting      |
-| **Local Public Services**               | `public_services` | Water Supply Drinking Water Sewer System           |
-| **Environment Quality**                 | `environment`     | Waste                                              |
-| **Green Areas and Parks**               | `green_parks`     | Public Green Areas and Playgrounds                 |
-| **Decentralization and Civic Services** | `civic_services`  | Other (General issues)                             |
-| **Organizational Office**               | `organization`    | No category                                        |
+| Office Name                             | ID (Database)     | Type              | Competent Categories                               |
+| :-------------------------------------- | :---------------- | :---------------- | :------------------------------------------------- |
+| **Maintenance and Technical Services**  | `maintenance`     | Municipal         | Roads and Urban Furnishings Architectural Barriers |
+| **Infrastructure**                      | `infrastructure`  | Municipal         | Road Signs and Traffic Lights Public Lighting      |
+| **Local Public Services**               | `public_services` | Municipal         | Water Supply Drinking Water Sewer System           |
+| **Environment Quality**                 | `environment`     | Municipal         | Waste                                              |
+| **Green Areas and Parks**               | `green_parks`     | Municipal         | Public Green Areas and Playgrounds                 |
+| **Decentralization and Civic Services** | `civic_services`  | Municipal         | Other (General issues)                             |
+| **Organizational Office**               | `organization`    | Municipal         | No category                                        |
+| **External Companies**                  | Custom IDs        | External Company  | Categories requiring external service providers    |
 
 ### Report Status Lifecycle
 
@@ -696,18 +700,20 @@ The platform implements role-based visibility controls for reports based on thei
 
 #### Report Visibility by Role and Status
 
-| User Role                             | Pending (Own) | Pending (Others) | Assigned | In Progress | Resolved | Rejected (Others) | Rejected (Own) |
-| :------------------------------------ | :-----------: | :--------------: | :------: | :---------: | :------: | :---------------: | :------------: |
-| Citizen (`role: 'user'`)              | Yes           | No               | Yes      | Yes         | Yes      | No                | Yes            |
-| PR Officer (`role: 'pr_officer'`)     | -             | Yes              | No       | No          | No       | No                | -              |
-| Technical Officer (`role: 'officer'`) | -             | Yes              | Yes      | Yes         | Yes      | Yes               | -              |
-| Admin (`role: 'admin'`)               | -             | Yes              | Yes      | Yes         | Yes      | Yes               | -              |
+| User Role                                      | Pending (Own) | Pending (Others) | Assigned    | In Progress | Resolved | Rejected (Others) | Rejected (Own) |
+| :--------------------------------------------- | :-----------: | :--------------: | :---------: | :---------: | :------: | :---------------: | :------------: |
+| Citizen (`role: 'user'`)                       | Yes           | No               | Yes         | Yes         | Yes      | No                | Yes            |
+| PR Officer (`role: 'pr_officer'`)              | -             | Yes              | No          | No          | No       | No                | -              |
+| Technical Officer (`role: 'officer'`)          | -             | Yes              | Yes         | Yes         | Yes      | Yes               | -              |
+| Admin (`role: 'admin'`)                        | -             | Yes              | Yes         | Yes         | Yes      | Yes               | -              |
+| External Maintainer (`role: 'external_maintainer'`) | -       | No               | Only Assigned| Only Assigned| Only Assigned | No          | -              |
 
 **Key Notes**:
 
 - **Citizens**: Can only see their own pending reports. Reports become public (visible to all citizens) once they reach 'assigned' status or beyond. Rejected reports from other users return 404 errors.
 - **PR Officers**: Only see pending reports (enforced server-side). This filter overrides all other status parameters to maintain focus on new submissions requiring initial review.
 - **Technical Officers & Admins**: Full visibility across all statuses and all users.
+- **External Maintainers**: Only see reports explicitly assigned to them via the assignedExternalMaintainerId field. Cannot see pending, rejected, or reports assigned to other maintainers. Limited to viewing and updating status of their assigned reports only.
 - **Map & Nearby Searches**: Rejected reports are excluded from map and nearby searches for all users to prevent displaying rejected reports in public visualizations.
 - **Access Control**: Filtering is enforced at the database query level for security and performance.
 
@@ -749,6 +755,36 @@ The system follows a workflow where the **Organization Office** (PR Officers) ac
     - The **Technical Officer** (e.g., `tech_infrastructure_1`) logs into the platform
     - They access their specific office dashboard
     - **Action**: The officer **views** the list of reports that have been accepted and assigned to their department
+
+### External Company Workflow
+
+For categories that require external service providers, the system supports assignment to External Maintainers:
+
+1.  **External Company Setup**:
+    - System administrators create offices with `isExternal: true` to represent external companies
+    - Categories can optionally link to external offices via `externalOfficeId` field
+    - External Maintainer users are created with role `external_maintainer` and must be assigned to an external office
+
+2.  **Assignment to External Maintainer**:
+    - PR Officers or Technical Officers can assign reports to specific external maintainers
+    - Assignment sets the `assignedExternalMaintainerId` field on the report
+    - Report status changes to `assigned`
+    - Only users with role `external_maintainer` can be assigned
+
+3.  **External Maintainer View**:
+    - External Maintainers can only view reports assigned to them
+    - Dashboard automatically filters to show only their assigned reports
+    - **Restricted Status Transitions**:
+      - From `assigned` can only move to `in_progress`
+      - From `in_progress` can only move to `resolved`
+      - Cannot reject reports or move to regression states
+    - These restrictions ensure external maintainers follow a simplified workflow
+
+4.  **Validation Rules**:
+    - External Maintainer users must have an office assigned
+    - External Maintainer users can only be assigned to external offices (isExternal: true)
+    - Regular users (citizens, officers) cannot be assigned to external offices
+    - Status transitions are validated server-side to prevent unauthorized changes
 
 ### Office - Technical User - PR User Table
 
