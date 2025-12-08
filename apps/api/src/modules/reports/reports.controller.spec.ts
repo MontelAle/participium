@@ -40,6 +40,19 @@ describe('ReportsController', () => {
     isAnonymous: false,
   };
 
+  const mockStats = {
+    total: 10,
+    pending: 2,
+    in_progress: 3,
+    resolved: 4,
+    assigned: 1,
+    rejected: 0,
+    user_assigned: 1,
+    user_rejected: 0,
+    user_in_progress: 0,
+    user_resolved: 0,
+  };
+
   beforeEach(async () => {
     const mockReportsService: Partial<jest.Mocked<ReportsService>> = {
       create: jest.fn(),
@@ -48,6 +61,7 @@ describe('ReportsController', () => {
       findNearby: jest.fn(),
       update: jest.fn(),
       findByUserId: jest.fn(),
+      getDashboardStats: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -433,11 +447,12 @@ describe('ReportsController', () => {
       const updatedReport = { ...mockReport, ...updateDto };
       reportsService.update.mockResolvedValue(updatedReport as Report);
 
-      const result = await controller.update('report-123', updateDto);
+      const result = await controller.update('report-123', updateDto, mockReq);
 
       expect(reportsService.update).toHaveBeenCalledWith(
         'report-123',
         updateDto,
+        mockUser,
       );
       expect(result).toEqual({ success: true, data: updatedReport });
     });
@@ -459,11 +474,12 @@ describe('ReportsController', () => {
       };
       reportsService.update.mockResolvedValue(updatedReport as Report);
 
-      const result = await controller.update('report-123', updateDto);
+      const result = await controller.update('report-123', updateDto, mockReq);
 
       expect(reportsService.update).toHaveBeenCalledWith(
         'report-123',
         updateDto,
+        mockUser,
       );
       expect(result).toEqual({ success: true, data: updatedReport });
     });
@@ -476,11 +492,13 @@ describe('ReportsController', () => {
       );
 
       await expect(
-        controller.update('non-existent', updateDto),
+        controller.update('non-existent', updateDto, mockReq),
       ).rejects.toThrow(NotFoundException);
+
       expect(reportsService.update).toHaveBeenCalledWith(
         'non-existent',
         updateDto,
+        mockUser,
       );
     });
   });
@@ -497,6 +515,17 @@ describe('ReportsController', () => {
         mockUser,
       );
       expect(result).toEqual({ success: true, data: mockReports });
+    });
+  });
+
+  describe('getStats', () => {
+    it('should return dashboard stats', async () => {
+      reportsService.getDashboardStats.mockResolvedValue(mockStats);
+
+      const result = await controller.getStats(mockReq);
+
+      expect(reportsService.getDashboardStats).toHaveBeenCalledWith(mockUser);
+      expect(result).toEqual({ success: true, data: mockStats });
     });
   });
 });

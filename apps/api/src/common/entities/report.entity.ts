@@ -82,4 +82,11 @@ export class Report implements ReportType {
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'assignedOfficerId' })
   assignedOfficer?: User;
+
+  @Column('varchar', { nullable: true })
+  processedById?: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'processedById' })
+  processedBy?: User;
 }

@@ -200,8 +200,7 @@ export default function ReportsMap() {
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    if (!markerClusterGroupRef.current) {
-      markerClusterGroupRef.current = L.markerClusterGroup({
+    markerClusterGroupRef.current ??= L.markerClusterGroup({
         showCoverageOnHover: false,
         maxClusterRadius: 45,
         iconCreateFunction: (cluster) => {
@@ -213,6 +212,7 @@ export default function ReportsMap() {
           });
           const dominantStatus = Object.keys(counts).reduce((a, b) =>
             (counts[a] || 0) >= (counts[b] || 0) ? a : b,
+            ''
           );
           const statusClass =
             STATUS_COLORS[dominantStatus as ReportStatus]?.class ||
@@ -224,7 +224,6 @@ export default function ReportsMap() {
           });
         },
       }).addTo(map);
-    }
 
     const clusterGroup = markerClusterGroupRef.current;
     clusterGroup.clearLayers();

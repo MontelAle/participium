@@ -44,3 +44,20 @@ export interface ReportsResponseDto extends ResponseDto {
 export interface ReportResponseDto extends ResponseDto {
   data: Report;
 }
+
+export interface DashboardStatsDto {
+  total: number;
+  pending: number;
+  in_progress: number;
+  assigned: number;
+  rejected: number;
+  resolved: number;
+  user_assigned: number;
+  user_rejected: number;
+  user_in_progress: number;
+  user_resolved: number;
+}
+
+export interface DashboardStatsResponseDto extends ResponseDto {
+  data: DashboardStatsDto;
+}

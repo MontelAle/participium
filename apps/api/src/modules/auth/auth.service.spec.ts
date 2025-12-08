@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import bcrypt from 'bcrypt';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 import { RegisterDto } from '../../common/dto/auth.dto';
 import { Account } from '../../common/entities/account.entity';
 import { Profile } from '../../common/entities/profile.entity';

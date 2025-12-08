@@ -1,10 +1,35 @@
 import { ReportData, createReportFormData } from '@/types/report';
 import type { Report, ReportsResponseDto } from '@repo/api';
-import { ReportResponseDto, UpdateReportDto } from '@repo/api';
+import {
+  DashboardStatsDto,
+  DashboardStatsResponseDto,
+  FilterReportsDto,
+  ReportResponseDto,
+  UpdateReportDto,
+} from '@repo/api';
 import { apiFetch } from '../client';
 
-export async function getReports(): Promise<Report[]> {
-  const response = await apiFetch<ReportsResponseDto>('/reports/', {
+export async function getReports(
+  filters?: FilterReportsDto,
+): Promise<Report[]> {
+  const queryString = filters
+    ? '?' +
+      new URLSearchParams(
+        filters as unknown as Record<string, string>,
+      ).toString()
+    : '';
+
+  const response = await apiFetch<ReportsResponseDto>(
+    `/reports${queryString}`,
+    {
+      method: 'GET',
+    },
+  );
+  return response.data;
+}
+
+export async function getReportStats(): Promise<DashboardStatsDto> {
+  const response = await apiFetch<DashboardStatsResponseDto>('/reports/stats', {
     method: 'GET',
   });
   return response.data;

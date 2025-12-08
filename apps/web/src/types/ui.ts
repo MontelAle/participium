@@ -1,4 +1,6 @@
 import { CreateMunicipalityUserDto, Role, User } from '@repo/api';
+import { LucideIcon } from 'lucide-react';
+import { ComponentProps, ElementType, type ReactNode } from 'react';
 
 export type SidebarProps = {
   isOpen: boolean;
@@ -8,7 +10,7 @@ export type CitizenSidebarProps = {
   width?: string;
 };
 
-export type AuthFormProps = React.ComponentProps<'div'> & {
+export type AuthFormProps = ComponentProps<'div'> & {
   mode: 'login' | 'register';
 };
 
@@ -31,7 +33,7 @@ export type CreateMunicipalityUserFormProps = {
 export type StatCardProps = {
   title: string;
   value: number | string;
-  icon: React.ElementType;
+  icon: ElementType;
   color: string;
   bgColor: string;
 };
@@ -51,4 +53,22 @@ export type UsersToolbarProps = {
   availableOffices: string[];
 
   className?: string;
+};
+
+export type MunicipalGuardProps = Readonly<{
+  children: ReactNode;
+}>;
+
+export type CitizenGuardProps = Readonly<{
+  children: ReactNode;
+}>;
+
+export type DateCheckStrategy = (date: Date, today: Date) => boolean;
+
+export type ActionButtonProps = {
+  label: string;
+  onClick: () => void;
+  icon: LucideIcon;
+  className?: string;
+  disabled?: boolean;
 };

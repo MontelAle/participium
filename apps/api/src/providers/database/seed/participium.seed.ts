@@ -1,17 +1,66 @@
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
-import * as fs from 'fs';
 import { nanoid } from 'nanoid';
-import * as path from 'path';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Account } from '../../../common/entities/account.entity';
 import { Category } from '../../../common/entities/category.entity';
 import { Office } from '../../../common/entities/office.entity';
-import { Profile } from '../../../common/entities/profile.entity';
 import { Report, ReportStatus } from '../../../common/entities/report.entity';
 import { Role } from '../../../common/entities/role.entity';
 import { User } from '../../../common/entities/user.entity';
 import { MinioProvider } from '../../minio/minio.provider';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { Profile } from '../../../common/entities/profile.entity';
+import { randomInt } from 'node:crypto';
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const OFFICES_DATA = [
+  { name: 'maintenance', label: 'Maintenance and Technical Services' },
+  { name: 'infrastructure', label: 'Infrastructure' },
+  { name: 'public_services', label: 'Local Public Services' },
+  { name: 'environment', label: 'Environment Quality' },
+  { name: 'green_parks', label: 'Green Areas and Parks' },
+  { name: 'civic_services', label: 'Decentralization and Civic Services' },
+  { name: 'organization_office', label: 'Organization Office' },
+];
+
+const CATEGORIES_DATA = [
+  { name: 'Roads and Urban Furnishings', office: 'maintenance' },
+  { name: 'Architectural Barriers', office: 'maintenance' },
+  { name: 'Road Signs and Traffic Lights', office: 'infrastructure' },
+  { name: 'Public Lighting', office: 'infrastructure' },
+  { name: 'Water Supply – Drinking Water', office: 'public_services' },
+  { name: 'Sewer System', office: 'public_services' },
+  { name: 'Waste', office: 'environment' },
+  { name: 'Public Green Areas and Playgrounds', office: 'green_parks' },
+  { name: 'Other', office: 'civic_services' },
+];
+
+const ROLES_DATA = [
+  { name: 'user', label: 'User', isMunicipal: false },
+  { name: 'admin', label: 'Admin', isMunicipal: true },
+  { name: 'pr_officer', label: 'PR Officer', isMunicipal: true },
+  { name: 'tech_officer', label: 'Technical Officer', isMunicipal: true },
+];
+
+const CITIZENS_DATA = [
+  {
+    username: 'mario_rossi',
+    first: 'Mario',
+    last: 'Rossi',
+    email: 'mario.rossi@gmail.com',
+  },
+  {
+    username: 'luigi_verdi',
+    first: 'Luigi',
+    last: 'Verdi',
+    email: 'luigi.verdi@gmail.com',
+  },
+];
 
 const REAL_REPORTS = [
   {
@@ -135,331 +184,442 @@ const REAL_REPORTS = [
   },
 ];
 
-export async function seedDatabase(
-  dataSource: DataSource,
-  minioProvider: MinioProvider,
-) {
-  const roleRepo = dataSource.getRepository(Role);
-  const userRepo = dataSource.getRepository(User);
-  const accountRepo = dataSource.getRepository(Account);
-  const categoryRepo = dataSource.getRepository(Category);
-  const reportRepo = dataSource.getRepository(Report);
-  const officeRepo = dataSource.getRepository(Office);
-  const profileRepo = dataSource.getRepository(Profile);
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
-  const commonPassword = await bcrypt.hash('password', 10);
+interface Repositories {
+  roleRepo: Repository<Role>;
+  userRepo: Repository<User>;
+  accountRepo: Repository<Account>;
+  categoryRepo: Repository<Category>;
+  reportRepo: Repository<Report>;
+  officeRepo: Repository<Office>;
+  profileRepo: Repository<Profile>;
+}
 
-  const officesData = [
-    {
-      name: 'maintenance',
-      label: 'Maintenance and Technical Services',
-    },
-    {
-      name: 'infrastructure',
-      label: 'Infrastructure',
-    },
-    {
-      name: 'public_services',
-      label: 'Local Public Services',
-    },
-    {
-      name: 'environment',
-      label: 'Environment Quality',
-    },
-    {
-      name: 'green_parks',
-      label: 'Green Areas and Parks',
-    },
-    {
-      name: 'civic_services',
-      label: 'Decentralization and Civic Services',
-    },
-    {
-      name: 'organization_office',
-      label: 'Organization Office',
-    },
-  ];
+interface UserCreationContext {
+  userRepo: Repository<User>;
+  accountRepo: Repository<Account>;
+  profileRepo: Repository<Profile>;
+  commonPassword: string;
+  rolesMap: Map<string, Role>;
+  officesMap: Map<string, Office>;
+}
 
+interface UserData {
+  username: string;
+  roleName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  officeName?: string;
+}
+
+function getRepositories(dataSource: DataSource): Repositories {
+  return {
+    roleRepo: dataSource.getRepository(Role),
+    userRepo: dataSource.getRepository(User),
+    accountRepo: dataSource.getRepository(Account),
+    categoryRepo: dataSource.getRepository(Category),
+    reportRepo: dataSource.getRepository(Report),
+    officeRepo: dataSource.getRepository(Office),
+    profileRepo: dataSource.getRepository(Profile),
+  };
+}
+
+async function seedOffices(
+  officeRepo: Repository<Office>,
+): Promise<Map<string, Office>> {
   const officesMap = new Map<string, Office>();
 
-  for (const o of officesData) {
-    let office = await officeRepo.findOne({ where: { name: o.name } });
+  for (const officeData of OFFICES_DATA) {
+    let office = await officeRepo.findOne({ where: { name: officeData.name } });
+    
     if (!office) {
       office = officeRepo.create({
         id: nanoid(),
-        name: o.name,
-        label: o.label,
+        name: officeData.name,
+        label: officeData.label,
       });
       await officeRepo.save(office);
     }
-    officesMap.set(o.name, office);
+    
+    officesMap.set(officeData.name, office);
   }
 
-  const categoriesData = [
-    { name: 'Roads and Urban Furnishings', office: 'maintenance' },
-    { name: 'Architectural Barriers', office: 'maintenance' },
+  return officesMap;
+}
 
-    { name: 'Road Signs and Traffic Lights', office: 'infrastructure' },
-    { name: 'Public Lighting', office: 'infrastructure' },
-
-    { name: 'Water Supply – Drinking Water', office: 'public_services' },
-    { name: 'Sewer System', office: 'public_services' },
-
-    { name: 'Waste', office: 'environment' },
-
-    { name: 'Public Green Areas and Playgrounds', office: 'green_parks' },
-
-    { name: 'Other', office: 'civic_services' },
-  ];
-
+async function seedCategories(
+  categoryRepo: Repository<Category>,
+  officesMap: Map<string, Office>,
+): Promise<Map<string, Category>> {
   const categoriesMap = new Map<string, Category>();
 
-  for (const c of categoriesData) {
-    let category = await categoryRepo.findOne({ where: { name: c.name } });
+  for (const categoryData of CATEGORIES_DATA) {
+    let category = await categoryRepo.findOne({
+      where: { name: categoryData.name },
+    });
+
     if (!category) {
-      const assignedOffice = officesMap.get(c.office);
+      const assignedOffice = officesMap.get(categoryData.office);
       if (assignedOffice) {
         category = categoryRepo.create({
           id: nanoid(),
-          name: c.name,
+          name: categoryData.name,
           office: assignedOffice,
         });
         await categoryRepo.save(category);
       }
     }
-    if (!category)
-      category = await categoryRepo.findOne({ where: { name: c.name } });
-    if (category) categoriesMap.set(c.name, category);
+
+    if (category) {
+      categoriesMap.set(categoryData.name, category);
+    }
   }
 
-  const rolesData = [
-    { name: 'user', label: 'User', isMunicipal: false },
-    { name: 'admin', label: 'Admin', isMunicipal: true },
-    { name: 'pr_officer', label: 'PR Officer', isMunicipal: true },
-    { name: 'tech_officer', label: 'Technical Officer', isMunicipal: true },
-  ];
+  return categoriesMap;
+}
 
+async function seedRoles(
+  roleRepo: Repository<Role>,
+): Promise<Map<string, Role>> {
   const rolesMap = new Map<string, Role>();
-  for (const r of rolesData) {
-    let role = await roleRepo.findOne({ where: { name: r.name } });
+
+  for (const roleData of ROLES_DATA) {
+    let role = await roleRepo.findOne({ where: { name: roleData.name } });
+    
     if (!role) {
-      role = roleRepo.create({ id: nanoid(), ...r });
+      role = roleRepo.create({ id: nanoid(), ...roleData });
       await roleRepo.save(role);
     }
-    rolesMap.set(r.name, role);
+    
+    rolesMap.set(roleData.name, role);
   }
 
-  const createUser = async (
-    username: string,
-    roleName: string,
-    firstName: string,
-    lastName: string,
-    email: string,
-    officeName?: string,
-  ) => {
-    let user = await userRepo.findOne({ where: { username } });
-    if (!user) {
-      user = userRepo.create({
-        id: nanoid(),
-        firstName,
-        lastName,
-        username,
-        email: email,
-        role: rolesMap.get(roleName),
-        office: officeName ? officesMap.get(officeName) : null,
-      });
-      await userRepo.save(user);
+  return rolesMap;
+}
 
-      await accountRepo.save({
-        id: nanoid(),
-        user,
-        providerId: 'local',
-        accountId: username,
-        password: commonPassword,
-      });
+async function createUserWithAccountAndProfile(
+  context: UserCreationContext,
+  userData: UserData,
+): Promise<User> {
+  const { userRepo, accountRepo, profileRepo, commonPassword, rolesMap, officesMap } = context;
+  const { username, roleName, firstName, lastName, email, officeName } = userData;
 
-      await profileRepo.save(
-        profileRepo.create({
-          id: nanoid(),
-          userId: user.id,
-          user: user,
-        }),
-      );
-    }
-    return user;
-  };
+  const existingUser = await userRepo.findOne({ where: { username } });
+  if (existingUser) {
+    return existingUser;
+  }
 
-  await createUser(
-    'admin',
-    'admin',
-    'System',
-    'Admin',
-    'admin@participium.com',
-    'organization_office',
+  const user = userRepo.create({
+    id: nanoid(),
+    firstName,
+    lastName,
+    username,
+    email,
+    role: rolesMap.get(roleName),
+    office: officeName ? officesMap.get(officeName) : null,
+  });
+  await userRepo.save(user);
+
+  await accountRepo.save({
+    id: nanoid(),
+    user,
+    providerId: 'local',
+    accountId: username,
+    password: commonPassword,
+  });
+
+  await profileRepo.save(
+    profileRepo.create({
+      id: nanoid(),
+      userId: user.id,
+      user: user,
+    }),
   );
 
-  for (const officeData of officesData) {
-    for (let i = 1; i <= 2; i++) {
-      const fakeFirstName = faker.person.firstName();
-      const fakeLastName = faker.person.lastName();
-      const techUsername = `tech_${officeData.name}_${i}`;
+  return user;
+}
 
-      if (officeData.name === 'organization_office') continue;
-      await createUser(
-        techUsername,
-        'tech_officer',
-        fakeFirstName,
-        fakeLastName,
-        `${techUsername}@participium.com`.toLowerCase(),
-        officeData.name,
-      );
+async function seedMunicipalUsers(
+  context: UserCreationContext,
+): Promise<void> {
+  await createUserWithAccountAndProfile(context, {
+    username: 'admin',
+    roleName: 'admin',
+    firstName: 'System',
+    lastName: 'Admin',
+    email: 'admin@participium.com',
+    officeName: 'organization_office',
+  });
+
+  for (const officeData of OFFICES_DATA) {
+    if (officeData.name === 'organization_office') continue;
+
+    for (let i = 1; i <= 2; i++) {
+      const techUsername = `tech_${officeData.name}_${i}`;
+      await createUserWithAccountAndProfile(context, {
+        username: techUsername,
+        roleName: 'tech_officer',
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+        email: `${techUsername}@participium.com`.toLowerCase(),
+        officeName: officeData.name,
+      });
     }
   }
 
-  const prOfficersCount = 4;
-  for (let i = 1; i <= prOfficersCount; i++) {
-    await createUser(
-      `pr_officer_${i}`,
-      'pr_officer',
-      'PR',
-      `Officer ${i}`,
-      `pr.officer.${i}@participium.com`,
-      'organization_office',
+  for (let i = 1; i <= 4; i++) {
+    await createUserWithAccountAndProfile(context, {
+      username: `pr_officer_${i}`,
+      roleName: 'pr_officer',
+      firstName: 'PR',
+      lastName: `Officer ${i}`,
+      email: `pr.officer.${i}@participium.com`,
+      officeName: 'organization_office',
+    });
+  }
+}
+
+async function seedCitizenUsers(
+  context: UserCreationContext,
+): Promise<User[]> {
+  const citizenUsers: User[] = [];
+
+  for (const citizenData of CITIZENS_DATA) {
+    const user = await createUserWithAccountAndProfile(context, {
+      username: citizenData.username,
+      roleName: 'user',
+      firstName: citizenData.first,
+      lastName: citizenData.last,
+      email: citizenData.email,
+    });
+    citizenUsers.push(user);
+  }
+
+  return citizenUsers;
+}
+
+function getImagesDirectory(): string {
+  let imagesDir = path.join(__dirname, 'images');
+
+  if (__dirname.includes('/dist/')) {
+    imagesDir = path.join(
+      __dirname,
+      '../../../../../src/providers/database/seed/images',
     );
   }
 
-  const citizenUsers: User[] = [];
-  const citizensData = [
-    {
-      username: 'mario_rossi',
-      first: 'Mario',
-      last: 'Rossi',
-      email: 'mario.rossi@gmail.com',
-    },
-    {
-      username: 'luigi_verdi',
-      first: 'Luigi',
-      last: 'Verdi',
-      email: 'luigi.verdi@gmail.com',
-    },
-  ];
+  return imagesDir;
+}
 
-  for (const c of citizensData) {
-    const u = await createUser(c.username, 'user', c.first, c.last, c.email);
-    citizenUsers.push(u);
+function determineReportUser(
+  idx: number,
+  luigiVerdi: User | undefined,
+  citizenUsers: User[],
+): { user: User; isAnonymous: boolean } {
+  if (idx === 0 && luigiVerdi) {
+    return { user: luigiVerdi, isAnonymous: false };
   }
 
-  const currentReportCount = await reportRepo.count();
+  if (idx === 1 && luigiVerdi) {
+    return { user: luigiVerdi, isAnonymous: true };
+  }
 
+  const randomUser = citizenUsers[randomInt(0, citizenUsers.length)];
+  const isAnonymous = randomInt(0, 100) < 20;
+
+  return { user: randomUser, isAnonymous };
+}
+
+function getMimeType(fileName: string): string {
+  return fileName.endsWith('.png') ? 'image/png' : 'image/jpeg';
+}
+
+async function uploadReportImage(
+  minioProvider: MinioProvider,
+  imagesDir: string,
+  imageName: string,
+  reportId: string,
+): Promise<string | null> {
+  try {
+    const imagePath = path.join(imagesDir, imageName);
+
+    if (!fs.existsSync(imagePath)) {
+      console.warn(`Image file not found: ${imagePath}`);
+      return null;
+    }
+
+    const imageBuffer = fs.readFileSync(imagePath);
+    const mimeType = getMimeType(imageName);
+    const timestamp = Date.now();
+    const minioFileName = `reports/${reportId}/${timestamp}-${imageName}`;
+
+    const imageUrl = await minioProvider.uploadFile(
+      minioFileName,
+      imageBuffer,
+      mimeType,
+    );
+
+    console.log(`Uploaded image: ${imageName} -> ${imageUrl}`);
+    return imageUrl;
+  } catch (error) {
+    console.error(`Failed to upload image ${imageName}:`, error);
+    return null;
+  }
+}
+
+async function uploadReportImages(
+  minioProvider: MinioProvider,
+  imagesDir: string,
+  imageNames: string[],
+  reportId: string,
+): Promise<string[]> {
+  const uploadedUrls: string[] = [];
+
+  for (const imageName of imageNames) {
+    const imageUrl = await uploadReportImage(
+      minioProvider,
+      imagesDir,
+      imageName,
+      reportId,
+    );
+    if (imageUrl) {
+      uploadedUrls.push(imageUrl);
+    }
+  }
+
+  return uploadedUrls;
+}
+
+async function createReport(
+  reportRepo: Repository<Report>,
+  minioProvider: MinioProvider,
+  realReport: typeof REAL_REPORTS[0],
+  user: User,
+  isAnonymous: boolean,
+  category: Category,
+  imagesDir: string,
+): Promise<Report> {
+  const reportId = nanoid();
+
+  const uploadedImageUrls = await uploadReportImages(
+    minioProvider,
+    imagesDir,
+    realReport.images,
+    reportId,
+  );
+
+  const report = reportRepo.create({
+    id: reportId,
+    title: realReport.title,
+    description: realReport.description,
+    status: ReportStatus.RESOLVED,
+    address: realReport.address,
+    location: {
+      type: 'Point',
+      coordinates: [realReport.lng, realReport.lat],
+    },
+    images: uploadedImageUrls,
+    user,
+    category,
+    createdAt: faker.date.recent({ days: 30 }),
+    isAnonymous,
+  });
+
+  return report;
+}
+
+async function seedReports(
+  reportRepo: Repository<Report>,
+  minioProvider: MinioProvider,
+  citizenUsers: User[],
+  categoriesMap: Map<string, Category>,
+): Promise<void> {
+  const currentReportCount = await reportRepo.count();
   const shouldSeed =
     process.env.FORCE_SEED === 'true' || currentReportCount < 10;
 
-  if (shouldSeed) {
-    const reportsToSave: Report[] = [];
-
-    let imagesDir = path.join(__dirname, 'images');
-
-    if (__dirname.includes('/dist/')) {
-      imagesDir = path.join(
-        __dirname,
-        '../../../../../src/providers/database/seed/images',
-      );
-    }
-
-    console.log('Looking for images in:', imagesDir);
-
-    // Get Luigi Verdi user (the second citizen user)
-    const luigiVerdi = citizenUsers.find((u) => u.username === 'luigi_verdi');
-
-    for (let idx = 0; idx < REAL_REPORTS.length; idx++) {
-      const realReport = REAL_REPORTS[idx];
-
-      // Assign first 2 reports to Luigi Verdi (one anonymous, one not)
-      let reportUser: User;
-      let isAnonymous: boolean;
-
-      if (idx === 0 && luigiVerdi) {
-        // First report: Luigi Verdi, not anonymous
-        reportUser = luigiVerdi;
-        isAnonymous = false;
-      } else if (idx === 1 && luigiVerdi) {
-        // Second report: Luigi Verdi, anonymous
-        reportUser = luigiVerdi;
-        isAnonymous = true;
-      } else {
-        // Other reports: random user with 20% chance of being anonymous
-        reportUser =
-          citizenUsers[Math.floor(Math.random() * citizenUsers.length)];
-        isAnonymous = Math.random() < 0.2;
-      }
-
-      const category = categoriesMap.get(realReport.categoryName);
-      if (!category) {
-        console.warn(`Category not found for report: ${realReport.title}`);
-        continue;
-      }
-
-      const reportId = nanoid();
-
-      const uploadedImageUrls: string[] = [];
-      for (const imageName of realReport.images) {
-        try {
-          const imagePath = path.join(imagesDir, imageName);
-
-          // Check if file exists
-          if (!fs.existsSync(imagePath)) {
-            console.warn(`Image file not found: ${imagePath}`);
-            continue;
-          }
-
-          const imageBuffer = fs.readFileSync(imagePath);
-          const mimeType = imageName.endsWith('.png')
-            ? 'image/png'
-            : 'image/jpeg';
-
-          // Generate unique filename for MinIO
-          const timestamp = Date.now();
-          const minioFileName = `reports/${reportId}/${timestamp}-${imageName}`;
-
-          // Upload to MinIO
-          const imageUrl = await minioProvider.uploadFile(
-            minioFileName,
-            imageBuffer,
-            mimeType,
-          );
-
-          uploadedImageUrls.push(imageUrl);
-          console.log(`Uploaded image: ${imageName} -> ${imageUrl}`);
-        } catch (error) {
-          console.error(`Failed to upload image ${imageName}:`, error);
-        }
-      }
-
-      const report = reportRepo.create({
-        id: reportId,
-        title: realReport.title,
-        description: realReport.description,
-        status: ReportStatus.RESOLVED,
-        address: realReport.address,
-        location: {
-          type: 'Point',
-          coordinates: [realReport.lng, realReport.lat],
-        },
-        images: uploadedImageUrls,
-        user: reportUser,
-        category: category,
-        createdAt: faker.date.recent({ days: 30 }),
-        isAnonymous: isAnonymous,
-      });
-
-      reportsToSave.push(report);
-    }
-
-    await reportRepo.save(reportsToSave);
-    console.log(`Created ${reportsToSave.length} real reports in Torino.`);
-  } else {
+  if (!shouldSeed) {
     console.log(
       `Reports already present (${currentReportCount}). Skipping generation.`,
     );
+    return;
   }
+
+  const imagesDir = getImagesDirectory();
+  console.log('Looking for images in:', imagesDir);
+
+  const luigiVerdi = citizenUsers.find((u) => u.username === 'luigi_verdi');
+  const reportsToSave: Report[] = [];
+
+  for (let idx = 0; idx < REAL_REPORTS.length; idx++) {
+    const realReport = REAL_REPORTS[idx];
+    const { user, isAnonymous } = determineReportUser(
+      idx,
+      luigiVerdi,
+      citizenUsers,
+    );
+
+    const category = categoriesMap.get(realReport.categoryName);
+    if (!category) {
+      console.warn(`Category not found for report: ${realReport.title}`);
+      continue;
+    }
+
+    const report = await createReport(
+      reportRepo,
+      minioProvider,
+      realReport,
+      user,
+      isAnonymous,
+      category,
+      imagesDir,
+    );
+
+    reportsToSave.push(report);
+  }
+
+  await reportRepo.save(reportsToSave);
+  console.log(`Created ${reportsToSave.length} real reports in Torino.`);
+}
+
+// ============================================================================
+// Main Seed Function
+// ============================================================================
+
+export async function seedDatabase(
+  dataSource: DataSource,
+  minioProvider: MinioProvider,
+): Promise<void> {
+  const repositories = getRepositories(dataSource);
+  const commonPassword = await bcrypt.hash('password', 10);
+
+  const officesMap = await seedOffices(repositories.officeRepo);
+  const categoriesMap = await seedCategories(
+    repositories.categoryRepo,
+    officesMap,
+  );
+  const rolesMap = await seedRoles(repositories.roleRepo);
+
+  const userContext: UserCreationContext = {
+    userRepo: repositories.userRepo,
+    accountRepo: repositories.accountRepo,
+    profileRepo: repositories.profileRepo,
+    commonPassword,
+    rolesMap,
+    officesMap,
+  };
+
+  await seedMunicipalUsers(userContext);
+  const citizenUsers = await seedCitizenUsers(userContext);
+
+  await seedReports(
+    repositories.reportRepo,
+    minioProvider,
+    citizenUsers,
+    categoriesMap,
+  );
 }
