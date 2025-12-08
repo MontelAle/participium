@@ -139,6 +139,8 @@ On the first run, the system **automatically seeds** the database with sample us
 | Municipal Technical Officer | `tech_infrastructure_1` | `password`|
 | System Admin | `admin` | `password`|
 
+Note: External Maintainer and External Company credentials will be added in future updates.
+
 ## Environment Variables
 
 You can customize the deployment by setting these variables in your docker-compose.yml or .env file
