@@ -755,6 +755,32 @@ describe('ReportsService', () => {
         { status: ReportStatus.RESOLVED },
       );
     });
+
+    it('should filter reports to only those assigned to external maintainer', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+      const mockReports = [mockReport];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      await service.findAll(externalMaintainer);
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.assignedExternalMaintainerId = :viewerId',
+        { viewerId: 'ext-maint-1' },
+      );
+    });
   });
 
   describe('findOne', () => {
@@ -768,7 +794,13 @@ describe('ReportsService', () => {
 
       expect(reportRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'mocked-id' },
-        relations: ['user', 'user.role', 'category', 'assignedOfficer'],
+        relations: [
+          'user',
+          'user.role',
+          'category',
+          'assignedOfficer',
+          'assignedExternalMaintainer',
+        ],
       });
       expect(result).toEqual(mockReport);
     });
@@ -883,6 +915,52 @@ describe('ReportsService', () => {
       expect(result.id).toBe('own-rejected');
       expect(result.status).toBe(ReportStatus.REJECTED);
       expect(result.userId).toBe('user-123');
+    });
+
+    it('should throw NotFoundException for external maintainer trying to access report not assigned to them', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportNotAssigned = {
+        ...mockReport,
+        id: 'report-123',
+        assignedExternalMaintainerId: 'other-ext-maint',
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        reportNotAssigned as unknown as Report,
+      );
+
+      await expect(
+        service.findOne('report-123', externalMaintainer),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.findOne('report-123', externalMaintainer),
+      ).rejects.toThrow(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('report-123'));
+    });
+
+    it('should allow external maintainer to access report assigned to them', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const assignedReport = {
+        ...mockReport,
+        id: 'assigned-report',
+        assignedExternalMaintainerId: 'ext-maint-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        assignedReport as unknown as Report,
+      );
+
+      const result = await service.findOne('assigned-report', externalMaintainer);
+
+      expect(result.id).toBe('assigned-report');
+      expect(result.assignedExternalMaintainerId).toBe('ext-maint-1');
     });
 
     it('should allow municipal user to access any rejected report', async () => {
@@ -1412,6 +1490,215 @@ describe('ReportsService', () => {
       );
       await expect(service.update('non-existent-id', {})).rejects.toThrow(
         REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('non-existent-id'),
+      );
+    });
+
+    it('should assign external maintainer when assignedExternalMaintainerId is provided', async () => {
+      const mockExternalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const updateDto: UpdateReportDto = {
+        assignedExternalMaintainerId: 'ext-maint-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(mockReport as Report);
+      userRepository.findOne.mockResolvedValue(mockExternalMaintainer);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'ext-maint-1' },
+        relations: ['role'],
+      });
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          assignedExternalMaintainer: mockExternalMaintainer,
+          assignedExternalMaintainerId: 'ext-maint-1',
+        }),
+      );
+    });
+
+    it('should throw BadRequestException when assigning invalid external maintainer', async () => {
+      const mockRegularUser = {
+        id: 'user-1',
+        role: { name: 'user' },
+      } as User;
+
+      const updateDto: UpdateReportDto = {
+        assignedExternalMaintainerId: 'user-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(mockReport as Report);
+      userRepository.findOne.mockResolvedValue(mockRegularUser);
+
+      await expect(
+        service.update('mocked-id', updateDto),
+      ).rejects.toThrow(
+        new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_USER,
+        ),
+      );
+    });
+
+    it('should allow external maintainer to change status from assigned to in_progress', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportAssigned = {
+        ...mockReport,
+        status: ReportStatus.ASSIGNED,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.IN_PROGRESS,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportAssigned);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto, externalMaintainer);
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.IN_PROGRESS,
+        }),
+      );
+    });
+
+    it('should allow external maintainer to change status from in_progress to resolved', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportInProgress = {
+        ...mockReport,
+        status: ReportStatus.IN_PROGRESS,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.RESOLVED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportInProgress);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto, externalMaintainer);
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.RESOLVED,
+        }),
+      );
+    });
+
+    it('should throw BadRequestException when external maintainer tries invalid status transition', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportInProgress = {
+        ...mockReport,
+        status: ReportStatus.IN_PROGRESS,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportInProgress);
+
+      await expect(
+        service.update('mocked-id', updateDto, externalMaintainer),
+      ).rejects.toThrow(
+        new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_STATUS_TRANSITION(
+            ReportStatus.IN_PROGRESS,
+            ReportStatus.ASSIGNED,
+          ),
+        ),
+      );
+    });
+
+    it('should throw BadRequestException when external maintainer tries to reject report', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportAssigned = {
+        ...mockReport,
+        status: ReportStatus.ASSIGNED,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.REJECTED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportAssigned);
+
+      await expect(
+        service.update('mocked-id', updateDto, externalMaintainer),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should remove external maintainer when assignedExternalMaintainerId is explicitly null', async () => {
+      const reportWithExtMaintainer = {
+        ...mockReport,
+        assignedExternalMaintainerId: 'ext-maint-1',
+        assignedExternalMaintainer: {
+          id: 'ext-maint-1',
+          role: { name: 'external_maintainer' },
+        } as User,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        assignedExternalMaintainerId: null,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithExtMaintainer);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          assignedExternalMaintainer: null,
+          assignedExternalMaintainerId: null,
+        }),
+      );
+    });
+
+    it('should allow external maintainer to update report without changing status', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportAssigned = {
+        ...mockReport,
+        status: ReportStatus.ASSIGNED,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        explanation: 'Work in progress',
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportAssigned);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto, externalMaintainer);
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          explanation: 'Work in progress',
+        }),
       );
     });
   });

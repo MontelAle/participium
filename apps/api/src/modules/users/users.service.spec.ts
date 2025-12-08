@@ -1,4 +1,8 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -8,6 +12,7 @@ import { Office } from '../../common/entities/office.entity';
 import { Role } from '../../common/entities/role.entity';
 import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
+import { USER_ERROR_MESSAGES } from './constants/error-messages';
 import { UsersService } from './users.service';
 
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
@@ -193,6 +198,155 @@ describe('UsersService', () => {
         ConflictException,
       );
     });
+
+    it('should not validate office-role match when role is null', async () => {
+      roleRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.createMunicipalityUser(createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw BadRequestException when external_maintainer has no office', async () => {
+      const externalMaintainerDto = {
+        ...createDto,
+        roleId: 'ext-role',
+        officeId: undefined,
+      };
+
+      roleRepository.findOne.mockResolvedValue({
+        id: 'ext-role',
+        name: 'external_maintainer',
+      } as Role);
+      officeRepository.findOne.mockResolvedValue(null);
+      userRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+
+      await expect(
+        service.createMunicipalityUser(externalMaintainerDto),
+      ).rejects.toThrow(
+        new BadRequestException(USER_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NO_OFFICE),
+      );
+    });
+
+    it('should throw BadRequestException when external_maintainer assigned to non-external office', async () => {
+      const externalMaintainerDto = {
+        ...createDto,
+        roleId: 'ext-role',
+        officeId: 'internal-office',
+      };
+
+      roleRepository.findOne.mockResolvedValue({
+        id: 'ext-role',
+        name: 'external_maintainer',
+      } as Role);
+      officeRepository.findOne.mockResolvedValue({
+        id: 'internal-office',
+        isExternal: false,
+      } as Office);
+      userRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+
+      await expect(
+        service.createMunicipalityUser(externalMaintainerDto),
+      ).rejects.toThrow(
+        new BadRequestException(
+          USER_ERROR_MESSAGES.EXTERNAL_MAINTAINER_WRONG_OFFICE,
+        ),
+      );
+    });
+
+    it('should throw BadRequestException when non-external_maintainer assigned to external office', async () => {
+      const regularUserDto = {
+        ...createDto,
+        roleId: 'officer-role',
+        officeId: 'external-office',
+      };
+
+      roleRepository.findOne.mockResolvedValue({
+        id: 'officer-role',
+        name: 'officer',
+      } as Role);
+      officeRepository.findOne.mockResolvedValue({
+        id: 'external-office',
+        isExternal: true,
+      } as Office);
+      userRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+
+      await expect(
+        service.createMunicipalityUser(regularUserDto),
+      ).rejects.toThrow(
+        new BadRequestException(
+          USER_ERROR_MESSAGES.REGULAR_USER_EXTERNAL_OFFICE,
+        ),
+      );
+    });
+
+    it('should successfully create external_maintainer with external office', async () => {
+      const externalMaintainerDto = {
+        ...createDto,
+        roleId: 'ext-role',
+        officeId: 'external-office',
+      };
+
+      roleRepository.findOne.mockResolvedValue({
+        id: 'ext-role',
+        name: 'external_maintainer',
+      } as Role);
+      officeRepository.findOne.mockResolvedValue({
+        id: 'external-office',
+        isExternal: true,
+      } as Office);
+      userRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+
+      const createdUser = { ...mockUser, id: 'new-ext-maint' };
+      userRepository.create.mockReturnValue(createdUser);
+      userRepository.save.mockResolvedValue(createdUser);
+      accountRepository.create.mockReturnValue({} as Account);
+
+      const result = await service.createMunicipalityUser(
+        externalMaintainerDto,
+      );
+
+      expect(result).toEqual(createdUser);
+      expect(userRepository.save).toHaveBeenCalled();
+    });
+
+    it('should successfully create regular user with non-external office', async () => {
+      const regularUserDto = {
+        ...createDto,
+        roleId: 'officer-role',
+        officeId: 'internal-office',
+      };
+
+      roleRepository.findOne.mockResolvedValue({
+        id: 'officer-role',
+        name: 'officer',
+      } as Role);
+      officeRepository.findOne.mockResolvedValue({
+        id: 'internal-office',
+        isExternal: false,
+      } as Office);
+      userRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+
+      const createdUser = { ...mockUser, id: 'new-officer' };
+      userRepository.create.mockReturnValue(createdUser);
+      userRepository.save.mockResolvedValue(createdUser);
+      accountRepository.create.mockReturnValue({} as Account);
+
+      const result = await service.createMunicipalityUser(regularUserDto);
+
+      expect(result).toEqual(createdUser);
+      expect(userRepository.save).toHaveBeenCalled();
+    });
   });
 
   describe('deleteMunicipalityUserById', () => {
@@ -271,6 +425,30 @@ describe('UsersService', () => {
       );
     });
 
+    it('should update user without changing username or email', async () => {
+      const existingUser = {
+        ...mockUser,
+        username: 'sameuser',
+        email: 'same@test.com',
+      } as User;
+
+      userRepository.findOne.mockResolvedValue(existingUser);
+      roleRepository.findOne.mockResolvedValue({ id: 'role-2' } as Role);
+      officeRepository.findOne.mockResolvedValue({ id: 'office-2' } as Office);
+
+      await service.updateMunicipalityUserById('user-1', {
+        firstName: 'NewName',
+        roleId: 'role-2',
+        officeId: 'office-2',
+      });
+
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: 'NewName',
+        }),
+      );
+    });
+
     it('should throw NotFoundException if user does not exist', async () => {
       userRepository.findOne.mockResolvedValue(null);
       await expect(
@@ -309,6 +487,121 @@ describe('UsersService', () => {
       await expect(
         service.updateMunicipalityUserById('user-1', { roleId: 'bad-role' }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when updating to external_maintainer without office', async () => {
+      const existingUser = {
+        ...mockUser,
+        role: { id: 'old-role', name: 'officer' },
+      };
+      const externalMaintainerRole = {
+        id: 'ext-role',
+        name: 'external_maintainer',
+      };
+
+      userRepository.findOne.mockResolvedValue(existingUser);
+      roleRepository.findOne.mockResolvedValue(externalMaintainerRole);
+
+      await expect(
+        service.updateMunicipalityUserById('user-1', {
+          roleId: 'ext-role',
+          officeId: null,
+        }),
+      ).rejects.toThrow(
+        new BadRequestException(USER_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NO_OFFICE),
+      );
+    });
+
+    it('should throw BadRequestException when updating to external_maintainer with non-external office', async () => {
+      const existingUser = {
+        ...mockUser,
+        role: { id: 'old-role', name: 'officer' },
+      };
+      const externalMaintainerRole = {
+        id: 'ext-role',
+        name: 'external_maintainer',
+      };
+      const internalOffice = {
+        id: 'office-1',
+        name: 'Internal Office',
+        isExternal: false,
+      };
+
+      userRepository.findOne.mockResolvedValue(existingUser);
+      roleRepository.findOne.mockResolvedValue(externalMaintainerRole);
+      officeRepository.findOne.mockResolvedValue(internalOffice);
+
+      await expect(
+        service.updateMunicipalityUserById('user-1', {
+          roleId: 'ext-role',
+          officeId: 'office-1',
+        }),
+      ).rejects.toThrow(
+        new BadRequestException(
+          USER_ERROR_MESSAGES.EXTERNAL_MAINTAINER_WRONG_OFFICE,
+        ),
+      );
+    });
+
+    it('should throw BadRequestException when updating regular role to external office', async () => {
+      const existingUser = {
+        ...mockUser,
+        role: { id: 'officer-role', name: 'officer' },
+      };
+      const regularRole = { id: 'officer-role', name: 'officer' };
+      const externalOffice = {
+        id: 'ext-office',
+        name: 'External Company',
+        isExternal: true,
+      };
+
+      userRepository.findOne.mockResolvedValue(existingUser);
+      roleRepository.findOne.mockResolvedValue(regularRole);
+      officeRepository.findOne.mockResolvedValue(externalOffice);
+
+      await expect(
+        service.updateMunicipalityUserById('user-1', {
+          roleId: 'officer-role',
+          officeId: 'ext-office',
+        }),
+      ).rejects.toThrow(
+        new BadRequestException(
+          USER_ERROR_MESSAGES.REGULAR_USER_EXTERNAL_OFFICE,
+        ),
+      );
+    });
+
+    it('should successfully update user to external_maintainer with external office', async () => {
+      const existingUser = {
+        ...mockUser,
+        role: { id: 'old-role', name: 'officer' },
+        office: { id: 'old-office', name: 'Old Office', isExternal: false },
+      };
+      const externalMaintainerRole = {
+        id: 'ext-role',
+        name: 'external_maintainer',
+      };
+      const externalOffice = {
+        id: 'ext-office',
+        name: 'External Company',
+        isExternal: true,
+      };
+
+      userRepository.findOne.mockResolvedValue(existingUser);
+      roleRepository.findOne.mockResolvedValue(externalMaintainerRole);
+      officeRepository.findOne.mockResolvedValue(externalOffice);
+
+      await service.updateMunicipalityUserById('user-1', {
+        roleId: 'ext-role',
+        officeId: 'ext-office',
+      });
+
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          roleId: 'ext-role',
+          officeId: 'ext-office',
+        }),
+      );
     });
   });
 });
