@@ -245,21 +245,24 @@ export class UsersService {
     const isExternalMaintainer = role.name === 'external_maintainer';
     const hasExternalOffice = office && office.isExternal;
 
-    if (isExternalMaintainer && !hasExternalOffice) {
-      throw new BadRequestException(
-        'External maintainers must be assigned to an external office',
-      );
-    }
-
-    if (!isExternalMaintainer && hasExternalOffice) {
-      throw new BadRequestException(
-        'Only external maintainers can be assigned to external offices',
-      );
-    }
-
+    // Check if external maintainer has no office first (more specific error)
     if (isExternalMaintainer && !office) {
       throw new BadRequestException(
-        'External maintainers must have an office assigned',
+        USER_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NO_OFFICE,
+      );
+    }
+
+    // Check if external maintainer has non-external office
+    if (isExternalMaintainer && !hasExternalOffice) {
+      throw new BadRequestException(
+        USER_ERROR_MESSAGES.EXTERNAL_MAINTAINER_WRONG_OFFICE,
+      );
+    }
+
+    // Check if non-external maintainer has external office
+    if (!isExternalMaintainer && hasExternalOffice) {
+      throw new BadRequestException(
+        USER_ERROR_MESSAGES.REGULAR_USER_EXTERNAL_OFFICE,
       );
     }
   }

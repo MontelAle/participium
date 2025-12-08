@@ -390,7 +390,7 @@ export class ReportsService {
         report.assignedExternalMaintainerId = externalMaintainer.id;
       } else {
         throw new BadRequestException(
-          'Invalid external maintainer ID or user is not an external maintainer',
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_USER,
         );
       }
     } else {
@@ -416,7 +416,10 @@ export class ReportsService {
 
     if (!allowedNextStatuses || !allowedNextStatuses.includes(updateDto.status)) {
       throw new BadRequestException(
-        `External maintainers can only change status from 'assigned' to 'in_progress' or from 'in_progress' to 'resolved'. Current status: ${report.status}`,
+        REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_STATUS_TRANSITION(
+          report.status,
+          updateDto.status,
+        ),
       );
     }
   }
