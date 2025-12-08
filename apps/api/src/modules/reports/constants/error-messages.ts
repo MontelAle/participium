@@ -7,6 +7,8 @@ export const REPORT_ERROR_MESSAGES = {
   REPORT_NOT_FOUND: (id: string) => `Report with ID ${id} not found`,
   IMAGE_UPLOAD_FAILED: 'Failed to upload images to storage',
   IMAGE_DELETE_FAILED: 'Failed to delete images from storage',
+  COORDINATES_OUTSIDE_BOUNDARY:
+    'The provided coordinates are outside the allowed municipal boundaries',
 } as const;
 
 export const ALLOWED_IMAGE_MIMETYPES = [

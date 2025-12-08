@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Account } from '../../common/entities/account.entity';
+import { Boundary } from '../../common/entities/boundary.entity';
 import { Category } from '../../common/entities/category.entity';
 import { Office } from '../../common/entities/office.entity';
 import { Profile } from '../../common/entities/profile.entity';
@@ -31,6 +32,7 @@ import { User } from '../../common/entities/user.entity';
           Report,
           Office,
           Profile,
+          Boundary,
         ],
         synchronize: configService.get<string>('app.env') !== 'production',
         logging: false,
