@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type {
   CreateReportDto as CreateReportDtoType,
+  DashboardStatsDto as DashboardStatsDtoType,
+  DashboardStatsResponseDto as DashboardStatsResponseDtoType,
   FilterReportsDto as FilterReportsDtoType,
   ReportResponseDto as ReportResponseDtoType,
   ReportsResponseDto as ReportsResponseDtoType,
@@ -170,4 +172,43 @@ export class ReportResponseDto implements ReportResponseDtoType {
 export class ReportsResponseDto implements ReportsResponseDtoType {
   success: boolean;
   data: Report[];
+}
+
+export class DashboardStatsDto implements DashboardStatsDtoType {
+  @IsNumber()
+  total: number;
+
+  @IsNumber()
+  pending: number;
+
+  @IsNumber()
+  in_progress: number;
+
+  @IsNumber()
+  assigned: number;
+
+  @IsNumber()
+  rejected: number;
+
+  @IsNumber()
+  resolved: number;
+
+  @IsNumber()
+  user_assigned: number;
+
+  @IsNumber()
+  user_rejected: number;
+
+  @IsNumber()
+  user_in_progress: number;
+
+  @IsNumber()
+  user_resolved: number;
+}
+
+export class DashboardStatsResponseDto
+  implements DashboardStatsResponseDtoType
+{
+  success: boolean;
+  data: DashboardStatsDto;
 }

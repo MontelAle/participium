@@ -1,4 +1,4 @@
-import { InternalServerErrorException } from '@nestjs/common';
+import { InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as Minio from 'minio';
@@ -25,6 +25,8 @@ describe('MinioProvider', () => {
     (Minio.Client as jest.MockedClass<typeof Minio.Client>).mockImplementation(
       () => mockMinioClient,
     );
+    
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

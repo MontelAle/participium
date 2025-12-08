@@ -18,6 +18,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import {
   CreateReportDto,
+  DashboardStatsResponseDto,
   FilterReportsDto,
   ReportResponseDto,
   ReportsResponseDto,
@@ -96,6 +97,16 @@ export class ReportsController {
   }
 
   /**
+   * Retrieves dashboard statistics for reports.
+   */
+  @Get('stats')
+  @UseGuards(SessionGuard)
+  async getStats(@Request() req): Promise<DashboardStatsResponseDto> {
+    const stats = await this.reportsService.getDashboardStats(req.user);
+    return { success: true, data: stats };
+  }
+
+  /**
    * Finds nearby reports based on location and radius.
    */
   @Get('nearby')
@@ -144,8 +155,13 @@ export class ReportsController {
   async update(
     @Param('id') id: string,
     @Body() updateReportDto: UpdateReportDto,
+    @Request() req,
   ): Promise<ReportResponseDto> {
-    const report = await this.reportsService.update(id, updateReportDto);
+    const report = await this.reportsService.update(
+      id,
+      updateReportDto,
+      req.user,
+    );
     return { success: true, data: report };
   }
 

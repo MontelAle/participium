@@ -1,8 +1,3 @@
-import { ArrowLeft, Image as ImageIcon, Send } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -11,22 +6,43 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from '@/components/ui/input-group';
+import { useAuth } from '@/contexts/auth-context';
 import { useProfile } from '@/hooks/use-profile';
+import {
+  ArrowLeft,
+  Image as ImageIcon,
+  MailIcon,
+  Send,
+  UserIcon,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 type FormValues = {
   telegramUsername?: string;
   emailNotificationsEnabled: boolean;
   profilePicture?: File | null;
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
 };
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { data: profile, updateProfile } = useProfile();
+  const { user } = useAuth();
   const { control, handleSubmit, watch, reset } = useForm<FormValues>({
     defaultValues: {
       emailNotificationsEnabled: true,
       telegramUsername: '',
       profilePicture: null,
+      firstName: '',
+      lastName: '',
+      username: '',
+      email: '',
     },
   });
 
@@ -38,10 +54,14 @@ export default function ProfilePage() {
         telegramUsername: profile.telegramUsername ?? '',
         emailNotificationsEnabled: !!profile.emailNotificationsEnabled,
         profilePicture: null,
+        firstName: profile.user.firstName ?? '',
+        lastName: profile.user.lastName ?? '',
+        username: profile.user.username ?? '',
+        email: profile.user.email ?? '',
       });
       setPreviewUrl(profile.profilePictureUrl ?? null);
     }
-  }, [profile, reset]);
+  }, [profile, user, reset]);
 
   const watchedPhoto = watch('profilePicture');
   useEffect(() => {
@@ -70,12 +90,22 @@ export default function ProfilePage() {
         }
       }
 
+      if (!data.firstName || !data.lastName || !data.username || !data.email) {
+        toast.error('Please fill all required fields');
+        return;
+      }
       const formData = new FormData();
       formData.append('telegramUsername', data.telegramUsername ?? '');
       formData.append(
         'emailNotificationsEnabled',
         String(data.emailNotificationsEnabled),
       );
+
+      formData.append('firstName', data.firstName);
+      formData.append('lastName', data.lastName);
+      formData.append('username', data.username);
+      formData.append('email', data.email);
+
       if (data.profilePicture)
         formData.append('profilePicture', data.profilePicture);
 
@@ -155,6 +185,88 @@ export default function ProfilePage() {
                   </Field>
                 </div>
               </div>
+
+              <div className="flex gap-6">
+                <Field className="flex-1">
+                  <FieldLabel className="mb-2">First Name</FieldLabel>
+                  <InputGroup>
+                    <Controller
+                      control={control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <InputGroupInput
+                          {...field}
+                          placeholder="First name"
+                          className="h-10"
+                        />
+                      )}
+                    />
+                    <InputGroupAddon>
+                      <UserIcon className="size-5 text-muted-foreground" />
+                    </InputGroupAddon>
+                  </InputGroup>
+                </Field>
+
+                <Field className="flex-1">
+                  <FieldLabel className="mb-2">Last Name</FieldLabel>
+                  <InputGroup>
+                    <Controller
+                      control={control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <InputGroupInput
+                          {...field}
+                          placeholder="Last name"
+                          className="h-10"
+                        />
+                      )}
+                    />
+                    <InputGroupAddon>
+                      <UserIcon className="size-5 text-muted-foreground" />
+                    </InputGroupAddon>
+                  </InputGroup>
+                </Field>
+              </div>
+
+              <Field className="flex-1">
+                <FieldLabel className="mb-2">Username</FieldLabel>
+                <InputGroup>
+                  <Controller
+                    control={control}
+                    name="username"
+                    render={({ field }) => (
+                      <InputGroupInput
+                        {...field}
+                        placeholder="Username"
+                        className="h-10"
+                      />
+                    )}
+                  />
+                  <InputGroupAddon>
+                    <UserIcon className="size-5 text-muted-foreground" />
+                  </InputGroupAddon>
+                </InputGroup>
+              </Field>
+
+              <Field className="flex-1">
+                <FieldLabel className="mb-2">Email</FieldLabel>
+                <InputGroup>
+                  <Controller
+                    control={control}
+                    name="email"
+                    render={({ field }) => (
+                      <InputGroupInput
+                        {...field}
+                        placeholder="Email"
+                        className="h-10"
+                      />
+                    )}
+                  />
+                  <InputGroupAddon>
+                    <MailIcon className="size-5 text-muted-foreground" />
+                  </InputGroupAddon>
+                </InputGroup>
+              </Field>
 
               <Field>
                 <FieldLabel className="mb-2">Telegram username</FieldLabel>

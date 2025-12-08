@@ -1,4 +1,5 @@
 import { CreateMunicipalityUserDto, Role, User } from '@repo/api';
+import { LucideIcon } from 'lucide-react';
 import { ComponentProps, ElementType, type ReactNode } from 'react';
 
 export type SidebarProps = {
@@ -63,3 +64,11 @@ export type CitizenGuardProps = Readonly<{
 }>;
 
 export type DateCheckStrategy = (date: Date, today: Date) => boolean;
+
+export type ActionButtonProps = {
+  label: string;
+  onClick: () => void;
+  icon: LucideIcon;
+  className?: string;
+  disabled?: boolean;
+};

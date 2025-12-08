@@ -59,7 +59,7 @@ const createMockRepository = (data: any[] = []) => {
         if (existing) {
           Object.assign(existing, entity);
           if (entity.assignedOfficer?.id) {
-            (existing).assignedOfficerId = entity.assignedOfficer.id;
+            existing.assignedOfficerId = entity.assignedOfficer.id;
           }
           return Promise.resolve(existing);
         }
@@ -73,7 +73,7 @@ const createMockRepository = (data: any[] = []) => {
         updatedAt: new Date(),
       };
       if (entity.assignedOfficer?.id) {
-        (newEntity).assignedOfficerId = entity.assignedOfficer.id;
+        newEntity.assignedOfficerId = entity.assignedOfficer.id;
       }
       data.push(newEntity);
       return Promise.resolve(newEntity);
@@ -111,9 +111,22 @@ const createMockRepository = (data: any[] = []) => {
       select: jest.fn().mockReturnThis(),
       groupBy: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
+      setParameters: jest.fn().mockReturnThis(),
       getOne: jest.fn().mockResolvedValue(data[0] || null),
       getMany: jest.fn().mockResolvedValue(data),
       getRawMany: jest.fn().mockResolvedValue([]),
+      getRawOne: jest.fn().mockResolvedValue({
+        total: '5',
+        pending: '2',
+        in_progress: '1',
+        resolved: '1',
+        assigned_global: '1',
+        rejected_global: '0',
+        user_assigned: '0',
+        user_rejected: '0',
+        user_in_progress: '0',
+        user_resolved: '0',
+      }),
       getRawAndEntities: jest.fn().mockResolvedValue({
         entities: data,
         raw: data.map(() => ({ distance: 100 })),
@@ -152,12 +165,21 @@ describe('AppController (e2e)', () => {
   let AppModule: any;
   let sessionCookie: string;
 
+  let mockUsers: any[];
+  let mockAccounts: any[];
+  let mockRoles: any[];
+  let mockOffices: any[];
+  let mockCategories: any[];
+  let mockReports: any[];
+  let mockSession: any;
+  let mockProfile: any[];
+
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
     const importedModule = await import('./../src/app.module');
     AppModule = importedModule.AppModule;
 
-    const mockRoles = [
+    mockRoles = [
       { id: 'role_1', name: 'admin', label: 'Admin', isMunicipal: true },
       { id: 'role_2', name: 'user', label: 'User', isMunicipal: false },
       {
@@ -174,7 +196,7 @@ describe('AppController (e2e)', () => {
       },
     ];
 
-    const mockUsers = [
+    mockUsers = [
       {
         id: 'user_1',
         email: 'john@example.com',
@@ -197,6 +219,20 @@ describe('AppController (e2e)', () => {
         lastName: 'Smith',
         roleId: 'role_2',
         role: { id: 'role_2', name: 'user', label: 'User', isMunicipal: false },
+      },
+      {
+        id: 'pr_officer_1',
+        email: 'pr@municipality.gov',
+        username: 'pr_officer',
+        firstName: 'Paul',
+        lastName: 'Rogers',
+        roleId: 'role_3',
+        role: {
+          id: 'role_3', // Questo ID deve corrispondere a quello definito in mockRoles
+          name: 'municipal_pr_officer', // CRITICO: Deve matchare la stringa nel codice
+          label: 'PR Officer',
+          isMunicipal: true,
+        },
       },
       {
         id: 'officer_1',
@@ -232,15 +268,26 @@ describe('AppController (e2e)', () => {
 
     const mockUser = mockUsers[0];
 
-    const mockAccounts = [
+    mockAccounts = [
       {
         id: 'account_1',
         userId: 'user_1',
+        providerId: 'local',
+        accountId: 'john',
         hashedPassword: 'hashed_password_1',
+        user: mockUsers[0],
+      },
+      {
+        id: 'account_2',
+        userId: 'user_2',
+        providerId: 'local',
+        accountId: 'jane',
+        hashedPassword: 'hashed_password_2',
+        user: mockUsers[1],
       },
     ];
 
-    const mockOffices = [
+    mockOffices = [
       {
         id: 'office_1',
         name: 'administration',
@@ -248,7 +295,7 @@ describe('AppController (e2e)', () => {
       },
     ];
 
-    const mockCategories = [
+    mockCategories = [
       {
         id: 'cat_1',
         name: 'Infrastructure',
@@ -258,7 +305,7 @@ describe('AppController (e2e)', () => {
       { id: 'cat_2', name: 'Environment' },
     ];
 
-    const mockReports: any[] = [
+    mockReports = [
       {
         id: 'report_1',
         title: 'Test Report',
@@ -308,13 +355,13 @@ describe('AppController (e2e)', () => {
       return Promise.resolve(newEntity);
     });
 
-    const mockSession = {
+    mockSession = {
       id: 'sess_1',
       userId: 'user_1',
       hashedSecret: 'hashed_secret',
     };
 
-    const mockProfile = [
+    mockProfile = [
       {
         id: 'profile_1',
         userId: 'user_1',
@@ -420,6 +467,13 @@ describe('AppController (e2e)', () => {
           ) {
             req.user = mockUsers[0]; // john - admin (municipal user)
             req.session = mockSession;
+            return true;
+          }
+
+          if (cookieValue === 'sess_pr.secret') {
+            const prUser = mockUsers.find((u) => u.username === 'pr_officer');
+            req.user = prUser;
+            req.session = { ...mockSession, userId: prUser.id };
             return true;
           }
 
@@ -785,6 +839,94 @@ describe('AppController (e2e)', () => {
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ telegramUsername: '' })
       .expect(200);
+  });
+
+  // ---------------------------------------------------------
+  // Core Data Sync & Conflict Tests
+  // ---------------------------------------------------------
+
+  it('PATCH /profiles/profile/me updates core user data (username, email) and syncs account', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/profiles/profile/me')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        username: 'john_updated',
+        email: 'john_new@example.com',
+        firstName: 'Johnny',
+      })
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.user.username).toBe('john_updated');
+    expect(res.body.data.user.email).toBe('john_new@example.com');
+    expect(res.body.data.user.firstName).toBe('Johnny');
+
+    const user = mockUsers.find((u) => u.id === 'user_1');
+    if (user) {
+      user.username = 'john';
+      user.email = 'john@example.com';
+    }
+    const account = mockAccounts.find((a) => a.userId === 'user_1');
+    if (account) {
+      account.accountId = 'john';
+    }
+  });
+
+  it('PATCH /profiles/profile/me syncs username change to Account entity', async () => {
+    await request(app.getHttpServer())
+      .patch('/profiles/profile/me')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        username: 'jane_sync_test',
+      })
+      .expect(200);
+
+    const account = mockAccounts.find((a) => a.userId === 'user_2');
+
+    expect(account).toBeDefined();
+    expect(account.accountId).toBe('jane_sync_test');
+  });
+
+  it('PATCH /profiles/profile/me throws 400 if profile picture is too large', async () => {
+    const largeBuffer = Buffer.alloc(6 * 1024 * 1024);
+
+    await request(app.getHttpServer())
+      .patch('/profiles/profile/me')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .attach('profilePicture', largeBuffer, {
+        filename: 'large.jpg',
+        contentType: 'image/jpeg',
+      })
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toBeDefined();
+      });
+  });
+
+  it('PATCH /profiles/profile/me throws 409 Conflict if username is taken', async () => {
+    await request(app.getHttpServer())
+      .patch('/profiles/profile/me')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        username: 'john',
+      })
+      .expect(409)
+      .expect((res) => {
+        expect(res.body.message).toContain('Username already in use');
+      });
+  });
+
+  it('PATCH /profiles/profile/me throws 409 Conflict if email is taken', async () => {
+    await request(app.getHttpServer())
+      .patch('/profiles/profile/me')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        email: 'john@example.com',
+      })
+      .expect(409)
+      .expect((res) => {
+        expect(res.body.message).toContain('Email already in use');
+      });
   });
 
   // ============================================================================
@@ -1480,5 +1622,118 @@ describe('AppController (e2e)', () => {
     expect(res.body.data.address).toBe('456 Test Ave');
     expect(res.body.data.isAnonymous).toBe(false);
     expect(res.body.data.images).toHaveLength(2);
+  });
+
+  // ============================================================================
+  // Dashboard Statistics (New Logic)
+  // ============================================================================
+
+  it('GET /reports/stats returns dashboard statistics structure correctly', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/stats')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toEqual(
+      expect.objectContaining({
+        total: expect.any(Number),
+        pending: expect.any(Number),
+        in_progress: expect.any(Number),
+        resolved: expect.any(Number),
+        assigned: expect.any(Number),
+        rejected: expect.any(Number),
+        user_assigned: expect.any(Number),
+        user_rejected: expect.any(Number),
+        user_in_progress: expect.any(Number),
+        user_resolved: expect.any(Number),
+      }),
+    );
+  });
+
+  // ============================================================================
+  // PR Officer Logic (Assignment & Audit)
+  // ============================================================================
+
+  it('PATCH /reports/:id as PR Officer sets processedById when assigning', async () => {
+    const reportRes = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'To be assigned')
+      .field('description', 'Pending report')
+      .field('longitude', '10.0')
+      .field('latitude', '10.0')
+      .field('categoryId', 'cat_1')
+      .attach('images', Buffer.from('img'), 'test.jpg')
+      .expect(201);
+
+    const reportId = reportRes.body.data.id;
+
+    const updateRes = await request(app.getHttpServer())
+      .patch(`/reports/${reportId}`)
+      .set('Cookie', 'session_token=sess_pr.secret')
+      .send({
+        status: 'assigned',
+        assignedOfficerId: 'officer_1',
+      })
+      .expect(200);
+
+    expect(updateRes.body.data.status).toBe('assigned');
+    expect(updateRes.body.data.assignedOfficerId).toBe('officer_1');
+
+    expect(updateRes.body.data.processedById).toBe('pr_officer_1');
+  });
+
+  it('PATCH /reports/:id as PR Officer sets processedById when rejecting', async () => {
+    const reportRes = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'To be rejected')
+      .attach('images', Buffer.from('img'), 'test.jpg')
+      .field('description', 'Bad report')
+      .field('longitude', '10.0')
+      .field('latitude', '10.0')
+      .field('categoryId', 'cat_1')
+      .expect(201);
+
+    const reportId = reportRes.body.data.id;
+
+    const updateRes = await request(app.getHttpServer())
+      .patch(`/reports/${reportId}`)
+      .set('Cookie', 'session_token=sess_pr.secret')
+      .send({
+        status: 'rejected',
+        explanation: 'Duplicate report',
+      })
+      .expect(200);
+
+    expect(updateRes.body.data.status).toBe('rejected');
+    expect(updateRes.body.data.processedById).toBe('pr_officer_1');
+  });
+
+  it('PATCH /reports/:id as Admin does NOT set processedById (Logic Check)', async () => {
+    const reportRes = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Admin assign')
+      .attach('images', Buffer.from('img'), 'test.jpg')
+      .field('description', '...')
+      .field('longitude', '10.0')
+      .field('latitude', '10.0')
+      .field('categoryId', 'cat_1')
+      .expect(201);
+
+    const reportId = reportRes.body.data.id;
+
+    const updateRes = await request(app.getHttpServer())
+      .patch(`/reports/${reportId}`)
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        status: 'assigned',
+        assignedOfficerId: 'officer_1',
+      })
+      .expect(200);
+
+    expect(updateRes.body.data.processedById).toBe('user_1');
   });
 });

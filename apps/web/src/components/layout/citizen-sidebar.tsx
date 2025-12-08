@@ -1,4 +1,3 @@
-import { Search, GripHorizontal, Lock } from 'lucide-react';
 import { ReportsList } from '@/components/reports-list';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +7,7 @@ import { useReports } from '@/hooks/use-reports';
 import { cn } from '@/lib/utils';
 import { useFilterStore } from '@/store/filterStore';
 import { CitizenSidebarProps } from '@/types/ui';
+import { GripHorizontal, Lock, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 function GuestState() {
@@ -32,7 +32,9 @@ function GuestState() {
 export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
   const { isCitizenUser, isGuestUser } = useAuth();
 
-  const { data: reports = [] } = useReports({ enabled: !isGuestUser });
+  const { data: reports = [] } = useReports(undefined, {
+    enabled: !isGuestUser,
+  });
   const { searchTerm, setSearchTerm, showOnlyMyReports, setShowOnlyMyReports } =
     useFilterStore();
 
