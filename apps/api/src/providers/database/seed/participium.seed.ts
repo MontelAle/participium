@@ -1,48 +1,116 @@
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
+import { randomInt } from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { DataSource, Repository } from 'typeorm';
 import { Account } from '../../../common/entities/account.entity';
 import { Boundary } from '../../../common/entities/boundary.entity';
 import { Category } from '../../../common/entities/category.entity';
 import { Office } from '../../../common/entities/office.entity';
+import { Profile } from '../../../common/entities/profile.entity';
 import { Report, ReportStatus } from '../../../common/entities/report.entity';
 import { Role } from '../../../common/entities/role.entity';
 import { User } from '../../../common/entities/user.entity';
 import { MinioProvider } from '../../minio/minio.provider';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { Profile } from '../../../common/entities/profile.entity';
-import { randomInt } from 'node:crypto';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
 const OFFICES_DATA = [
-  { name: 'maintenance', label: 'Maintenance and Technical Services' },
-  { name: 'infrastructure', label: 'Infrastructure' },
-  { name: 'public_services', label: 'Local Public Services' },
-  { name: 'environment', label: 'Environment Quality' },
-  { name: 'green_parks', label: 'Green Areas and Parks' },
-  { name: 'civic_services', label: 'Decentralization and Civic Services' },
-  { name: 'organization_office', label: 'Organization Office' },
+  {
+    name: 'maintenance',
+    label: 'Maintenance and Technical Services',
+    isExternal: false,
+  },
+  { name: 'infrastructure', label: 'Infrastructure', isExternal: false },
+  {
+    name: 'public_services',
+    label: 'Local Public Services',
+    isExternal: false,
+  },
+  { name: 'environment', label: 'Environment Quality', isExternal: false },
+  { name: 'green_parks', label: 'Green Areas and Parks', isExternal: false },
+  {
+    name: 'civic_services',
+    label: 'Decentralization and Civic Services',
+    isExternal: false,
+  },
+  {
+    name: 'organization_office',
+    label: 'Organization Office',
+    isExternal: false,
+  },
 ];
 
-const BOUNDARIES_DATA = [
-  { name: 'torino', label: 'Comune di Torino' },
+const EXTERNAL_OFFICES_DATA = [
+  {
+    name: 'external_office_1',
+    label: 'External Office 1',
+    isExternal: true,
+  },
+  {
+    name: 'external_office_2',
+    label: 'External Office 2',
+    isExternal: true,
+  },
+  {
+    name: 'external_office_3',
+    label: 'External Office 3',
+    isExternal: true,
+  },
 ];
+
+const BOUNDARIES_DATA = [{ name: 'torino', label: 'Comune di Torino' }];
 
 const CATEGORIES_DATA = [
-  { name: 'Roads and Urban Furnishings', office: 'maintenance' },
-  { name: 'Architectural Barriers', office: 'maintenance' },
-  { name: 'Road Signs and Traffic Lights', office: 'infrastructure' },
-  { name: 'Public Lighting', office: 'infrastructure' },
-  { name: 'Water Supply – Drinking Water', office: 'public_services' },
-  { name: 'Sewer System', office: 'public_services' },
-  { name: 'Waste', office: 'environment' },
-  { name: 'Public Green Areas and Playgrounds', office: 'green_parks' },
-  { name: 'Other', office: 'civic_services' },
+  {
+    name: 'Roads and Urban Furnishings',
+    office: 'maintenance',
+    externalOffice: 'external_maintainer_1',
+  },
+  {
+    name: 'Architectural Barriers',
+    office: 'maintenance',
+    externalOffice: 'external_maintainer_2',
+  },
+  {
+    name: 'Road Signs and Traffic Lights',
+    office: 'infrastructure',
+    externalOffice: 'external_maintainer_3',
+  },
+  {
+    name: 'Public Lighting',
+    office: 'infrastructure',
+    externalOffice: 'external_maintainer_1',
+  },
+  {
+    name: 'Water Supply – Drinking Water',
+    office: 'public_services',
+    externalOffice: 'external_maintainer_2',
+  },
+  {
+    name: 'Sewer System',
+    office: 'public_services',
+    externalOffice: 'external_maintainer_3',
+  },
+  {
+    name: 'Waste',
+    office: 'environment',
+    externalOffice: 'external_maintainer_1',
+  },
+  {
+    name: 'Public Green Areas and Playgrounds',
+    office: 'green_parks',
+    externalOffice: 'external_maintainer_2',
+  },
+  {
+    name: 'Other',
+    office: 'civic_services',
+    externalOffice: 'external_maintainer_3',
+  },
 ];
 
 const ROLES_DATA = [
@@ -50,7 +118,11 @@ const ROLES_DATA = [
   { name: 'admin', label: 'Admin', isMunicipal: true },
   { name: 'pr_officer', label: 'PR Officer', isMunicipal: true },
   { name: 'tech_officer', label: 'Technical Officer', isMunicipal: true },
-  { name: 'external_maintainer', label: 'External Maintainer', isMunicipal: false },
+  {
+    name: 'external_maintainer',
+    label: 'External Maintainer',
+    isMunicipal: false,
+  },
 ];
 
 const CITIZENS_DATA = [
@@ -241,18 +313,21 @@ async function seedOffices(
 ): Promise<Map<string, Office>> {
   const officesMap = new Map<string, Office>();
 
-  for (const officeData of OFFICES_DATA) {
+  const OFFICES = [...OFFICES_DATA, ...EXTERNAL_OFFICES_DATA];
+
+  for (const officeData of OFFICES) {
     let office = await officeRepo.findOne({ where: { name: officeData.name } });
-    
+
     if (!office) {
       office = officeRepo.create({
         id: nanoid(),
         name: officeData.name,
         label: officeData.label,
+        isExternal: officeData.isExternal,
       });
       await officeRepo.save(office);
     }
-    
+
     officesMap.set(officeData.name, office);
   }
 
@@ -276,8 +351,10 @@ async function seedBoundaries(
   boundaryRepo: Repository<Boundary>,
 ): Promise<void> {
   for (const boundaryData of BOUNDARIES_DATA) {
-    const existing = await boundaryRepo.findOne({ where: { name: boundaryData.name } });
-    
+    const existing = await boundaryRepo.findOne({
+      where: { name: boundaryData.name },
+    });
+
     if (!existing) {
       const geoJsonPath = getBoundariesGeoJsonPath();
       const geoJsonContent = fs.readFileSync(geoJsonPath, 'utf-8');
@@ -308,11 +385,13 @@ async function seedCategories(
 
     if (!category) {
       const assignedOffice = officesMap.get(categoryData.office);
+      const externalOffice = officesMap.get(categoryData.externalOffice);
       if (assignedOffice) {
         category = categoryRepo.create({
           id: nanoid(),
           name: categoryData.name,
           office: assignedOffice,
+          externalOffice: externalOffice || null,
         });
         await categoryRepo.save(category);
       }
@@ -333,12 +412,12 @@ async function seedRoles(
 
   for (const roleData of ROLES_DATA) {
     let role = await roleRepo.findOne({ where: { name: roleData.name } });
-    
+
     if (!role) {
       role = roleRepo.create({ id: nanoid(), ...roleData });
       await roleRepo.save(role);
     }
-    
+
     rolesMap.set(roleData.name, role);
   }
 
@@ -349,8 +428,16 @@ async function createUserWithAccountAndProfile(
   context: UserCreationContext,
   userData: UserData,
 ): Promise<User> {
-  const { userRepo, accountRepo, profileRepo, commonPassword, rolesMap, officesMap } = context;
-  const { username, roleName, firstName, lastName, email, officeName } = userData;
+  const {
+    userRepo,
+    accountRepo,
+    profileRepo,
+    commonPassword,
+    rolesMap,
+    officesMap,
+  } = context;
+  const { username, roleName, firstName, lastName, email, officeName } =
+    userData;
 
   const existingUser = await userRepo.findOne({ where: { username } });
   if (existingUser) {
@@ -387,9 +474,7 @@ async function createUserWithAccountAndProfile(
   return user;
 }
 
-async function seedMunicipalUsers(
-  context: UserCreationContext,
-): Promise<void> {
+async function seedMunicipalUsers(context: UserCreationContext): Promise<void> {
   await createUserWithAccountAndProfile(context, {
     username: 'admin',
     roleName: 'admin',
@@ -427,9 +512,25 @@ async function seedMunicipalUsers(
   }
 }
 
-async function seedCitizenUsers(
+async function seedExternalMaintainers(
   context: UserCreationContext,
-): Promise<User[]> {
+): Promise<void> {
+  for (const officeData of EXTERNAL_OFFICES_DATA) {
+    for (let i = 1; i <= 2; i++) {
+      const externalMaintainerUsername = `${officeData.name}_${i}`;
+      await createUserWithAccountAndProfile(context, {
+        username: externalMaintainerUsername,
+        roleName: 'external_maintainer',
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+        email: `${externalMaintainerUsername}@participium.com`.toLowerCase(),
+        officeName: officeData.name,
+      });
+    }
+  }
+}
+
+async function seedCitizenUsers(context: UserCreationContext): Promise<User[]> {
   const citizenUsers: User[] = [];
 
   for (const citizenData of CITIZENS_DATA) {
@@ -541,7 +642,7 @@ async function uploadReportImages(
 async function createReport(
   reportRepo: Repository<Report>,
   minioProvider: MinioProvider,
-  realReport: typeof REAL_REPORTS[0],
+  realReport: (typeof REAL_REPORTS)[0],
   user: User,
   isAnonymous: boolean,
   category: Category,
@@ -659,6 +760,7 @@ export async function seedDatabase(
   };
 
   await seedMunicipalUsers(userContext);
+  await seedExternalMaintainers(userContext);
   const citizenUsers = await seedCitizenUsers(userContext);
 
   await seedReports(
