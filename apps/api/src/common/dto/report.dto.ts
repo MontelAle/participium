@@ -120,6 +120,10 @@ export class UpdateReportDto implements UpdateReportDtoType {
   @IsString()
   @IsOptional()
   assignedOfficerId?: string;
+
+  @IsString()
+  @IsOptional()
+  assignedExternalMaintainerId?: string;
 }
 
 export class FilterReportsDto implements FilterReportsDtoType {

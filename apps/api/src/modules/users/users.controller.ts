@@ -7,11 +7,13 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import {
   CreateMunicipalityUserDto,
+  ExternalMaintainersResponseDto,
   MunicipalityUserIdResponseDto,
   MunicipalityUserResponseDto,
   MunicipalityUsersResponseDto,
@@ -39,8 +41,10 @@ export class UsersController {
    */
   @Get('municipality')
   @Roles('admin', 'pr_officer')
-  async getMunicipalityUsers(): Promise<MunicipalityUsersResponseDto> {
-    const users = await this.usersService.findMunicipalityUsers();
+  async getMunicipalityUsers(
+    @Query('categoryId') categoryId?: string,
+  ): Promise<MunicipalityUsersResponseDto> {
+    const users = await this.usersService.findMunicipalityUsers(categoryId);
     return { success: true, data: users };
   }
 
@@ -113,4 +117,22 @@ export class UsersController {
     await this.usersService.updateMunicipalityUserById(id, dto);
     return { success: true, data: { id } };
   }
+
+  /**
+   * Retrieves a list of external maintainers, optionally filtered by category.
+   *
+   * @throws {400} Bad Request - Category has no external office assigned
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Insufficient permissions (admin or tech_officer role required)
+   * @throws {404} Not Found - Category not found or no external maintainers for category
+   */
+  @Get('external-maintainers')
+  @Roles('admin', 'tech_officer')
+  async getExternalMaintainers(
+    @Query('categoryId') categoryId?: string,
+  ): Promise<ExternalMaintainersResponseDto> {
+    const maintainers = await this.usersService.findExternalMaintainers(categoryId);
+    return { success: true, data: maintainers };
+  }
+
 }

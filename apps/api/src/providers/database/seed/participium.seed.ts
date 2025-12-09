@@ -48,6 +48,7 @@ const ROLES_DATA = [
   { name: 'admin', label: 'Admin', isMunicipal: true },
   { name: 'pr_officer', label: 'PR Officer', isMunicipal: true },
   { name: 'tech_officer', label: 'Technical Officer', isMunicipal: true },
+  { name: 'external_maintainer', label: 'External Maintainer', isMunicipal: false },
 ];
 
 const CITIZENS_DATA = [

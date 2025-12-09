@@ -12,4 +12,7 @@ export class Category implements CategoryType {
 
   @ManyToOne(() => Office, (office) => office.categories)
   office: Office;
+
+  @ManyToOne(() => Office, { nullable: true })
+  externalOffice?: Office;
 }

@@ -25,7 +25,7 @@ export class UpdateMunicipalityUserDto
   @IsString()
   @IsOptional()
   @MinLength(6)
-  @MaxLength(20)
+  @MaxLength(30)
   username?: string;
 
   @IsString()
@@ -51,7 +51,7 @@ export class CreateMunicipalityUserDto
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
-  @MaxLength(20)
+  @MaxLength(30)
   password: string;
 
   @IsEmail()
@@ -61,7 +61,7 @@ export class CreateMunicipalityUserDto
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
-  @MaxLength(20)
+  @MaxLength(30)
   username: string;
 
   @IsString()
@@ -99,5 +99,10 @@ export class MunicipalityUserIdResponseDto
   implements MunicipalityUserIdResponseDtoType
 {
   data: { id: string };
+  success: boolean;
+}
+
+export class ExternalMaintainersResponseDto {
+  data: User[];
   success: boolean;
 }
