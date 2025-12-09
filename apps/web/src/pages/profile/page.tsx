@@ -11,8 +11,8 @@ export default function ProfilePage() {
   const { user } = useAuth();
 
   return (
-    <div className="flex flex-col w-full h-full animate-in fade-in zoom-in-95 duration-300">
-      <div className="w-full max-w-3xl mx-auto flex flex-col h-full gap-4">
+    <div className="flex flex-col w-full animate-in fade-in zoom-in-95 duration-300">
+      <div className="w-full max-w-3xl mx-auto flex flex-col gap-4">
         <div className="flex flex-col gap-1 shrink-0">
           <div>
             <Button
@@ -30,13 +30,11 @@ export default function ProfilePage() {
             </h1>
           </div>
         </div>
-        <div className="flex flex-col gap-6">
-          <ProfileForm
-            profile={profile}
-            user={user ? user : undefined}
-            updateProfile={updateProfile}
-          />
-        </div>
+        <ProfileForm
+          profile={profile}
+          user={user ? user : undefined}
+          updateProfile={updateProfile}
+        />
       </div>
     </div>
   );
