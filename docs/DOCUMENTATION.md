@@ -320,7 +320,7 @@ File: `src/config/app.config.ts`
     type: 'postgres',
     host: 'localhost',
     port: 5432,
-    username: 'admin',
+    username: 'system_admin',
     password: 'password',
     database: 'participium'
   }
@@ -801,7 +801,7 @@ This table lists the credentials (usernames) to use for testing the workflow
 | **Environment Quality**               | Environment Technician     | `tech_environment_1`, `tech_environment_2`                              |
 | **Green Areas and Parks**             | Green Parks Technician     | `tech_green_parks_1`, `tech_green_parks_2`                              |
 | **Decentralization & Civic Services** | Civic Services Technician  | `tech_civic_services_1`, `tech_civic_services_2`                        |
-| **Organizational**                    | System Admin, PR Officer   | `admin`, `pr_officer_1`, `pr_officer_2`, `pr_officer_3`, `pr_officer_4` |
+| **Organizational**                    | System Admin, PR Officer   | `system_admin`, `pr_officer_1`, `pr_officer_2`, `pr_officer_3`, `pr_officer_4` |
 
 ---
 
