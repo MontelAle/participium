@@ -67,7 +67,7 @@ export function ViewAssignedReport({
     );
 
     if (!selectedExternalMaintainer) {
-      toast.error('Please select an external office');
+      toast.error('Please select an external company');
       return;
     }
 
@@ -136,14 +136,14 @@ export function ViewAssignedReport({
 
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">
-                  External Office
+                  External Company
                 </h4>
                 <Select
                   value={watch('externalOfficeId') ?? ''}
                   onValueChange={(v) => setValue('externalOfficeId', v)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select an external office" />
+                    <SelectValue placeholder="Select an external company" />
                   </SelectTrigger>
                   <SelectContent>
                     {externalOfficesWithCategory?.map((office) => (
