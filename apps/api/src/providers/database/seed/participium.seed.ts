@@ -1,19 +1,19 @@
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
+import { randomInt } from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { DataSource, Repository } from 'typeorm';
 import { Account } from '../../../common/entities/account.entity';
 import { Boundary } from '../../../common/entities/boundary.entity';
 import { Category } from '../../../common/entities/category.entity';
 import { Office } from '../../../common/entities/office.entity';
+import { Profile } from '../../../common/entities/profile.entity';
 import { Report, ReportStatus } from '../../../common/entities/report.entity';
 import { Role } from '../../../common/entities/role.entity';
 import { User } from '../../../common/entities/user.entity';
 import { MinioProvider } from '../../minio/minio.provider';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { Profile } from '../../../common/entities/profile.entity';
-import { randomInt } from 'node:crypto';
 
 // ============================================================================
 // Constants
@@ -29,9 +29,7 @@ const OFFICES_DATA = [
   { name: 'organization_office', label: 'Organization Office' },
 ];
 
-const BOUNDARIES_DATA = [
-  { name: 'torino', label: 'Comune di Torino' },
-];
+const BOUNDARIES_DATA = [{ name: 'torino', label: 'Comune di Torino' }];
 
 const CATEGORIES_DATA = [
   { name: 'Roads and Urban Furnishings', office: 'maintenance' },
@@ -243,7 +241,7 @@ async function seedOffices(
 
   for (const officeData of OFFICES_DATA) {
     let office = await officeRepo.findOne({ where: { name: officeData.name } });
-    
+
     if (!office) {
       office = officeRepo.create({
         id: nanoid(),
@@ -252,7 +250,7 @@ async function seedOffices(
       });
       await officeRepo.save(office);
     }
-    
+
     officesMap.set(officeData.name, office);
   }
 
@@ -276,8 +274,10 @@ async function seedBoundaries(
   boundaryRepo: Repository<Boundary>,
 ): Promise<void> {
   for (const boundaryData of BOUNDARIES_DATA) {
-    const existing = await boundaryRepo.findOne({ where: { name: boundaryData.name } });
-    
+    const existing = await boundaryRepo.findOne({
+      where: { name: boundaryData.name },
+    });
+
     if (!existing) {
       const geoJsonPath = getBoundariesGeoJsonPath();
       const geoJsonContent = fs.readFileSync(geoJsonPath, 'utf-8');
@@ -333,12 +333,12 @@ async function seedRoles(
 
   for (const roleData of ROLES_DATA) {
     let role = await roleRepo.findOne({ where: { name: roleData.name } });
-    
+
     if (!role) {
       role = roleRepo.create({ id: nanoid(), ...roleData });
       await roleRepo.save(role);
     }
-    
+
     rolesMap.set(roleData.name, role);
   }
 
@@ -349,8 +349,16 @@ async function createUserWithAccountAndProfile(
   context: UserCreationContext,
   userData: UserData,
 ): Promise<User> {
-  const { userRepo, accountRepo, profileRepo, commonPassword, rolesMap, officesMap } = context;
-  const { username, roleName, firstName, lastName, email, officeName } = userData;
+  const {
+    userRepo,
+    accountRepo,
+    profileRepo,
+    commonPassword,
+    rolesMap,
+    officesMap,
+  } = context;
+  const { username, roleName, firstName, lastName, email, officeName } =
+    userData;
 
   const existingUser = await userRepo.findOne({ where: { username } });
   if (existingUser) {
@@ -387,11 +395,9 @@ async function createUserWithAccountAndProfile(
   return user;
 }
 
-async function seedMunicipalUsers(
-  context: UserCreationContext,
-): Promise<void> {
+async function seedMunicipalUsers(context: UserCreationContext): Promise<void> {
   await createUserWithAccountAndProfile(context, {
-    username: 'admin',
+    username: 'system_admin',
     roleName: 'admin',
     firstName: 'System',
     lastName: 'Admin',
@@ -427,9 +433,7 @@ async function seedMunicipalUsers(
   }
 }
 
-async function seedCitizenUsers(
-  context: UserCreationContext,
-): Promise<User[]> {
+async function seedCitizenUsers(context: UserCreationContext): Promise<User[]> {
   const citizenUsers: User[] = [];
 
   for (const citizenData of CITIZENS_DATA) {
@@ -541,7 +545,7 @@ async function uploadReportImages(
 async function createReport(
   reportRepo: Repository<Report>,
   minioProvider: MinioProvider,
-  realReport: typeof REAL_REPORTS[0],
+  realReport: (typeof REAL_REPORTS)[0],
   user: User,
   isAnonymous: boolean,
   category: Category,

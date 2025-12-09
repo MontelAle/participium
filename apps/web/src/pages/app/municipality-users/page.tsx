@@ -2,6 +2,7 @@ import { MunicipalityUsersTable } from '@/components/municipality-users/municipa
 import { UsersToolbar } from '@/components/municipality-users/user-toolbar';
 import { Button } from '@/components/ui/button';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
+import { User } from '@repo/api';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -33,7 +34,7 @@ const MunicipalityUsersPage = () => {
   const filteredData = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    const byUsername = (u: any) =>
+    const byUsername = (u: User) =>
       !normalizedQuery ||
       String(u.username ?? '')
         .toLowerCase()
@@ -48,10 +49,10 @@ const MunicipalityUsersPage = () => {
         .toLowerCase()
         .includes(normalizedQuery);
 
-    const byRole = (u: any) =>
+    const byRole = (u: User) =>
       selectedRoles.length === 0 || selectedRoles.includes(u.role?.name);
 
-    const byOffice = (u: any) =>
+    const byOffice = (u: User) =>
       selectedOffices.length === 0 ||
       (u.office?.label && selectedOffices.includes(u.office.label));
 
