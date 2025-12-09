@@ -1,18 +1,18 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Account } from '../src/common/entities/account.entity';
-import { Boundary } from '../src/common/entities/boundary.entity';
-import { Category } from '../src/common/entities/category.entity';
-import { Office } from '../src/common/entities/office.entity';
-import { Profile } from '../src/common/entities/profile.entity';
-import { Report } from '../src/common/entities/report.entity';
-import { Role } from '../src/common/entities/role.entity';
-import { Session } from '../src/common/entities/session.entity';
-import { User } from '../src/common/entities/user.entity';
-import { LocalAuthGuard } from './../src/modules/auth/guards/local-auth.guard';
-import { RolesGuard } from './../src/modules/auth/guards/roles.guard';
-import { SessionGuard } from './../src/modules/auth/guards/session-auth.guard';
+import { Account } from '../../src/common/entities/account.entity';
+import { Boundary } from '../../src/common/entities/boundary.entity';
+import { Category } from '../../src/common/entities/category.entity';
+import { Office } from '../../src/common/entities/office.entity';
+import { Profile } from '../../src/common/entities/profile.entity';
+import { Report } from '../../src/common/entities/report.entity';
+import { Role } from '../../src/common/entities/role.entity';
+import { Session } from '../../src/common/entities/session.entity';
+import { User } from '../../src/common/entities/user.entity';
+import { LocalAuthGuard } from '../../src/modules/auth/guards/local-auth.guard';
+import { RolesGuard } from '../../src/modules/auth/guards/roles.guard';
+import { SessionGuard } from '../../src/modules/auth/guards/session-auth.guard';
 import request = require('supertest');
 
 jest.mock('nanoid', () => ({
@@ -176,7 +176,7 @@ describe('AppController (e2e)', () => {
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
-    const importedModule = await import('./../src/app.module');
+    const importedModule = await import('./../../src/app.module');
     AppModule = importedModule.AppModule;
 
     mockRoles = [
@@ -381,10 +381,10 @@ describe('AppController (e2e)', () => {
     ];
 
     const { DatabaseModule } = await import(
-      './../src/providers/database/database.module'
+      './../../src/providers/database/database.module'
     );
     const { MinioProvider } = await import(
-      './../src/providers/minio/minio.provider'
+      './../../src/providers/minio/minio.provider'
     );
 
     const mockMinioProvider = {
