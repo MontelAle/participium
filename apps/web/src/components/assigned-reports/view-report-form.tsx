@@ -76,7 +76,7 @@ export function ViewAssignedReport({
     };
 
     try {
-      await updateReportMutation.mutateAsync({
+      await updateReportMutation({
         reportId: report.id,
         data: updateData,
       });
@@ -93,7 +93,7 @@ export function ViewAssignedReport({
 
   const shouldShowUser = showAnonymous || report.user;
 
-  const updateReportMutation = useUpdateReport();
+  const { mutateAsync: updateReportMutation, isPending } = useUpdateReport();
 
   return (
     <>
@@ -102,7 +102,7 @@ export function ViewAssignedReport({
           className="grid grid-cols-1 md:grid-cols-12 h-full"
           onSubmit={handleSubmit(handleConfirm)}
         >
-          <div className="md:col-span-7 p-6 flex flex-col bg-white overflow-y-auto h-full border-b md:border-b-0 md:border-r border-gray-100 order-2 md:order-1 min-w-0">
+          <div className="md:col-span-7 p-6 flex flex-col bg-white overflow-y-auto border-b md:border-b-0 md:border-r border-gray-100 order-2 md:order-1 min-w-0">
             <div className="space-y-4 flex-1 flex flex-col min-w-0">
               <div className="w-full">
                 <h4 className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wider">
@@ -125,7 +125,7 @@ export function ViewAssignedReport({
                 </div>
               </div>
 
-              <div className="flex-1 w-full">
+              <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">
                   Description
                 </h4>
@@ -308,6 +308,7 @@ export function ViewAssignedReport({
               <Button
                 type="submit"
                 className="h-11 px-8 text-base shadow-lg shadow-primary/20 hover:shadow-primary/40 rounded-lg"
+                disabled={isPending}
               >
                 Confirm
               </Button>
