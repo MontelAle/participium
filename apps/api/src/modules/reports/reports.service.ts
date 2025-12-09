@@ -258,6 +258,11 @@ export class ReportsService {
     const report = await this.findReportEntity(id);
 
     if (actor?.role?.name === 'external_maintainer') {
+      if (report.assignedExternalMaintainerId !== actor.id) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NOT_ASSIGNED_TO_REPORT,
+        );
+      }
       this.validateExternalMaintainerStatusChange(report, updateReportDto);
     }
 

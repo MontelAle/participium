@@ -25,6 +25,8 @@ export const REPORT_ERROR_MESSAGES = {
     categoryId: string,
   ) =>
     `External maintainer ${externalMaintainerId} does not belong to the external office responsible for category ${categoryId}`,
+  EXTERNAL_MAINTAINER_NOT_ASSIGNED_TO_REPORT:
+    'You can only modify reports assigned to you',
 } as const;
 
 export const ALLOWED_IMAGE_MIMETYPES = [
