@@ -178,11 +178,12 @@ participium/
 
 | Method | Route                    | Description                 |
 | ------ | ------------------------ | --------------------------- |
-| GET    | `/municipality`          | List municipal users        |
+| GET    | `/municipality`          | List municipal users (Admin, PR Officer only) |
 | GET    | `/municipality/user/:id` | User details                |
 | POST   | `/municipality`          | Create municipal user       |
 | POST   | `/municipality/user/:id` | Update user                 |
 | DELETE | `/municipality/user/:id` | Delete user                 |
+| GET    | `/external-maintainers`  | List external maintainers (optional categoryId filter) |
 | PATCH  | `/profile/me`            | Update regular user profile |
 
 **Functionality**:
@@ -205,7 +206,7 @@ participium/
   - Maximum size: 5MB
   - Automatic filename sanitization (path traversal protection)
   - Old pictures automatically deleted on replacement
-- **Security**: Municipality users (admin, officers) cannot edit their profile via this endpoint
+- **Security**: Municipality users (admin, technical officers) cannot edit their profile via this endpoint
 
 #### Roles Module
 
@@ -276,7 +277,7 @@ participium/
 - **Rejected Reports** (`status: 'rejected'`):
   - Regular citizens (`role: 'user'`) can only see their own rejected reports
   - Citizens attempting to access other users' rejected reports receive a 404 Not Found error
-  - Municipal users (admin, officers) can see all rejected reports
+  - Municipal users (admin, technical officers) can see all rejected reports
   - Rejected reports are excluded from nearby/map searches for all users
 
 - **PR Officer Filtering** (`role: 'pr_officer'`):
@@ -432,7 +433,7 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 | id          | string  | Primary key            | No       | varchar                                         |
 | name        | string  | Role name              | No       | varchar                                         |
 | label       | string  | Display label          | No       | varchar                                         |
-| isMunicipal | boolean | Municipality user flag | No       | true for admin/officers, false for external users |
+| isMunicipal | boolean | Municipality user flag | No       | true for admin/technical officers/PR officers, false for external users |
 
 #### Office
 
@@ -704,7 +705,7 @@ The platform implements role-based visibility controls for reports based on thei
 | :--------------------------------------------- | :-----------: | :--------------: | :---------: | :---------: | :------: | :---------------: | :------------: |
 | Citizen (`role: 'user'`)                       | Yes           | No               | Yes         | Yes         | Yes      | No                | Yes            |
 | PR Officer (`role: 'pr_officer'`)              | -             | Yes              | No          | No          | No       | No                | -              |
-| Technical Officer (`role: 'officer'`)          | -             | Yes              | Yes         | Yes         | Yes      | Yes               | -              |
+| Technical Officer (`role: 'tech_officer'`)     | -             | Yes              | Yes         | Yes         | Yes      | Yes               | -              |
 | Admin (`role: 'admin'`)                        | -             | Yes              | Yes         | Yes         | Yes      | Yes               | -              |
 | External Maintainer (`role: 'external_maintainer'`) | -       | No               | Only Assigned| Only Assigned| Only Assigned | No          | -              |
 
@@ -766,10 +767,12 @@ For categories that require external service providers, the system supports assi
     - External Maintainer users are created with role `external_maintainer` and must be assigned to an external office
 
 2.  **Assignment to External Maintainer**:
-    - PR Officers or Technical Officers can assign reports to specific external maintainers
+    - Technical Officers can assign reports to specific external maintainers (filtered by category if needed)
+    - Technical Officers can query available external maintainers via `GET /users/external-maintainers?categoryId=xxx`
     - Assignment sets the `assignedExternalMaintainerId` field on the report
     - Report status changes to `assigned`
     - Only users with role `external_maintainer` can be assigned
+    - System validates that assigned technical officer belongs to the correct office for the report's category
 
 3.  **External Maintainer View**:
     - External Maintainers can only view reports assigned to them

@@ -166,10 +166,10 @@ export class ReportsController {
   }
 
   /**
-   * Finds reports assigned to a specific user (officer).
+   * Finds reports assigned to a specific user (technical officer).
    *
    * @throws {401} Unauthorized - Invalid or missing session
-   * @throws {403} Forbidden - Insufficient permissions (pr_officer, or officer role required)
+   * @throws {403} Forbidden - Insufficient permissions (pr_officer, or tech_officer role required)
    * */
   @Get('/user/:userId')
   @UseGuards(SessionGuard, RolesGuard)

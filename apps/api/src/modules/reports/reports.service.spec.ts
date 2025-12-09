@@ -839,7 +839,7 @@ describe('ReportsService', () => {
       expect(result.user).toEqual(mockCitizenUser);
     });
 
-    it('should show user info if report is anonymous but viewer has privileged role (officer)', async () => {
+    it('should show user info if report is anonymous but viewer has privileged role (tech_officer)', async () => {
       const anonymousReport = {
         ...mockReport,
         userId: 'user-123',
