@@ -20,7 +20,7 @@ export class OfficesController {
    * @throws {403} Forbidden - Insufficient permissions (admin role required)
    */
   @Get()
-  @Roles('admin', 'pr_officer')
+  @Roles('admin', 'pr_officer', 'tech_officer')
   async findAll(): Promise<OfficesResponseDto> {
     const offices = await this.officesService.findAll();
     return { success: true, data: offices };

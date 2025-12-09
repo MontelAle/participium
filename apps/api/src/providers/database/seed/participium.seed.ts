@@ -20,27 +20,97 @@ import { MinioProvider } from '../../minio/minio.provider';
 // ============================================================================
 
 const OFFICES_DATA = [
-  { name: 'maintenance', label: 'Maintenance and Technical Services' },
-  { name: 'infrastructure', label: 'Infrastructure' },
-  { name: 'public_services', label: 'Local Public Services' },
-  { name: 'environment', label: 'Environment Quality' },
-  { name: 'green_parks', label: 'Green Areas and Parks' },
-  { name: 'civic_services', label: 'Decentralization and Civic Services' },
-  { name: 'organization_office', label: 'Organization Office' },
+  {
+    name: 'maintenance',
+    label: 'Maintenance and Technical Services',
+    isExternal: false,
+  },
+  { name: 'infrastructure', label: 'Infrastructure', isExternal: false },
+  {
+    name: 'public_services',
+    label: 'Local Public Services',
+    isExternal: false,
+  },
+  { name: 'environment', label: 'Environment Quality', isExternal: false },
+  { name: 'green_parks', label: 'Green Areas and Parks', isExternal: false },
+  {
+    name: 'civic_services',
+    label: 'Decentralization and Civic Services',
+    isExternal: false,
+  },
+  {
+    name: 'organization_office',
+    label: 'Organization Office',
+    isExternal: false,
+  },
+];
+
+const EXTERNAL_OFFICES_DATA = [
+  {
+    name: 'external_company_1',
+    label: 'External Company 1',
+    isExternal: true,
+  },
+  {
+    name: 'external_company_2',
+    label: 'External Company 2',
+    isExternal: true,
+  },
+  {
+    name: 'external_company_3',
+    label: 'External Company 3',
+    isExternal: true,
+  },
 ];
 
 const BOUNDARIES_DATA = [{ name: 'torino', label: 'Comune di Torino' }];
 
 const CATEGORIES_DATA = [
-  { name: 'Roads and Urban Furnishings', office: 'maintenance' },
-  { name: 'Architectural Barriers', office: 'maintenance' },
-  { name: 'Road Signs and Traffic Lights', office: 'infrastructure' },
-  { name: 'Public Lighting', office: 'infrastructure' },
-  { name: 'Water Supply – Drinking Water', office: 'public_services' },
-  { name: 'Sewer System', office: 'public_services' },
-  { name: 'Waste', office: 'environment' },
-  { name: 'Public Green Areas and Playgrounds', office: 'green_parks' },
-  { name: 'Other', office: 'civic_services' },
+  {
+    name: 'Roads and Urban Furnishings',
+    office: 'maintenance',
+    externalOffice: 'external_company_1',
+  },
+  {
+    name: 'Architectural Barriers',
+    office: 'maintenance',
+    externalOffice: 'external_company_2',
+  },
+  {
+    name: 'Road Signs and Traffic Lights',
+    office: 'infrastructure',
+    externalOffice: 'external_company_3',
+  },
+  {
+    name: 'Public Lighting',
+    office: 'infrastructure',
+    externalOffice: 'external_company_1',
+  },
+  {
+    name: 'Water Supply – Drinking Water',
+    office: 'public_services',
+    externalOffice: 'external_company_2',
+  },
+  {
+    name: 'Sewer System',
+    office: 'public_services',
+    externalOffice: 'external_company_3',
+  },
+  {
+    name: 'Waste',
+    office: 'environment',
+    externalOffice: 'external_company_1',
+  },
+  {
+    name: 'Public Green Areas and Playgrounds',
+    office: 'green_parks',
+    externalOffice: 'external_company_2',
+  },
+  {
+    name: 'Other',
+    office: 'civic_services',
+    externalOffice: 'external_company_3',
+  },
 ];
 
 const ROLES_DATA = [
@@ -48,7 +118,11 @@ const ROLES_DATA = [
   { name: 'admin', label: 'Admin', isMunicipal: true },
   { name: 'pr_officer', label: 'PR Officer', isMunicipal: true },
   { name: 'tech_officer', label: 'Technical Officer', isMunicipal: true },
-  { name: 'external_maintainer', label: 'External Maintainer', isMunicipal: false },
+  {
+    name: 'external_maintainer',
+    label: 'External Maintainer',
+    isMunicipal: false,
+  },
 ];
 
 const CITIZENS_DATA = [
@@ -239,7 +313,9 @@ async function seedOffices(
 ): Promise<Map<string, Office>> {
   const officesMap = new Map<string, Office>();
 
-  for (const officeData of OFFICES_DATA) {
+  const OFFICES = [...OFFICES_DATA, ...EXTERNAL_OFFICES_DATA];
+
+  for (const officeData of OFFICES) {
     let office = await officeRepo.findOne({ where: { name: officeData.name } });
 
     if (!office) {
@@ -247,6 +323,7 @@ async function seedOffices(
         id: nanoid(),
         name: officeData.name,
         label: officeData.label,
+        isExternal: officeData.isExternal,
       });
       await officeRepo.save(office);
     }
@@ -308,11 +385,13 @@ async function seedCategories(
 
     if (!category) {
       const assignedOffice = officesMap.get(categoryData.office);
+      const externalOffice = officesMap.get(categoryData.externalOffice);
       if (assignedOffice) {
         category = categoryRepo.create({
           id: nanoid(),
           name: categoryData.name,
           office: assignedOffice,
+          externalOffice: externalOffice || null,
         });
         await categoryRepo.save(category);
       }
@@ -430,6 +509,24 @@ async function seedMunicipalUsers(context: UserCreationContext): Promise<void> {
       email: `pr.officer.${i}@participium.com`,
       officeName: 'organization_office',
     });
+  }
+}
+
+async function seedExternalMaintainers(
+  context: UserCreationContext,
+): Promise<void> {
+  for (const officeData of EXTERNAL_OFFICES_DATA) {
+    for (let i = 1; i <= 2; i++) {
+      const externalMaintainerUsername = `${officeData.name}_${i}`;
+      await createUserWithAccountAndProfile(context, {
+        username: externalMaintainerUsername,
+        roleName: 'external_maintainer',
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+        email: `${externalMaintainerUsername}@participium.com`.toLowerCase(),
+        officeName: officeData.name,
+      });
+    }
   }
 }
 
@@ -663,6 +760,7 @@ export async function seedDatabase(
   };
 
   await seedMunicipalUsers(userContext);
+  await seedExternalMaintainers(userContext);
   const citizenUsers = await seedCitizenUsers(userContext);
 
   await seedReports(

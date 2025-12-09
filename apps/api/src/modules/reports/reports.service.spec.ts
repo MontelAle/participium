@@ -39,9 +39,13 @@ const createMockQueryBuilder = () => ({
 
 const createMockBoundaryQueryBuilder = (withinBoundary: boolean = true) => ({
   where: jest.fn().mockReturnThis(),
-  getOne: jest.fn().mockResolvedValue(
-    withinBoundary ? { id: 'torino', name: 'torino', label: 'Comune di Torino' } : null,
-  ),
+  getOne: jest
+    .fn()
+    .mockResolvedValue(
+      withinBoundary
+        ? { id: 'torino', name: 'torino', label: 'Comune di Torino' }
+        : null,
+    ),
 });
 
 describe('ReportsService', () => {
@@ -108,7 +112,9 @@ describe('ReportsService', () => {
         {
           provide: getRepositoryToken(Boundary),
           useValue: {
-            createQueryBuilder: jest.fn(() => createMockBoundaryQueryBuilder(true)),
+            createQueryBuilder: jest.fn(() =>
+              createMockBoundaryQueryBuilder(true),
+            ),
           },
         },
         {
@@ -639,7 +645,12 @@ describe('ReportsService', () => {
       const filters: FilterReportsDto = {};
       const mockReports = [
         { ...mockReport, status: ReportStatus.PENDING },
-        { ...mockReport, id: 'own-rejected', status: ReportStatus.REJECTED, userId: 'user-123' },
+        {
+          ...mockReport,
+          id: 'own-rejected',
+          status: ReportStatus.REJECTED,
+          userId: 'user-123',
+        },
       ];
 
       const mockQueryBuilder = {
@@ -701,8 +712,18 @@ describe('ReportsService', () => {
       const filters: FilterReportsDto = {};
       const mockReports = [
         { ...mockReport, status: ReportStatus.PENDING },
-        { ...mockReport, id: 'rejected-1', status: ReportStatus.REJECTED, userId: 'user-123' },
-        { ...mockReport, id: 'rejected-2', status: ReportStatus.REJECTED, userId: 'other-user' },
+        {
+          ...mockReport,
+          id: 'rejected-1',
+          status: ReportStatus.REJECTED,
+          userId: 'user-123',
+        },
+        {
+          ...mockReport,
+          id: 'rejected-2',
+          status: ReportStatus.REJECTED,
+          userId: 'other-user',
+        },
       ];
 
       const mockQueryBuilder = {
@@ -892,9 +913,7 @@ describe('ReportsService', () => {
       ).rejects.toThrow(NotFoundException);
       await expect(
         service.findOne('rejected-123', mockCitizenUser),
-      ).rejects.toThrow(
-        REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('rejected-123'),
-      );
+      ).rejects.toThrow(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('rejected-123'));
     });
 
     it('should allow citizen to access their own rejected report', async () => {
@@ -957,7 +976,10 @@ describe('ReportsService', () => {
         assignedReport as unknown as Report,
       );
 
-      const result = await service.findOne('assigned-report', externalMaintainer);
+      const result = await service.findOne(
+        'assigned-report',
+        externalMaintainer,
+      );
 
       expect(result.id).toBe('assigned-report');
       expect(result.assignedExternalMaintainerId).toBe('ext-maint-1');
@@ -1104,7 +1126,13 @@ describe('ReportsService', () => {
 
       expect(reportRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'mocked-id' },
-        relations: ['user', 'user.role', 'category', 'assignedOfficer'],
+        relations: [
+          'user',
+          'user.role',
+          'category',
+          'assignedOfficer',
+          'assignedExternalMaintainer',
+        ],
       });
       expect(reportRepository.save).toHaveBeenCalledWith({
         ...mockReport,
@@ -1535,9 +1563,7 @@ describe('ReportsService', () => {
       reportRepository.findOne.mockResolvedValue(mockReport as Report);
       userRepository.findOne.mockResolvedValue(mockRegularUser);
 
-      await expect(
-        service.update('mocked-id', updateDto),
-      ).rejects.toThrow(
+      await expect(service.update('mocked-id', updateDto)).rejects.toThrow(
         new BadRequestException(
           REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_USER,
         ),
