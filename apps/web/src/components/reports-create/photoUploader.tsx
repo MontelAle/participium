@@ -1,13 +1,16 @@
 import { cn } from '@/lib/utils';
+import type { PhotoUploaderProps } from '@/types';
 import { Camera, Plus, UploadCloud, X } from 'lucide-react';
-import { ChangeEvent, useCallback, useEffect, useRef, useState, DragEvent, KeyboardEvent } from 'react';
+import {
+  ChangeEvent,
+  DragEvent,
+  KeyboardEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { toast } from 'sonner';
-
-interface PhotoUploaderProps {
-  photos: File[];
-  onChange: (photos: File[]) => void;
-  maxPhotos?: number;
-}
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE_MB = 5;
@@ -146,9 +149,7 @@ export function PhotoUploader({
               {!isDragging && photos.length === 0 && (
                 <Camera className="size-7" />
               )}
-              {!isDragging && photos.length > 0 && (
-                <Plus className="size-6" />
-              )}
+              {!isDragging && photos.length > 0 && <Plus className="size-6" />}
             </div>
 
             <div className="text-center space-y-1">

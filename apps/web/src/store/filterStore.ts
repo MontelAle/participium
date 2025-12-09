@@ -1,7 +1,7 @@
-import { FilterState } from '@/types';
+import { ReportFilterState } from '@/types';
 import { create } from 'zustand';
 
-export const useFilterStore = create<FilterState>((set) => ({
+export const useFilterStore = create<ReportFilterState>((set) => ({
   searchTerm: '',
   showOnlyMyReports: false,
   filters: {

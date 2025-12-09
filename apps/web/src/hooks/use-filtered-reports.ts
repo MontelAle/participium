@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useReports } from '@/hooks/use-reports';
 import { useFilterStore } from '@/store/filterStore';
-import type { Filters } from '@/types/index';
+import type { ReportFilters } from '@/types/index';
 import { DateCheckStrategy } from '@/types/ui';
 import type { Report, User } from '@repo/api';
 import {
@@ -48,7 +48,10 @@ const failsSearchCheck = (report: Report, searchTerm: string): boolean => {
   return !(titleMatch || addressMatch || categoryMatch);
 };
 
-const failsStaticFilters = (report: Report, filters: Filters): boolean => {
+const failsStaticFilters = (
+  report: Report,
+  filters: ReportFilters,
+): boolean => {
   if (!filters) return false;
 
   if (filters.status && report.status !== filters.status) return true;
@@ -83,7 +86,7 @@ const failsCustomDateCheck = (
 
 const failsDateCheck = (
   report: Report,
-  filters: Filters,
+  filters: ReportFilters,
   today: Date,
 ): boolean => {
   if (!filters) return false;

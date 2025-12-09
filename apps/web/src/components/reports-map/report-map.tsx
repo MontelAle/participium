@@ -11,8 +11,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import type { OSMAddress, OSMSearchResult, StatusMarker } from '@/types';
-import { MapControls, SearchBox } from './map-controls';
+import type {
+  NominatimAddressData,
+  NominatimSearchResult,
+  StatusMarker,
+} from '@/types';
+import { MapControls } from './map-controls';
+import { SearchBox } from './map-searchbox';
 import {
   DEFAULT_COLOR,
   escapeHtml,
@@ -49,7 +54,9 @@ export default function ReportsMap() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<OSMSearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<NominatimSearchResult[]>(
+    [],
+  );
   const [mapType, setMapType] = useState<'standard' | 'satellite'>('standard');
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -161,7 +168,7 @@ export default function ReportsMap() {
   const handleLocationSelect = async (
     lat: number,
     lng: number,
-    prefilledAddress?: OSMAddress,
+    prefilledAddress?: NominatimAddressData,
     skipBoundaryCheck = false,
   ) => {
     const map = mapInstanceRef.current;

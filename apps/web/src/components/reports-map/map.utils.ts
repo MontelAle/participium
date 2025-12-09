@@ -1,4 +1,4 @@
-import { Filters, OSMAddress } from '@/types';
+import { Filters, NominatimAddressData } from '@/types';
 import { Report, ReportStatus } from '@repo/api';
 import {
   endOfDay,
@@ -190,7 +190,7 @@ export function escapeHtml(str: string) {
     .replaceAll("'", '&#039;');
 }
 
-export function formatShortAddress(addr: OSMAddress, raw: string) {
+export function formatShortAddress(addr: NominatimAddressData, raw: string) {
   const street = (
     addr?.address.road ||
     addr?.address.pedestrian ||
