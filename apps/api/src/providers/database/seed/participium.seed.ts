@@ -476,7 +476,7 @@ async function createUserWithAccountAndProfile(
 
 async function seedMunicipalUsers(context: UserCreationContext): Promise<void> {
   await createUserWithAccountAndProfile(context, {
-    username: 'admin',
+    username: 'system_admin',
     roleName: 'admin',
     firstName: 'System',
     lastName: 'Admin',

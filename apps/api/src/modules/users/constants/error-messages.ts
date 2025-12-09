@@ -3,6 +3,7 @@ export const USER_ERROR_MESSAGES = {
   MUNICIPALITY_USER_NOT_FOUND: 'Municipality user not found',
   PROFILE_NOT_FOUND: 'User not found',
   ROLE_NOT_FOUND: 'Role not found',
+  OFFICE_NOT_FOUND: 'Office not found',
   USERNAME_ALREADY_EXISTS: 'User with this username already exists',
   EMAIL_ALREADY_EXISTS: 'User with this email already exists',
   INVALID_PROFILE_PICTURE_TYPE: (mimetype: string) =>

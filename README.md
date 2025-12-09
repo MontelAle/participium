@@ -137,7 +137,7 @@ On the first run, the system **automatically seeds** the database with sample us
 | Citizen (registered on platform) | `mario_rossi`, `luigi_verdi` | `password` |
 | Municipal Public Relations Officer | `pr_officer_1` | `password`|
 | Municipal Technical Officer | `tech_infrastructure_1` | `password`|
-| System Admin | `admin` | `password`|
+| System Admin | `system_admin` | `password`|
 
 Note: External Maintainer and External Company credentials will be added in future updates.
 

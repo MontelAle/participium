@@ -9,9 +9,13 @@ import {
   TableRow,
 } from '@/components/ui/shadcn-io/table';
 import type { Report } from '@repo/api';
-import type { CellContext } from '@tanstack/react-table';
+import {
+  type CellContext,
+  type ColumnDef,
+  createColumnHelper,
+} from '@tanstack/react-table';
 import { Eye } from 'lucide-react';
-import * as React from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export type ReportsTableProps = {
@@ -49,7 +53,7 @@ const StatusCell = ({ getValue }: CellContext<Report, Report['status']>) => {
 const OperationsCell = ({
   row,
   viewBasePath,
-}: CellContext<Report, void> & { viewBasePath: string }) => {
+}: CellContext<Report, unknown> & { viewBasePath: string }) => {
   const navigate = useNavigate();
   const report = row.original;
 
@@ -68,41 +72,37 @@ const OperationsCell = ({
   );
 };
 
+const columnHelper = createColumnHelper<Report>();
+
+const getColumns = (viewBasePath: string): ColumnDef<Report, any>[] => [
+  columnHelper.accessor('title', {
+    header: 'Title',
+  }),
+  columnHelper.accessor('category', {
+    header: 'Category',
+    cell: CategoryCell,
+  }),
+  columnHelper.accessor('status', {
+    header: 'Status',
+    cell: StatusCell,
+  }),
+  columnHelper.display({
+    id: 'operations',
+    header: 'Operations',
+    cell: (props) => <OperationsCell {...props} viewBasePath={viewBasePath} />,
+  }),
+];
+
 export function ReportsTable({
   data,
   viewBasePath,
 }: Readonly<ReportsTableProps>) {
-  const columns = React.useMemo(
-    () => [
-      {
-        accessorKey: 'title',
-        header: 'Title',
-      },
-      {
-        accessorKey: 'category',
-        header: 'Category',
-        cell: CategoryCell,
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: StatusCell,
-      },
-      {
-        id: 'operations',
-        header: 'Operations',
-        cell: (props: CellContext<Report, void>) => (
-          <OperationsCell {...props} viewBasePath={viewBasePath} />
-        ),
-      },
-    ],
-    [viewBasePath],
-  );
+  const columns = useMemo(() => getColumns(viewBasePath), [viewBasePath]);
 
   return (
     <div className="relative w-full overflow-auto rounded-md border">
       <div className="min-w-[800px]">
-        <TableProvider columns={columns as any} data={data}>
+        <TableProvider columns={columns} data={data}>
           <TableHeader>
             {({ headerGroup }) => (
               <TableHeaderGroup
@@ -112,11 +112,7 @@ export function ReportsTable({
                 {({ header }) => (
                   <TableColumnHeader
                     column={header.column}
-                    title={
-                      typeof header.column.columnDef.header === 'function'
-                        ? header.column.columnDef.header(header.getContext())
-                        : header.column.columnDef.header
-                    }
+                    title={header.column.columnDef.header as string}
                     className="h-12 text-sm font-semibold text-muted-foreground px-4 first:pl-6"
                   />
                 )}

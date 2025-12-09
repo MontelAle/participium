@@ -24,6 +24,7 @@ describe('UsersController', () => {
       createMunicipalityUser: jest.fn(),
       deleteMunicipalityUserById: jest.fn(),
       updateMunicipalityUserById: jest.fn(),
+      findExternalMaintainers: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -199,6 +200,35 @@ describe('UsersController', () => {
       await expect(
         controller.updateMunicipalityUserById('1', dto),
       ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('getExternalMaintainers', () => {
+    it('should return all external maintainers when no categoryId provided', async () => {
+      const mockMaintainers: Partial<User>[] = [
+        { id: '1', username: 'maintainer1' },
+        { id: '2', username: 'maintainer2' },
+      ];
+
+      usersService.findExternalMaintainers.mockResolvedValue(mockMaintainers as User[]);
+
+      const result = await controller.getExternalMaintainers();
+
+      expect(usersService.findExternalMaintainers).toHaveBeenCalledWith(undefined);
+      expect(result).toEqual({ success: true, data: mockMaintainers });
+    });
+
+    it('should return filtered external maintainers when categoryId provided', async () => {
+      const mockMaintainers: Partial<User>[] = [
+        { id: '1', username: 'maintainer1' },
+      ];
+
+      usersService.findExternalMaintainers.mockResolvedValue(mockMaintainers as User[]);
+
+      const result = await controller.getExternalMaintainers('category-1');
+
+      expect(usersService.findExternalMaintainers).toHaveBeenCalledWith('category-1');
+      expect(result).toEqual({ success: true, data: mockMaintainers });
     });
   });
 });

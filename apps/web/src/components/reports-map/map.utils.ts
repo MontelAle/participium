@@ -1,4 +1,4 @@
-import { NominatimAddressData, ReportFilters } from '@/types';
+import { NominatimSearchResult, ReportFilters } from '@/types';
 import { Report, ReportStatus } from '@repo/api';
 import {
   endOfDay,
@@ -190,16 +190,18 @@ export function escapeHtml(str: string) {
     .replaceAll("'", '&#039;');
 }
 
-export function formatShortAddress(addr: NominatimAddressData, raw: string) {
-  const street = (
-    addr?.address.road ||
-    addr?.address.pedestrian ||
-    addr?.address.path ||
-    ''
-  ).trim();
-  const number = (addr?.address.house_number || '').toString().trim();
+// FIX: Usiamo NominatimSearchResult e accediamo a .address in modo sicuro
+export function formatShortAddress(item: NominatimSearchResult, raw: string) {
+  const addr = item.address;
+
+  // Se non c'è l'oggetto address strutturato, fallback al nome grezzo
+  if (!addr) return raw.split(',')[0] || '';
+
+  const street = (addr.road || addr.pedestrian || addr.path || '').trim();
+  const number = (addr.house_number || '').toString().trim();
+
   if (street && number) return `${street}, ${number}`;
-  return street || raw.split(',')[0];
+  return street || raw.split(',')[0] || '';
 }
 
 type Coordinate = [number, number];

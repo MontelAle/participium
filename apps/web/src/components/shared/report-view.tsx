@@ -20,7 +20,10 @@ export type ReportViewProps = {
   showAnonymous?: boolean;
 };
 
-export function ReportView({ report, showAnonymous = true }: ReportViewProps) {
+export function ReportView({
+  report,
+  showAnonymous = true,
+}: Readonly<ReportViewProps>) {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null,
   );

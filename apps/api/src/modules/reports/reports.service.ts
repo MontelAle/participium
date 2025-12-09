@@ -274,6 +274,11 @@ export class ReportsService {
     const report = await this.findReportEntity(id);
 
     if (actor?.role?.name === 'external_maintainer') {
+      if (report.assignedExternalMaintainerId !== actor.id) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NOT_ASSIGNED_TO_REPORT,
+        );
+      }
       this.validateExternalMaintainerStatusChange(report, updateReportDto);
     }
 
@@ -418,20 +423,40 @@ export class ReportsService {
     if (assignedExternalMaintainerId) {
       const externalMaintainer = await this.userRepository.findOne({
         where: { id: assignedExternalMaintainerId },
-        relations: ['role'],
+        relations: ['role', 'office'],
       });
 
       if (
-        externalMaintainer &&
-        externalMaintainer.role?.name === 'external_maintainer'
+        !externalMaintainer ||
+        externalMaintainer.role?.name !== 'external_maintainer'
       ) {
-        report.assignedExternalMaintainer = externalMaintainer;
-        report.assignedExternalMaintainerId = externalMaintainer.id;
-      } else {
         throw new BadRequestException(
           REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_USER,
         );
       }
+
+      // Validate external maintainer belongs to the correct office for the report's category
+      const category =
+        report.category ||
+        (await this.categoryRepository.findOne({
+          where: { id: report.categoryId },
+          relations: ['externalOffice'],
+        }));
+
+      if (
+        category?.externalOffice &&
+        externalMaintainer.officeId !== category.externalOffice.id
+      ) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NOT_FOR_CATEGORY(
+            assignedExternalMaintainerId,
+            report.categoryId,
+          ),
+        );
+      }
+
+      report.assignedExternalMaintainer = externalMaintainer;
+      report.assignedExternalMaintainerId = externalMaintainer.id;
     } else {
       report.assignedExternalMaintainer = null;
       report.assignedExternalMaintainerId = null;

@@ -1,16 +1,16 @@
 import { ConflictException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
-import { Account } from '../../common/entities/account.entity';
-import { Session } from '../../common/entities/session.entity';
-import { Role } from '../../common/entities/role.entity';
-import { RegisterDto } from '../../common/dto/auth.dto';
-import { nanoid } from 'nanoid';
-import { ConfigService } from '@nestjs/config';
-import { createHash } from 'node:crypto';
 import { instanceToPlain } from 'class-transformer';
+import { nanoid } from 'nanoid';
+import { createHash } from 'node:crypto';
+import { Repository } from 'typeorm';
+import { RegisterDto } from '../../common/dto/auth.dto';
+import { Account } from '../../common/entities/account.entity';
 import { Profile } from '../../common/entities/profile.entity';
+import { Role } from '../../common/entities/role.entity';
+import { Session } from '../../common/entities/session.entity';
 import { User } from '../../common/entities/user.entity';
 
 @Injectable()
@@ -49,76 +49,58 @@ export class AuthService {
   async register(dto: RegisterDto) {
     const { email, username, firstName, lastName, password } = dto;
 
+    const existingUser = await this.userRepository.findOne({
+      where: [{ email }, { username }],
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Username or Email already in use');
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return this.userRepository.manager.transaction(async (manager) => {
-      let userRole = await manager
+      const userRole = await manager
         .getRepository(Role)
         .findOne({ where: { name: 'user' } });
+
       if (!userRole) {
-        userRole = manager
-          .getRepository(Role)
-          .create({ id: nanoid(), name: 'user' });
-        await manager.getRepository(Role).save(userRole);
+        throw new ConflictException(
+          'Default role "user" not found. Contact support.',
+        );
       }
 
-      let user = await manager.getRepository(User).findOne({
-        where: { username },
-        relations: ['role'],
+      const newUser = manager.getRepository(User).create({
+        id: nanoid(),
+        email,
+        username,
+        firstName,
+        lastName,
+        role: userRole,
       });
 
-      if (user) {
-        const account = await manager.getRepository(Account).findOne({
-          where: { providerId: 'local', accountId: username },
-        });
+      const savedUser = await manager.getRepository(User).save(newUser);
 
-        if (account) {
-          throw new ConflictException('User with this username already exists');
-        }
+      const profile = manager.getRepository(Profile).create({
+        id: nanoid(),
+        userId: savedUser.id,
+        user: savedUser,
+      });
 
-        const newAccount = manager.getRepository(Account).create({
-          id: nanoid(),
-          accountId: username,
-          providerId: 'local',
-          userId: user.id,
-          password: hashedPassword,
-          user: user,
-        });
+      await manager.getRepository(Profile).save(profile);
 
-        await manager.getRepository(Account).save(newAccount);
-      } else {
-        const newUser = manager.getRepository(User).create({
-          id: nanoid(),
-          email,
-          username,
-          firstName,
-          lastName,
-          role: userRole,
-        });
+      const newAccount = manager.getRepository(Account).create({
+        id: nanoid(),
+        accountId: username,
+        providerId: 'local',
+        userId: savedUser.id,
+        password: hashedPassword,
+        user: savedUser,
+      });
 
-        user = await manager.getRepository(User).save(newUser);
+      await manager.getRepository(Account).save(newAccount);
 
-        const profile = manager.getRepository(Profile).create({
-          id: nanoid(),
-          user: user,
-          userId: user.id,
-        });
-
-        await manager.getRepository(Profile).save(profile);
-
-        const newAccount = manager.getRepository(Account).create({
-          id: nanoid(),
-          accountId: username,
-          providerId: 'local',
-          userId: user.id,
-          password: hashedPassword,
-          user: user,
-        });
-
-        await manager.getRepository(Account).save(newAccount);
-      }
-
-      return { user };
+      return { user: savedUser };
     });
   }
 

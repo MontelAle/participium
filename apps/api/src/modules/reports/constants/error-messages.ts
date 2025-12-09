@@ -20,6 +20,13 @@ export const REPORT_ERROR_MESSAGES = {
     `Officer ${officerId} does not belong to the office responsible for category ${categoryId}`,
   OFFICER_NOT_FOUND: (officerId: string) =>
     `Officer with ID ${officerId} not found`,
+  EXTERNAL_MAINTAINER_NOT_FOR_CATEGORY: (
+    externalMaintainerId: string,
+    categoryId: string,
+  ) =>
+    `External maintainer ${externalMaintainerId} does not belong to the external office responsible for category ${categoryId}`,
+  EXTERNAL_MAINTAINER_NOT_ASSIGNED_TO_REPORT:
+    'You can only modify reports assigned to you',
 } as const;
 
 export const ALLOWED_IMAGE_MIMETYPES = [

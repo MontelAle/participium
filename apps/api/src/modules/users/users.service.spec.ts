@@ -419,19 +419,20 @@ describe('UsersService', () => {
       );
     });
 
-    it('should handle officeId set to non-existent office (set null)', async () => {
+    it('should throw NotFoundException when office is not found', async () => {
       userRepository.findOne.mockResolvedValue(mockUser);
       officeRepository.findOne.mockResolvedValue(null);
 
-      await service.updateMunicipalityUserById('user-1', {
-        officeId: 'bad-office',
-      });
-
-      expect(userRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          officeId: null,
+      await expect(
+        service.updateMunicipalityUserById('user-1', {
+          officeId: 'bad-office',
         }),
-      );
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.updateMunicipalityUserById('user-1', {
+          officeId: 'bad-office',
+        }),
+      ).rejects.toThrow(USER_ERROR_MESSAGES.OFFICE_NOT_FOUND);
     });
 
     it('should update user without changing username or email', async () => {
