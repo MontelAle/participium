@@ -69,47 +69,47 @@ const CATEGORIES_DATA = [
   {
     name: 'Roads and Urban Furnishings',
     office: 'maintenance',
-    externalOffice: 'external_maintainer_1',
+    externalOffice: 'external_office_1',
   },
   {
     name: 'Architectural Barriers',
     office: 'maintenance',
-    externalOffice: 'external_maintainer_2',
+    externalOffice: 'external_office_2',
   },
   {
     name: 'Road Signs and Traffic Lights',
     office: 'infrastructure',
-    externalOffice: 'external_maintainer_3',
+    externalOffice: 'external_office_3',
   },
   {
     name: 'Public Lighting',
     office: 'infrastructure',
-    externalOffice: 'external_maintainer_1',
+    externalOffice: 'external_office_1',
   },
   {
     name: 'Water Supply – Drinking Water',
     office: 'public_services',
-    externalOffice: 'external_maintainer_2',
+    externalOffice: 'external_office_2',
   },
   {
     name: 'Sewer System',
     office: 'public_services',
-    externalOffice: 'external_maintainer_3',
+    externalOffice: 'external_office_3',
   },
   {
     name: 'Waste',
     office: 'environment',
-    externalOffice: 'external_maintainer_1',
+    externalOffice: 'external_office_1',
   },
   {
     name: 'Public Green Areas and Playgrounds',
     office: 'green_parks',
-    externalOffice: 'external_maintainer_2',
+    externalOffice: 'external_office_2',
   },
   {
     name: 'Other',
     office: 'civic_services',
-    externalOffice: 'external_maintainer_3',
+    externalOffice: 'external_office_3',
   },
 ];
 
