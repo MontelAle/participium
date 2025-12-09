@@ -695,7 +695,7 @@ describe('ReportsService', () => {
     it('should NOT filter rejected reports for municipal users', async () => {
       const mockMunicipalUser = {
         id: 'officer-999',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
 
       const filters: FilterReportsDto = {};
@@ -849,7 +849,7 @@ describe('ReportsService', () => {
 
       const mockOfficerUser = {
         id: 'officer-999',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
 
       reportRepository.findOne.mockResolvedValue(
@@ -966,7 +966,7 @@ describe('ReportsService', () => {
     it('should allow municipal user to access any rejected report', async () => {
       const mockMunicipalUser = {
         id: 'officer-999',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
 
       const rejectedReport = {
@@ -1175,7 +1175,7 @@ describe('ReportsService', () => {
       const mockOfficer = {
         id: 'officer-1',
         username: 'officer_jane',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
 
       const updateDto: UpdateReportDto = {
@@ -1198,6 +1198,7 @@ describe('ReportsService', () => {
 
       expect(userRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'officer-1' },
+        relations: ['office'],
       });
       expect(reportRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -1216,11 +1217,11 @@ describe('ReportsService', () => {
 
       const mockOfficer1 = {
         id: 'officer-1',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
       const mockOfficer2 = {
         id: 'officer-2',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
 
       const reportWithCategory = {
@@ -1276,7 +1277,7 @@ describe('ReportsService', () => {
       } as Category;
       const mockOfficer = {
         id: 'officer-1',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
       const reportWithoutCategory = {
         ...mockReport,
@@ -1396,7 +1397,7 @@ describe('ReportsService', () => {
       } as Category;
       const mockOfficer = {
         id: 'officer-1',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
       const reportWithCategory = {
         ...mockReport,
@@ -1698,6 +1699,134 @@ describe('ReportsService', () => {
       expect(reportRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           explanation: 'Work in progress',
+        }),
+      );
+    });
+
+    it('should throw NotFoundException when officer does not exist', async () => {
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+        assignedOfficerId: 'invalid-officer',
+      };
+
+      reportRepository.findOne.mockResolvedValue(mockReport as Report);
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.update('mocked-id', updateDto)).rejects.toThrow(
+        new NotFoundException(
+          REPORT_ERROR_MESSAGES.OFFICER_NOT_FOUND('invalid-officer'),
+        ),
+      );
+    });
+
+    it('should throw BadRequestException when officer does not belong to category office', async () => {
+      const mockCategory = {
+        id: 'cat-1',
+        office: { id: 'office-1', name: 'Infrastructure' },
+      } as Category;
+
+      const mockOfficer = {
+        id: 'officer-1',
+        officeId: 'office-2',
+        office: { id: 'office-2', name: 'Environment' },
+      } as User;
+
+      const reportWithCategory = {
+        ...mockReport,
+        categoryId: 'cat-1',
+        category: mockCategory,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+        assignedOfficerId: 'officer-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithCategory);
+      userRepository.findOne.mockResolvedValue(mockOfficer);
+
+      await expect(service.update('mocked-id', updateDto)).rejects.toThrow(
+        new BadRequestException(
+          REPORT_ERROR_MESSAGES.OFFICER_NOT_FOR_CATEGORY('officer-1', 'cat-1'),
+        ),
+      );
+    });
+
+    it('should successfully assign officer that belongs to correct office', async () => {
+      const mockCategory = {
+        id: 'cat-1',
+        office: { id: 'office-1', name: 'Infrastructure' },
+      } as Category;
+
+      const mockOfficer = {
+        id: 'officer-1',
+        officeId: 'office-1',
+        office: { id: 'office-1', name: 'Infrastructure' },
+      } as User;
+
+      const reportWithCategory = {
+        ...mockReport,
+        categoryId: 'cat-1',
+        category: mockCategory,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+        assignedOfficerId: 'officer-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithCategory);
+      userRepository.findOne.mockResolvedValue(mockOfficer);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          assignedOfficer: mockOfficer,
+          assignedOfficerId: 'officer-1',
+        }),
+      );
+    });
+
+    it('should load category separately when not included in report', async () => {
+      const mockCategory = {
+        id: 'cat-1',
+        office: { id: 'office-1', name: 'Infrastructure' },
+      } as Category;
+
+      const mockOfficer = {
+        id: 'officer-1',
+        officeId: 'office-1',
+        office: { id: 'office-1', name: 'Infrastructure' },
+      } as User;
+
+      const reportWithoutCategory = {
+        ...mockReport,
+        categoryId: 'cat-1',
+        category: null,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+        assignedOfficerId: 'officer-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithoutCategory);
+      categoryRepository.findOne.mockResolvedValue(mockCategory);
+      userRepository.findOne.mockResolvedValue(mockOfficer);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(categoryRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'cat-1' },
+        relations: ['office'],
+      });
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          assignedOfficer: mockOfficer,
+          assignedOfficerId: 'officer-1',
         }),
       );
     });

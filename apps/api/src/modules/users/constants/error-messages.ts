@@ -16,6 +16,16 @@ export const USER_ERROR_MESSAGES = {
     'External maintainers must be assigned to an external office',
   REGULAR_USER_EXTERNAL_OFFICE:
     'Only external maintainers can be assigned to external offices',
+  CATEGORY_NOT_FOUND: (categoryId: string) =>
+    `Category with ID ${categoryId} not found`,
+  CATEGORY_NO_EXTERNAL_OFFICE: (categoryId: string) =>
+    `Category ${categoryId} does not have an external office assigned`,
+  NO_EXTERNAL_MAINTAINERS_FOR_CATEGORY: (categoryId: string) =>
+    `No external maintainers found for category ${categoryId}`,
+  CATEGORY_NO_OFFICE: (categoryId: string) =>
+    `Category ${categoryId} does not have an office assigned`,
+  NO_OFFICERS_FOR_CATEGORY: (categoryId: string) =>
+    `No officers found for category ${categoryId}`,
 } as const;
 
 export const ALLOWED_PROFILE_PICTURE_MIMETYPES = [

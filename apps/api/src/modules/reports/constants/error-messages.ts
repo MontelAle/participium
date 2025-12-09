@@ -16,6 +16,10 @@ export const REPORT_ERROR_MESSAGES = {
     targetStatus: string,
   ) =>
     `External maintainer cannot change status from ${currentStatus} to ${targetStatus}`,
+  OFFICER_NOT_FOR_CATEGORY: (officerId: string, categoryId: string) =>
+    `Officer ${officerId} does not belong to the office responsible for category ${categoryId}`,
+  OFFICER_NOT_FOUND: (officerId: string) =>
+    `Officer with ID ${officerId} not found`,
 } as const;
 
 export const ALLOWED_IMAGE_MIMETYPES = [
