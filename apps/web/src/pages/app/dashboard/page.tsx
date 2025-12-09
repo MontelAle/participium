@@ -17,7 +17,7 @@ import { useNavigate } from 'react-router-dom';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const { isAdminUser, isMunicipalPrOfficer, isTechnicalOfficer } = useAuth();
+  const { isAdminUser, isMunicipalPrOfficer, isTechnicalOfficer, isExternal } = useAuth();
 
   const { data: allUsers = [] } = useMunicipalityUsers();
   const municipalityUsers = isAdminUser ? allUsers : [];
@@ -116,7 +116,7 @@ const DashboardPage = () => {
       icon: CheckCircle,
       color: 'text-green-600',
       bgColor: 'bg-green-500/10',
-      isVisible: isTechnicalOfficer,
+      isVisible: isTechnicalOfficer ,
     },
   ];
 
@@ -179,6 +179,14 @@ const DashboardPage = () => {
               label="View My Reports"
               onClick={() => navigate('/app/assigned-reports')}
             />
+          )}
+
+          {isExternal && (
+            <ActionButton
+              icon={FileText} 
+              label="View Reports"
+              onClick={() => navigate('/app/external/assigned-reports')} 
+            />  
           )}
         </div>
       </div>
