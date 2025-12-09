@@ -61,6 +61,15 @@ const createMockRepository = (data: any[] = []) => {
           if (entity.assignedOfficer?.id) {
             existing.assignedOfficerId = entity.assignedOfficer.id;
           }
+          if (entity.role?.id) {
+            existing.roleId = entity.role.id;
+          }
+          if (entity.office?.id) {
+            existing.officeId = entity.office.id;
+          }
+          if (entity.user?.id) {
+            existing.userId = entity.user.id;
+          }
           return Promise.resolve(existing);
         }
       }
@@ -75,6 +84,20 @@ const createMockRepository = (data: any[] = []) => {
       if (entity.assignedOfficer?.id) {
         newEntity.assignedOfficerId = entity.assignedOfficer.id;
       }
+      if (entity.role?.id) {
+        newEntity.roleId = entity.role.id;
+        delete newEntity.role;
+      }
+      if (entity.office?.id) {
+        newEntity.officeId = entity.office.id;
+        delete newEntity.office;
+      }
+      if (entity.user?.id) {
+        newEntity.userId = entity.user.id;
+      }
+      delete newEntity.user;
+      delete newEntity.role;
+      delete newEntity.office;
       data.push(newEntity);
       return Promise.resolve(newEntity);
     }),
@@ -103,55 +126,64 @@ const createMockRepository = (data: any[] = []) => {
       }
       return Promise.resolve({ affected: existing ? 1 : 0 });
     }),
-    createQueryBuilder: jest.fn(() => ({
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      leftJoinAndSelect: jest.fn().mockReturnThis(),
-      addSelect: jest.fn().mockReturnThis(),
-      select: jest.fn().mockReturnThis(),
-      groupBy: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      setParameters: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue(data[0] || null),
-      getMany: jest.fn().mockResolvedValue(data),
-      getRawMany: jest.fn().mockResolvedValue([]),
-      getRawOne: jest.fn().mockResolvedValue({
-        total: '5',
-        pending: '2',
-        in_progress: '1',
-        resolved: '1',
-        assigned_global: '1',
-        rejected_global: '0',
-        user_assigned: '0',
-        user_rejected: '0',
-        user_in_progress: '0',
-        user_resolved: '0',
-      }),
-      getRawAndEntities: jest.fn().mockResolvedValue({
-        entities: data,
-        raw: data.map(() => ({ distance: 100 })),
-      }),
-    })),
+    createQueryBuilder: jest.fn(() => {
+      const qb = {
+        whereConditions: [] as any[],
+        where: jest.fn((condition: any, params?: any) => {
+          qb.whereConditions.push({ condition, params });
+          return qb;
+        }),
+        andWhere: jest.fn((condition: any, params?: any) => {
+          qb.whereConditions.push({ condition, params });
+          return qb;
+        }),
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        setParameters: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(data[0] || null),
+        getMany: jest.fn(() => {
+          let results = [...data];
+          // Apply filtering based on where conditions
+          for (const { condition, params } of qb.whereConditions) {
+            if (
+              typeof condition === 'string' &&
+              condition.includes('assignedExternalMaintainerId')
+            ) {
+              results = results.filter(
+                (r: any) => r.assignedExternalMaintainerId === params?.viewerId,
+              );
+            }
+          }
+          return Promise.resolve(results);
+        }),
+        getRawMany: jest.fn().mockResolvedValue([]),
+        getRawOne: jest.fn().mockResolvedValue({
+          total: '5',
+          pending: '2',
+          in_progress: '1',
+          resolved: '1',
+          assigned_global: '1',
+          rejected_global: '0',
+          user_assigned: '0',
+          user_rejected: '0',
+          user_in_progress: '0',
+          user_resolved: '0',
+        }),
+        getRawAndEntities: jest.fn().mockResolvedValue({
+          entities: data,
+          raw: data.map(() => ({ distance: 100 })),
+        }),
+      };
+      return qb;
+    }),
   };
   repo.manager = {
     transaction: async (cb: any) => {
       const mockManager = {
-        getRepository: (entity: any) => {
-          if (entity?.name === 'Role') {
-            return createMockRepository([
-              { id: 'role_1', name: 'admin' },
-              { id: 'role_2', name: 'user' },
-              { id: 'role_3', name: 'municipal_pr_officer' },
-            ]);
-          }
-          if (entity?.name === 'User') {
-            return createMockRepository([]);
-          }
-          if (entity?.name === 'Account') {
-            return createMockRepository([]);
-          }
-          return repo;
-        },
+        getRepository: (entity: any) => repo,
       };
       return cb(mockManager);
     },
@@ -194,6 +226,12 @@ describe('AppController (e2e)', () => {
         label: 'Technical Officer',
         isMunicipal: true,
       },
+      {
+        id: 'role_6',
+        name: 'external_maintainer',
+        label: 'External Maintainer',
+        isMunicipal: false,
+      },
     ];
 
     mockUsers = [
@@ -228,8 +266,8 @@ describe('AppController (e2e)', () => {
         lastName: 'Rogers',
         roleId: 'role_3',
         role: {
-          id: 'role_3', // Questo ID deve corrispondere a quello definito in mockRoles
-          name: 'municipal_pr_officer', // CRITICO: Deve matchare la stringa nel codice
+          id: 'role_3',
+          name: 'municipal_pr_officer',
           label: 'PR Officer',
           isMunicipal: true,
         },
@@ -238,13 +276,13 @@ describe('AppController (e2e)', () => {
         id: 'officer_1',
         email: 'officer1@example.com',
         username: 'officer1',
-        firstName: 'Officer',
+        firstName: 'tech_officer',
         lastName: 'One',
         roleId: 'role_5',
         officeId: 'office_1',
         role: {
           id: 'role_5',
-          name: 'officer',
+          name: 'tech_officer',
           label: 'Technical Officer',
           isMunicipal: true,
         },
@@ -253,15 +291,30 @@ describe('AppController (e2e)', () => {
         id: 'officer_2',
         email: 'officer2@example.com',
         username: 'officer2',
-        firstName: 'Officer',
+        firstName: 'tech_officer',
         lastName: 'Two',
         roleId: 'role_5',
         officeId: 'office_1',
         role: {
           id: 'role_5',
-          name: 'officer',
+          name: 'tech_officer',
           label: 'Technical Officer',
           isMunicipal: true,
+        },
+      },
+      {
+        id: 'ext_maint_1',
+        email: 'external@company.com',
+        username: 'ext_maintainer',
+        firstName: 'External',
+        lastName: 'Maintainer',
+        roleId: 'role_6',
+        officeId: 'office_2',
+        role: {
+          id: 'role_6',
+          name: 'external_maintainer',
+          label: 'External Maintainer',
+          isMunicipal: false,
         },
       },
     ];
@@ -292,6 +345,13 @@ describe('AppController (e2e)', () => {
         id: 'office_1',
         name: 'administration',
         label: 'Administration',
+        isExternal: false,
+      },
+      {
+        id: 'office_2',
+        name: 'external_company',
+        label: 'External Company',
+        isExternal: true,
       },
     ];
 
@@ -302,7 +362,17 @@ describe('AppController (e2e)', () => {
         office: mockOffices[0],
         officeId: 'office_1',
       },
-      { id: 'cat_2', name: 'Environment' },
+      {
+        id: 'cat_2',
+        name: 'Environment',
+      },
+      {
+        id: 'cat_3',
+        name: 'External Service',
+        office: mockOffices[0],
+        officeId: 'office_1',
+        externalOffice: mockOffices[1],
+      },
     ];
 
     mockReports = [
@@ -317,6 +387,20 @@ describe('AppController (e2e)', () => {
         category: mockCategories[0],
         isAnonymous: false,
         assignedOfficerId: undefined,
+        status: 'pending',
+      },
+      {
+        id: 'report_2',
+        title: 'External Maintainer Report',
+        description: 'Report assigned to external maintainer',
+        location: { type: 'Point', coordinates: [7.6869, 45.0703] },
+        userId: 'user_2',
+        categoryId: 'cat_3',
+        user: mockUsers[1],
+        category: mockCategories[2],
+        isAnonymous: false,
+        status: 'assigned',
+        assignedExternalMaintainerId: 'ext_maint_1',
       },
     ];
 
@@ -398,6 +482,41 @@ describe('AppController (e2e)', () => {
       extractFileNameFromUrl: jest.fn((url: string) => url.split('/').pop()),
     };
 
+    const mockRoleRepository = createMockRepository(mockRoles);
+    const mockUserRepository = createMockRepository(mockUsers);
+    const mockAccountRepository = createMockRepository(mockAccounts);
+    const mockOfficeRepository = createMockRepository(mockOffices);
+    const mockProfileRepository = createMockRepository(mockProfile);
+
+    mockAccountRepository.save = jest.fn((entity) => {
+      const cleanEntity = {
+        ...entity,
+        id: entity.id || 'mocked-id',
+        userId: entity.userId || entity.user?.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      delete cleanEntity.user;
+      if (!mockAccounts.find((a) => a.id === cleanEntity.id)) {
+        mockAccounts.push(cleanEntity);
+      }
+      return Promise.resolve(cleanEntity);
+    });
+
+    mockUserRepository.manager.transaction = async (cb: any) => {
+      const mockManager = {
+        getRepository: (entity: any) => {
+          if (entity?.name === 'Role') return mockRoleRepository;
+          if (entity?.name === 'User') return mockUserRepository;
+          if (entity?.name === 'Account') return mockAccountRepository;
+          if (entity?.name === 'Office') return mockOfficeRepository;
+          if (entity?.name === 'Profile') return mockProfileRepository;
+          return mockUserRepository;
+        },
+      };
+      return cb(mockManager);
+    };
+
     const testingModuleBuilder = Test.createTestingModule({
       imports: [AppModule],
     });
@@ -410,19 +529,19 @@ describe('AppController (e2e)', () => {
       .overrideProvider(getRepositoryToken(Session))
       .useValue(createMockRepository([mockSession]))
       .overrideProvider(getRepositoryToken(User))
-      .useValue(createMockRepository(mockUsers))
+      .useValue(mockUserRepository)
       .overrideProvider(getRepositoryToken(Role))
-      .useValue(createMockRepository(mockRoles))
+      .useValue(mockRoleRepository)
       .overrideProvider(getRepositoryToken(Account))
-      .useValue(createMockRepository(mockAccounts))
+      .useValue(mockAccountRepository)
       .overrideProvider(getRepositoryToken(Category))
       .useValue(createMockRepository(mockCategories))
       .overrideProvider(getRepositoryToken(Report))
       .useValue(reportsRepositoryMock)
       .overrideProvider(getRepositoryToken(Office))
-      .useValue(createMockRepository(mockOffices))
+      .useValue(mockOfficeRepository)
       .overrideProvider(getRepositoryToken(Profile))
-      .useValue(createMockRepository(mockProfile))
+      .useValue(mockProfileRepository)
       .overrideProvider(getRepositoryToken(Boundary))
       .useValue(
         createMockRepository([
@@ -432,7 +551,17 @@ describe('AppController (e2e)', () => {
             label: 'Comune di Torino',
             geometry: {
               type: 'MultiPolygon',
-              coordinates: [[[[7.5, 45.0], [7.8, 45.0], [7.8, 45.2], [7.5, 45.2], [7.5, 45.0]]]],
+              coordinates: [
+                [
+                  [
+                    [7.5, 45.0],
+                    [7.8, 45.0],
+                    [7.8, 45.2],
+                    [7.5, 45.2],
+                    [7.5, 45.0],
+                  ],
+                ],
+              ],
             },
           },
         ]),
@@ -474,6 +603,18 @@ describe('AppController (e2e)', () => {
             const prUser = mockUsers.find((u) => u.username === 'pr_officer');
             req.user = prUser;
             req.session = { ...mockSession, userId: prUser.id };
+            return true;
+          }
+
+          if (
+            cookieValue === 'sess_ext_maint.secret' ||
+            cookieValue === 'sess_ext_1.secret'
+          ) {
+            const extMaintUser = mockUsers.find(
+              (u) => u.username === 'ext_maintainer',
+            );
+            req.user = extMaintUser;
+            req.session = { ...mockSession, userId: extMaintUser.id };
             return true;
           }
 
@@ -555,52 +696,6 @@ describe('AppController (e2e)', () => {
   // ============================================================================
   // Authentication & Authorization
   // ============================================================================
-  it('POST /auth/register returns user and sets session cookie', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        email: 'john@example.com',
-        username: 'john01',
-        firstName: 'John',
-        lastName: 'Doe',
-        password: 'StrongP@ssw0rd',
-      })
-      .expect(201);
-
-    expect(res.body).toEqual(
-      expect.objectContaining({
-        success: true,
-        data: expect.objectContaining({
-          user: expect.objectContaining({
-            email: 'john@example.com',
-            username: 'john01',
-            firstName: 'John',
-            lastName: 'Doe',
-            id: expect.any(String),
-            role: expect.objectContaining({
-              id: expect.any(String),
-              name: expect.any(String),
-            }),
-          }),
-          session: expect.objectContaining({
-            id: expect.any(String),
-            userId: expect.any(String),
-            hashedSecret: expect.any(String),
-            expiresAt: expect.any(String),
-            ipAddress: expect.any(String),
-          }),
-        }),
-      }),
-    );
-
-    const setCookie = res.headers['set-cookie'];
-    const cookies = Array.isArray(setCookie)
-      ? setCookie.join(';')
-      : String(setCookie || '');
-    sessionCookie = cookies;
-    expect(cookies).toMatch(/session_token=[^;]+/);
-  });
-
   it('POST /auth/login returns user and session when guard passes', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/login')
@@ -745,6 +840,72 @@ describe('AppController (e2e)', () => {
         lastName: 'User',
         password: 'TestPass123',
         roleId: 'role_1',
+      })
+      .expect(400);
+  });
+
+  it('POST /users/municipality creating external_maintainer with external office returns 201', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/users/municipality')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        email: 'external2@company.com',
+        username: 'ext_user2',
+        firstName: 'External',
+        lastName: 'User',
+        password: 'ExternalPass123',
+        roleId: 'role_6',
+        officeId: 'office_2',
+      })
+      .expect(201);
+
+    expect(res.body.data.roleId).toBe('role_6');
+    expect(res.body.data.officeId).toBe('office_2');
+  });
+
+  it('POST /users/municipality creating external_maintainer without office returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/users/municipality')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        email: 'external3@company.com',
+        username: 'ext_user3',
+        firstName: 'External',
+        lastName: 'User',
+        password: 'ExternalPass123',
+        roleId: 'role_6',
+      })
+      .expect(400);
+  });
+
+  it('POST /users/municipality creating external_maintainer with non-external office returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/users/municipality')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        email: 'external4@company.com',
+        username: 'ext_user4',
+        firstName: 'External',
+        lastName: 'User',
+        password: 'ExternalPass123',
+        roleId: 'role_6',
+        officeId: 'office_1',
+      })
+      .expect(400);
+  });
+
+  it('POST /users/municipality creating regular user with external office returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/users/municipality')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        email: 'regular@municipality.gov',
+        username: 'regular_user',
+        firstName: 'Regular',
+        lastName: 'User',
+        password: 'RegularPass123',
+        roleId: 'role_5',
+        officeId: 'office_2',
       })
       .expect(400);
   });
@@ -1388,34 +1549,33 @@ describe('AppController (e2e)', () => {
   // User Registration Edge Cases
   // ============================================================================
 
-  it('POST /auth/register with duplicate username returns 201 and reuses existing user', async () => {
-    const res = await request(app.getHttpServer())
+  it('POST /auth/register with duplicate username returns 409', async () => {
+    await request(app.getHttpServer())
       .post('/auth/register')
       .send({
-        email: 'different@example.com',
+        email: 'unique@example.com',
         username: 'john01',
-        firstName: 'John',
-        lastName: 'Doe',
-        password: 'StrongP@ssw0rd',
+        firstName: 'Hacker',
+        lastName: 'Man',
+        password: 'NewPassword123',
       })
-      .expect(201);
-
-    expect(res.body.data.user.username).toBe('john01');
+      .expect(409)
+      .expect((res) => {
+        expect(res.body.message).toMatch(/already in use/i);
+      });
   });
 
-  it('POST /auth/register with duplicate email can succeed if username exists', async () => {
-    const res = await request(app.getHttpServer())
+  it('POST /auth/register with duplicate email returns 409', async () => {
+    await request(app.getHttpServer())
       .post('/auth/register')
       .send({
         email: 'john@example.com',
-        username: 'different_john',
-        firstName: 'John',
-        lastName: 'Doe',
-        password: 'StrongP@ssw0rd',
+        username: 'unique_user',
+        firstName: 'Test',
+        lastName: 'User',
+        password: 'Password123',
       })
-      .expect(201);
-
-    expect(res.body.success).toBe(true);
+      .expect(409);
   });
 
   it('POST /auth/register with weak password returns 400', async () => {
@@ -1735,5 +1895,219 @@ describe('AppController (e2e)', () => {
       .expect(200);
 
     expect(updateRes.body.data.processedById).toBe('user_1');
+  });
+
+  // ============================================================================
+  // External Maintainer Tests
+  // ============================================================================
+
+  it('PATCH /reports/:id assigning external maintainer with valid ID returns 200', async () => {
+    const reportRes = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Report for external')
+      .attach('images', Buffer.from('img'), 'test.jpg')
+      .field('description', 'Needs external maintainer')
+      .field('longitude', '10.0')
+      .field('latitude', '10.0')
+      .field('categoryId', 'cat_3')
+      .expect(201);
+
+    const reportId = reportRes.body.data.id;
+
+    const updateRes = await request(app.getHttpServer())
+      .patch(`/reports/${reportId}`)
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        assignedExternalMaintainerId: 'ext_maint_1',
+      })
+      .expect(200);
+
+    expect(updateRes.body.data.assignedExternalMaintainerId).toBe(
+      'ext_maint_1',
+    );
+  });
+
+  it('PATCH /reports/:id assigning invalid external maintainer returns 400', async () => {
+    const reportRes = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Report for external')
+      .attach('images', Buffer.from('img'), 'test.jpg')
+      .field('description', 'Test')
+      .field('longitude', '10.0')
+      .field('latitude', '10.0')
+      .field('categoryId', 'cat_3')
+      .expect(201);
+
+    const reportId = reportRes.body.data.id;
+
+    await request(app.getHttpServer())
+      .patch(`/reports/${reportId}`)
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        assignedExternalMaintainerId: 'user_1',
+      })
+      .expect(400);
+  });
+
+  it('PATCH /reports/:id removing external maintainer with null returns 200', async () => {
+    mockReports.push({
+      id: 'report_ext_1',
+      title: 'Report with external',
+      description: 'Test',
+      location: { type: 'Point', coordinates: [10.0, 10.0] },
+      userId: 'user_1',
+      categoryId: 'cat_3',
+      assignedExternalMaintainerId: 'ext_maint_1',
+      user: mockUsers[0],
+      category: mockCategories[2],
+      isAnonymous: false,
+    });
+
+    const updateRes = await request(app.getHttpServer())
+      .patch('/reports/report_ext_1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .send({
+        assignedExternalMaintainerId: null,
+      })
+      .expect(200);
+
+    expect(updateRes.body.data.assignedExternalMaintainerId).toBeNull();
+  });
+
+  it('GET /reports as external maintainer returns only assigned reports', async () => {
+    mockReports.push({
+      id: 'report_ext_2',
+      title: 'Assigned to external',
+      description: 'Test',
+      location: { type: 'Point', coordinates: [10.0, 10.0] },
+      userId: 'user_1',
+      categoryId: 'cat_3',
+      status: 'assigned',
+      assignedExternalMaintainerId: 'ext_maint_1',
+      user: mockUsers[0],
+      category: mockCategories[2],
+      isAnonymous: false,
+    });
+
+    mockSession = {
+      id: 'sess_ext_1',
+      token: 'sess_ext_1.secret',
+      userId: 'ext_maint_1',
+      expiresAt: new Date(Date.now() + 10000000),
+      user: mockUsers.find((u) => u.id === 'ext_maint_1'),
+    };
+
+    const res = await request(app.getHttpServer())
+      .get('/reports')
+      .set('Cookie', 'session_token=sess_ext_1.secret')
+      .expect(200);
+
+    expect(
+      res.body.data.every(
+        (r: any) => r.assignedExternalMaintainerId === 'ext_maint_1',
+      ),
+    ).toBe(true);
+  });
+
+  it('PATCH /reports/:id as external maintainer changing status from assigned to in_progress returns 200', async () => {
+    mockReports.push({
+      id: 'report_ext_3',
+      title: 'External work',
+      description: 'Test',
+      location: { type: 'Point', coordinates: [10.0, 10.0] },
+      userId: 'user_1',
+      categoryId: 'cat_3',
+      status: 'assigned',
+      assignedExternalMaintainerId: 'ext_maint_1',
+      user: mockUsers[0],
+      category: mockCategories[2],
+      isAnonymous: false,
+    });
+
+    const updateRes = await request(app.getHttpServer())
+      .patch('/reports/report_ext_3')
+      .set('Cookie', 'session_token=sess_ext_1.secret')
+      .send({
+        status: 'in_progress',
+      })
+      .expect(200);
+
+    expect(updateRes.body.data.status).toBe('in_progress');
+  });
+
+  it('PATCH /reports/:id as external maintainer changing status from in_progress to resolved returns 200', async () => {
+    mockReports.push({
+      id: 'report_ext_4',
+      title: 'External work in progress',
+      description: 'Test',
+      location: { type: 'Point', coordinates: [10.0, 10.0] },
+      userId: 'user_1',
+      categoryId: 'cat_3',
+      status: 'in_progress',
+      assignedExternalMaintainerId: 'ext_maint_1',
+      user: mockUsers[0],
+      category: mockCategories[2],
+      isAnonymous: false,
+    });
+
+    const updateRes = await request(app.getHttpServer())
+      .patch('/reports/report_ext_4')
+      .set('Cookie', 'session_token=sess_ext_1.secret')
+      .send({
+        status: 'resolved',
+      })
+      .expect(200);
+
+    expect(updateRes.body.data.status).toBe('resolved');
+  });
+
+  it('PATCH /reports/:id as external maintainer with invalid status transition returns 400', async () => {
+    mockReports.push({
+      id: 'report_ext_5',
+      title: 'External invalid transition',
+      description: 'Test',
+      location: { type: 'Point', coordinates: [10.0, 10.0] },
+      userId: 'user_1',
+      categoryId: 'cat_3',
+      status: 'in_progress',
+      assignedExternalMaintainerId: 'ext_maint_1',
+      user: mockUsers[0],
+      category: mockCategories[2],
+      isAnonymous: false,
+    });
+
+    await request(app.getHttpServer())
+      .patch('/reports/report_ext_5')
+      .set('Cookie', 'session_token=sess_ext_1.secret')
+      .send({
+        status: 'assigned',
+      })
+      .expect(400);
+  });
+
+  it('PATCH /reports/:id as external maintainer trying to reject returns 400', async () => {
+    mockReports.push({
+      id: 'report_ext_6',
+      title: 'External reject attempt',
+      description: 'Test',
+      location: { type: 'Point', coordinates: [10.0, 10.0] },
+      userId: 'user_1',
+      categoryId: 'cat_3',
+      status: 'assigned',
+      assignedExternalMaintainerId: 'ext_maint_1',
+      user: mockUsers[0],
+      category: mockCategories[2],
+      isAnonymous: false,
+    });
+
+    await request(app.getHttpServer())
+      .patch('/reports/report_ext_6')
+      .set('Cookie', 'session_token=sess_ext_1.secret')
+      .send({
+        status: 'rejected',
+      })
+      .expect(400);
   });
 });

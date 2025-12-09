@@ -9,6 +9,24 @@ export const REPORT_ERROR_MESSAGES = {
   IMAGE_DELETE_FAILED: 'Failed to delete images from storage',
   COORDINATES_OUTSIDE_BOUNDARY:
     'The provided coordinates are outside the allowed municipal boundaries',
+  EXTERNAL_MAINTAINER_INVALID_USER:
+    'The specified user is not an external maintainer',
+  EXTERNAL_MAINTAINER_INVALID_STATUS_TRANSITION: (
+    currentStatus: string,
+    targetStatus: string,
+  ) =>
+    `External maintainer cannot change status from ${currentStatus} to ${targetStatus}`,
+  OFFICER_NOT_FOR_CATEGORY: (officerId: string, categoryId: string) =>
+    `Officer ${officerId} does not belong to the office responsible for category ${categoryId}`,
+  OFFICER_NOT_FOUND: (officerId: string) =>
+    `Officer with ID ${officerId} not found`,
+  EXTERNAL_MAINTAINER_NOT_FOR_CATEGORY: (
+    externalMaintainerId: string,
+    categoryId: string,
+  ) =>
+    `External maintainer ${externalMaintainerId} does not belong to the external office responsible for category ${categoryId}`,
+  EXTERNAL_MAINTAINER_NOT_ASSIGNED_TO_REPORT:
+    'You can only modify reports assigned to you',
 } as const;
 
 export const ALLOWED_IMAGE_MIMETYPES = [

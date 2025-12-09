@@ -18,13 +18,13 @@ export class LoginDto implements LoginDtoType {
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
-  @MaxLength(20)
+  @MaxLength(30)
   username: string;
 
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
-  @MaxLength(20)
+  @MaxLength(30)
   password: string;
 }
 
@@ -36,7 +36,7 @@ export class RegisterDto implements RegisterDtoType {
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
-  @MaxLength(20)
+  @MaxLength(30)
   username: string;
 
   @IsString()
@@ -50,7 +50,7 @@ export class RegisterDto implements RegisterDtoType {
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
-  @MaxLength(20)
+  @MaxLength(30)
   password: string;
 }
 

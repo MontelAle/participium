@@ -21,7 +21,7 @@ import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 
-const PRIVILEGED_ROLES = ['pr_officer', 'officer'];
+const PRIVILEGED_ROLES = ['pr_officer', 'tech_officer'];
 
 @Injectable()
 export class ReportsService {
@@ -142,13 +142,20 @@ export class ReportsService {
       .leftJoinAndSelect('report.user', 'user')
       .leftJoinAndSelect('user.role', 'role')
       .leftJoinAndSelect('report.category', 'category')
-      .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer');
+      .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer')
+      .leftJoinAndSelect('report.assignedExternalMaintainer', 'assignedExternalMaintainer');
 
     if (viewer.role?.name === 'user') {
       query.andWhere(
         `(report.status != 'rejected' OR report.userId = :viewerId)`,
         { viewerId: viewer.id },
       );
+    }
+
+    if (viewer.role?.name === 'external_maintainer') {
+      query.andWhere('report.assignedExternalMaintainerId = :viewerId', {
+        viewerId: viewer.id,
+      });
     }
 
     if (viewer.role?.name === 'pr_officer') {
@@ -218,7 +225,7 @@ export class ReportsService {
   async findOne(id: string, viewer: User): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ['user', 'user.role', 'category', 'assignedOfficer'],
+      relations: ['user', 'user.role', 'category', 'assignedOfficer', 'assignedExternalMaintainer'],
     });
 
     if (!report) {
@@ -233,6 +240,13 @@ export class ReportsService {
       throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
     }
 
+    if (
+      viewer.role?.name === 'external_maintainer' &&
+      report.assignedExternalMaintainerId !== viewer.id
+    ) {
+      throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
+    }
+
     return this.sanitizeReport(report, viewer);
   }
 
@@ -243,6 +257,15 @@ export class ReportsService {
   ): Promise<Report> {
     const report = await this.findReportEntity(id);
 
+    if (actor?.role?.name === 'external_maintainer') {
+      if (report.assignedExternalMaintainerId !== actor.id) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NOT_ASSIGNED_TO_REPORT,
+        );
+      }
+      this.validateExternalMaintainerStatusChange(report, updateReportDto);
+    }
+
     this.updateReportLocation(report, updateReportDto);
 
     await this.updateReportCategory(report, updateReportDto);
@@ -251,6 +274,13 @@ export class ReportsService {
       await this.assignOfficerToReport(
         report,
         updateReportDto.assignedOfficerId,
+      );
+    }
+
+    if (updateReportDto.assignedExternalMaintainerId !== undefined) {
+      await this.assignExternalMaintainerToReport(
+        report,
+        updateReportDto.assignedExternalMaintainerId,
       );
     }
 
@@ -320,11 +350,34 @@ export class ReportsService {
   ): Promise<void> {
     const officer = await this.userRepository.findOne({
       where: { id: officerId },
+      relations: ['office'],
     });
-    if (officer) {
-      report.assignedOfficer = officer;
-      report.assignedOfficerId = officer.id;
+
+    if (!officer) {
+      throw new NotFoundException(
+        REPORT_ERROR_MESSAGES.OFFICER_NOT_FOUND(officerId),
+      );
     }
+
+    // Validate officer belongs to the correct office for the report's category
+    const category =
+      report.category ||
+      (await this.categoryRepository.findOne({
+        where: { id: report.categoryId },
+        relations: ['office'],
+      }));
+
+    if (category?.office && officer.officeId !== category.office.id) {
+      throw new BadRequestException(
+        REPORT_ERROR_MESSAGES.OFFICER_NOT_FOR_CATEGORY(
+          officerId,
+          report.categoryId,
+        ),
+      );
+    }
+
+    report.assignedOfficer = officer;
+    report.assignedOfficerId = officer.id;
   }
 
   private async assignOfficerAutomatically(report: Report): Promise<void> {
@@ -347,6 +400,78 @@ export class ReportsService {
     }
   }
 
+  private async assignExternalMaintainerToReport(
+    report: Report,
+    assignedExternalMaintainerId?: string,
+  ): Promise<void> {
+    if (assignedExternalMaintainerId) {
+      const externalMaintainer = await this.userRepository.findOne({
+        where: { id: assignedExternalMaintainerId },
+        relations: ['role', 'office'],
+      });
+
+      if (
+        !externalMaintainer ||
+        externalMaintainer.role?.name !== 'external_maintainer'
+      ) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_USER,
+        );
+      }
+
+      // Validate external maintainer belongs to the correct office for the report's category
+      const category =
+        report.category ||
+        (await this.categoryRepository.findOne({
+          where: { id: report.categoryId },
+          relations: ['externalOffice'],
+        }));
+
+      if (
+        category?.externalOffice &&
+        externalMaintainer.officeId !== category.externalOffice.id
+      ) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NOT_FOR_CATEGORY(
+            assignedExternalMaintainerId,
+            report.categoryId,
+          ),
+        );
+      }
+
+      report.assignedExternalMaintainer = externalMaintainer;
+      report.assignedExternalMaintainerId = externalMaintainer.id;
+    } else {
+      report.assignedExternalMaintainer = null;
+      report.assignedExternalMaintainerId = null;
+    }
+  }
+
+  private validateExternalMaintainerStatusChange(
+    report: Report,
+    updateDto: UpdateReportDto,
+  ): void {
+    if (!updateDto.status) {
+      return;
+    }
+
+    const allowedTransitions = {
+      assigned: ['in_progress'],
+      in_progress: ['resolved'],
+    };
+
+    const allowedNextStatuses = allowedTransitions[report.status];
+
+    if (!allowedNextStatuses || !allowedNextStatuses.includes(updateDto.status)) {
+      throw new BadRequestException(
+        REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_STATUS_TRANSITION(
+          report.status,
+          updateDto.status,
+        ),
+      );
+    }
+  }
+
   private async findOfficerWithFewestReports(
     officeId: string,
   ): Promise<User | null> {
@@ -356,9 +481,7 @@ export class ReportsService {
     });
 
     const technicalOfficers = officers.filter(
-      (officer) =>
-        officer.role?.name === 'officer' ||
-        officer.role?.name === 'tech_officer',
+      (officer) => officer.role?.name === 'tech_officer',
     );
 
     if (technicalOfficers.length === 0) {
