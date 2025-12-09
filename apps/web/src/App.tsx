@@ -18,6 +18,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import AssignedReportsPage from './pages/app/assigned-reports/page';
 import AssignedReportsViewPage from './pages/app/assigned-reports/view/page';
+import ExternalPage from './pages/app/external/page';
 
 const App = () => {
   return (
@@ -127,6 +128,14 @@ const App = () => {
               element={
                 <MunicipalGuard>
                   <AssignedReportsViewPage />
+                </MunicipalGuard>
+              }
+            />
+            <Route
+              path="/app/external/assigned-reports"
+              element={
+                <MunicipalGuard>
+                  <ExternalPage />
                 </MunicipalGuard>
               }
             />

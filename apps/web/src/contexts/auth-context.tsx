@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isMunicipalPrOfficer: user?.role?.name === 'pr_officer',
       isTechnicalOfficer: user?.role?.name === 'tech_officer',
       isGuestUser: !isAuthenticated,
+      isExternal: user?.role?.name === 'external_maintainer',
     };
   }, [user]);
 
