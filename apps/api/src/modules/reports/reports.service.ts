@@ -31,7 +31,8 @@ export class ReportsService {
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-    @InjectRepository(Boundary) private readonly boundaryRepository: Repository<Boundary>,
+    @InjectRepository(Boundary)
+    private readonly boundaryRepository: Repository<Boundary>,
     private readonly minioProvider: MinioProvider,
   ) {}
 
@@ -45,7 +46,13 @@ export class ReportsService {
   private async findReportEntity(id: string): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ['user', 'user.role', 'category', 'assignedOfficer'],
+      relations: [
+        'user',
+        'user.role',
+        'category',
+        'assignedOfficer',
+        'assignedExternalMaintainer',
+      ],
     });
 
     if (!report) {
@@ -143,7 +150,10 @@ export class ReportsService {
       .leftJoinAndSelect('user.role', 'role')
       .leftJoinAndSelect('report.category', 'category')
       .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer')
-      .leftJoinAndSelect('report.assignedExternalMaintainer', 'assignedExternalMaintainer');
+      .leftJoinAndSelect(
+        'report.assignedExternalMaintainer',
+        'assignedExternalMaintainer',
+      );
 
     if (viewer.role?.name === 'user') {
       query.andWhere(
@@ -225,7 +235,13 @@ export class ReportsService {
   async findOne(id: string, viewer: User): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ['user', 'user.role', 'category', 'assignedOfficer', 'assignedExternalMaintainer'],
+      relations: [
+        'user',
+        'user.role',
+        'category',
+        'assignedOfficer',
+        'assignedExternalMaintainer',
+      ],
     });
 
     if (!report) {
@@ -437,7 +453,10 @@ export class ReportsService {
 
     const allowedNextStatuses = allowedTransitions[report.status];
 
-    if (!allowedNextStatuses || !allowedNextStatuses.includes(updateDto.status)) {
+    if (
+      !allowedNextStatuses ||
+      !allowedNextStatuses.includes(updateDto.status)
+    ) {
       throw new BadRequestException(
         REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_STATUS_TRANSITION(
           report.status,
@@ -513,7 +532,9 @@ export class ReportsService {
         )`,
         { lng: longitude, lat: latitude, radius: radiusMeters },
       )
-      .andWhere('report.status != :rejectedStatus', { rejectedStatus: 'rejected' })
+      .andWhere('report.status != :rejectedStatus', {
+        rejectedStatus: 'rejected',
+      })
       .orderBy('distance', 'ASC')
       .getRawAndEntities();
 

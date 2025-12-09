@@ -11,6 +11,8 @@ export class CategoriesService {
   ) {}
 
   async findAll(): Promise<Category[]> {
-    return this.categoryRepository.find({ relations: ['office'] });
+    return this.categoryRepository.find({
+      relations: ['office', 'externalOffice'],
+    });
   }
 }
