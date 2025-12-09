@@ -10,6 +10,7 @@ import { nanoid } from 'nanoid';
 import { Repository } from 'typeorm';
 import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
 import { Account } from '../../common/entities/account.entity';
+import { Category } from '../../common/entities/category.entity';
 import { Office } from '../../common/entities/office.entity';
 import { Role } from '../../common/entities/role.entity';
 import { User } from '../../common/entities/user.entity';
@@ -31,10 +32,49 @@ export class UsersService {
     @InjectRepository(Office)
     private readonly officeRepository: Repository<Office>,
 
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
+
     private readonly minioProvider: MinioProvider,
   ) {}
 
-  async findMunicipalityUsers(): Promise<User[]> {
+  async findMunicipalityUsers(categoryId?: string): Promise<User[]> {
+    if (categoryId) {
+      const category = await this.categoryRepository.findOne({
+        where: { id: categoryId },
+        relations: ['office'],
+      });
+
+      if (!category) {
+        throw new NotFoundException(
+          USER_ERROR_MESSAGES.CATEGORY_NOT_FOUND(categoryId),
+        );
+      }
+
+      if (!category.office) {
+        throw new BadRequestException(
+          USER_ERROR_MESSAGES.CATEGORY_NO_OFFICE(categoryId),
+        );
+      }
+
+      const users = await this.userRepository.find({
+        where: {
+          role: { isMunicipal: true },
+          officeId: category.office.id,
+        },
+        relations: ['role', 'office'],
+        order: { firstName: 'ASC', lastName: 'ASC' },
+      });
+
+      if (users.length === 0) {
+        throw new NotFoundException(
+          USER_ERROR_MESSAGES.NO_OFFICERS_FOR_CATEGORY(categoryId),
+        );
+      }
+
+      return users;
+    }
+
     return this.userRepository.find({
       relations: ['role', 'office'],
       where: {
@@ -42,6 +82,7 @@ export class UsersService {
           isMunicipal: true,
         },
       },
+      order: { firstName: 'ASC', lastName: 'ASC' },
     });
   }
 
@@ -265,5 +306,101 @@ export class UsersService {
         USER_ERROR_MESSAGES.REGULAR_USER_EXTERNAL_OFFICE,
       );
     }
+  }
+
+  async findExternalMaintainers(categoryId?: string): Promise<User[]> {
+    if (categoryId) {
+      const category = await this.categoryRepository.findOne({
+        where: { id: categoryId },
+        relations: ['externalOffice'],
+      });
+
+      if (!category) {
+        throw new NotFoundException(
+          USER_ERROR_MESSAGES.CATEGORY_NOT_FOUND(categoryId),
+        );
+      }
+
+      if (!category.externalOffice) {
+        throw new BadRequestException(
+          USER_ERROR_MESSAGES.CATEGORY_NO_EXTERNAL_OFFICE(categoryId),
+        );
+      }
+
+      const maintainers = await this.userRepository.find({
+        where: {
+          role: { name: 'external_maintainer' },
+          officeId: category.externalOffice.id,
+        },
+        relations: ['role', 'office'],
+        order: { firstName: 'ASC', lastName: 'ASC' },
+      });
+
+      if (maintainers.length === 0) {
+        throw new NotFoundException(
+          USER_ERROR_MESSAGES.NO_EXTERNAL_MAINTAINERS_FOR_CATEGORY(categoryId),
+        );
+      }
+
+      return maintainers;
+    }
+
+    return this.userRepository.find({
+      where: {
+        role: { name: 'external_maintainer' },
+      },
+      relations: ['role', 'office'],
+      order: { firstName: 'ASC', lastName: 'ASC' },
+    });
+  }
+
+  async findOfficers(categoryId?: string): Promise<User[]> {
+    if (categoryId) {
+      const category = await this.categoryRepository.findOne({
+        where: { id: categoryId },
+        relations: ['office'],
+      });
+
+      if (!category) {
+        throw new NotFoundException(
+          USER_ERROR_MESSAGES.CATEGORY_NOT_FOUND(categoryId),
+        );
+      }
+
+      if (!category.office) {
+        throw new BadRequestException(
+          USER_ERROR_MESSAGES.CATEGORY_NO_OFFICE(categoryId),
+        );
+      }
+
+      const allOfficers = await this.userRepository.find({
+        where: { officeId: category.office.id },
+        relations: ['role', 'office'],
+        order: { firstName: 'ASC', lastName: 'ASC' },
+      });
+
+      // Filter for both 'officer' and 'tech_officer' roles
+      const officers = allOfficers.filter(
+        (user) => user.role?.name === 'officer' || user.role?.name === 'tech_officer',
+      );
+
+      if (officers.length === 0) {
+        throw new NotFoundException(
+          USER_ERROR_MESSAGES.NO_OFFICERS_FOR_CATEGORY(categoryId),
+        );
+      }
+
+      return officers;
+    }
+
+    const allUsers = await this.userRepository.find({
+      relations: ['role', 'office'],
+      order: { firstName: 'ASC', lastName: 'ASC' },
+    });
+
+    // Filter for both 'officer' and 'tech_officer' roles
+    return allUsers.filter(
+      (user) => user.role?.name === 'officer' || user.role?.name === 'tech_officer',
+    );
   }
 }

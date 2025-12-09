@@ -21,7 +21,7 @@ import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 
-const PRIVILEGED_ROLES = ['pr_officer', 'officer'];
+const PRIVILEGED_ROLES = ['pr_officer', 'tech_officer'];
 
 @Injectable()
 export class ReportsService {
@@ -345,11 +345,34 @@ export class ReportsService {
   ): Promise<void> {
     const officer = await this.userRepository.findOne({
       where: { id: officerId },
+      relations: ['office'],
     });
-    if (officer) {
-      report.assignedOfficer = officer;
-      report.assignedOfficerId = officer.id;
+
+    if (!officer) {
+      throw new NotFoundException(
+        REPORT_ERROR_MESSAGES.OFFICER_NOT_FOUND(officerId),
+      );
     }
+
+    // Validate officer belongs to the correct office for the report's category
+    const category =
+      report.category ||
+      (await this.categoryRepository.findOne({
+        where: { id: report.categoryId },
+        relations: ['office'],
+      }));
+
+    if (category?.office && officer.officeId !== category.office.id) {
+      throw new BadRequestException(
+        REPORT_ERROR_MESSAGES.OFFICER_NOT_FOR_CATEGORY(
+          officerId,
+          report.categoryId,
+        ),
+      );
+    }
+
+    report.assignedOfficer = officer;
+    report.assignedOfficerId = officer.id;
   }
 
   private async assignOfficerAutomatically(report: Report): Promise<void> {
@@ -433,9 +456,7 @@ export class ReportsService {
     });
 
     const technicalOfficers = officers.filter(
-      (officer) =>
-        officer.role?.name === 'officer' ||
-        officer.role?.name === 'tech_officer',
+      (officer) => officer.role?.name === 'tech_officer',
     );
 
     if (technicalOfficers.length === 0) {

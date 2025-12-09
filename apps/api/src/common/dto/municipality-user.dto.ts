@@ -101,3 +101,8 @@ export class MunicipalityUserIdResponseDto
   data: { id: string };
   success: boolean;
 }
+
+export class ExternalMaintainersResponseDto {
+  data: User[];
+  success: boolean;
+}
