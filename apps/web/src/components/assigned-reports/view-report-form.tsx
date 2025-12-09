@@ -5,6 +5,6 @@ type ViewReportFormProps = {
   report: Report;
 };
 
-export function ViewReportForm({ report }: ViewReportFormProps) {
+export function ViewReportForm({ report }: Readonly<ViewReportFormProps>) {
   return <ReportView report={report} showAnonymous={false} />;
 }

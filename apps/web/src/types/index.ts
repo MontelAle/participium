@@ -29,17 +29,29 @@ export type Address = {
   house_number?: string;
 };
 
-export type NominatimAddressData = {
-  display_name?: string;
-  address: Address;
+export type NominatimAddress = {
+  road?: string;
+  house_number?: string;
+  city?: string;
+  town?: string;
+  village?: string;
+  suburb?: string;
+  state?: string;
+  country?: string;
+  postcode?: string;
+  pedestrian?: string;
+  path?: string;
+  neighbourhood?: string;
 };
 
 export type NominatimSearchResult = {
-  place_id: string;
+  place_id?: string | number;
   lat: string;
   lon: string;
   display_name: string;
-  address?: NominatimAddressData;
+  address?: NominatimAddress;
+  type?: string;
+  class?: string;
 };
 
 export type StatusMarker = Marker & { status?: string };
@@ -61,6 +73,8 @@ export type MapSearchBoxProps = {
   setSearchResults: (val: NominatimSearchResult[]) => void;
   searchResults: NominatimSearchResult[];
   onSelect: (lat: number, lon: number, item: NominatimSearchResult) => void;
+  onLocateMe: () => void;
+  isLocating: boolean;
 };
 
 export type MapControlsProps = {

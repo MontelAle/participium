@@ -32,7 +32,7 @@ export default function ProfilePage() {
         </div>
         <ProfileForm
           profile={profile}
-          user={user ? user : undefined}
+          user={user || undefined}
           updateProfile={updateProfile}
         />
       </div>
