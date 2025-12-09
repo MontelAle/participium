@@ -279,10 +279,6 @@ export class UsersService {
   }
 
   private validateOfficeRoleMatch(role: Role, office: Office | null): void {
-    if (!role) {
-      return;
-    }
-
     const isExternalMaintainer = role.name === 'external_maintainer';
     const hasExternalOffice = office && office.isExternal;
 
@@ -352,55 +348,5 @@ export class UsersService {
       relations: ['role', 'office'],
       order: { firstName: 'ASC', lastName: 'ASC' },
     });
-  }
-
-  async findOfficers(categoryId?: string): Promise<User[]> {
-    if (categoryId) {
-      const category = await this.categoryRepository.findOne({
-        where: { id: categoryId },
-        relations: ['office'],
-      });
-
-      if (!category) {
-        throw new NotFoundException(
-          USER_ERROR_MESSAGES.CATEGORY_NOT_FOUND(categoryId),
-        );
-      }
-
-      if (!category.office) {
-        throw new BadRequestException(
-          USER_ERROR_MESSAGES.CATEGORY_NO_OFFICE(categoryId),
-        );
-      }
-
-      const allOfficers = await this.userRepository.find({
-        where: { officeId: category.office.id },
-        relations: ['role', 'office'],
-        order: { firstName: 'ASC', lastName: 'ASC' },
-      });
-
-      // Filter for both 'officer' and 'tech_officer' roles
-      const officers = allOfficers.filter(
-        (user) => user.role?.name === 'officer' || user.role?.name === 'tech_officer',
-      );
-
-      if (officers.length === 0) {
-        throw new NotFoundException(
-          USER_ERROR_MESSAGES.NO_OFFICERS_FOR_CATEGORY(categoryId),
-        );
-      }
-
-      return officers;
-    }
-
-    const allUsers = await this.userRepository.find({
-      relations: ['role', 'office'],
-      order: { firstName: 'ASC', lastName: 'ASC' },
-    });
-
-    // Filter for both 'officer' and 'tech_officer' roles
-    return allUsers.filter(
-      (user) => user.role?.name === 'officer' || user.role?.name === 'tech_officer',
-    );
   }
 }
