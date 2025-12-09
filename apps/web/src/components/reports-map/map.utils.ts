@@ -1,4 +1,4 @@
-import { Filters, NominatimAddressData } from '@/types';
+import { NominatimAddressData, ReportFilters } from '@/types';
 import { Report, ReportStatus } from '@repo/api';
 import {
   endOfDay,
@@ -284,7 +284,7 @@ const failsSearchCheck = (report: Report, term: string) => {
   );
 };
 
-const failsStaticCheck = (report: Report, filters: Filters) => {
+const failsStaticCheck = (report: Report, filters: ReportFilters) => {
   if (filters.status && report.status !== filters.status) return true;
   if (filters.category && report.category.name !== filters.category)
     return true;
@@ -293,7 +293,7 @@ const failsStaticCheck = (report: Report, filters: Filters) => {
 
 const failsDateRangeCheck = (
   reportDate: Date,
-  filters: Filters,
+  filters: ReportFilters,
   today: Date,
 ) => {
   if (!filters.dateRange) return false;
@@ -310,7 +310,7 @@ const failsDateRangeCheck = (
   }
 };
 
-const failsCustomDateCheck = (reportDate: Date, filters: Filters) => {
+const failsCustomDateCheck = (reportDate: Date, filters: ReportFilters) => {
   const { from, to } = filters.customDate || {};
   if (!from) return false;
 
@@ -328,7 +328,7 @@ const failsCustomDateCheck = (reportDate: Date, filters: Filters) => {
 export function filterReportsLogic(
   reports: Report[],
   debouncedSearchTerm: string,
-  filters: Filters,
+  filters: ReportFilters,
 ) {
   const today = new Date();
   const term = debouncedSearchTerm.trim();
