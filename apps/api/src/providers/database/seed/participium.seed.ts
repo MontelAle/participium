@@ -3,6 +3,7 @@ import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { DataSource, Repository } from 'typeorm';
 import { Account } from '../../../common/entities/account.entity';
+import { Boundary } from '../../../common/entities/boundary.entity';
 import { Category } from '../../../common/entities/category.entity';
 import { Office } from '../../../common/entities/office.entity';
 import { Report, ReportStatus } from '../../../common/entities/report.entity';
@@ -28,6 +29,10 @@ const OFFICES_DATA = [
   { name: 'organization_office', label: 'Organization Office' },
 ];
 
+const BOUNDARIES_DATA = [
+  { name: 'torino', label: 'Comune di Torino' },
+];
+
 const CATEGORIES_DATA = [
   { name: 'Roads and Urban Furnishings', office: 'maintenance' },
   { name: 'Architectural Barriers', office: 'maintenance' },
@@ -45,6 +50,7 @@ const ROLES_DATA = [
   { name: 'admin', label: 'Admin', isMunicipal: true },
   { name: 'pr_officer', label: 'PR Officer', isMunicipal: true },
   { name: 'tech_officer', label: 'Technical Officer', isMunicipal: true },
+  { name: 'external_maintainer', label: 'External Maintainer', isMunicipal: false },
 ];
 
 const CITIZENS_DATA = [
@@ -196,6 +202,7 @@ interface Repositories {
   reportRepo: Repository<Report>;
   officeRepo: Repository<Office>;
   profileRepo: Repository<Profile>;
+  boundaryRepo: Repository<Boundary>;
 }
 
 interface UserCreationContext {
@@ -225,6 +232,7 @@ function getRepositories(dataSource: DataSource): Repositories {
     reportRepo: dataSource.getRepository(Report),
     officeRepo: dataSource.getRepository(Office),
     profileRepo: dataSource.getRepository(Profile),
+    boundaryRepo: dataSource.getRepository(Boundary),
   };
 }
 
@@ -249,6 +257,42 @@ async function seedOffices(
   }
 
   return officesMap;
+}
+
+function getBoundariesGeoJsonPath(): string {
+  let assetsDir = path.join(__dirname, 'assets');
+
+  if (__dirname.includes('/dist/') || __dirname.includes('\\dist\\')) {
+    assetsDir = path.join(
+      __dirname,
+      '../../../../../src/providers/database/seed/assets',
+    );
+  }
+
+  return path.join(assetsDir, 'torino_boundaries.json');
+}
+
+async function seedBoundaries(
+  boundaryRepo: Repository<Boundary>,
+): Promise<void> {
+  for (const boundaryData of BOUNDARIES_DATA) {
+    const existing = await boundaryRepo.findOne({ where: { name: boundaryData.name } });
+    
+    if (!existing) {
+      const geoJsonPath = getBoundariesGeoJsonPath();
+      const geoJsonContent = fs.readFileSync(geoJsonPath, 'utf-8');
+      const geometry = JSON.parse(geoJsonContent);
+
+      const boundary = boundaryRepo.create({
+        id: nanoid(),
+        name: boundaryData.name,
+        label: boundaryData.label,
+        geometry,
+      });
+      await boundaryRepo.save(boundary);
+      console.log(`Created boundary: ${boundaryData.label}`);
+    }
+  }
 }
 
 async function seedCategories(
@@ -405,7 +449,7 @@ async function seedCitizenUsers(
 function getImagesDirectory(): string {
   let imagesDir = path.join(__dirname, 'images');
 
-  if (__dirname.includes('/dist/')) {
+  if (__dirname.includes('/dist/') || __dirname.includes('\\dist\\')) {
     imagesDir = path.join(
       __dirname,
       '../../../../../src/providers/database/seed/images',
@@ -598,6 +642,7 @@ export async function seedDatabase(
   const commonPassword = await bcrypt.hash('password', 10);
 
   const officesMap = await seedOffices(repositories.officeRepo);
+  await seedBoundaries(repositories.boundaryRepo);
   const categoriesMap = await seedCategories(
     repositories.categoryRepo,
     officesMap,

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,6 +11,7 @@ import {
   FilterReportsDto,
   UpdateReportDto,
 } from '../../common/dto/report.dto';
+import { Boundary } from '../../common/entities/boundary.entity';
 import { Category } from '../../common/entities/category.entity';
 import { Report, ReportStatus } from '../../common/entities/report.entity';
 import { User } from '../../common/entities/user.entity';
@@ -30,8 +32,16 @@ const createMockQueryBuilder = () => ({
   getMany: jest.fn().mockResolvedValue([]),
   getRawMany: jest.fn().mockResolvedValue([]),
   getRawAndEntities: jest.fn().mockResolvedValue({ entities: [], raw: [] }),
+  getOne: jest.fn().mockResolvedValue(null),
   setParameters: jest.fn().mockReturnThis(),
   getRawOne: jest.fn().mockResolvedValue({}),
+});
+
+const createMockBoundaryQueryBuilder = (withinBoundary: boolean = true) => ({
+  where: jest.fn().mockReturnThis(),
+  getOne: jest.fn().mockResolvedValue(
+    withinBoundary ? { id: 'torino', name: 'torino', label: 'Comune di Torino' } : null,
+  ),
 });
 
 describe('ReportsService', () => {
@@ -39,6 +49,7 @@ describe('ReportsService', () => {
   let reportRepository: jest.Mocked<Repository<Report>>;
   let categoryRepository: jest.Mocked<Repository<Category>>;
   let userRepository: jest.Mocked<Repository<User>>;
+  let boundaryRepository: jest.Mocked<Repository<Boundary>>;
   let minioProvider: jest.Mocked<MinioProvider>;
 
   const mockCitizenUser = { id: 'user-123', role: { name: 'user' } } as User;
@@ -95,6 +106,12 @@ describe('ReportsService', () => {
           },
         },
         {
+          provide: getRepositoryToken(Boundary),
+          useValue: {
+            createQueryBuilder: jest.fn(() => createMockBoundaryQueryBuilder(true)),
+          },
+        },
+        {
           provide: MinioProvider,
           useValue: {
             uploadFile: jest.fn(),
@@ -109,6 +126,7 @@ describe('ReportsService', () => {
     service = module.get<ReportsService>(ReportsService);
     reportRepository = module.get(getRepositoryToken(Report));
     categoryRepository = module.get(getRepositoryToken(Category));
+    boundaryRepository = module.get(getRepositoryToken(Boundary));
     minioProvider = module.get(MinioProvider);
     userRepository = module.get(getRepositoryToken(User));
   });
@@ -349,6 +367,37 @@ describe('ReportsService', () => {
         service.create(createDto, 'user-123', mockFiles),
       ).rejects.toThrow(REPORT_ERROR_MESSAGES.IMAGE_UPLOAD_FAILED);
     });
+
+    it('should throw BadRequestException if coordinates are outside municipal boundaries', async () => {
+      const createDto: CreateReportDto = {
+        title: 'Report outside boundary',
+        description: 'Description outside boundary',
+        longitude: 10.0,
+        latitude: 44.0,
+        categoryId: 'cat-123',
+        isAnonymous: false,
+      };
+
+      const mockFiles = [
+        {
+          originalname: 'test.jpg',
+          buffer: Buffer.from('test'),
+          mimetype: 'image/jpeg',
+        },
+      ] as Express.Multer.File[];
+
+      boundaryRepository.createQueryBuilder = jest.fn(() =>
+        createMockBoundaryQueryBuilder(false),
+      ) as any;
+
+      await expect(
+        service.create(createDto, 'user-123', mockFiles),
+      ).rejects.toThrow(
+        new BadRequestException(
+          REPORT_ERROR_MESSAGES.COORDINATES_OUTSIDE_BOUNDARY,
+        ),
+      );
+    });
   });
 
   describe('findAll', () => {
@@ -586,6 +635,96 @@ describe('ReportsService', () => {
       expect(result).toEqual(mockReports);
     });
 
+    it('should exclude rejected reports from other users for citizen users', async () => {
+      const filters: FilterReportsDto = {};
+      const mockReports = [
+        { ...mockReport, status: ReportStatus.PENDING },
+        { ...mockReport, id: 'own-rejected', status: ReportStatus.REJECTED, userId: 'user-123' },
+      ];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      const result = await service.findAll(mockCitizenUser, filters);
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        `(report.status != 'rejected' OR report.userId = :viewerId)`,
+        { viewerId: 'user-123' },
+      );
+      expect(result).toEqual(mockReports);
+    });
+
+    it('should include own rejected reports for citizen users', async () => {
+      const filters: FilterReportsDto = {};
+      const ownRejectedReport = {
+        ...mockReport,
+        id: 'own-rejected',
+        status: ReportStatus.REJECTED,
+        userId: 'user-123',
+      };
+      const mockReports = [ownRejectedReport];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      const result = await service.findAll(mockCitizenUser, filters);
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        `(report.status != 'rejected' OR report.userId = :viewerId)`,
+        { viewerId: 'user-123' },
+      );
+      expect(result).toEqual(mockReports);
+    });
+
+    it('should NOT filter rejected reports for municipal users', async () => {
+      const mockMunicipalUser = {
+        id: 'officer-999',
+        role: { name: 'tech_officer' },
+      } as User;
+
+      const filters: FilterReportsDto = {};
+      const mockReports = [
+        { ...mockReport, status: ReportStatus.PENDING },
+        { ...mockReport, id: 'rejected-1', status: ReportStatus.REJECTED, userId: 'user-123' },
+        { ...mockReport, id: 'rejected-2', status: ReportStatus.REJECTED, userId: 'other-user' },
+      ];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      const result = await service.findAll(mockMunicipalUser, filters);
+
+      expect(mockQueryBuilder.andWhere).not.toHaveBeenCalledWith(
+        `(report.status != 'rejected' OR report.userId = :viewerId)`,
+        expect.any(Object),
+      );
+      expect(result).toEqual(mockReports);
+    });
+
     it('should FORCE status=pending if viewer is a pr_officer, ignoring other status filters', async () => {
       const prOfficerUser = {
         id: 'pr-1',
@@ -616,6 +755,32 @@ describe('ReportsService', () => {
         { status: ReportStatus.RESOLVED },
       );
     });
+
+    it('should filter reports to only those assigned to external maintainer', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+      const mockReports = [mockReport];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      await service.findAll(externalMaintainer);
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.assignedExternalMaintainerId = :viewerId',
+        { viewerId: 'ext-maint-1' },
+      );
+    });
   });
 
   describe('findOne', () => {
@@ -629,7 +794,13 @@ describe('ReportsService', () => {
 
       expect(reportRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'mocked-id' },
-        relations: ['user', 'user.role', 'category', 'assignedOfficer'],
+        relations: [
+          'user',
+          'user.role',
+          'category',
+          'assignedOfficer',
+          'assignedExternalMaintainer',
+        ],
       });
       expect(result).toEqual(mockReport);
     });
@@ -668,7 +839,7 @@ describe('ReportsService', () => {
       expect(result.user).toEqual(mockCitizenUser);
     });
 
-    it('should show user info if report is anonymous but viewer has privileged role (officer)', async () => {
+    it('should show user info if report is anonymous but viewer has privileged role (tech_officer)', async () => {
       const anonymousReport = {
         ...mockReport,
         userId: 'user-123',
@@ -678,7 +849,7 @@ describe('ReportsService', () => {
 
       const mockOfficerUser = {
         id: 'officer-999',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
 
       reportRepository.findOne.mockResolvedValue(
@@ -702,6 +873,117 @@ describe('ReportsService', () => {
       ).rejects.toThrow(
         REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('non-existent-id'),
       );
+    });
+
+    it('should throw NotFoundException for citizen trying to access rejected report of another user', async () => {
+      const rejectedReport = {
+        ...mockReport,
+        id: 'rejected-123',
+        status: ReportStatus.REJECTED,
+        userId: 'other-user-456',
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        rejectedReport as unknown as Report,
+      );
+
+      await expect(
+        service.findOne('rejected-123', mockCitizenUser),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.findOne('rejected-123', mockCitizenUser),
+      ).rejects.toThrow(
+        REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('rejected-123'),
+      );
+    });
+
+    it('should allow citizen to access their own rejected report', async () => {
+      const ownRejectedReport = {
+        ...mockReport,
+        id: 'own-rejected',
+        status: ReportStatus.REJECTED,
+        userId: 'user-123',
+        user: mockCitizenUser,
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        ownRejectedReport as unknown as Report,
+      );
+
+      const result = await service.findOne('own-rejected', mockCitizenUser);
+
+      expect(result.id).toBe('own-rejected');
+      expect(result.status).toBe(ReportStatus.REJECTED);
+      expect(result.userId).toBe('user-123');
+    });
+
+    it('should throw NotFoundException for external maintainer trying to access report not assigned to them', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportNotAssigned = {
+        ...mockReport,
+        id: 'report-123',
+        assignedExternalMaintainerId: 'other-ext-maint',
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        reportNotAssigned as unknown as Report,
+      );
+
+      await expect(
+        service.findOne('report-123', externalMaintainer),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.findOne('report-123', externalMaintainer),
+      ).rejects.toThrow(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('report-123'));
+    });
+
+    it('should allow external maintainer to access report assigned to them', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const assignedReport = {
+        ...mockReport,
+        id: 'assigned-report',
+        assignedExternalMaintainerId: 'ext-maint-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        assignedReport as unknown as Report,
+      );
+
+      const result = await service.findOne('assigned-report', externalMaintainer);
+
+      expect(result.id).toBe('assigned-report');
+      expect(result.assignedExternalMaintainerId).toBe('ext-maint-1');
+    });
+
+    it('should allow municipal user to access any rejected report', async () => {
+      const mockMunicipalUser = {
+        id: 'officer-999',
+        role: { name: 'tech_officer' },
+      } as User;
+
+      const rejectedReport = {
+        ...mockReport,
+        id: 'rejected-123',
+        status: ReportStatus.REJECTED,
+        userId: 'other-user-456',
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        rejectedReport as unknown as Report,
+      );
+
+      const result = await service.findOne('rejected-123', mockMunicipalUser);
+
+      expect(result.id).toBe('rejected-123');
+      expect(result.status).toBe(ReportStatus.REJECTED);
     });
   });
 
@@ -774,6 +1056,31 @@ describe('ReportsService', () => {
       const result = await service.findNearby(0, 0, 1000, mockCitizenUser);
 
       expect(result).toEqual([]);
+    });
+
+    it('should exclude all rejected reports from nearby search', async () => {
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getRawAndEntities: jest.fn().mockResolvedValue({
+          entities: [],
+          raw: [],
+        }),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      await service.findNearby(7.686864, 45.070312, 5000, mockCitizenUser);
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.status != :rejectedStatus',
+        { rejectedStatus: 'rejected' },
+      );
     });
   });
 
@@ -868,7 +1175,7 @@ describe('ReportsService', () => {
       const mockOfficer = {
         id: 'officer-1',
         username: 'officer_jane',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
 
       const updateDto: UpdateReportDto = {
@@ -891,6 +1198,7 @@ describe('ReportsService', () => {
 
       expect(userRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'officer-1' },
+        relations: ['office'],
       });
       expect(reportRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -909,11 +1217,11 @@ describe('ReportsService', () => {
 
       const mockOfficer1 = {
         id: 'officer-1',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
       const mockOfficer2 = {
         id: 'officer-2',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
 
       const reportWithCategory = {
@@ -969,7 +1277,7 @@ describe('ReportsService', () => {
       } as Category;
       const mockOfficer = {
         id: 'officer-1',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
       const reportWithoutCategory = {
         ...mockReport,
@@ -1089,7 +1397,7 @@ describe('ReportsService', () => {
       } as Category;
       const mockOfficer = {
         id: 'officer-1',
-        role: { name: 'officer' },
+        role: { name: 'tech_officer' },
       } as User;
       const reportWithCategory = {
         ...mockReport,
@@ -1183,6 +1491,343 @@ describe('ReportsService', () => {
       );
       await expect(service.update('non-existent-id', {})).rejects.toThrow(
         REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('non-existent-id'),
+      );
+    });
+
+    it('should assign external maintainer when assignedExternalMaintainerId is provided', async () => {
+      const mockExternalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const updateDto: UpdateReportDto = {
+        assignedExternalMaintainerId: 'ext-maint-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(mockReport as Report);
+      userRepository.findOne.mockResolvedValue(mockExternalMaintainer);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'ext-maint-1' },
+        relations: ['role'],
+      });
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          assignedExternalMaintainer: mockExternalMaintainer,
+          assignedExternalMaintainerId: 'ext-maint-1',
+        }),
+      );
+    });
+
+    it('should throw BadRequestException when assigning invalid external maintainer', async () => {
+      const mockRegularUser = {
+        id: 'user-1',
+        role: { name: 'user' },
+      } as User;
+
+      const updateDto: UpdateReportDto = {
+        assignedExternalMaintainerId: 'user-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(mockReport as Report);
+      userRepository.findOne.mockResolvedValue(mockRegularUser);
+
+      await expect(
+        service.update('mocked-id', updateDto),
+      ).rejects.toThrow(
+        new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_USER,
+        ),
+      );
+    });
+
+    it('should allow external maintainer to change status from assigned to in_progress', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportAssigned = {
+        ...mockReport,
+        status: ReportStatus.ASSIGNED,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.IN_PROGRESS,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportAssigned);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto, externalMaintainer);
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.IN_PROGRESS,
+        }),
+      );
+    });
+
+    it('should allow external maintainer to change status from in_progress to resolved', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportInProgress = {
+        ...mockReport,
+        status: ReportStatus.IN_PROGRESS,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.RESOLVED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportInProgress);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto, externalMaintainer);
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.RESOLVED,
+        }),
+      );
+    });
+
+    it('should throw BadRequestException when external maintainer tries invalid status transition', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportInProgress = {
+        ...mockReport,
+        status: ReportStatus.IN_PROGRESS,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportInProgress);
+
+      await expect(
+        service.update('mocked-id', updateDto, externalMaintainer),
+      ).rejects.toThrow(
+        new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_STATUS_TRANSITION(
+            ReportStatus.IN_PROGRESS,
+            ReportStatus.ASSIGNED,
+          ),
+        ),
+      );
+    });
+
+    it('should throw BadRequestException when external maintainer tries to reject report', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportAssigned = {
+        ...mockReport,
+        status: ReportStatus.ASSIGNED,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.REJECTED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportAssigned);
+
+      await expect(
+        service.update('mocked-id', updateDto, externalMaintainer),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should remove external maintainer when assignedExternalMaintainerId is explicitly null', async () => {
+      const reportWithExtMaintainer = {
+        ...mockReport,
+        assignedExternalMaintainerId: 'ext-maint-1',
+        assignedExternalMaintainer: {
+          id: 'ext-maint-1',
+          role: { name: 'external_maintainer' },
+        } as User,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        assignedExternalMaintainerId: null,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithExtMaintainer);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          assignedExternalMaintainer: null,
+          assignedExternalMaintainerId: null,
+        }),
+      );
+    });
+
+    it('should allow external maintainer to update report without changing status', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportAssigned = {
+        ...mockReport,
+        status: ReportStatus.ASSIGNED,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        explanation: 'Work in progress',
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportAssigned);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto, externalMaintainer);
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          explanation: 'Work in progress',
+        }),
+      );
+    });
+
+    it('should throw NotFoundException when officer does not exist', async () => {
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+        assignedOfficerId: 'invalid-officer',
+      };
+
+      reportRepository.findOne.mockResolvedValue(mockReport as Report);
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.update('mocked-id', updateDto)).rejects.toThrow(
+        new NotFoundException(
+          REPORT_ERROR_MESSAGES.OFFICER_NOT_FOUND('invalid-officer'),
+        ),
+      );
+    });
+
+    it('should throw BadRequestException when officer does not belong to category office', async () => {
+      const mockCategory = {
+        id: 'cat-1',
+        office: { id: 'office-1', name: 'Infrastructure' },
+      } as Category;
+
+      const mockOfficer = {
+        id: 'officer-1',
+        officeId: 'office-2',
+        office: { id: 'office-2', name: 'Environment' },
+      } as User;
+
+      const reportWithCategory = {
+        ...mockReport,
+        categoryId: 'cat-1',
+        category: mockCategory,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+        assignedOfficerId: 'officer-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithCategory);
+      userRepository.findOne.mockResolvedValue(mockOfficer);
+
+      await expect(service.update('mocked-id', updateDto)).rejects.toThrow(
+        new BadRequestException(
+          REPORT_ERROR_MESSAGES.OFFICER_NOT_FOR_CATEGORY('officer-1', 'cat-1'),
+        ),
+      );
+    });
+
+    it('should successfully assign officer that belongs to correct office', async () => {
+      const mockCategory = {
+        id: 'cat-1',
+        office: { id: 'office-1', name: 'Infrastructure' },
+      } as Category;
+
+      const mockOfficer = {
+        id: 'officer-1',
+        officeId: 'office-1',
+        office: { id: 'office-1', name: 'Infrastructure' },
+      } as User;
+
+      const reportWithCategory = {
+        ...mockReport,
+        categoryId: 'cat-1',
+        category: mockCategory,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+        assignedOfficerId: 'officer-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithCategory);
+      userRepository.findOne.mockResolvedValue(mockOfficer);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          assignedOfficer: mockOfficer,
+          assignedOfficerId: 'officer-1',
+        }),
+      );
+    });
+
+    it('should load category separately when not included in report', async () => {
+      const mockCategory = {
+        id: 'cat-1',
+        office: { id: 'office-1', name: 'Infrastructure' },
+      } as Category;
+
+      const mockOfficer = {
+        id: 'officer-1',
+        officeId: 'office-1',
+        office: { id: 'office-1', name: 'Infrastructure' },
+      } as User;
+
+      const reportWithoutCategory = {
+        ...mockReport,
+        categoryId: 'cat-1',
+        category: null,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.ASSIGNED,
+        assignedOfficerId: 'officer-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithoutCategory);
+      categoryRepository.findOne.mockResolvedValue(mockCategory);
+      userRepository.findOne.mockResolvedValue(mockOfficer);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto);
+
+      expect(categoryRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'cat-1' },
+        relations: ['office'],
+      });
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          assignedOfficer: mockOfficer,
+          assignedOfficerId: 'officer-1',
+        }),
       );
     });
   });

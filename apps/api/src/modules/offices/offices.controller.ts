@@ -1,5 +1,6 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { OfficesResponseDto } from '../../common/dto/office.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
@@ -20,7 +21,7 @@ export class OfficesController {
    */
   @Get()
   @Roles('admin', 'pr_officer')
-  async findAll() {
+  async findAll(): Promise<OfficesResponseDto> {
     const offices = await this.officesService.findAll();
     return { success: true, data: offices };
   }

@@ -131,13 +131,15 @@ docker compose down -v
 
 🔐 Demo Credentials (Auto-Seeded)
 
-On the first run, the system **automatically seeds** the database with sample geolocated data in Turin and creates the following users for testing:
+On the first run, the system **automatically seeds** the database with sample users, geolocated reports in Turin, and municipal boundaries for testing:
 | Role | Username | Password|
 | :--- | :--- | :---|
-| Citizen (registered on platform) | `mario_rossi` | `password` |
+| Citizen (registered on platform) | `mario_rossi`, `luigi_verdi` | `password` |
 | Municipal Public Relations Officer | `pr_officer_1` | `password`|
 | Municipal Technical Officer | `tech_infrastructure_1` | `password`|
 | System Admin | `admin` | `password`|
+
+Note: External Maintainer and External Company credentials will be added in future updates.
 
 ## Environment Variables
 

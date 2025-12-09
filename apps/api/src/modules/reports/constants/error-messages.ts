@@ -7,6 +7,19 @@ export const REPORT_ERROR_MESSAGES = {
   REPORT_NOT_FOUND: (id: string) => `Report with ID ${id} not found`,
   IMAGE_UPLOAD_FAILED: 'Failed to upload images to storage',
   IMAGE_DELETE_FAILED: 'Failed to delete images from storage',
+  COORDINATES_OUTSIDE_BOUNDARY:
+    'The provided coordinates are outside the allowed municipal boundaries',
+  EXTERNAL_MAINTAINER_INVALID_USER:
+    'The specified user is not an external maintainer',
+  EXTERNAL_MAINTAINER_INVALID_STATUS_TRANSITION: (
+    currentStatus: string,
+    targetStatus: string,
+  ) =>
+    `External maintainer cannot change status from ${currentStatus} to ${targetStatus}`,
+  OFFICER_NOT_FOR_CATEGORY: (officerId: string, categoryId: string) =>
+    `Officer ${officerId} does not belong to the office responsible for category ${categoryId}`,
+  OFFICER_NOT_FOUND: (officerId: string) =>
+    `Officer with ID ${officerId} not found`,
 } as const;
 
 export const ALLOWED_IMAGE_MIMETYPES = [

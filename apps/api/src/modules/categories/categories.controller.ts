@@ -14,7 +14,7 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
-  @Roles('officer', 'user', 'pr_officer', 'admin')
+  @Roles('tech_officer', 'user', 'pr_officer', 'admin')
   async findAll(): Promise<CategoriesResponseDto> {
     const categories = await this.categoriesService.findAll();
     return { success: true, data: categories };

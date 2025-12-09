@@ -10,6 +10,22 @@ export const USER_ERROR_MESSAGES = {
   PROFILE_PICTURE_SIZE_EXCEEDED: 'File size must not exceed 5MB',
   MUNICIPALITY_USER_CANNOT_EDIT_PROFILE:
     'Municipality users cannot edit their profile through this endpoint',
+  EXTERNAL_MAINTAINER_NO_OFFICE:
+    'External maintainers must have an office assigned',
+  EXTERNAL_MAINTAINER_WRONG_OFFICE:
+    'External maintainers must be assigned to an external office',
+  REGULAR_USER_EXTERNAL_OFFICE:
+    'Only external maintainers can be assigned to external offices',
+  CATEGORY_NOT_FOUND: (categoryId: string) =>
+    `Category with ID ${categoryId} not found`,
+  CATEGORY_NO_EXTERNAL_OFFICE: (categoryId: string) =>
+    `Category ${categoryId} does not have an external office assigned`,
+  NO_EXTERNAL_MAINTAINERS_FOR_CATEGORY: (categoryId: string) =>
+    `No external maintainers found for category ${categoryId}`,
+  CATEGORY_NO_OFFICE: (categoryId: string) =>
+    `Category ${categoryId} does not have an office assigned`,
+  NO_OFFICERS_FOR_CATEGORY: (categoryId: string) =>
+    `No officers found for category ${categoryId}`,
 } as const;
 
 export const ALLOWED_PROFILE_PICTURE_MIMETYPES = [
