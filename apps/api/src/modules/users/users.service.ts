@@ -257,7 +257,11 @@ export class UsersService {
           where: { id: dto.officeId },
         });
 
-        user.officeId = office ? office.id : null;
+        if (!office) {
+          throw new NotFoundException(USER_ERROR_MESSAGES.OFFICE_NOT_FOUND);
+        }
+
+        user.officeId = office.id;
         updatedOffice = office;
       }
 
