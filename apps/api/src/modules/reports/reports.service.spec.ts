@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,6 +11,7 @@ import {
   FilterReportsDto,
   UpdateReportDto,
 } from '../../common/dto/report.dto';
+import { Boundary } from '../../common/entities/boundary.entity';
 import { Category } from '../../common/entities/category.entity';
 import { Report, ReportStatus } from '../../common/entities/report.entity';
 import { User } from '../../common/entities/user.entity';
@@ -30,8 +32,16 @@ const createMockQueryBuilder = () => ({
   getMany: jest.fn().mockResolvedValue([]),
   getRawMany: jest.fn().mockResolvedValue([]),
   getRawAndEntities: jest.fn().mockResolvedValue({ entities: [], raw: [] }),
+  getOne: jest.fn().mockResolvedValue(null),
   setParameters: jest.fn().mockReturnThis(),
   getRawOne: jest.fn().mockResolvedValue({}),
+});
+
+const createMockBoundaryQueryBuilder = (withinBoundary: boolean = true) => ({
+  where: jest.fn().mockReturnThis(),
+  getOne: jest.fn().mockResolvedValue(
+    withinBoundary ? { id: 'torino', name: 'torino', label: 'Comune di Torino' } : null,
+  ),
 });
 
 describe('ReportsService', () => {
@@ -39,6 +49,7 @@ describe('ReportsService', () => {
   let reportRepository: jest.Mocked<Repository<Report>>;
   let categoryRepository: jest.Mocked<Repository<Category>>;
   let userRepository: jest.Mocked<Repository<User>>;
+  let boundaryRepository: jest.Mocked<Repository<Boundary>>;
   let minioProvider: jest.Mocked<MinioProvider>;
 
   const mockCitizenUser = { id: 'user-123', role: { name: 'user' } } as User;
@@ -95,6 +106,12 @@ describe('ReportsService', () => {
           },
         },
         {
+          provide: getRepositoryToken(Boundary),
+          useValue: {
+            createQueryBuilder: jest.fn(() => createMockBoundaryQueryBuilder(true)),
+          },
+        },
+        {
           provide: MinioProvider,
           useValue: {
             uploadFile: jest.fn(),
@@ -109,6 +126,7 @@ describe('ReportsService', () => {
     service = module.get<ReportsService>(ReportsService);
     reportRepository = module.get(getRepositoryToken(Report));
     categoryRepository = module.get(getRepositoryToken(Category));
+    boundaryRepository = module.get(getRepositoryToken(Boundary));
     minioProvider = module.get(MinioProvider);
     userRepository = module.get(getRepositoryToken(User));
   });
@@ -349,6 +367,37 @@ describe('ReportsService', () => {
         service.create(createDto, 'user-123', mockFiles),
       ).rejects.toThrow(REPORT_ERROR_MESSAGES.IMAGE_UPLOAD_FAILED);
     });
+
+    it('should throw BadRequestException if coordinates are outside municipal boundaries', async () => {
+      const createDto: CreateReportDto = {
+        title: 'Report outside boundary',
+        description: 'Description outside boundary',
+        longitude: 10.0,
+        latitude: 44.0,
+        categoryId: 'cat-123',
+        isAnonymous: false,
+      };
+
+      const mockFiles = [
+        {
+          originalname: 'test.jpg',
+          buffer: Buffer.from('test'),
+          mimetype: 'image/jpeg',
+        },
+      ] as Express.Multer.File[];
+
+      boundaryRepository.createQueryBuilder = jest.fn(() =>
+        createMockBoundaryQueryBuilder(false),
+      ) as any;
+
+      await expect(
+        service.create(createDto, 'user-123', mockFiles),
+      ).rejects.toThrow(
+        new BadRequestException(
+          REPORT_ERROR_MESSAGES.COORDINATES_OUTSIDE_BOUNDARY,
+        ),
+      );
+    });
   });
 
   describe('findAll', () => {
@@ -586,6 +635,96 @@ describe('ReportsService', () => {
       expect(result).toEqual(mockReports);
     });
 
+    it('should exclude rejected reports from other users for citizen users', async () => {
+      const filters: FilterReportsDto = {};
+      const mockReports = [
+        { ...mockReport, status: ReportStatus.PENDING },
+        { ...mockReport, id: 'own-rejected', status: ReportStatus.REJECTED, userId: 'user-123' },
+      ];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      const result = await service.findAll(mockCitizenUser, filters);
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        `(report.status != 'rejected' OR report.userId = :viewerId)`,
+        { viewerId: 'user-123' },
+      );
+      expect(result).toEqual(mockReports);
+    });
+
+    it('should include own rejected reports for citizen users', async () => {
+      const filters: FilterReportsDto = {};
+      const ownRejectedReport = {
+        ...mockReport,
+        id: 'own-rejected',
+        status: ReportStatus.REJECTED,
+        userId: 'user-123',
+      };
+      const mockReports = [ownRejectedReport];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      const result = await service.findAll(mockCitizenUser, filters);
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        `(report.status != 'rejected' OR report.userId = :viewerId)`,
+        { viewerId: 'user-123' },
+      );
+      expect(result).toEqual(mockReports);
+    });
+
+    it('should NOT filter rejected reports for municipal users', async () => {
+      const mockMunicipalUser = {
+        id: 'officer-999',
+        role: { name: 'officer' },
+      } as User;
+
+      const filters: FilterReportsDto = {};
+      const mockReports = [
+        { ...mockReport, status: ReportStatus.PENDING },
+        { ...mockReport, id: 'rejected-1', status: ReportStatus.REJECTED, userId: 'user-123' },
+        { ...mockReport, id: 'rejected-2', status: ReportStatus.REJECTED, userId: 'other-user' },
+      ];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      const result = await service.findAll(mockMunicipalUser, filters);
+
+      expect(mockQueryBuilder.andWhere).not.toHaveBeenCalledWith(
+        `(report.status != 'rejected' OR report.userId = :viewerId)`,
+        expect.any(Object),
+      );
+      expect(result).toEqual(mockReports);
+    });
+
     it('should FORCE status=pending if viewer is a pr_officer, ignoring other status filters', async () => {
       const prOfficerUser = {
         id: 'pr-1',
@@ -703,6 +842,71 @@ describe('ReportsService', () => {
         REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('non-existent-id'),
       );
     });
+
+    it('should throw NotFoundException for citizen trying to access rejected report of another user', async () => {
+      const rejectedReport = {
+        ...mockReport,
+        id: 'rejected-123',
+        status: ReportStatus.REJECTED,
+        userId: 'other-user-456',
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        rejectedReport as unknown as Report,
+      );
+
+      await expect(
+        service.findOne('rejected-123', mockCitizenUser),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.findOne('rejected-123', mockCitizenUser),
+      ).rejects.toThrow(
+        REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND('rejected-123'),
+      );
+    });
+
+    it('should allow citizen to access their own rejected report', async () => {
+      const ownRejectedReport = {
+        ...mockReport,
+        id: 'own-rejected',
+        status: ReportStatus.REJECTED,
+        userId: 'user-123',
+        user: mockCitizenUser,
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        ownRejectedReport as unknown as Report,
+      );
+
+      const result = await service.findOne('own-rejected', mockCitizenUser);
+
+      expect(result.id).toBe('own-rejected');
+      expect(result.status).toBe(ReportStatus.REJECTED);
+      expect(result.userId).toBe('user-123');
+    });
+
+    it('should allow municipal user to access any rejected report', async () => {
+      const mockMunicipalUser = {
+        id: 'officer-999',
+        role: { name: 'officer' },
+      } as User;
+
+      const rejectedReport = {
+        ...mockReport,
+        id: 'rejected-123',
+        status: ReportStatus.REJECTED,
+        userId: 'other-user-456',
+      };
+
+      reportRepository.findOne.mockResolvedValue(
+        rejectedReport as unknown as Report,
+      );
+
+      const result = await service.findOne('rejected-123', mockMunicipalUser);
+
+      expect(result.id).toBe('rejected-123');
+      expect(result.status).toBe(ReportStatus.REJECTED);
+    });
   });
 
   describe('findNearby', () => {
@@ -774,6 +978,31 @@ describe('ReportsService', () => {
       const result = await service.findNearby(0, 0, 1000, mockCitizenUser);
 
       expect(result).toEqual([]);
+    });
+
+    it('should exclude all rejected reports from nearby search', async () => {
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getRawAndEntities: jest.fn().mockResolvedValue({
+          entities: [],
+          raw: [],
+        }),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      await service.findNearby(7.686864, 45.070312, 5000, mockCitizenUser);
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.status != :rejectedStatus',
+        { rejectedStatus: 'rejected' },
+      );
     });
   });
 
