@@ -12,7 +12,7 @@ import { useCategories } from '@/hooks/use-categories';
 import { useExternalMaintainers } from '@/hooks/use-external-maintainers';
 import { useOffices } from '@/hooks/use-offices';
 import { useUpdateReport } from '@/hooks/use-reports';
-import type { Report } from '@repo/api';
+import type { Report, UpdateReportDto } from '@repo/api';
 import { ReportStatus } from '@repo/api';
 import {
   CalendarClock,
@@ -41,8 +41,6 @@ export function ViewAssignedReport({
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null,
   );
-
-  console.log(report);
 
   const reportImages = report.images || [];
 
@@ -73,7 +71,7 @@ export function ViewAssignedReport({
       return;
     }
 
-    const updateData = {
+    const updateData: UpdateReportDto = {
       assignedExternalMaintainerId: selectedExternalMaintainer.id,
     };
 
