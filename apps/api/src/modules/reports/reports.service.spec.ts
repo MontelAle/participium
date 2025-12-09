@@ -1512,7 +1512,7 @@ describe('ReportsService', () => {
 
       expect(userRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'ext-maint-1' },
-        relations: ['role'],
+        relations: ['role', 'office'],
       });
       expect(reportRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -1636,6 +1636,7 @@ describe('ReportsService', () => {
       const reportAssigned = {
         ...mockReport,
         status: ReportStatus.ASSIGNED,
+        assignedExternalMaintainerId: 'ext-maint-1',
       } as Report;
 
       const updateDto: UpdateReportDto = {
@@ -1647,6 +1648,76 @@ describe('ReportsService', () => {
       await expect(
         service.update('mocked-id', updateDto, externalMaintainer),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when external maintainer tries to update report not assigned to them', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportAssignedToOther = {
+        ...mockReport,
+        status: ReportStatus.ASSIGNED,
+        assignedExternalMaintainerId: 'ext-maint-2',
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.IN_PROGRESS,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportAssignedToOther);
+
+      await expect(
+        service.update('mocked-id', updateDto, externalMaintainer),
+      ).rejects.toThrow(
+        new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NOT_ASSIGNED_TO_REPORT,
+        ),
+      );
+    });
+
+    it('should throw BadRequestException when external maintainer office does not match category external office', async () => {
+      const mockExternalMaintainer = {
+        id: 'ext-maint-1',
+        officeId: 'external-office-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const mockCategory = {
+        id: 'cat-1',
+        externalOffice: { id: 'external-office-2', name: 'Wrong External Office' },
+      } as Category;
+
+      const reportWithoutCategory = {
+        ...mockReport,
+        categoryId: 'cat-1',
+        category: null,
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        assignedExternalMaintainerId: 'ext-maint-1',
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportWithoutCategory);
+      userRepository.findOne.mockResolvedValue(mockExternalMaintainer);
+      categoryRepository.findOne.mockResolvedValue(mockCategory);
+
+      await expect(
+        service.update('mocked-id', updateDto),
+      ).rejects.toThrow(
+        new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NOT_FOR_CATEGORY(
+            'ext-maint-1',
+            'cat-1',
+          ),
+        ),
+      );
+
+      expect(categoryRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'cat-1' },
+        relations: ['externalOffice'],
+      });
     });
 
     it('should remove external maintainer when assignedExternalMaintainerId is explicitly null', async () => {
