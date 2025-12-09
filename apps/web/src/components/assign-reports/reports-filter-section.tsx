@@ -36,4 +36,4 @@ export const ReportsFilterSection: React.FC<ReportsFilterSectionProps> = ({
       />
     </div>
   );
-};
+}
