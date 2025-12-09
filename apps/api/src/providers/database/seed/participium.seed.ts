@@ -47,18 +47,18 @@ const OFFICES_DATA = [
 
 const EXTERNAL_OFFICES_DATA = [
   {
-    name: 'external_office_1',
-    label: 'External Office 1',
+    name: 'external_company_1',
+    label: 'External Company 1',
     isExternal: true,
   },
   {
-    name: 'external_office_2',
-    label: 'External Office 2',
+    name: 'external_company_2',
+    label: 'External Company 2',
     isExternal: true,
   },
   {
-    name: 'external_office_3',
-    label: 'External Office 3',
+    name: 'external_company_3',
+    label: 'External Company 3',
     isExternal: true,
   },
 ];
@@ -69,47 +69,47 @@ const CATEGORIES_DATA = [
   {
     name: 'Roads and Urban Furnishings',
     office: 'maintenance',
-    externalOffice: 'external_office_1',
+    externalOffice: 'external_company_1',
   },
   {
     name: 'Architectural Barriers',
     office: 'maintenance',
-    externalOffice: 'external_office_2',
+    externalOffice: 'external_company_2',
   },
   {
     name: 'Road Signs and Traffic Lights',
     office: 'infrastructure',
-    externalOffice: 'external_office_3',
+    externalOffice: 'external_company_3',
   },
   {
     name: 'Public Lighting',
     office: 'infrastructure',
-    externalOffice: 'external_office_1',
+    externalOffice: 'external_company_1',
   },
   {
     name: 'Water Supply – Drinking Water',
     office: 'public_services',
-    externalOffice: 'external_office_2',
+    externalOffice: 'external_company_2',
   },
   {
     name: 'Sewer System',
     office: 'public_services',
-    externalOffice: 'external_office_3',
+    externalOffice: 'external_company_3',
   },
   {
     name: 'Waste',
     office: 'environment',
-    externalOffice: 'external_office_1',
+    externalOffice: 'external_company_1',
   },
   {
     name: 'Public Green Areas and Playgrounds',
     office: 'green_parks',
-    externalOffice: 'external_office_2',
+    externalOffice: 'external_company_2',
   },
   {
     name: 'Other',
     office: 'civic_services',
-    externalOffice: 'external_office_3',
+    externalOffice: 'external_company_3',
   },
 ];
 

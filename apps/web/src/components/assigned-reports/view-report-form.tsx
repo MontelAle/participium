@@ -148,7 +148,7 @@ export function ViewAssignedReport({
                   <SelectContent>
                     {externalOfficesWithCategory?.map((office) => (
                       <SelectItem key={office.id} value={office.id}>
-                        {office.name}
+                        {office.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
