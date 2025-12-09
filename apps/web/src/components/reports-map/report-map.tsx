@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useFilteredReports } from '@/hooks/use-filtered-reports';
 import { useActiveReportStore } from '@/store/activeReportStore';
-import { ReportStatus } from '@repo/api';
+import { Report, ReportStatus } from '@repo/api';
 import L from 'leaflet';
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -11,7 +11,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { MapControls, SearchBox } from './map-controls';
+import type { NominatimSearchResult, StatusMarker } from '@/types';
+import { MapControls } from './map-controls';
+import { SearchBox } from './map-searchbox';
 import {
   DEFAULT_COLOR,
   escapeHtml,
@@ -33,6 +35,8 @@ export default function ReportsMap() {
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const boundaryGeoJsonRef = useRef<any>(null);
   const markersMapRef = useRef<Map<string, L.Marker>>(new Map());
+  const isSelectingRef = useRef(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
 
   const { isCitizenUser } = useAuth();
@@ -48,10 +52,11 @@ export default function ReportsMap() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<NominatimSearchResult[]>(
+    [],
+  );
   const [mapType, setMapType] = useState<'standard' | 'satellite'>('standard');
-
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
 
   useEffect(() => {
     injectStylesOnce();
@@ -137,6 +142,12 @@ export default function ReportsMap() {
       setSearchResults([]);
       return;
     }
+
+    if (isSelectingRef.current) {
+      isSelectingRef.current = false;
+      return;
+    }
+
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     setIsSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
@@ -157,73 +168,34 @@ export default function ReportsMap() {
     };
   }, [searchQuery]);
 
-  const handleLocationSelect = async (
-    lat: number,
-    lng: number,
-    prefilledAddress?: any,
-    skipBoundaryCheck = false,
-  ) => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-
-    if (!skipBoundaryCheck && boundaryGeoJsonRef.current) {
-      const inside = isPointInGeoJSON(lat, lng, boundaryGeoJsonRef.current);
-      if (!inside) {
-        toast.error('Outside boundaries', {
-          description: 'You can only interact within Torino.',
-          duration: 3000,
-        });
-        return;
-      }
-    }
-
-    let addressData = prefilledAddress;
-    if (!addressData) {
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=en`,
-        );
-        addressData = await response.json();
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
-    const rawAddress = addressData?.display_name || 'Unknown Location';
-    const city = addressData?.address?.city || 'Torino';
-    const shortAddress = formatShortAddress(addressData?.address, rawAddress);
-
-    setLocation({ latitude: lat, longitude: lng, address: shortAddress, city });
-  };
-
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
     markerClusterGroupRef.current ??= L.markerClusterGroup({
-        showCoverageOnHover: false,
-        maxClusterRadius: 45,
-        iconCreateFunction: (cluster) => {
-          const children = cluster.getAllChildMarkers();
-          const counts: Record<string, number> = {};
-          children.forEach((marker: any) => {
-            const s = (marker.options.status as string) || 'UNKNOWN';
-            counts[s] = (counts[s] || 0) + 1;
-          });
-          const dominantStatus = Object.keys(counts).reduce((a, b) =>
-            (counts[a] || 0) >= (counts[b] || 0) ? a : b,
-            ''
-          );
-          const statusClass =
-            STATUS_COLORS[dominantStatus as ReportStatus]?.class ||
-            DEFAULT_COLOR.class;
-          return L.divIcon({
-            html: `<div><span>${cluster.getChildCount()}</span></div>`,
-            className: `marker-cluster-custom ${statusClass}`,
-            iconSize: L.point(40, 40),
-          });
-        },
-      }).addTo(map);
+      showCoverageOnHover: false,
+      maxClusterRadius: 45,
+      iconCreateFunction: (cluster) => {
+        const children = cluster.getAllChildMarkers();
+        const counts: Record<string, number> = {};
+        children.forEach((marker: StatusMarker) => {
+          const s = marker.status || 'UNKNOWN';
+          counts[s] = (counts[s] || 0) + 1;
+        });
+        const dominantStatus = Object.keys(counts).reduce(
+          (a, b) => ((counts[a] || 0) >= (counts[b] || 0) ? a : b),
+          '',
+        );
+        const statusClass =
+          STATUS_COLORS[dominantStatus as ReportStatus]?.class ||
+          DEFAULT_COLOR.class;
+        return L.divIcon({
+          html: `<div><span>${cluster.getChildCount()}</span></div>`,
+          className: `marker-cluster-custom ${statusClass}`,
+          iconSize: L.point(40, 40),
+        });
+      },
+    }).addTo(map);
 
     const clusterGroup = markerClusterGroupRef.current;
     clusterGroup.clearLayers();
@@ -231,7 +203,7 @@ export default function ReportsMap() {
 
     if (!mapReports?.length) return;
 
-    mapReports.forEach((report: any) => {
+    mapReports.forEach((report: Report) => {
       const [lng, lat] = report.location?.coordinates ?? [0, 0];
       if (!lat || !lng) return;
 
@@ -240,7 +212,7 @@ export default function ReportsMap() {
         { weekday: 'long', hour: '2-digit', minute: '2-digit' },
       );
       const idShort = report.id.slice(-6);
-      const statusBadge = getStatusBadgeHTML(report.status as ReportStatus);
+      const statusBadge = getStatusBadgeHTML(report.status);
 
       const popupDiv = document.createElement('div');
       popupDiv.className = 'font-sans bg-white min-w-[260px] p-4';
@@ -300,9 +272,9 @@ export default function ReportsMap() {
 
       const m = L.marker([lat, lng], {
         icon: smallDivIcon({ status: report.status }),
-        status: report.status,
         title: report.title,
-      } as any);
+      }) as StatusMarker;
+      m.status = report.status;
 
       m.bindPopup(popupDiv, { className: 'my-popup', maxWidth: 320 });
 
@@ -414,6 +386,103 @@ export default function ReportsMap() {
     return () => clearLocation();
   }, [clearLocation]);
 
+  const handleLocationSelect = async (
+    lat: number,
+    lng: number,
+    prefilledResult?: NominatimSearchResult,
+    skipBoundaryCheck = false,
+  ) => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    if (!skipBoundaryCheck && boundaryGeoJsonRef.current) {
+      const inside = isPointInGeoJSON(lat, lng, boundaryGeoJsonRef.current);
+      if (!inside) {
+        toast.error('Outside boundaries', {
+          description: 'You can only interact within Torino.',
+          duration: 3000,
+        });
+        return;
+      }
+    }
+
+    let resultData = prefilledResult;
+    if (!resultData) {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=en`,
+        );
+        resultData = await response.json();
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    const rawAddress = resultData?.display_name || 'Unknown Location';
+    const city = resultData?.address?.city || 'Torino';
+    const shortAddress = resultData
+      ? formatShortAddress(resultData, rawAddress)
+      : rawAddress;
+    setLocation({ latitude: lat, longitude: lng, address: shortAddress, city });
+  };
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation not supported', {
+        description: 'Your browser does not support geolocation.',
+      });
+      return;
+    }
+
+    setIsLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1&accept-language=en`,
+          );
+          const data: NominatimSearchResult = await response.json();
+
+          let label =
+            data.address?.road ||
+            data.display_name.split(',')[0] ||
+            'Current Location';
+          if (data.address?.road && data.address?.house_number) {
+            label = `${data.address.road}, ${data.address.house_number}`;
+          }
+
+          isSelectingRef.current = true;
+          setSearchQuery(label);
+          setSearchResults([]);
+          handleLocationSelect(latitude, longitude, data, false);
+
+          toast.success('Location found', {
+            description: `Located at ${label}`,
+          });
+        } catch (error) {
+          console.error('Reverse geocoding failed', error);
+          handleLocationSelect(latitude, longitude, undefined, false);
+          setSearchQuery(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (error) => {
+        console.error('Geolocation error', error);
+        let msg = 'Unable to retrieve your location';
+        if (error.code === 1) msg = 'Location permission denied';
+        else if (error.code === 2) msg = 'Location unavailable';
+        else if (error.code === 3) msg = 'Location request timed out';
+
+        toast.error('Geolocation Error', { description: msg });
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  };
+
   return (
     <div className="relative h-full w-full group">
       <SearchBox
@@ -423,10 +492,18 @@ export default function ReportsMap() {
         setSearchResults={setSearchResults}
         searchResults={searchResults}
         onSelect={(lat, lon, item) => {
+          isSelectingRef.current = true;
           handleLocationSelect(lat, lon, item, false);
           setSearchResults([]);
-          setSearchQuery(item.display_name.split(',')[0]);
+          let label =
+            item.address?.road || item.display_name.split(',')[0] || '';
+          if (item.address?.road && item.address?.house_number) {
+            label = `${item.address.road}, ${item.address.house_number}`;
+          }
+          setSearchQuery(label);
         }}
+        onLocateMe={handleLocateMe}
+        isLocating={isLocating}
       />
 
       <MapControls

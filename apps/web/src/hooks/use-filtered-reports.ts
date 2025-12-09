@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useReports } from '@/hooks/use-reports';
 import { useFilterStore } from '@/store/filterStore';
+import type { ReportFilters } from '@/types/index';
 import { DateCheckStrategy } from '@/types/ui';
 import type { Report, User } from '@repo/api';
 import {
@@ -12,6 +13,7 @@ import {
   subWeeks,
 } from 'date-fns';
 import { useMemo } from 'react';
+import type { DateRange } from 'react-day-picker';
 
 const failsPermissionCheck = (
   report: Report,
@@ -46,7 +48,10 @@ const failsSearchCheck = (report: Report, searchTerm: string): boolean => {
   return !(titleMatch || addressMatch || categoryMatch);
 };
 
-const failsStaticFilters = (report: Report, filters: any): boolean => {
+const failsStaticFilters = (
+  report: Report,
+  filters: ReportFilters,
+): boolean => {
   if (!filters) return false;
 
   if (filters.status && report.status !== filters.status) return true;
@@ -62,7 +67,10 @@ const DATE_RANGE_STRATEGIES: Record<string, DateCheckStrategy> = {
   'This Month': (date, today) => !isAfter(date, subMonths(today, 1)),
 };
 
-const failsCustomDateCheck = (reportDate: Date, customDate: any): boolean => {
+const failsCustomDateCheck = (
+  reportDate: Date,
+  customDate: DateRange,
+): boolean => {
   if (!customDate?.from) return false;
 
   const fromDate = startOfDay(new Date(customDate.from));
@@ -76,7 +84,11 @@ const failsCustomDateCheck = (reportDate: Date, customDate: any): boolean => {
   return false;
 };
 
-const failsDateCheck = (report: Report, filters: any, today: Date): boolean => {
+const failsDateCheck = (
+  report: Report,
+  filters: ReportFilters,
+  today: Date,
+): boolean => {
   if (!filters) return false;
 
   const reportDate = new Date(report.createdAt);
@@ -88,8 +100,10 @@ const failsDateCheck = (report: Report, filters: any, today: Date): boolean => {
     }
   }
 
-  if (failsCustomDateCheck(reportDate, filters.customDate)) {
-    return true;
+  if (filters.customDate) {
+    if (failsCustomDateCheck(reportDate, filters.customDate)) {
+      return true;
+    }
   }
 
   return false;

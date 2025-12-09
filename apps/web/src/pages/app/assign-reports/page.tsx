@@ -86,7 +86,7 @@ const AssignReportsPage = () => {
         />
       </div>
       <div className="overflow-hidden">
-        <ReportsTable data={filteredReports} />
+        <ReportsTable data={filteredReports} viewBasePath="/app/assign-reports/view" />
       </div>
     </div>
   );
