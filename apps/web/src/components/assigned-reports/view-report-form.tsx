@@ -140,7 +140,7 @@ export function ViewAssignedReport({
                   <Select
                     value={watch('externalOfficeId') ?? ''}
                     onValueChange={(v) => setValue('externalOfficeId', v)}
-                    disabled={report.status === ReportStatus.RESOLVED}
+                    disabled={report.status !== ReportStatus.ASSIGNED}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select an external company" />
@@ -156,7 +156,7 @@ export function ViewAssignedReport({
                   </Select>
 
                   {watch('externalOfficeId') &&
-                    report.status !== ReportStatus.RESOLVED && (
+                    report.status === ReportStatus.ASSIGNED && (
                       <button
                         type="button"
                         className="absolute right-12 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
