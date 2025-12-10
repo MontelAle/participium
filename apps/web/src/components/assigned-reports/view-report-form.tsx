@@ -32,11 +32,13 @@ import { Button } from '../ui/button';
 export type ViewAssignedReportProps = {
   report: Report;
   showAnonymous?: boolean;
+  onClose?: () => void;
 };
 
 export function ViewAssignedReport({
   report,
   showAnonymous = true,
+  onClose,
 }: ViewAssignedReportProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null,
@@ -77,6 +79,7 @@ export function ViewAssignedReport({
       });
 
       toast.success('Report updated successfully');
+      if (onClose) onClose();
     } catch (err) {
       toast.error('Failed to update report');
       console.error(err);
@@ -320,7 +323,11 @@ export function ViewAssignedReport({
               <Button
                 type="submit"
                 className="h-11 px-8 text-base shadow-lg shadow-primary/20 hover:shadow-primary/40 rounded-lg"
-                disabled={isPending}
+                disabled={
+                  isPending ||
+                  (report.assignedExternalMaintainer?.officeId || '') ==
+                    watch('externalOfficeId')
+                }
               >
                 Confirm
               </Button>

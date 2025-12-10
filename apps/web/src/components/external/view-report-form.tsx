@@ -29,11 +29,13 @@ import { Button } from '../ui/button';
 export type ViewAssignedExternalReportProps = {
   report: Report;
   showAnonymous?: boolean;
+  onClose?: () => void;
 };
 
 export function ViewAssignedExternalReport({
   report,
   showAnonymous = true,
+  onClose,
 }: ViewAssignedExternalReportProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null,
@@ -72,6 +74,7 @@ export function ViewAssignedExternalReport({
       });
 
       toast.success('Report updated successfully');
+      if (onClose) onClose();
     } catch (err) {
       toast.error('Failed to update report');
       console.error(err);
@@ -132,7 +135,7 @@ export function ViewAssignedExternalReport({
                   value={watch('status')}
                   onValueChange={(v) => setValue('status', v as ReportStatus)}
                 >
-                  <SelectTrigger className="w-fit">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Change status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -298,7 +301,7 @@ export function ViewAssignedExternalReport({
               <Button
                 type="submit"
                 className="h-11 px-8 text-base shadow-lg shadow-primary/20 hover:shadow-primary/40 rounded-lg"
-                disabled={isPending}
+                disabled={isPending || report.status == watch('status')}
               >
                 Confirm
               </Button>
