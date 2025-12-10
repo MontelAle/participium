@@ -47,6 +47,19 @@ export function ViewAssignedExternalReport({
     },
   });
 
+  const getNextStatusOptions = (currentStatus: ReportStatus) => {
+    switch (currentStatus) {
+      case ReportStatus.ASSIGNED:
+        return [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS];
+      case ReportStatus.IN_PROGRESS:
+        return [ReportStatus.IN_PROGRESS, ReportStatus.RESOLVED];
+      case ReportStatus.RESOLVED:
+        return [ReportStatus.RESOLVED];
+      default:
+        return [];
+    }
+  };
+
   const handleConfirm = async (data: { status: ReportStatus }) => {
     const updateData: UpdateReportDto = {
       status: data.status,
@@ -123,7 +136,7 @@ export function ViewAssignedExternalReport({
                     <SelectValue placeholder="Change status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.values(ReportStatus).map((s) => (
+                    {getNextStatusOptions(watch('status')).map((s) => (
                       <SelectItem key={s} value={s}>
                         {getStatusConfig(s).label}
                       </SelectItem>
