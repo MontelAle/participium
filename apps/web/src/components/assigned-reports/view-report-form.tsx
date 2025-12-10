@@ -66,13 +66,8 @@ export function ViewAssignedReport({
       (em) => em.office?.id === data.externalOfficeId,
     );
 
-    if (!selectedExternalMaintainer) {
-      toast.error('Please select an external company');
-      return;
-    }
-
     const updateData: UpdateReportDto = {
-      assignedExternalMaintainerId: selectedExternalMaintainer.id,
+      assignedExternalMaintainerId: selectedExternalMaintainer?.id || '',
     };
 
     try {
@@ -138,21 +133,38 @@ export function ViewAssignedReport({
                 <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">
                   External Company
                 </h4>
-                <Select
-                  value={watch('externalOfficeId') ?? ''}
-                  onValueChange={(v) => setValue('externalOfficeId', v)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select an external company" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {externalOfficesWithCategory?.map((office) => (
-                      <SelectItem key={office.id} value={office.id}>
-                        {office.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <Select
+                    value={watch('externalOfficeId') ?? ''}
+                    onValueChange={(v) => setValue('externalOfficeId', v)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select an external company" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      {externalOfficesWithCategory?.map((office) => (
+                        <SelectItem key={office.id} value={office.id}>
+                          {office.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {watch('externalOfficeId') && (
+                    <button
+                      type="button"
+                      className="absolute right-12 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setValue('externalOfficeId', '');
+                      }}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
 
               {report.explanation && (
