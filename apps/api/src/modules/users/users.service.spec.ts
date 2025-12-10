@@ -10,6 +10,7 @@ import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dt
 import { Account } from '../../common/entities/account.entity';
 import { Category } from '../../common/entities/category.entity';
 import { Office } from '../../common/entities/office.entity';
+import { Profile } from '../../common/entities/profile.entity';
 import { Role } from '../../common/entities/role.entity';
 import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
@@ -29,6 +30,7 @@ describe('UsersService', () => {
   let accountRepository: jest.Mocked<Repository<Account>>;
   let roleRepository: jest.Mocked<Repository<Role>>;
   let officeRepository: jest.Mocked<Repository<Office>>;
+  let profileRepository: jest.Mocked<Repository<Profile>>;
   const mockManager = {
     getRepository: jest.fn(),
   };
@@ -92,6 +94,13 @@ describe('UsersService', () => {
             extractFileNameFromUrl: jest.fn(),
           },
         },
+        {
+          provide: getRepositoryToken(Profile),
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -100,12 +109,14 @@ describe('UsersService', () => {
     accountRepository = module.get(getRepositoryToken(Account));
     roleRepository = module.get(getRepositoryToken(Role));
     officeRepository = module.get(getRepositoryToken(Office));
+    profileRepository = module.get(getRepositoryToken(Profile)); // <-- Add this line
 
     mockManager.getRepository.mockImplementation((entity) => {
       if (entity === User) return userRepository;
       if (entity === Account) return accountRepository;
       if (entity === Role) return roleRepository;
       if (entity === Office) return officeRepository;
+      if (entity === Profile) return profileRepository;
       return null;
     });
   });
@@ -165,6 +176,8 @@ describe('UsersService', () => {
       userRepository.findOne
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null);
+      profileRepository.create.mockReturnValue({} as Profile); // Mock profile creation
+      profileRepository.save.mockResolvedValue({} as Profile); // Mock profile save
 
       const createdUser = { ...mockUser, id: 'new-id' };
       userRepository.create.mockReturnValue(createdUser);
@@ -235,7 +248,9 @@ describe('UsersService', () => {
       await expect(
         service.createMunicipalityUser(externalMaintainerDto),
       ).rejects.toThrow(
-        new BadRequestException(USER_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NO_OFFICE),
+        new BadRequestException(
+          USER_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NO_OFFICE,
+        ),
       );
     });
 
@@ -313,6 +328,8 @@ describe('UsersService', () => {
       userRepository.findOne
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null);
+      profileRepository.create.mockReturnValue({} as Profile); // Mock profile creation
+      profileRepository.save.mockResolvedValue({} as Profile); // Mock profile save
 
       const createdUser = { ...mockUser, id: 'new-ext-maint' };
       userRepository.create.mockReturnValue(createdUser);
@@ -345,6 +362,8 @@ describe('UsersService', () => {
       userRepository.findOne
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null);
+      profileRepository.create.mockReturnValue({} as Profile); // Mock profile creation
+      profileRepository.save.mockResolvedValue({} as Profile); // Mock profile save
 
       const createdUser = { ...mockUser, id: 'new-officer' };
       userRepository.create.mockReturnValue(createdUser);
@@ -518,7 +537,9 @@ describe('UsersService', () => {
           officeId: null,
         }),
       ).rejects.toThrow(
-        new BadRequestException(USER_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NO_OFFICE),
+        new BadRequestException(
+          USER_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NO_OFFICE,
+        ),
       );
     });
 
@@ -693,8 +714,12 @@ describe('UsersService', () => {
       const categoryRepository = module.get(getRepositoryToken(Category));
       categoryRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findExternalMaintainers('invalid-cat')).rejects.toThrow(
-        new NotFoundException(USER_ERROR_MESSAGES.CATEGORY_NOT_FOUND('invalid-cat')),
+      await expect(
+        service.findExternalMaintainers('invalid-cat'),
+      ).rejects.toThrow(
+        new NotFoundException(
+          USER_ERROR_MESSAGES.CATEGORY_NOT_FOUND('invalid-cat'),
+        ),
       );
     });
 
@@ -776,8 +801,12 @@ describe('UsersService', () => {
       const categoryRepository = module.get(getRepositoryToken(Category));
       categoryRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findMunicipalityUsers('invalid-cat')).rejects.toThrow(
-        new NotFoundException(USER_ERROR_MESSAGES.CATEGORY_NOT_FOUND('invalid-cat')),
+      await expect(
+        service.findMunicipalityUsers('invalid-cat'),
+      ).rejects.toThrow(
+        new NotFoundException(
+          USER_ERROR_MESSAGES.CATEGORY_NOT_FOUND('invalid-cat'),
+        ),
       );
     });
 
@@ -792,7 +821,9 @@ describe('UsersService', () => {
       categoryRepository.findOne.mockResolvedValue(mockCategory);
 
       await expect(service.findMunicipalityUsers('cat-1')).rejects.toThrow(
-        new BadRequestException(USER_ERROR_MESSAGES.CATEGORY_NO_OFFICE('cat-1')),
+        new BadRequestException(
+          USER_ERROR_MESSAGES.CATEGORY_NO_OFFICE('cat-1'),
+        ),
       );
     });
 
@@ -808,7 +839,9 @@ describe('UsersService', () => {
       userRepository.find.mockResolvedValue([]);
 
       await expect(service.findMunicipalityUsers('cat-1')).rejects.toThrow(
-        new NotFoundException(USER_ERROR_MESSAGES.NO_OFFICERS_FOR_CATEGORY('cat-1')),
+        new NotFoundException(
+          USER_ERROR_MESSAGES.NO_OFFICERS_FOR_CATEGORY('cat-1'),
+        ),
       );
     });
   });
