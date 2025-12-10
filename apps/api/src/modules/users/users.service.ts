@@ -1,19 +1,19 @@
 import {
-  Injectable,
+  BadRequestException,
   ConflictException,
+  Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../../common/entities/user.entity';
-import { Account } from '../../common/entities/account.entity';
-import { Role } from '../../common/entities/role.entity';
-import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
-import { UpdateProfileDto } from '../../common/dto/user.dto';
 import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
-import path from 'path';
+import { Repository } from 'typeorm';
+import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
+import { Account } from '../../common/entities/account.entity';
+import { Category } from '../../common/entities/category.entity';
 import { Office } from '../../common/entities/office.entity';
+import { Role } from '../../common/entities/role.entity';
+import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { USER_ERROR_MESSAGES } from './constants/error-messages';
 
@@ -32,10 +32,49 @@ export class UsersService {
     @InjectRepository(Office)
     private readonly officeRepository: Repository<Office>,
 
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
+
     private readonly minioProvider: MinioProvider,
   ) {}
 
-  async findMunicipalityUsers(): Promise<User[]> {
+  async findMunicipalityUsers(categoryId?: string): Promise<User[]> {
+    if (categoryId) {
+      const category = await this.categoryRepository.findOne({
+        where: { id: categoryId },
+        relations: ['office'],
+      });
+
+      if (!category) {
+        throw new NotFoundException(
+          USER_ERROR_MESSAGES.CATEGORY_NOT_FOUND(categoryId),
+        );
+      }
+
+      if (!category.office) {
+        throw new BadRequestException(
+          USER_ERROR_MESSAGES.CATEGORY_NO_OFFICE(categoryId),
+        );
+      }
+
+      const users = await this.userRepository.find({
+        where: {
+          role: { isMunicipal: true },
+          officeId: category.office.id,
+        },
+        relations: ['role', 'office'],
+        order: { firstName: 'ASC', lastName: 'ASC' },
+      });
+
+      if (users.length === 0) {
+        throw new NotFoundException(
+          USER_ERROR_MESSAGES.NO_OFFICERS_FOR_CATEGORY(categoryId),
+        );
+      }
+
+      return users;
+    }
+
     return this.userRepository.find({
       relations: ['role', 'office'],
       where: {
@@ -43,6 +82,7 @@ export class UsersService {
           isMunicipal: true,
         },
       },
+      order: { firstName: 'ASC', lastName: 'ASC' },
     });
   }
 
@@ -85,6 +125,8 @@ export class UsersService {
       const dbOffice = await officeRepo.findOne({
         where: { id: dto.officeId },
       });
+
+      this.validateOfficeRoleMatch(dbRole, dbOffice);
 
       const existingUser = await manager.getRepository(User).findOne({
         where: { username },
@@ -194,6 +236,9 @@ export class UsersService {
       if (dto.firstName) user.firstName = dto.firstName;
       if (dto.lastName) user.lastName = dto.lastName;
 
+      let updatedRole = user.role;
+      let updatedOffice = user.office;
+
       if (dto.roleId) {
         const role = await this.roleRepository.findOne({
           where: { id: dto.roleId },
@@ -204,6 +249,7 @@ export class UsersService {
         }
 
         user.roleId = role.id;
+        updatedRole = role;
       }
 
       if (dto.officeId) {
@@ -211,8 +257,15 @@ export class UsersService {
           where: { id: dto.officeId },
         });
 
-        user.officeId = office ? office.id : null;
+        if (!office) {
+          throw new NotFoundException(USER_ERROR_MESSAGES.OFFICE_NOT_FOUND);
+        }
+
+        user.officeId = office.id;
+        updatedOffice = office;
       }
+
+      this.validateOfficeRoleMatch(updatedRole, updatedOffice);
 
       await manager.getRepository(User).save(user);
 
@@ -229,62 +282,75 @@ export class UsersService {
     });
   }
 
-  async updateProfile(
-    userId: string,
-    dto: UpdateProfileDto,
-    file?: Express.Multer.File,
-  ): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
+  private validateOfficeRoleMatch(role: Role, office: Office | null): void {
+    const isExternalMaintainer = role.name === 'external_maintainer';
+    const hasExternalOffice = office && office.isExternal;
 
-    if (!user) {
-      throw new NotFoundException(USER_ERROR_MESSAGES.PROFILE_NOT_FOUND);
-    }
-
-    if (dto.telegramUsername !== undefined) {
-      user.telegramUsername = dto.telegramUsername || null;
-    }
-
-    if (dto.emailNotificationsEnabled !== undefined) {
-      user.emailNotificationsEnabled = dto.emailNotificationsEnabled === 'true';
-    }
-
-    if (file) {
-      const sanitizedFilename = path
-        .basename(file.originalname)
-        .replace(/[^a-zA-Z0-9.-]/g, '_');
-      const fileName = `profile-pictures/${userId}/${nanoid()}-${sanitizedFilename}`;
-      const fileUrl = await this.minioProvider.uploadFile(
-        fileName,
-        file.buffer,
-        file.mimetype,
+    // Check if external maintainer has no office first (more specific error)
+    if (isExternalMaintainer && !office) {
+      throw new BadRequestException(
+        USER_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NO_OFFICE,
       );
-
-      if (user.profilePictureUrl) {
-        try {
-          const oldFileName = this.minioProvider.extractFileNameFromUrl(
-            user.profilePictureUrl,
-          );
-          await this.minioProvider.deleteFile(oldFileName);
-        } catch {
-          // Ignore errors if old file doesn't exist
-        }
-      }
-
-      user.profilePictureUrl = fileUrl;
     }
 
-    return this.userRepository.save(user);
+    // Check if external maintainer has non-external office
+    if (isExternalMaintainer && !hasExternalOffice) {
+      throw new BadRequestException(
+        USER_ERROR_MESSAGES.EXTERNAL_MAINTAINER_WRONG_OFFICE,
+      );
+    }
+
+    // Check if non-external maintainer has external office
+    if (!isExternalMaintainer && hasExternalOffice) {
+      throw new BadRequestException(
+        USER_ERROR_MESSAGES.REGULAR_USER_EXTERNAL_OFFICE,
+      );
+    }
   }
 
-  async findUserById(userId: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
-    if (!user) {
-      throw new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND);
+  async findExternalMaintainers(categoryId?: string): Promise<User[]> {
+    if (categoryId) {
+      const category = await this.categoryRepository.findOne({
+        where: { id: categoryId },
+        relations: ['externalOffice'],
+      });
+
+      if (!category) {
+        throw new NotFoundException(
+          USER_ERROR_MESSAGES.CATEGORY_NOT_FOUND(categoryId),
+        );
+      }
+
+      if (!category.externalOffice) {
+        throw new BadRequestException(
+          USER_ERROR_MESSAGES.CATEGORY_NO_EXTERNAL_OFFICE(categoryId),
+        );
+      }
+
+      const maintainers = await this.userRepository.find({
+        where: {
+          role: { name: 'external_maintainer' },
+          officeId: category.externalOffice.id,
+        },
+        relations: ['role', 'office'],
+        order: { firstName: 'ASC', lastName: 'ASC' },
+      });
+
+      if (maintainers.length === 0) {
+        throw new NotFoundException(
+          USER_ERROR_MESSAGES.NO_EXTERNAL_MAINTAINERS_FOR_CATEGORY(categoryId),
+        );
+      }
+
+      return maintainers;
     }
-    return user;
+
+    return this.userRepository.find({
+      where: {
+        role: { name: 'external_maintainer' },
+      },
+      relations: ['role', 'office'],
+      order: { firstName: 'ASC', lastName: 'ASC' },
+    });
   }
 }

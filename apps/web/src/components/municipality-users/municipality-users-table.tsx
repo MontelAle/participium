@@ -1,133 +1,130 @@
-import * as React from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
-  TableProvider,
-  TableHeader,
-  TableHeaderGroup,
-  TableRow,
+  TableBody,
   TableCell,
   TableColumnHeader,
-  TableBody,
+  TableHeader,
+  TableHeaderGroup,
+  TableProvider,
+  TableRow,
 } from '@/components/ui/shadcn-io/table';
-import type { User } from '@repo/api';
-import { DeleteMunicipalityUserDialog } from './delete-municipality-user-dialog';
-import { prettifyRole, cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Pencil } from 'lucide-react';
+import { cn, prettifyRole } from '@/lib/utils';
 import { MunicipalityUsersTableProps } from '@/types/ui';
+import type { Office, Role, User } from '@repo/api';
+import type { ColumnDef } from '@tanstack/react-table'; // Aggiungi ColumnDef
+import { Pencil, Search } from 'lucide-react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { DeleteMunicipalityUserDialog } from './delete-municipality-user-dialog';
 
-export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
+const UserInfoCell = ({ user }: { user: User }) => {
+  const initials =
+    (
+      (user.firstName?.charAt(0) || '') + (user.lastName?.charAt(0) || '')
+    ).toUpperCase() || 'U';
+
+  return (
+    <div className="flex items-center gap-3 py-1 min-w-[200px]">
+      <Avatar className="h-10 w-10 border-2 border-background shadow-sm shrink-0">
+        <AvatarImage src="" />
+        <AvatarFallback className="bg-primary/10 text-primary font-bold">
+          {initials}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex flex-col min-w-0">
+        <span className="font-semibold text-base text-foreground truncate">
+          {user.username}
+        </span>
+        <span className="text-sm text-muted-foreground truncate">
+          {user.email}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const RoleCell = ({ role }: { role: Role | undefined }) => {
+  const name = role?.name || '';
+  const isSuperAdmin = name === 'super_admin';
+
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium border whitespace-nowrap',
+        isSuperAdmin
+          ? 'bg-purple-50 text-purple-700 border-purple-200'
+          : 'bg-slate-100 text-slate-700 border-slate-200',
+      )}
+    >
+      {prettifyRole(name)}
+    </span>
+  );
+};
+
+const OfficeCell = ({ office }: { office: Office | undefined }) => {
+  const label = office?.label || '-';
+  return (
+    <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
+      {label}
+    </span>
+  );
+};
+
+const OperationsCell = ({ user }: { user: User }) => {
   const navigate = useNavigate();
 
-  const columns = React.useMemo(
+  return (
+    <div className="text-base items-center">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-9 w-9 text-muted-foreground"
+        onClick={() => navigate(`/app/municipality-users/view/${user.id}`)}
+        aria-label="Edit"
+      >
+        <Pencil className="h-5 w-5" />
+      </Button>
+      <DeleteMunicipalityUserDialog user={user} />
+    </div>
+  );
+};
+
+export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
+  const columns = useMemo<ColumnDef<User>[]>(
     () => [
       {
         accessorKey: 'username',
         header: 'User',
         size: 250,
-        cell: ({ row }: any) => {
-          const user = row.original as User;
-          const initials =
-            (
-              (user.firstName?.charAt(0) || '') +
-              (user.lastName?.charAt(0) || '')
-            ).toUpperCase() || 'U';
-
-          return (
-            <div className="flex items-center gap-3 py-1 min-w-[200px]">
-              <Avatar className="h-10 w-10 border-2 border-background shadow-sm shrink-0">
-                <AvatarImage src="" />
-                <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col min-w-0">
-                <span className="font-semibold text-base text-foreground truncate">
-                  {user.username}
-                </span>
-                <span className="text-sm text-muted-foreground truncate">
-                  {user.email}
-                </span>
-              </div>
-            </div>
-          );
-        },
+        cell: ({ row }) => <UserInfoCell user={row.original} />,
       },
       {
         accessorKey: 'firstName',
         header: 'Full Name',
-        cell: ({ row }: any) => {
-          const user = row.original;
-          return (
-            <span className="text-base whitespace-nowrap">
-              {user.firstName} {user.lastName}
-            </span>
-          );
-        },
+        cell: ({ row }) => (
+          <span className="text-base whitespace-nowrap">
+            {row.original.firstName} {row.original.lastName}
+          </span>
+        ),
       },
       {
         accessorKey: 'role',
         header: 'Role',
-        cell: ({ getValue }: any) => {
-          const v = getValue();
-          const name =
-            typeof v === 'object' ? (v?.name ?? '') : String(v ?? '');
-          const isSuperAdmin = name === 'super_admin';
-
-          return (
-            <span
-              className={cn(
-                'inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium border whitespace-nowrap',
-                isSuperAdmin
-                  ? 'bg-purple-50 text-purple-700 border-purple-200'
-                  : 'bg-slate-100 text-slate-700 border-slate-200',
-              )}
-            >
-              {prettifyRole(name)}
-            </span>
-          );
-        },
+        cell: ({ row }) => <RoleCell role={row.original.role} />,
       },
       {
         accessorKey: 'office',
         header: 'Office',
-        cell: ({ getValue }: any) => {
-          const v = getValue();
-          const label =
-            typeof v === 'object' ? (v?.label ?? '-') : String(v ?? '-');
-          return (
-            <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
-              {label}
-            </span>
-          );
-        },
+        cell: ({ row }) => <OfficeCell office={row.original.office} />,
       },
       {
         id: 'operations',
         header: 'Operations',
-        cell: ({ row }: any) => {
-          const user = row.original as User;
-          return (
-            <div className="text-base items-center">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 text-muted-foreground"
-                onClick={() =>
-                  navigate(`/app/municipality-users/view/${user.id}`)
-                }
-                aria-label="Edit"
-              >
-                <Pencil className="h-5 w-5" />
-              </Button>
-              <DeleteMunicipalityUserDialog user={user} />
-            </div>
-          );
-        },
+        cell: ({ row }) => <OperationsCell user={row.original} />,
       },
     ],
-    [navigate],
+    [], // Dipendenze vuote! Molto più efficiente.
   );
 
   if (data.length === 0) {
@@ -147,7 +144,7 @@ export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
   return (
     <div className="relative w-full overflow-auto rounded-md border">
       <div className="min-w-[800px]">
-        <TableProvider columns={columns as any} data={data}>
+        <TableProvider columns={columns} data={data}>
           <TableHeader>
             {({ headerGroup }) => (
               <TableHeaderGroup
@@ -156,11 +153,11 @@ export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
               >
                 {({ header }) => (
                   <TableColumnHeader
-                    column={header.column as any}
+                    column={header.column}
                     title={
                       typeof header.column.columnDef.header === 'function'
-                        ? (header.column.columnDef.header as any)()
-                        : (header.column.columnDef.header as string)
+                        ? header.column.columnDef.header(header.getContext())
+                        : header.column.columnDef.header
                     }
                     className="h-12 text-sm font-semibold text-muted-foreground px-4 first:pl-6"
                   />

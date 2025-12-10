@@ -1,18 +1,18 @@
+import type { User as UserType } from '@repo/api';
 import {
-  Entity,
-  PrimaryColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
+  Entity,
   JoinColumn,
   ManyToOne,
+  PrimaryColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { User as UserInterface } from '@repo/api';
-import { Role } from './role.entity';
 import { Office } from './office.entity';
+import { Role } from './role.entity';
 
 @Entity('user')
-export class User implements UserInterface {
+export class User implements UserType {
   @PrimaryColumn('varchar')
   id: string;
 
@@ -41,15 +41,6 @@ export class User implements UserInterface {
   @ManyToOne(() => Office, { nullable: true })
   @JoinColumn({ name: 'officeId' })
   office: Office;
-
-  @Column({ nullable: true })
-  telegramUsername: string | null;
-
-  @Column({ default: false })
-  emailNotificationsEnabled: boolean;
-
-  @Column({ nullable: true })
-  profilePictureUrl: string | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;

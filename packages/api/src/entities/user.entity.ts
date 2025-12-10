@@ -1,5 +1,5 @@
-import { Role } from './role.entity';
 import { Office } from './office.entity';
+import { Role } from './role.entity';
 
 export interface User {
   id: string;
@@ -13,7 +13,4 @@ export interface User {
   updatedAt: Date;
   officeId?: string;
   office?: Office;
-  telegramUsername?: string | null;
-  emailNotificationsEnabled: boolean;
-  profilePictureUrl?: string | null;
 }

@@ -1,91 +1,154 @@
-# Participium - Full Stack Deployment
+# Quick Start (Full Stack Deployment)
 
-This repository contains the deployment configuration for the **Participium** platform, a full-stack application built with a modular architecture using a monorepo strategy.
+The recommended way to run the full Participium stack (Frontend + Backend + Database + Storage) is using Docker Compose. This ensures all services share the correct network and volumes
 
-The release is fully containerized and hosted on Docker Hub, ensuring a seamless "plug-and-play" deployment experience for third parties
+## 1. Create a compose.yml file
 
-## Prerequisites
+Copy the following content into a file named docker-compose.yml:
 
-Before starting, ensure you have the following installed on your machine:
+```
+name: participium-release
 
-- **Docker Desktop** (v4.0 or later)
+services:
+  api:
+    image: giova21/participium-api:latest
+    container_name: participium-api
+    restart: always
+    depends_on:
+      - postgres
+      - minio
+    environment:
+      PORT: 5000
+      FRONTEND_URL: http://localhost:5173
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-participium}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_PUBLIC_ENDPOINT: localhost
+      MINIO_PUBLIC_PORT: 9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      MINIO_BUCKET_NAME: participium-reports
+      MINIO_USE_SSL: "false"
+    ports:
+      - "5000:5000"
+    networks:
+      - participium-net
 
-- **Docker Compose** (usually included with Docker Desktop)
+  web:
+    image: giova21/participium-web:latest
+    container_name: participium-web
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+    networks:
+      - participium-net
 
-## Quick Start
+  postgres:
+    image: postgis/postgis:18-3.6
+    platform: linux/amd64
+    container_name: participium-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-participium}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - participium-net
 
-To start the entire system (Frontend, Backend, Database, and Object Storage), follow these simple steps:
+  minio:
+    image: minio/minio:latest
+    container_name: participium-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - participium-net
+    ports:
+      - "9001:9001"
+      - "9000:9000"
 
-**1. Launch the System:** Open your terminal in the root directory that contains docker-compose.yml and run:
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  participium-net:
+    driver: bridge
+```
+
+## 2. Start the application
+
+Run the following command in your terminal:
 
 ```
 docker compose up -d
 ```
 
-**2. Verify Status:** Check if all containers are up and running correctly:
+## 3. Access the services
+
+- **Web App:** http://localhost:5173
+
+- **API Documentation:** http://localhost:5000/api
+
+- **MinIO Console:** http://localhost:9001
+
+# Technical Details
+
+## Architecture Components
+
+| Service  | Image                   | Internal Port | Description                                                                                              |
+| :------- | :---------------------- | :------------ | :------------------------------------------------------------------------------------------------------- |
+| Backend  | giova21/participium-api | 5000          | Built with Node.js 20 (Alpine). Handles business logic, seeds data, and connects to services via TypeORM |
+| Frontend | giova21/participium-web | 80            | Built with Vite. Static assets served via high-performance Nginx (Alpine) reverse proxy                  |
+| Database | postgis/postgis:18-3.6  | 5432          | PostgreSQL 18 extended with PostGIS for geospatial queries and storage                                   |
+| Storage  | minio/minio:latest      | 9000          | S3-Compatible object storage for storing report images and assets                                        |
+
+## Data Persistence
+
+Data is persisted using Docker named volumes to ensure it survives container restarts:
+
+- **`postgres_data`** stores the relational database and geospatial index
+
+- **`minio_data`** Stores the uploaded files/blobs
+
+To reset the data completely, run:
 
 ```
-docker compose ps
+docker compose down -v
 ```
 
-**3. Wait for Initialization:** Docker will pull the images from Docker Hub and start the containers
-_Note: The backend may take a few seconds to connect to the database on the first run_
+🔐 Demo Credentials (Auto-Seeded)
 
-**4. Stop the System:** To stop and remove the containers, run:
+On the first run, the system **automatically seeds** the database with sample users, geolocated reports in Turin, and municipal boundaries for testing:
+| Role | Username | Password|
+| :--- | :--- | :---|
+| Citizen (registered on platform) | `mario_rossi`, `luigi_verdi` | `password` |
+| Municipal Public Relations Officer | `pr_officer_1` | `password`|
+| Municipal Technical Officer | `tech_infrastructure_1` | `password`|
+| System Admin | `system_admin` | `password`|
 
-```
-docker compose down
-```
+Note: External Maintainer and External Company credentials will be added in future updates.
 
-## Accessing the Application
+## Environment Variables
 
-Once the containers are running, you can access the services at the following URLs:
-| Service | URL | Description |
-| :--- | :--- | :--- |
-| Frontend | http://localhost:5173 | Main user interface (React) |
-| Backend | http://localhost:5000/api | Rest API endpoints (NestJS) |
-| MinIO Console | http://localhost:9001 | Object Storage Management |
+You can customize the deployment by setting these variables in your docker-compose.yml or .env file
 
-## Demo Credentials
-
-For release demo purpose, the **system automatically populates the database** on the first launch
-
-**1. Mock Data Generation**
-The system generates **20 fake reports** with realistic descriptions and categories. These reports are **geolocated around the city center of Turin**, allowing you to immediately test the map features and list filtering.
-
-**2. Pre-configured Users**
-Use these accounts to log in and test the application with different permission levels:
-| Role | Username | Password
-| :--- | :--- | :--- |
-| Citizen (registered on platform) | `user` | `password` |
-| Municipal Officer | `officer` | `password` |
-| System Admin | `admin` | `password`|
-
-## Services Credentials
-
-The system comes pre-configured with the following default credentials for development and testing purposes:
-
-#### PostgreSQL (Database)
-
-- **Host:** localhost (port 5432)
-- **User:** admin
-- **Password:** password
-- **Database:** participium
-
-#### MinIO (Object Storage)
-
-- **Web Client Console URL:** http://localhost:9001
-- **User:** minioadmin
-- **Password:** minioadmin
-
-## Architecture Overview
-
-The system is composed of the following Docker services:
-
-- **`web`** Frontend application built with Vite, React, and TypeScript, served via Nginx
-
-- **`api`** Backend application built with NestJS, handling business logic and API requests
-
-- **`postgres`** PostgreSQL database extended with PostGIS for geospatial data support
-
-- **`minio`**: S3-compatible object storage for handling file uploads
+| Variable              | Description         | Default               |
+| :-------------------- | :------------------ | :-------------------- |
+| `POSTGRES_USER`       | Database username   | `admin`               |
+| `POSTGRES_PASSWORD`   | Database password   | `password`            |
+| `MINIO_ROOT_USER`     | MinIO access key    | minioadmin            |
+| `MINIO_ROOT_PASSWORD` | MinIO secret key    | minioadmin            |
+| `FRONTEND_URL`        | CORS Allowed Origin | http://localhost:5173 |

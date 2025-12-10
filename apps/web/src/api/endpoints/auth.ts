@@ -1,6 +1,10 @@
+import {
+  LoginDto,
+  LoginResponseDto,
+  LogoutResponseDto,
+  RegisterDto,
+} from '@repo/api';
 import { apiFetch } from '../client';
-import { LoginDto, RegisterDto } from '@repo/api';
-import { LoginResponseDto, LogoutResponseDto } from '@repo/api';
 
 export async function login(credentials: LoginDto): Promise<LoginResponseDto> {
   return apiFetch<LoginResponseDto>('/auth/login', {
@@ -17,7 +21,7 @@ export async function register(data: RegisterDto): Promise<LoginResponseDto> {
 }
 
 export async function logout(): Promise<LogoutResponseDto> {
-  return apiFetch<void>('/auth/logout', {
+  return apiFetch<LogoutResponseDto>('/auth/logout', {
     method: 'POST',
   });
 }

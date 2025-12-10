@@ -1,29 +1,29 @@
+import { FileText, MapPin, Tag, Type } from 'lucide-react';
 import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { MapPin, Type, FileText, Tag } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
+import { MiniMap } from '@/components/mini-map';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from '@/components/ui/select';
 import { Field, FieldLabel } from '@/components/ui/field';
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from '@/components/ui/input-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useCategories } from '@/hooks/use-categories';
 import { useCreateReport } from '@/hooks/use-reports';
-import { toast } from 'sonner';
 import { ReportData as FormData } from '@/types/report';
+import { toast } from 'sonner';
 import { PhotoUploader } from './photoUploader.js';
-import { MiniMap } from '@/components/mini-map';
 
 export function ReportForm() {
   const navigate = useNavigate();
@@ -33,8 +33,8 @@ export function ReportForm() {
 
   const { register, handleSubmit, setValue, watch } = useForm<FormData>({
     defaultValues: {
-      latitude: location.state?.latitude!,
-      longitude: location.state?.longitude!,
+      latitude: location.state?.latitude,
+      longitude: location.state?.longitude,
       address: location.state?.address || '',
       title: '',
       description: '',

@@ -1,14 +1,19 @@
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -16,16 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { SlidersHorizontal, CalendarIcon } from 'lucide-react';
-import { ReportStatus } from '@repo/api';
 import { cn } from '@/lib/utils';
+import { ReportStatus } from '@repo/api';
 import { format } from 'date-fns';
+import { CalendarIcon, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { DateRange } from 'react-day-picker';
 
 type FilterState = {
@@ -45,7 +45,7 @@ export function FilterDialog({
   filters: parentFilters,
   setFilters: setParentFilters,
   categories,
-}: FilterDialogProps) {
+}: Readonly<FilterDialogProps>) {
   const [open, setOpen] = useState(false);
 
   const [localFilters, setLocalFilters] = useState<FilterState>(parentFilters);
@@ -243,18 +243,19 @@ export function FilterDialog({
                       )}
                     />
 
-                    {localFilters.customDate?.from ? (
-                      localFilters.customDate.to ? (
+                    {!localFilters.customDate?.from && (
+                      <span>Select Dates</span>
+                    )}
+                    {localFilters.customDate?.from &&
+                      !localFilters.customDate.to &&
+                      format(localFilters.customDate.from, 'MMM dd, y')}
+                    {localFilters.customDate?.from &&
+                      localFilters.customDate.to && (
                         <>
                           {format(localFilters.customDate.from, 'MMM dd')} -{' '}
                           {format(localFilters.customDate.to, 'MMM dd')}
                         </>
-                      ) : (
-                        format(localFilters.customDate.from, 'MMM dd, y')
-                      )
-                    ) : (
-                      <span>Select Dates</span>
-                    )}
+                      )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">

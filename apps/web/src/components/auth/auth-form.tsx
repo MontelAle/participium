@@ -1,4 +1,3 @@
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -12,12 +11,13 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from '@/components/ui/input-group';
-import { Link, useNavigate } from 'react-router-dom';
-import { MailIcon, UserIcon, LockIcon, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
-import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { AuthFormProps } from '@/types/ui';
-import { useState } from 'react';
+import { Eye, EyeOff, MailIcon, UserIcon } from 'lucide-react';
+import { FormEvent, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export function AuthForm({ mode, className, ...props }: AuthFormProps) {
   const { login, register, isLoading } = useAuth();
@@ -25,7 +25,7 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
   const isLogin = mode === 'login';
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     if (isLogin) {
@@ -179,7 +179,9 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
                     disabled={isLoading}
                     className="h-12 text-lg w-full"
                   >
-                    {isLoading ? 'Loading...' : isLogin ? 'Login' : 'Sign up'}
+                    {isLoading && 'Loading...'}
+                    {!isLoading && isLogin && 'Login'}
+                    {!isLoading && !isLogin && 'Sign up'}
                   </Button>
                 </Field>
 

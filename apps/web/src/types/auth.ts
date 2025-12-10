@@ -1,4 +1,4 @@
-import { User, LoginDto, RegisterDto } from '@repo/api';
+import { LoginDto, RegisterDto, User } from '@repo/api';
 
 export type AuthContextType = {
   user: User | null;

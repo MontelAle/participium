@@ -1,15 +1,22 @@
-import { IsOptional, IsString, IsEmail } from 'class-validator';
-import {
-  UpdateMunicipalityUserDto as UpdateMunicipalityUserDtoInterface,
-  CreateMunicipalityUserDto as CreateMunicipalityUserDtoInterface,
-  MunicipalityUserResponseDto as MunicipalityUserResponseDtoInterface,
-  MunicipalityUsersResponseDto as MunicipalityUsersResponseDtoInterface,
-  MunicipalityUserIdResponseDto as MunicipalityUserIdResponseDtoInterface,
+import type {
+  CreateMunicipalityUserDto as CreateMunicipalityUserDtoType,
+  MunicipalityUserIdResponseDto as MunicipalityUserIdResponseDtoType,
+  MunicipalityUserResponseDto as MunicipalityUserResponseDtoType,
+  MunicipalityUsersResponseDto as MunicipalityUsersResponseDtoType,
+  UpdateMunicipalityUserDto as UpdateMunicipalityUserDtoType,
 } from '@repo/api';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { User } from '../entities/user.entity';
 
 export class UpdateMunicipalityUserDto
-  implements UpdateMunicipalityUserDtoInterface
+  implements UpdateMunicipalityUserDtoType
 {
   @IsEmail()
   @IsOptional()
@@ -17,6 +24,8 @@ export class UpdateMunicipalityUserDto
 
   @IsString()
   @IsOptional()
+  @MinLength(6)
+  @MaxLength(30)
   username?: string;
 
   @IsString()
@@ -37,24 +46,34 @@ export class UpdateMunicipalityUserDto
 }
 
 export class CreateMunicipalityUserDto
-  implements CreateMunicipalityUserDtoInterface
+  implements CreateMunicipalityUserDtoType
 {
   @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
+  @MaxLength(30)
   password: string;
 
   @IsEmail()
+  @IsNotEmpty()
   email: string;
 
   @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
+  @MaxLength(30)
   username: string;
 
   @IsString()
+  @IsNotEmpty()
   firstName: string;
 
   @IsString()
+  @IsNotEmpty()
   lastName: string;
 
   @IsString()
+  @IsNotEmpty()
   roleId: string;
 
   @IsString()
@@ -63,22 +82,27 @@ export class CreateMunicipalityUserDto
 }
 
 export class MunicipalityUserResponseDto
-  implements MunicipalityUserResponseDtoInterface
+  implements MunicipalityUserResponseDtoType
 {
   data: User;
   success: boolean;
 }
 
 export class MunicipalityUsersResponseDto
-  implements MunicipalityUsersResponseDtoInterface
+  implements MunicipalityUsersResponseDtoType
 {
   data: User[];
   success: boolean;
 }
 
 export class MunicipalityUserIdResponseDto
-  implements MunicipalityUserIdResponseDtoInterface
+  implements MunicipalityUserIdResponseDtoType
 {
   data: { id: string };
+  success: boolean;
+}
+
+export class ExternalMaintainersResponseDto {
+  data: User[];
   success: boolean;
 }

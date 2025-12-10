@@ -1,7 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, ChevronsUpDown, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +10,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/auth-context';
 import { useProfile } from '@/hooks/use-profile';
+import { ChevronsUpDown, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 export function Navbar() {
   const { user, logout, isMunicipalityUser } = useAuth();
@@ -25,10 +25,9 @@ export function Navbar() {
 
   const getUserInitials = () => {
     if (!user) return '?';
-    return (
-      (user.firstName?.charAt(0) + user.lastName?.charAt(0)).toUpperCase() ||
-      '?'
-    );
+    const firstName = profile?.user.firstName.charAt(0) || '?';
+    const lastName = profile?.user.lastName.charAt(0) || '?';
+    return (firstName + lastName).toUpperCase();
   };
 
   return (
@@ -66,7 +65,7 @@ export function Navbar() {
                 <div className="flex-col items-end text-right hidden md:flex max-w-[200px]">
                   {' '}
                   <span className="text-sm font-medium leading-none truncate">
-                    {user.firstName} {user.lastName}
+                    {profile?.user.firstName} {profile?.user.lastName}
                   </span>
                 </div>
 
@@ -77,11 +76,13 @@ export function Navbar() {
               <DropdownMenuItem>
                 <div className="flex flex-col space-y-1 w-full min-w-0">
                   <p className="text-base font-medium truncate">
-                    {user.firstName} {user.lastName}
+                    {profile?.user.firstName} {profile?.user.lastName}
                   </p>
-                  <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {profile?.user.email}
+                  </p>
                   <p className="text-sm text-muted-foreground capitalize truncate">
-                    {user.role.label}
+                    {profile?.user.role?.label}
                   </p>
                 </div>
               </DropdownMenuItem>

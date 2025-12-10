@@ -1,28 +1,29 @@
-import * as React from 'react';
-import { useReports } from '@/hooks/use-reports';
-import { useNavigate } from 'react-router-dom';
-import { Toolbar } from '@/components/assign-reports/toolbar';
 import { ReportsTable } from '@/components/assign-reports/report-list-table';
+import { Toolbar } from '@/components/assign-reports/toolbar';
+import { useAuth } from '@/contexts/auth-context';
+import { useReports } from '@/hooks/use-reports';
+import { useMemo, useState } from 'react';
 
 const AssignReportsPage = () => {
   const { data: reports = [] } = useReports();
-  const navigate = useNavigate();
+  const { isMunicipalPrOfficer } = useAuth();
 
-  const [query, setQuery] = React.useState('');
-  const [selectedStatuses, setSelectedStatuses] = React.useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = React.useState<string[]>(
-    [],
-  );
+  const [query, setQuery] = useState('');
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  const availableStatuses = React.useMemo(() => {
+  const availableStatuses = useMemo(() => {
+    if (isMunicipalPrOfficer) {
+      return [];
+    }
     const setStatus = new Set<string>();
     for (const r of reports) {
       if (r.status) setStatus.add(r.status);
     }
     return Array.from(setStatus).sort();
-  }, [reports]);
+  }, [reports, isMunicipalPrOfficer]);
 
-  const availableCategories = React.useMemo(() => {
+  const availableCategories = useMemo(() => {
     const setCategories = new Set<string>();
     for (const r of reports) {
       if (r.category?.name) setCategories.add(r.category.name);
@@ -30,7 +31,7 @@ const AssignReportsPage = () => {
     return Array.from(setCategories).sort();
   }, [reports]);
 
-  const filteredReports = React.useMemo(() => {
+  const filteredReports = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     return reports.filter((r) => {
@@ -41,7 +42,9 @@ const AssignReportsPage = () => {
           .includes(normalizedQuery);
 
       const matchesStatus =
-        selectedStatuses.length === 0 || selectedStatuses.includes(r.status);
+        isMunicipalPrOfficer ||
+        selectedStatuses.length === 0 ||
+        selectedStatuses.includes(r.status);
 
       const matchesCategory =
         selectedCategories.length === 0 ||
@@ -49,11 +52,13 @@ const AssignReportsPage = () => {
 
       return matchesQuery && matchesStatus && matchesCategory;
     });
-  }, [reports, query, selectedStatuses, selectedCategories]);
-
-  const handleViewReport = (report: any) => {
-    navigate(`/app/reports/${report.id}`);
-  };
+  }, [
+    reports,
+    query,
+    selectedStatuses,
+    selectedCategories,
+    isMunicipalPrOfficer,
+  ]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">
@@ -81,7 +86,7 @@ const AssignReportsPage = () => {
         />
       </div>
       <div className="overflow-hidden">
-        <ReportsTable data={filteredReports} />
+        <ReportsTable data={filteredReports} viewBasePath="/app/assign-reports/view" />
       </div>
     </div>
   );

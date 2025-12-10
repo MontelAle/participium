@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom';
 import { ReportForm } from '@/components/reports-create/report-form';
-import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 function ReportPage() {
   const navigate = useNavigate();

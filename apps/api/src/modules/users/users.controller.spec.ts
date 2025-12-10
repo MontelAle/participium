@@ -1,16 +1,12 @@
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UsersController } from './users.controller';
-import { UsersService } from './users.service';
-import { User } from '../../common/entities/user.entity';
 import {
   CreateMunicipalityUserDto,
   UpdateMunicipalityUserDto,
 } from '../../common/dto/municipality-user.dto';
-import {
-  NotFoundException,
-  ConflictException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { User } from '../../common/entities/user.entity';
+import { UsersController } from './users.controller';
+import { UsersService } from './users.service';
 
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
@@ -28,8 +24,7 @@ describe('UsersController', () => {
       createMunicipalityUser: jest.fn(),
       deleteMunicipalityUserById: jest.fn(),
       updateMunicipalityUserById: jest.fn(),
-      updateProfile: jest.fn(),
-      findUserById: jest.fn(),
+      findExternalMaintainers: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -208,116 +203,32 @@ describe('UsersController', () => {
     });
   });
 
-  describe('updateProfile', () => {
-    it('should update profile successfully', async () => {
-      const mockUser = {
-        id: 'user-1',
-        telegramUsername: '@newusername',
-        emailNotificationsEnabled: true,
-        profilePictureUrl: null,
-      } as User;
+  describe('getExternalMaintainers', () => {
+    it('should return all external maintainers when no categoryId provided', async () => {
+      const mockMaintainers: Partial<User>[] = [
+        { id: '1', username: 'maintainer1' },
+        { id: '2', username: 'maintainer2' },
+      ];
 
-      const req = { user: { id: 'user-1' } } as any;
-      const dto = { telegramUsername: '@newusername' };
+      usersService.findExternalMaintainers.mockResolvedValue(mockMaintainers as User[]);
 
-      usersService.updateProfile.mockResolvedValue(mockUser);
+      const result = await controller.getExternalMaintainers();
 
-      const result = await controller.updateProfile(req, dto);
-
-      expect(result.success).toBe(true);
-      expect(result.data.id).toBe('user-1');
-      expect(result.data.telegramUsername).toBe('@newusername');
-      expect(usersService.updateProfile).toHaveBeenCalledWith(
-        'user-1',
-        dto,
-        undefined,
-      );
+      expect(usersService.findExternalMaintainers).toHaveBeenCalledWith(undefined);
+      expect(result).toEqual({ success: true, data: mockMaintainers });
     });
 
-    it('should update profile with file upload', async () => {
-      const mockUser = {
-        id: 'user-1',
-        telegramUsername: null,
-        emailNotificationsEnabled: false,
-        profilePictureUrl: 'http://minio.test/profile.jpg',
-      } as User;
+    it('should return filtered external maintainers when categoryId provided', async () => {
+      const mockMaintainers: Partial<User>[] = [
+        { id: '1', username: 'maintainer1' },
+      ];
 
-      const req = { user: { id: 'user-1' } } as any;
-      const dto = {};
-      const file = {
-        buffer: Buffer.from('test'),
-        originalname: 'profile.jpg',
-        mimetype: 'image/jpeg',
-        size: 1024,
-      } as Express.Multer.File;
+      usersService.findExternalMaintainers.mockResolvedValue(mockMaintainers as User[]);
 
-      usersService.updateProfile.mockResolvedValue(mockUser);
+      const result = await controller.getExternalMaintainers('category-1');
 
-      const result = await controller.updateProfile(req, dto, file);
-
-      expect(result.success).toBe(true);
-      expect(result.data.profilePictureUrl).toBe(
-        'http://minio.test/profile.jpg',
-      );
-      expect(usersService.updateProfile).toHaveBeenCalledWith(
-        'user-1',
-        dto,
-        file,
-      );
-    });
-
-    it('should throw BadRequestException for invalid file type', async () => {
-      const req = { user: { id: 'user-1' } } as any;
-      const dto = {};
-      const file = {
-        buffer: Buffer.from('test'),
-        originalname: 'file.txt',
-        mimetype: 'text/plain',
-        size: 1024,
-      } as Express.Multer.File;
-
-      await expect(controller.updateProfile(req, dto, file)).rejects.toThrow();
-    });
-
-    it('should throw BadRequestException for file size exceeded', async () => {
-      const req = { user: { id: 'user-1' } } as any;
-      const dto = {};
-      const file = {
-        buffer: Buffer.alloc(6 * 1024 * 1024),
-        originalname: 'large.jpg',
-        mimetype: 'image/jpeg',
-        size: 6 * 1024 * 1024,
-      } as Express.Multer.File;
-
-      await expect(controller.updateProfile(req, dto, file)).rejects.toThrow();
-    });
-
-    it('should throw ForbiddenException for municipality users', async () => {
-      const req = {
-        user: {
-          id: 'user-1',
-          role: { isMunicipal: true, name: 'officer' },
-        },
-      } as any;
-      const dto = { telegramUsername: '@newusername' };
-
-      await expect(controller.updateProfile(req, dto)).rejects.toThrow(
-        ForbiddenException,
-      );
-    });
-  });
-
-  describe('getUserProfileById', () => {
-    it('should return user profile for current user', async () => {
-      const mockUser = { id: 'user-1', username: 'me' } as User;
-      const req = { user: { id: 'user-1' } } as any;
-
-      usersService.findUserById.mockResolvedValue(mockUser);
-
-      const result = await controller.getUserProfileById(req);
-
-      expect(usersService.findUserById).toHaveBeenCalledWith('user-1');
-      expect(result).toEqual({ success: true, data: mockUser });
+      expect(usersService.findExternalMaintainers).toHaveBeenCalledWith('category-1');
+      expect(result).toEqual({ success: true, data: mockMaintainers });
     });
   });
 });

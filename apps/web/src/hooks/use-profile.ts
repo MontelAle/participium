@@ -1,22 +1,18 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProfile, updateProfileWithFile } from '@/api/endpoints/profile';
-import type { UpdateProfileDto, ProfileResponseDto, User } from '@repo/api';
+import type { Profile } from '@repo/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useProfile(options?: { enabled?: boolean }) {
   const queryClient = useQueryClient();
 
-  const profileQuery = useQuery<User>({
+  const profileQuery = useQuery<Profile>({
     queryKey: ['profile'],
     queryFn: () => getProfile(),
     enabled: options?.enabled,
   });
 
   // Update profile (with file support)
-  const updateMutation = useMutation<
-    ProfileResponseDto,
-    Error,
-    UpdateProfileDto
-  >({
+  const updateMutation = useMutation<Profile, Error, FormData>({
     mutationFn: (dto) => updateProfileWithFile(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });

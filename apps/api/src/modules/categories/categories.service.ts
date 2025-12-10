@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Category } from '../../common/entities/category.entity';
 
 @Injectable()
@@ -11,6 +11,8 @@ export class CategoriesService {
   ) {}
 
   async findAll(): Promise<Category[]> {
-    return this.categoryRepository.find({ relations: ['office'] });
+    return this.categoryRepository.find({
+      relations: ['office', 'externalOffice'],
+    });
   }
 }

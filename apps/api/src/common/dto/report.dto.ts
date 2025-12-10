@@ -1,28 +1,33 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type {
+  CreateReportDto as CreateReportDtoType,
+  DashboardStatsDto as DashboardStatsDtoType,
+  DashboardStatsResponseDto as DashboardStatsResponseDtoType,
+  FilterReportsDto as FilterReportsDtoType,
+  ReportResponseDto as ReportResponseDtoType,
+  ReportsResponseDto as ReportsResponseDtoType,
+  UpdateReportDto as UpdateReportDtoType,
+} from '@repo/api';
 import {
-  IsString,
-  IsOptional,
-  IsEnum,
-  IsNumber,
-  Min,
-  Max,
   IsArray,
   IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  CreateReportDto as CreateReportDtoInterface,
-  UpdateReportDto as UpdateReportDtoInterface,
-  FilterReportsDto as FilterReportsDtoInterface,
-  ReportResponseDto as ReportResponseDtoInterface,
-  ReportsResponseDto as ReportsResponseDtoInterface,
-} from '@repo/api';
-import { ReportStatus, Report } from '../entities/report.entity';
+import { Report, ReportStatus } from '../entities/report.entity';
 
-export class CreateReportDto implements CreateReportDtoInterface {
+export class CreateReportDto implements CreateReportDtoType {
   @IsString()
+  @IsNotEmpty()
   title: string;
 
   @IsString()
+  @IsNotEmpty()
   description: string;
 
   @ApiProperty({
@@ -53,6 +58,7 @@ export class CreateReportDto implements CreateReportDtoInterface {
   images?: string[];
 
   @IsString()
+  @IsNotEmpty()
   categoryId: string;
 
   @ApiPropertyOptional()
@@ -61,7 +67,7 @@ export class CreateReportDto implements CreateReportDtoInterface {
   isAnonymous?: boolean;
 }
 
-export class UpdateReportDto implements UpdateReportDtoInterface {
+export class UpdateReportDto implements UpdateReportDtoType {
   @IsString()
   @IsOptional()
   title?: string;
@@ -114,9 +120,13 @@ export class UpdateReportDto implements UpdateReportDtoInterface {
   @IsString()
   @IsOptional()
   assignedOfficerId?: string;
+
+  @IsString()
+  @IsOptional()
+  assignedExternalMaintainerId?: string;
 }
 
-export class FilterReportsDto implements FilterReportsDtoInterface {
+export class FilterReportsDto implements FilterReportsDtoType {
   @IsEnum(ReportStatus)
   @IsOptional()
   status?: ReportStatus;
@@ -158,12 +168,51 @@ export class FilterReportsDto implements FilterReportsDtoInterface {
   radiusMeters?: number;
 }
 
-export class ReportResponseDto implements ReportResponseDtoInterface {
+export class ReportResponseDto implements ReportResponseDtoType {
   success: boolean;
   data: Report;
 }
 
-export class ReportsResponseDto implements ReportsResponseDtoInterface {
+export class ReportsResponseDto implements ReportsResponseDtoType {
   success: boolean;
   data: Report[];
+}
+
+export class DashboardStatsDto implements DashboardStatsDtoType {
+  @IsNumber()
+  total: number;
+
+  @IsNumber()
+  pending: number;
+
+  @IsNumber()
+  in_progress: number;
+
+  @IsNumber()
+  assigned: number;
+
+  @IsNumber()
+  rejected: number;
+
+  @IsNumber()
+  resolved: number;
+
+  @IsNumber()
+  user_assigned: number;
+
+  @IsNumber()
+  user_rejected: number;
+
+  @IsNumber()
+  user_in_progress: number;
+
+  @IsNumber()
+  user_resolved: number;
+}
+
+export class DashboardStatsResponseDto
+  implements DashboardStatsResponseDtoType
+{
+  success: boolean;
+  data: DashboardStatsDto;
 }

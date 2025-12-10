@@ -1,43 +1,28 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  UseGuards,
-  Param,
+  Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
-  Patch,
-  Req,
-  UseInterceptors,
-  UploadedFile,
-  BadRequestException,
-  ForbiddenException,
+  Param,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiCookieAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
-import { UsersService } from './users.service';
-import { SessionGuard } from '../auth/guards/session-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import {
   CreateMunicipalityUserDto,
-  UpdateMunicipalityUserDto,
+  ExternalMaintainersResponseDto,
+  MunicipalityUserIdResponseDto,
   MunicipalityUserResponseDto,
   MunicipalityUsersResponseDto,
-  MunicipalityUserIdResponseDto,
+  UpdateMunicipalityUserDto,
 } from '../../common/dto/municipality-user.dto';
-import {
-  UpdateProfileDto,
-  ProfileResponseDto,
-} from '../../common/dto/user.dto';
-import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
-import {
-  USER_ERROR_MESSAGES,
-  ALLOWED_PROFILE_PICTURE_MIMETYPES,
-  MAX_PROFILE_PICTURE_SIZE,
-} from './constants/error-messages';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { SessionGuard } from '../auth/guards/session-auth.guard';
+import { UsersService } from './users.service';
 
 @ApiTags('Users')
 @Controller('users')
@@ -56,8 +41,10 @@ export class UsersController {
    */
   @Get('municipality')
   @Roles('admin', 'pr_officer')
-  async getMunicipalityUsers(): Promise<MunicipalityUsersResponseDto> {
-    const users = await this.usersService.findMunicipalityUsers();
+  async getMunicipalityUsers(
+    @Query('categoryId') categoryId?: string,
+  ): Promise<MunicipalityUsersResponseDto> {
+    const users = await this.usersService.findMunicipalityUsers(categoryId);
     return { success: true, data: users };
   }
 
@@ -132,69 +119,20 @@ export class UsersController {
   }
 
   /**
-   * Updates the current user's profile.
+   * Retrieves a list of external maintainers, optionally filtered by category.
    *
-   * @throws {400} Bad Request - Invalid data or file type
+   * @throws {400} Bad Request - Category has no external office assigned
    * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Insufficient permissions (admin or tech_officer role required)
+   * @throws {404} Not Found - Category not found or no external maintainers for category
    */
-  @Patch('profile/me')
-  @UseGuards(SessionGuard)
-  @UseInterceptors(FileInterceptor('profilePicture'))
-  @ApiConsumes('multipart/form-data')
-  async updateProfile(
-    @Req() req: RequestWithUserSession,
-    @Body() dto: UpdateProfileDto,
-    @UploadedFile() file?: Express.Multer.File,
-  ): Promise<ProfileResponseDto> {
-    // Only regular users (not municipality users) can edit their profile
-    if (req.user.role?.isMunicipal) {
-      throw new ForbiddenException(
-        USER_ERROR_MESSAGES.MUNICIPALITY_USER_CANNOT_EDIT_PROFILE,
-      );
-    }
-
-    if (file) {
-      if (!ALLOWED_PROFILE_PICTURE_MIMETYPES.includes(file.mimetype as any)) {
-        throw new BadRequestException(
-          USER_ERROR_MESSAGES.INVALID_PROFILE_PICTURE_TYPE(file.mimetype),
-        );
-      }
-      if (file.size > MAX_PROFILE_PICTURE_SIZE) {
-        throw new BadRequestException(
-          USER_ERROR_MESSAGES.PROFILE_PICTURE_SIZE_EXCEEDED,
-        );
-      }
-    }
-
-    const updatedUser = await this.usersService.updateProfile(
-      req.user.id,
-      dto,
-      file,
-    );
-
-    return {
-      success: true,
-      data: updatedUser,
-    };
+  @Get('external-maintainers')
+  @Roles('admin', 'tech_officer')
+  async getExternalMaintainers(
+    @Query('categoryId') categoryId?: string,
+  ): Promise<ExternalMaintainersResponseDto> {
+    const maintainers = await this.usersService.findExternalMaintainers(categoryId);
+    return { success: true, data: maintainers };
   }
 
-  /**
-   * Retrieves the profile of the current user by ID.
-   *
-   * @throws {401} Unauthorized - Invalid or missing session
-   * @throws {403} Forbidden - Accessing another user's profile
-   */
-  @Get('profile/me')
-  @UseGuards(SessionGuard)
-  async getUserProfileById(
-    @Req() req: RequestWithUserSession,
-  ): Promise<ProfileResponseDto> {
-    const id = req.user.id;
-
-    const user = await this.usersService.findUserById(id);
-    return {
-      success: true,
-      data: user,
-    };
-  }
 }

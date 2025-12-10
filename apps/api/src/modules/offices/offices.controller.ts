@@ -1,8 +1,9 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
-import { SessionGuard } from '../auth/guards/session-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { OfficesResponseDto } from '../../common/dto/office.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { SessionGuard } from '../auth/guards/session-auth.guard';
 import { OfficesService } from './offices.service';
 
 @ApiTags('Offices')
@@ -19,8 +20,8 @@ export class OfficesController {
    * @throws {403} Forbidden - Insufficient permissions (admin role required)
    */
   @Get()
-  @Roles('admin','pr_officer')
-  async findAll() {
+  @Roles('admin', 'pr_officer', 'tech_officer')
+  async findAll(): Promise<OfficesResponseDto> {
     const offices = await this.officesService.findAll();
     return { success: true, data: offices };
   }

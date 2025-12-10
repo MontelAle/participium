@@ -1,15 +1,17 @@
-const API_BASE_URL = 'http://localhost:5000/api';
-
 export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const isFormData = options.body instanceof FormData;
+
+  const headers = {
+    ...(options.headers || {}),
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+  };
+
+  const res = await fetch(`/api${endpoint}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
+    headers,
     credentials: 'include',
   });
 

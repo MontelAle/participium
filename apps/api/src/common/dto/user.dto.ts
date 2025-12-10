@@ -1,17 +1,11 @@
-import {
-  IsOptional,
-  IsString,
-  IsBoolean,
-  Matches,
-  ValidateIf,
-} from 'class-validator';
-import {
-  UpdateProfileDto as UpdateProfileDtoInterface,
-  ProfileResponseDto as ProfileResponseDtoInterface,
+import type {
+  ProfileResponseDto as ProfileResponseDtoType,
+  UpdateProfileDto as UpdateProfileDtoType,
 } from '@repo/api';
-import { User } from '../entities/user.entity';
+import { IsEmail, IsOptional, IsString, Matches, ValidateIf } from 'class-validator';
+import { Profile } from '../entities/profile.entity';
 
-export class UpdateProfileDto implements UpdateProfileDtoInterface {
+export class UpdateProfileDto implements UpdateProfileDtoType {
   @IsString()
   @IsOptional()
   @ValidateIf((o) => o.telegramUsername !== '')
@@ -24,9 +18,25 @@ export class UpdateProfileDto implements UpdateProfileDtoInterface {
   @IsString()
   @IsOptional()
   emailNotificationsEnabled?: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+  
+  @IsString()
+  @IsOptional()
+  username?: string;
+  
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+  
+  @IsString()
+  @IsOptional()
+  lastName?: string;
 }
 
-export class ProfileResponseDto implements ProfileResponseDtoInterface {
+export class ProfileResponseDto implements ProfileResponseDtoType {
   success: boolean;
-  data: User;
+  data: Profile;
 }

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import { Navbar } from '@/components/layout/navbar';
-import { MunicipalSidebar } from '@/components/layout/municipal-sidebar';
 import { CitizenSidebar } from '@/components/layout/citizen-sidebar';
+import { MunicipalSidebar } from '@/components/layout/municipal-sidebar';
+import { Navbar } from '@/components/layout/navbar';
 import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 
 export function DashboardLayout() {
   const { isMunicipalityUser, isAdminUser, isCitizenUser, isGuestUser } =

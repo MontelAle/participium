@@ -1,12 +1,14 @@
-import { apiFetch } from '../client';
-import type { User } from '@repo/api';
-import { CreateMunicipalityUserDto } from '@repo/api';
 import type {
+  MunicipalityUserIdResponseDto,
   MunicipalityUserResponseDto,
   MunicipalityUsersResponseDto,
-  MunicipalityUserIdResponseDto,
+  User,
 } from '@repo/api';
-import { UpdateMunicipalityUserDto } from '@repo/api';
+import {
+  CreateMunicipalityUserDto,
+  UpdateMunicipalityUserDto,
+} from '@repo/api';
+import { apiFetch } from '../client';
 
 export async function getMunicipalityUsers(): Promise<User[]> {
   const response = await apiFetch<MunicipalityUsersResponseDto>(
@@ -48,9 +50,6 @@ export async function updateMunicipalityUser(
     `/users/municipality/user/${userId}`,
     {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(data),
     },
   );
@@ -67,10 +66,6 @@ export async function deleteMunicipalityUser(
       method: 'DELETE',
     },
   );
-
-  if (!response.success) {
-    throw new Error('An error occurred while deleting the user');
-  }
 
   return response.data;
 }

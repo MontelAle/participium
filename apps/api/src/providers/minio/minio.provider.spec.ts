@@ -1,9 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { MinioProvider } from './minio.provider';
+import { InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InternalServerErrorException } from '@nestjs/common';
-import { MINIO_ERROR_MESSAGES } from './constants/error-messages';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as Minio from 'minio';
+import { MINIO_ERROR_MESSAGES } from './constants/error-messages';
+import { MinioProvider } from './minio.provider';
 
 jest.mock('minio');
 
@@ -25,6 +25,8 @@ describe('MinioProvider', () => {
     (Minio.Client as jest.MockedClass<typeof Minio.Client>).mockImplementation(
       () => mockMinioClient,
     );
+    
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -37,6 +39,10 @@ describe('MinioProvider', () => {
                 'minio.bucketName': 'test-bucket',
                 'minio.endPoint': 'localhost',
                 'minio.port': 9000,
+
+                'minio.publicEndPoint': 'localhost',
+                'minio.publicPort': 9000,
+
                 'minio.useSSL': false,
                 'minio.accessKey': 'testkey',
                 'minio.secretKey': 'testsecret',
@@ -49,7 +55,6 @@ describe('MinioProvider', () => {
     }).compile();
 
     provider = module.get<MinioProvider>(MinioProvider);
-    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {
@@ -283,6 +288,43 @@ describe('MinioProvider', () => {
       );
 
       expect(result).toBe('http://minio.example.com/test-bucket/test.jpg');
+    });
+    it('should use public configuration for URL generation if different from internal', async () => {
+      const mockConfigSplit = {
+        get: jest.fn((key: string, defaultValue?: unknown) => {
+          const config: Record<string, unknown> = {
+            'minio.bucketName': 'test-bucket',
+            'minio.endPoint': 'minio-internal',
+            'minio.port': 9000,
+            'minio.publicEndPoint': 'my-website.com',
+            'minio.publicPort': 80,
+            'minio.useSSL': false,
+          };
+          return config[key] ?? defaultValue;
+        }),
+      };
+
+      const moduleSplit = await Test.createTestingModule({
+        providers: [
+          MinioProvider,
+          { provide: ConfigService, useValue: mockConfigSplit },
+        ],
+      }).compile();
+
+      const providerSplit = moduleSplit.get<MinioProvider>(MinioProvider);
+
+      mockMinioClient.putObject.mockResolvedValue({
+        etag: 'etag',
+        versionId: 'v1',
+      });
+
+      const result = await providerSplit.uploadFile(
+        'test.jpg',
+        Buffer.from('data'),
+        'image/jpeg',
+      );
+
+      expect(result).toBe('http://my-website.com/test-bucket/test.jpg');
     });
   });
 

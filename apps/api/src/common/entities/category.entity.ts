@@ -1,9 +1,9 @@
-import { Entity, PrimaryColumn, Column, ManyToOne } from 'typeorm';
-import { Category as CategoryInterface } from '@repo/api';
+import type { Category as CategoryType } from '@repo/api';
+import { Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm';
 import { Office } from './office.entity';
 
 @Entity('category')
-export class Category implements CategoryInterface {
+export class Category implements CategoryType {
   @PrimaryColumn('varchar')
   id: string;
 
@@ -12,4 +12,7 @@ export class Category implements CategoryInterface {
 
   @ManyToOne(() => Office, (office) => office.categories)
   office: Office;
+
+  @ManyToOne(() => Office, { nullable: true })
+  externalOffice?: Office;
 }

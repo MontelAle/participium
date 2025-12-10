@@ -1,12 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { LoginDto, RegisterDto } from '../../common/dto/auth.dto';
+import { Profile } from '../../common/entities/profile.entity';
+import { Session } from '../../common/entities/session.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from '../../common/dto/auth.dto';
-import { Session } from '../../common/entities/session.entity';
 import { SessionGuard } from './guards/session-auth.guard';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
@@ -63,6 +64,13 @@ describe('AuthController', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(Profile),
+          useValue: {
+            findOne: jest.fn(),
+            create: jest.fn(),
           },
         },
       ],

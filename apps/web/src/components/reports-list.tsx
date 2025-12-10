@@ -1,70 +1,30 @@
-import { useReports } from '@/hooks/use-reports';
-import { useActiveReportStore } from '@/store/activeReportStore';
-import { useFilterStore } from '@/store/filterStore';
-import { useAuth } from '@/contexts/auth-context';
-import type { Report } from '@repo/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
 import { useFilteredReports } from '@/hooks/use-filtered-reports';
-import { getStatusConfig } from '@/lib/utils';
-import { MapPin, CalendarDays, Tag, User, Ghost } from 'lucide-react';
-import { ReportsListProps } from '@/types/report';
+import { cn, getStatusConfig } from '@/lib/utils';
+import { useActiveReportStore } from '@/store/activeReportStore';
+import type { ReportsListProps } from '@/types/report';
+import type { Report } from '@repo/api';
+import { CalendarDays, Ghost, MapPin, Tag, User } from 'lucide-react';
+import { useMemo, MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMemo } from 'react';
 
 export function ReportsList({
   setIsMobileExpanded = () => {},
 }: ReportsListProps) {
   const { reports: baseFilteredReports } = useFilteredReports();
-  const { data: allReports = [] } = useReports({ enabled: true });
   const { user, isCitizenUser, isGuestUser } = useAuth();
-  const { searchTerm, filters, showOnlyMyReports } = useFilterStore();
   const navigate = useNavigate();
   const setLocation = useActiveReportStore((state) => state.setLocation);
 
   const sidebarReports = useMemo(() => {
     if (isGuestUser) return [];
     if (!isCitizenUser || !user) return baseFilteredReports;
+    return [...baseFilteredReports];
+  }, [baseFilteredReports, isCitizenUser, isGuestUser, user]);
 
-    const myRejectedReports = allReports.filter((report) => {
-      if (report.status !== 'rejected') return false;
-      if (report.userId !== user.id) return false;
-
-      if (!report.userId) return false;
-
-      if (showOnlyMyReports && report.userId !== user.id) return false;
-
-      if (searchTerm.trim() !== '') {
-        const term = searchTerm.toLowerCase();
-        const matches =
-          report.title.toLowerCase().includes(term) ||
-          (report.address && report.address.toLowerCase().includes(term)) ||
-          report.category.name.toLowerCase().includes(term);
-        if (!matches) return false;
-      }
-
-      if (filters?.status && report.status !== filters.status) return false;
-      if (filters?.category && report.category.name !== filters.category)
-        return false;
-
-      return true;
-    });
-
-    return [...baseFilteredReports, ...myRejectedReports];
-  }, [
-    baseFilteredReports,
-    allReports,
-    isCitizenUser,
-    isGuestUser,
-    user,
-    searchTerm,
-    filters,
-    showOnlyMyReports,
-  ]);
-
-  const handleReportClick = (e: React.MouseEvent, report: Report) => {
-    e.stopPropagation();
+  const handleReportClick = (e: MouseEvent, report: Report) => {
     setIsMobileExpanded(false);
     setLocation({
       latitude: report.location.coordinates[1] ?? 0,
@@ -102,8 +62,7 @@ export function ReportsList({
         return (
           <div
             key={report.id}
-            onClick={() => handleShowDetails(report.id)}
-            className="group relative w-full rounded-lg border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/50 bg-white cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="group relative w-full text-left rounded-lg border p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/50 bg-white"
           >
             <div className="flex items-start justify-between mb-2">
               <div className="text-sm text-muted-foreground uppercase font-semibold tracking-wider">
@@ -121,9 +80,13 @@ export function ReportsList({
             </div>
 
             <div className="mb-3">
-              <h3 className="font-bold text-xl leading-tight text-foreground mb-1 group-hover:text-primary transition-colors">
+              <button
+                onClick={() => handleShowDetails(report.id)}
+                className="text-left w-full font-bold text-xl leading-tight text-foreground mb-1 group-hover:text-primary transition-colors after:absolute after:inset-0 outline-none focus-visible:underline"
+              >
                 {report.title}
-              </h3>
+              </button>
+
               <div className="flex items-center gap-1 text-sm text-muted-foreground mt-4 mb-2">
                 <Tag className="size-3" />
                 <span className="truncate max-w-[250px] text-sm font-medium">
@@ -165,7 +128,7 @@ export function ReportsList({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-7 text-base rounded-md border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 z-10"
+                  className="relative z-10 h-7 text-base rounded-md border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                   onClick={(e) => handleReportClick(e, report)}
                 >
                   Show on Map

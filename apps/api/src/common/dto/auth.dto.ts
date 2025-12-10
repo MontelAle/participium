@@ -1,31 +1,42 @@
-import { IsNotEmpty, IsString, MinLength, IsEmail } from 'class-validator';
-import {
-  LoginDto as LoginDtoInterface,
-  RegisterDto as RegisterDtoInterface,
-  LoginResponseDto as LoginResponseDtoInterface,
-  LogoutResponseDto as LogoutResponseDtoInterface,
+import type {
+  LoginDto as LoginDtoType,
+  LoginResponseDto as LoginResponseDtoType,
+  LogoutResponseDto as LogoutResponseDtoType,
+  RegisterDto as RegisterDtoType,
 } from '@repo/api';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { Session } from '../entities/session.entity';
 import { User } from '../entities/user.entity';
 
-export class LoginDto implements LoginDtoInterface {
+export class LoginDto implements LoginDtoType {
   @IsString()
   @IsNotEmpty()
+  @MinLength(6)
+  @MaxLength(30)
   username: string;
 
   @IsString()
-  @MinLength(6)
   @IsNotEmpty()
+  @MinLength(6)
+  @MaxLength(30)
   password: string;
 }
 
-export class RegisterDto implements RegisterDtoInterface {
+export class RegisterDto implements RegisterDtoType {
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
   @IsString()
   @IsNotEmpty()
+  @MinLength(6)
+  @MaxLength(30)
   username: string;
 
   @IsString()
@@ -37,12 +48,13 @@ export class RegisterDto implements RegisterDtoInterface {
   lastName: string;
 
   @IsString()
-  @MinLength(6)
   @IsNotEmpty()
+  @MinLength(6)
+  @MaxLength(30)
   password: string;
 }
 
-export class LoginResponseDto implements LoginResponseDtoInterface {
+export class LoginResponseDto implements LoginResponseDtoType {
   success: boolean;
   data: {
     user: User;
@@ -50,6 +62,6 @@ export class LoginResponseDto implements LoginResponseDtoInterface {
   };
 }
 
-export class LogoutResponseDto implements LogoutResponseDtoInterface {
+export class LogoutResponseDto implements LogoutResponseDtoType {
   success: boolean;
 }

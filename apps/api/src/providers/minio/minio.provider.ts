@@ -1,8 +1,8 @@
 import {
   Injectable,
-  OnModuleInit,
-  Logger,
   InternalServerErrorException,
+  Logger,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
@@ -11,10 +11,10 @@ import { MINIO_ERROR_MESSAGES } from './constants/error-messages';
 @Injectable()
 export class MinioProvider implements OnModuleInit {
   private readonly logger = new Logger(MinioProvider.name);
-  private minioClient: Minio.Client;
-  private bucketName: string;
+  private readonly minioClient: Minio.Client;
+  private readonly bucketName: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(private readonly configService: ConfigService) {
     this.bucketName = this.configService.get<string>(
       'minio.bucketName',
       'participium-reports',
@@ -132,13 +132,23 @@ export class MinioProvider implements OnModuleInit {
         },
       );
 
-      const endPoint = this.configService.get<string>('minio.endPoint');
-      const port = this.configService.get<number>('minio.port');
+      const publicEndPoint = this.configService.get<string>(
+        'minio.publicEndPoint',
+        this.configService.get<string>('minio.endPoint'),
+      );
+
+      const publicPort = this.configService.get<number>(
+        'minio.publicPort',
+        this.configService.get<number>('minio.port'),
+      );
+
       const useSSL = this.configService.get<boolean>('minio.useSSL');
       const protocol = useSSL ? 'https' : 'http';
-      const portString = port === 80 || port === 443 ? '' : `:${port}`;
 
-      return `${protocol}://${endPoint}${portString}/${this.bucketName}/${fileName}`;
+      const portString =
+        publicPort === 80 || publicPort === 443 ? '' : `:${publicPort}`;
+
+      return `${protocol}://${publicEndPoint}${portString}/${this.bucketName}/${fileName}`;
     } catch (error) {
       this.logger.error(
         `${MINIO_ERROR_MESSAGES.FILE_UPLOAD_FAILED}: ${this.getErrorMessage(error)}`,

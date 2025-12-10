@@ -1,39 +1,40 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
   Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Query,
-  UseGuards,
-  Request,
-  HttpStatus,
   HttpCode,
-  UseInterceptors,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Request,
   UploadedFiles,
-  BadRequestException,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiCookieAuth } from '@nestjs/swagger';
-import { ReportsService } from './reports.service';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import {
   CreateReportDto,
-  UpdateReportDto,
+  DashboardStatsResponseDto,
   FilterReportsDto,
   ReportResponseDto,
   ReportsResponseDto,
+  UpdateReportDto,
 } from '../../common/dto/report.dto';
-import { SessionGuard } from '../auth/guards/session-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { SessionGuard } from '../auth/guards/session-auth.guard';
 import {
-  REPORT_ERROR_MESSAGES,
   ALLOWED_IMAGE_MIMETYPES,
   MAX_IMAGE_SIZE,
-  MIN_IMAGES,
   MAX_IMAGES,
+  MIN_IMAGES,
+  REPORT_ERROR_MESSAGES,
 } from './constants/error-messages';
+import { ReportsService } from './reports.service';
 
 @ApiTags('Reports')
 @Controller('reports')
@@ -96,6 +97,16 @@ export class ReportsController {
   }
 
   /**
+   * Retrieves dashboard statistics for reports.
+   */
+  @Get('stats')
+  @UseGuards(SessionGuard)
+  async getStats(@Request() req): Promise<DashboardStatsResponseDto> {
+    const stats = await this.reportsService.getDashboardStats(req.user);
+    return { success: true, data: stats };
+  }
+
+  /**
    * Finds nearby reports based on location and radius.
    */
   @Get('nearby')
@@ -106,10 +117,10 @@ export class ReportsController {
     @Query('latitude') latitude: string,
     @Query('radius') radius?: string,
   ): Promise<ReportsResponseDto> {
-    const radiusMeters = radius ? parseFloat(radius) : 5000;
+    const radiusMeters = radius ? Number.parseFloat(radius) : 5000;
     const reports = await this.reportsService.findNearby(
-      parseFloat(longitude),
-      parseFloat(latitude),
+      Number.parseFloat(longitude),
+      Number.parseFloat(latitude),
       radiusMeters,
       req.user,
     );
@@ -140,24 +151,29 @@ export class ReportsController {
    */
   @Patch(':id')
   @UseGuards(SessionGuard, RolesGuard)
-  @Roles('pr_officer', 'officer')
+  @Roles('pr_officer', 'tech_officer', 'external_maintainer')
   async update(
     @Param('id') id: string,
     @Body() updateReportDto: UpdateReportDto,
+    @Request() req,
   ): Promise<ReportResponseDto> {
-    const report = await this.reportsService.update(id, updateReportDto);
+    const report = await this.reportsService.update(
+      id,
+      updateReportDto,
+      req.user,
+    );
     return { success: true, data: report };
   }
 
   /**
-   * Finds reports assigned to a specific user (officer).
+   * Finds reports assigned to a specific user (technical officer).
    *
    * @throws {401} Unauthorized - Invalid or missing session
-   * @throws {403} Forbidden - Insufficient permissions (pr_officer, or officer role required)
+   * @throws {403} Forbidden - Insufficient permissions (pr_officer, or tech_officer role required)
    * */
   @Get('/user/:userId')
   @UseGuards(SessionGuard, RolesGuard)
-  @Roles('pr_officer', 'officer')
+  @Roles('pr_officer', 'tech_officer')
   async findByUserId(
     @Param('userId') userId: string,
     @Request() req,

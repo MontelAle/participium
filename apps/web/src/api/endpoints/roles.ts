@@ -1,6 +1,5 @@
+import type { Role, RolesResponseDto } from '@repo/api';
 import { apiFetch } from '../client';
-import type { Role } from '@repo/api';
-import type { RolesResponseDto } from '@repo/api';
 
 export async function getRoles(): Promise<Role[]> {
   const response = await apiFetch<RolesResponseDto>('/roles/', {

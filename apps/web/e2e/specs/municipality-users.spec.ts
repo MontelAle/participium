@@ -1,6 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { MunicipalityUsersPage } from '../pages/UserPage.js';
-import { AuthPage } from '../pages/AuthPage.js';
+import { expect, test } from '@playwright/test';
 import {
   createLoginResponse,
   createMutationResponse,
@@ -8,6 +6,8 @@ import {
   mockOffices,
   mockRoles,
 } from '../fixtures/auth-municipal-data.js';
+import { AuthPage } from '../pages/AuthPage.js';
+import { MunicipalityUsersPage } from '../pages/UserPage.js';
 
 const successResponse = (data: any) => ({
   status: 200,

@@ -1,6 +1,6 @@
 import { Point } from 'typeorm';
-import { User } from './user.entity';
 import { Category } from './category.entity';
+import { User } from './user.entity';
 
 export enum ReportStatus {
   PENDING = 'pending',
@@ -28,4 +28,6 @@ export interface Report {
   explanation?: string;
   assignedOfficerId?: string;
   assignedOfficer?: User;
+  assignedExternalMaintainerId?: string;
+  assignedExternalMaintainer?: User;
 }

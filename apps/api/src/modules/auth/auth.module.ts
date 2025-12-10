@@ -1,16 +1,17 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { User } from '../../common/entities/user.entity';
-import { Account } from '../../common/entities/account.entity';
-import { Session } from '../../common/entities/session.entity';
-import { Role } from '../../common/entities/role.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { LocalStrategy } from './strategies/local.strategy';
+import { Account } from '../../common/entities/account.entity';
+import { Profile } from '../../common/entities/profile.entity';
+import { Role } from '../../common/entities/role.entity';
+import { Session } from '../../common/entities/session.entity';
+import { User } from '../../common/entities/user.entity';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 import { SessionGuard } from './guards/session-auth.guard';
+import { LocalStrategy } from './strategies/local.strategy';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Account, Session, Role])],
+  imports: [TypeOrmModule.forFeature([User, Account, Session, Role, Profile])],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, SessionGuard],
 })
