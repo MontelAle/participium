@@ -139,7 +139,7 @@ export function ViewAssignedExternalReport({
                     <SelectValue placeholder="Change status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getNextStatusOptions(watch('status')).map((s) => (
+                    {getNextStatusOptions(report.status).map((s) => (
                       <SelectItem key={s} value={s}>
                         {getStatusConfig(s).label}
                       </SelectItem>
