@@ -25,8 +25,6 @@ const DashboardPage = () => {
 
   const { data: serverStats } = useReportStats();
 
-  console.log(serverStats);
-
   const stats = serverStats || {
     total: 0,
     pending: 0,
