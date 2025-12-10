@@ -260,6 +260,176 @@ const REAL_REPORTS = [
     categoryName: 'Roads and Urban Furnishings',
     images: ['PoleOnTheGround1.jpg', 'PoleOnTheGround2.jpg'],
   },
+  {
+    title: 'Faded Pedestrian Crossing',
+    description:
+      'Poorly visible crosswalk that needs repainting to ensure pedestrian safety. The faded markings make it difficult for drivers to notice pedestrians, especially at night or in bad weather, increasing the risk of accidents.',
+    address: 'Via Osoppo, 20e, Torino',
+    lat: 45.052893,
+    lng: 7.638379,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['FadedPedestrianCrossing1.jpg', 'FadedPedestrianCrossing2.jpg'],
+  },
+  {
+    title: 'Faded Bike Line Markings',
+    description:
+      'The bike lane markings on the road are no longer clearly visible, making it difficult for both cyclists and drivers to notice them. This increases the risk of accidents, especially during low-light conditions or heavy traffic.',
+    address: 'Via Tolmino, Torino',
+    lat: 45.054293,
+    lng: 7.642011,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['FadedBikeLine1.jpg', 'FadedBikeLine2.jpg', 'FadedBikeLine3.jpg' ],
+  },
+  {
+    title: 'Damaged Pedestrian Railing',
+    description:
+      'The green railing along the sidewalk is damaged. Repair needed to ensure pedestrian safety.',
+    address: 'Corso Racconigi, 208, Torino',
+    lat: 45.056554,
+    lng: 7.647711,
+    categoryName: 'Architectural Barriers',
+    images: ['DamagedPedestrianRailing.jpg'],
+  },
+  {
+    title: 'Vandalized road sign',
+    description:
+      'The sign has graffiti that compromises its visibility and effectiveness.',
+    address: 'Via Spalato, Torino',
+    lat: 45.059737,
+    lng: 7.652716,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['VandalizedRoadSign.jpg'],
+  },
+  {
+    title: 'Damaged Road Signs with Graffiti',
+    description:
+      'Two road signs have graffiti, reducing their readability and compromising road safety for drivers and pedestrians. Immediate cleaning or replacement is recommended.',
+    address: 'Via Paolo Braccini, Torino',
+    lat: 45.059915,
+    lng: 7.652474,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['RoadSignWithGraffiti.jpg'],
+  },
+  {
+    title: 'Severely Damaged Reflective Panel',
+    description:
+      'The sign is almost completely destroyed; the reflective film is no longer effective. Immediate replacement required.',
+    address: 'Corso Peschiera, Torino',
+    lat: 45.062229,
+    lng: 7.655716,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['DamagedReflectivePanel.jpg'],
+  },
+  {
+    title: 'Skating Rink with Damaged Wooden Edges',
+    description:
+      'The skating rink located inside the park has low wooden edges that are severely damaged along the entire perimeter. In several areas, the wood is broken, unstable, or completely detached, and numerous pieces are scattered throughout the surrounding area. This situation poses a concrete risk to children and animals who frequent the park, as they may trip, get injured, or come into contact with sharp or unstable fragments.',
+    address: 'Via Osoppo, Torino',
+    lat: 45.053219,
+    lng: 7.639716,
+    categoryName: 'Public Green Areas and Playgrounds',
+    images: ['SkatingRink1.jpg', 'SkatingRink2.jpg', 'SkatingRink3.jpg'],
+  },
+  {
+    title: 'Bent Sign',
+    description:
+      'The sign in the area is bent, and the deformation makes it difficult to read, reducing the effectiveness of the signal.',
+    address: 'Via Paolo Braccini, 2, Torino',
+    lat: 45.059449,
+    lng: 7.656176,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['BentSign.jpg'],
+  },
+  {
+    title: 'Bent and Illegible Road Sign',
+    description:
+      'I report a bent road sign that is crooked and difficult to read, causing confusion for drivers. Intervention is requested to restore the sign and ensure it is clearly visible.',
+    address: 'Via Bobbio, 3, Torino',
+    lat: 45.057927,
+    lng: 7.654953,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['BentAndIllegibleRoadSign1.jpg','BentAndIllegibleRoadSign2.jpg'],
+  },
+  {
+    title: 'Damaged Wall in the Park',
+    description:
+      'I am reporting a wall in a park that is in poor condition, visibly damaged and deteriorated, requiring maintenance and restoration.',
+    address: 'Corso Mediterraneo, Torino',
+    lat: 45.060608,
+    lng: 7.657127,
+    categoryName: 'Public Green Areas and Playgrounds',
+    images: ['DamagedWallInThePark1.jpg','DamagedWallInThePark2.jpg','DamagedWallInThePark3.jpg'],
+  },
+  {
+    title: 'Wall Covered with Graffiti',
+    description:
+      'I am reporting a wall covered with graffiti, which damages its appearance. Cleaning or restoration of the surface would be advisable.',
+    address: 'Via Gorizia, 9a, Torino',
+    lat: 45.051959,
+    lng: 7.641575,
+    categoryName: 'Other',
+    images: ['WallWithGraffiti.jpg'],
+  },
+  {
+    title: 'Vegetation Encroaching on the Sidewalk',
+    description:
+      'I am reporting vegetation encroaching on the sidewalk from the side, obstructing pedestrian passage. Pruning or removal would be advisable.',
+    address: 'Via Tolmino, 80a, Torino',
+    lat: 45.054390,
+    lng: 7.642114,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['VegetationOnSidewalk1.jpg','VegetationOnSidewalk2.jpg'],
+  },
+  {
+    title: 'Scattered Trash',
+    description:
+      'I am reporting scattered trash in the area, which makes the place look neglected and in need of cleaning.',
+    address: 'Corso Carlo e Nello Rosselli, 153, Torino',
+    lat: 45.055148,
+    lng: 7.646663,
+    categoryName: 'Waste',
+    images: ['ScatteredTrash1.jpg','ScatteredTrash2.jpg','ScatteredTrash3.jpg'],
+  },
+  {
+    title: 'Confusing Road Markings',
+    description:
+      'I am reporting that after construction work, new pedestrian crossings and stop lines were painted without removing the old ones. The presence of double lines causes confusion for both pedestrians and drivers, and the markings need clarification.',
+    address: 'Via Gorizia, 9a, Torino',
+    lat: 45.052070,
+    lng: 7.641613,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['ConfusingRoadMarking.jpg'],
+  },
+  {
+    title: 'Vegetation Occupying Parking Spaces',
+    description:
+      'I am reporting vegetation growing from the ground in the parking lot, occupying some parking spaces and reducing the available area.',
+    address: 'Via Spalato, 14, Torino',
+    lat: 45.061404,
+    lng: 7.653820,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['VegetationParkingSpace.jpg'],
+  },
+  {
+    title: 'Traffic Lights with Damaged or Missing Sun Protection',
+    description:
+      'I am reporting traffic lights with damaged or missing sun protection, making the signals harder to see for drivers.',
+    address: 'Corso Luigi Einaudi, Torino',
+    lat: 45.061338,
+    lng: 7.658394,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['TrafficLightsDamaged1.jpg','TrafficLightsDamaged2.jpg','TrafficLightsDamaged3.jpg'],
+  },
+  {
+    title: 'Damaged Traffic Lights and Road Sign',
+    description:
+      'I am reporting that some traffic lights have damaged or missing sun protection, reducing the visibility of the signals for drivers. Additionally, a road sign is damaged and has graffiti on it, affecting the clarity of the information.',
+    address: 'Corso Peschiera, Torino',
+    lat: 45.061494,
+    lng: 7.657612,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['TrafficLightAndRoadSign1.jpg','TrafficLightAndRoadSign2.jpg','TrafficLightAndRoadSign3.jpg'],
+  },
 ];
 
 // ============================================================================
