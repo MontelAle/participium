@@ -17,12 +17,15 @@ import { useNavigate } from 'react-router-dom';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const { isAdminUser, isMunicipalPrOfficer, isTechnicalOfficer } = useAuth();
+  const { isAdminUser, isMunicipalPrOfficer, isTechnicalOfficer, isExternal } =
+    useAuth();
 
   const { data: allUsers = [] } = useMunicipalityUsers();
   const municipalityUsers = isAdminUser ? allUsers : [];
 
   const { data: serverStats } = useReportStats();
+
+  console.log(serverStats);
 
   const stats = serverStats || {
     total: 0,
@@ -52,7 +55,7 @@ const DashboardPage = () => {
       icon: FileText,
       color: 'text-violet-600',
       bgColor: 'bg-violet-500/10',
-      isVisible: !isTechnicalOfficer,
+      isVisible: !isTechnicalOfficer && !isExternal,
     },
     {
       title: 'In Progress',
@@ -60,7 +63,7 @@ const DashboardPage = () => {
       icon: Timer,
       color: 'text-amber-600',
       bgColor: 'bg-amber-500/10',
-      isVisible: !isTechnicalOfficer && !isMunicipalPrOfficer,
+      isVisible: !isTechnicalOfficer && !isMunicipalPrOfficer && !isExternal,
     },
     {
       title: 'Pending Approval',
@@ -68,7 +71,7 @@ const DashboardPage = () => {
       icon: AlertCircle,
       color: 'text-rose-600',
       bgColor: 'bg-rose-500/10',
-      isVisible: !isTechnicalOfficer,
+      isVisible: !isTechnicalOfficer && !isExternal,
     },
     {
       title: isMunicipalPrOfficer ? 'My Assigned' : 'Assigned',
@@ -76,7 +79,7 @@ const DashboardPage = () => {
       icon: UserCheck,
       color: 'text-purple-600',
       bgColor: 'bg-purple-500/10',
-      isVisible: !isTechnicalOfficer,
+      isVisible: !isTechnicalOfficer && !isExternal,
     },
     {
       title: isMunicipalPrOfficer ? 'My Rejected' : 'Rejected',
@@ -84,7 +87,7 @@ const DashboardPage = () => {
       icon: XCircle,
       color: 'text-red-600',
       bgColor: 'bg-red-500/10',
-      isVisible: !isTechnicalOfficer,
+      isVisible: !isTechnicalOfficer && !isExternal,
     },
     {
       title: 'Resolved',
@@ -92,7 +95,7 @@ const DashboardPage = () => {
       icon: CheckCircle,
       color: 'text-green-600',
       bgColor: 'bg-green-500/10',
-      isVisible: !isTechnicalOfficer && !isMunicipalPrOfficer,
+      isVisible: !isTechnicalOfficer && !isMunicipalPrOfficer && !isExternal,
     },
     {
       title: 'My In Progress',
@@ -100,7 +103,7 @@ const DashboardPage = () => {
       icon: Timer,
       color: 'text-amber-600',
       bgColor: 'bg-amber-500/10',
-      isVisible: isTechnicalOfficer,
+      isVisible: isTechnicalOfficer || isExternal,
     },
     {
       title: 'My Assigned',
@@ -108,7 +111,7 @@ const DashboardPage = () => {
       icon: UserCheck,
       color: 'text-purple-600',
       bgColor: 'bg-purple-500/10',
-      isVisible: isTechnicalOfficer,
+      isVisible: isTechnicalOfficer || isExternal,
     },
     {
       title: 'My Resolved',
@@ -116,7 +119,7 @@ const DashboardPage = () => {
       icon: CheckCircle,
       color: 'text-green-600',
       bgColor: 'bg-green-500/10',
-      isVisible: isTechnicalOfficer,
+      isVisible: isTechnicalOfficer || isExternal,
     },
   ];
 
@@ -178,6 +181,14 @@ const DashboardPage = () => {
               icon={FileText}
               label="View My Reports"
               onClick={() => navigate('/app/assigned-reports')}
+            />
+          )}
+
+          {isExternal && (
+            <ActionButton
+              icon={FileText}
+              label="View Reports"
+              onClick={() => navigate('/app/external/assigned-reports')}
             />
           )}
         </div>
