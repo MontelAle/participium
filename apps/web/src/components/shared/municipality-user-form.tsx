@@ -87,7 +87,7 @@ export function MunicipalityUserForm({
   };
 
   const handleRoleChange = (value: string) => {
-    setForm({ ...form, roleId: value });
+    setForm({ ...form, roleId: value, officeId: '' });
   };
 
   const handleOfficeChange = (value: string) => {
@@ -135,10 +135,27 @@ export function MunicipalityUserForm({
   const submitText = mode === 'create' ? 'Create User' : 'Save Changes';
   const loadingText = mode === 'create' ? 'Creating...' : 'Updating...';
 
-  const availableOffices =
-    roles.find((r) => r.id === form.roleId)?.name === 'external_maintainer'
-      ? offices.filter((office) => office.isExternal)
-      : offices.filter((office) => !office.isExternal);
+  const selectedRoleName = roles.find((r) => r.id === form.roleId)?.name;
+
+  let availableOffices: typeof offices = [];
+  switch (selectedRoleName) {
+    case 'external_maintainer':
+      availableOffices = offices.filter((office) => office.isExternal);
+      break;
+    case 'pr_officer':
+      availableOffices = offices.filter(
+        (office) => office.name === 'organization_office',
+      );
+      break;
+    case 'tech_officer':
+      availableOffices = offices.filter(
+        (office) => !office.isExternal && office.name !== 'organization_office',
+      );
+      break;
+    default:
+      availableOffices = offices;
+      break;
+  }
 
   return (
     <Card className="w-full h-full flex flex-col border-none bg-white/90 backdrop-blur-sm ring-1 ring-gray-200">
