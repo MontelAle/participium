@@ -43,7 +43,7 @@ The project uses **Turborepo** to manage a monorepo workspace with:
 
 ### Architectural Patterns
 
-- **Backend**: NestJS with modular structure(controllers, services, modules)
+- **Backend**: NestJS with modular pattern (controllers, services, modules)
 - **Frontend**: React with routing, context API, custom hooks
 - **Database**: PostgreSQL with TypeORM and PostGIS
 - **Authentication**: Session-based with Passport.js (Local Strategy)
@@ -79,543 +79,10 @@ The project uses **Turborepo** to manage a monorepo workspace with:
 
 ### DevOps & Tools
 
-# Participium - Project Documentation
-
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Architecture](#architecture)
-3. [Technology Stack](#technology-stack)
-4. [Project Structure](#project-structure)
-5. [Backend API](#backend-api)
-6. [Frontend Web](#frontend-web)
-7. [Database](#database)
-8. [Shared Packages](#shared-packages)
-9. [Operational Model & Workflow](#operational-model--workflow)
-10. [Setup and Configuration](#setup-and-configuration)
-11. [Available Commands](#available-commands)
-
----
-
-## Overview
-
-**Participium** is a web platform for managing civic participation. The project uses a monorepo architecture (Turborepo) with a NestJS backend and a React + Vite frontend.
-
-### Main Features
-
-- Session (cookie) based authentication
-- Role and permission system (municipal vs regular users)
-- Municipal user management with office assignments
-- Regular user profile management (Telegram, notifications, avatar)
-- File storage via MinIO (S3-compatible)
-- Dashboard UI with reusable components
-- RESTful API with Swagger documentation
-
----
-
-## Architecture
-
-### Monorepo Structure
-
-- 2 applications: `apps/api` (backend), `apps/web` (frontend)
-- Shared packages under `packages/` for entities, DTOs and config presets
-
-### Patterns
-
-- Backend: NestJS modular structure (controllers, services, modules)
-- Frontend: React + Vite, routing, contexts and custom hooks
-- Database: PostgreSQL with TypeORM and PostGIS
-- Auth: Session-based with Passport (Local strategy)
-
----
-
-## Technology Stack
-
-### Backend
-
-| Technology | Version | Purpose |
-| ---------- | ------- | ------- |
-| NestJS     | ^11.0.0 | Backend framework |
-| TypeORM    | ^0.3.27 | ORM |
-| PostgreSQL | 18      | Database |
-| PostGIS    | 3.6     | Geospatial extension |
-| MinIO      | ^8.x    | S3-compatible object storage |
-| Passport   | ^0.7.0  | Authentication |
-| Swagger    | ^11.x   | API docs |
-| Jest       | ^29.x   | Testing |
-
-### Frontend
-
-| Technology | Version | Purpose |
-| ---------- | ------- | ------- |
-| React      | ^18.x   | UI |
-| Vite       | ^5.x    | Build tool |
-| React Router | ^7.x  | Routing |
-| Tailwind   | ^4.x    | Styling |
-| Radix UI   | -       | Accessible primitives |
-| TanStack Query | ^5.x | Data fetching |
-| Jotai      | ^2.x    | State management |
-
-### Tools
-
-- pnpm (workspace)
-- Turborepo
-- Docker & Docker Compose
-- Node >= 18
-
----
-
-## Project Structure
-
-```
-participium/
-├── apps/
-│   ├── api/                    # NestJS backend
-│   │   ├── src/
-│   │   │   ├── modules/        # Functional modules (auth, users, reports...)
-│   │   │   ├── providers/      # database, minio, seeding
-│   │   │   ├── config/         # app configuration
-│   │   │   └── common/         # shared types, dto copies for api app
-│   │   └── compose.yml         # docker compose for db (local)
-│   └── web/                    # React + Vite frontend
-│       ├── src/
-│       │   ├── pages/
-│       │   ├── components/
-│       │   ├── contexts/
-│       │   ├── hooks/
-│       │   ├── layouts/
-│       │   └── api/
-│       └── public/
-├── packages/
-│   ├── api/                    # shared entities & DTOs
-│   ├── eslint-config/
-│   ├── jest-config/
-│   └── typescript-config/
-├── package.json
-├── turbo.json
-└── pnpm-workspace.yaml
-```
-
----
-
-## Backend API
-
-### Ports and URLs
-
-- Port: 5000 (default)
-- Base URL: http://localhost:5000/api
-- Swagger UI: http://localhost:5000/api
-
-### Main Modules
-
-#### Auth Module (/auth)
-
-- POST /auth/login — login (username/password)
-- POST /auth/register — register new user
-- POST /auth/logout — logout and invalidate session
-- POST /auth/refresh — refresh session
-
-Features: Passport Local strategy, session cookies, LocalAuthGuard, SessionGuard, RolesGuard.
-
-#### Users Module (/users)
-
-Municipality user management and profile endpoints:
-
-- GET /users/municipality — list municipal users
-- GET /users/municipality/user/:id — user details
-- POST /users/municipality — create municipal user
-- POST /users/municipality/user/:id — update municipal user
-- DELETE /users/municipality/user/:id — delete municipal user
-- PATCH /users/profile/me — update regular user profile
-
-Profile update supports:
-- Telegram username (format validated, removable)
-- Email notifications toggle
-- Profile picture upload (JPEG/PNG/WebP, max 5MB, sanitized filenames)
-- Municipality accounts cannot edit profile via this endpoint
-
-#### Roles Module (/roles)
-
-- GET /roles — list available roles
-
-#### Offices Module (/offices)
-
-- GET /offices — list municipal offices
-
-#### Categories Module (/categories)
-
-- GET /categories — list report categories
-
-#### Reports Module (/reports)
-
-- POST /reports — create report with geolocation and images
-- GET /reports — list reports with filters
-- GET /reports/nearby — nearby search ordered by distance
-- GET /reports/:id — fetch single report
-- PATCH /reports/:id — update report (restricted)
-- DELETE /reports/:id — delete report (admin only)
-
-Features: PostGIS-based geospatial queries (bounding box, radius), distance calculations, support for SRID 4326 coordinates.
-
-Query params supported (examples): status, categoryId, userId, minLongitude, maxLongitude, minLatitude, maxLatitude, searchLongitude, searchLatitude, radiusMeters, longitude, latitude, radius.
-
-App configuration sample is stored in src/config/app.config.ts and environment-driven.
-
----
-
-## App Configuration (example)
-
-File: src/config/app.config.ts
-
-```typescript
-{
-  app: {
-    frontendUrl: 'http://localhost:5173',
-    port: 5000,
-    backendUrl: 'http://localhost:5000/api',
-    env: 'development'
-  },
-  session: {
-    expiresInSeconds: 86400
-  },
-  cookie: {
-    httpOnly: true,
-    secure: false,
-    sameSite: 'lax'
-  },
-  db: {
-    type: 'postgres',
-    host: 'localhost',
-    port: 5432,
-    username: 'admin',
-    password: 'password',
-    database: 'participium'
-  },
-  minio: {
-    // values loaded from environment variables at runtime
-  }
-}
-```
-
-Common MinIO env vars referenced by providers: MINIO_ENDPOINT, MINIO_PORT, MINIO_USE_SSL, MINIO_ACCESS_KEY (or MINIO_ROOT_USER), MINIO_SECRET_KEY (or MINIO_ROOT_PASSWORD), MINIO_BUCKET_NAME, MINIO_PUBLIC_ENDPOINT, MINIO_PUBLIC_PORT.
-
----
-
-## Frontend Web
-
-- Dev port: 5173 (http://localhost:5173)
-- Routes:
-  - / → HomePage
-  - /report-map → MapPage
-  - /login → LoginPage
-  - /register → RegistrationPage
-  - /users-municipality → Municipal users (configurable)
-
-Structure: pages, components (ui primitives, lists, forms), contexts (AuthContext), hooks (useAuth, useMunicipalityUsers, useRoles, useMobile), API client in src/api.
-
-Styling: Tailwind CSS, Radix UI, Lucide React icons, class-variance-authority for variants.
-
----
-
-## Database
-
-### Technology
-
-- PostgreSQL 18 + PostGIS 3.6
-- Docker container (participium-postgres)
-- Port: 5432
-
-### Entities (TypeORM) — summary fields
-
-User, Role, Office, Account, Session, Category, Report — canonical fields and relations are implemented in packages and apps code (see packages/api and apps/api common entities).
-
-User highlights:
-- id, email, username, firstName, lastName
-- roleId/role (required)
-- officeId/office (optional)
-- telegramUsername, emailNotificationsEnabled, profilePictureUrl
-- timestamps
-
-Report highlights:
-- id, title, description, status (enum)
-- location: PostGIS geometry(Point, 4326)
-- address, images (string array), userId/user relation
-- isAnonymous, categoryId/category, assignedOfficerId/assignedOfficer
-- createdAt, updatedAt, explanation
-
-Status values in code are defined in ReportStatus enum (e.g., pending, assigned, in_progress, resolved, rejected).
-
-### Location storage and PostGIS notes
-
-- location column uses PostGIS geometry(Point, 4326)
-- In application code points are represented as GeoJSON-style objects: { type: 'Point', coordinates: [longitude, latitude] }
-- Some DB usage represents points as WKT (POINT(lon lat)) for SQL statements; services cast to geography where metric distances are required
-- Spatial index (GIST) present for location column
-
-### Relations
-
-- User ↔ Role (ManyToOne)
-- User ↔ Office (ManyToOne, optional)
-- User ↔ Account (OneToMany)
-- User ↔ Session (OneToMany)
-- Report ↔ User (ManyToOne)
-- Report ↔ Category (ManyToOne, optional)
-- Report ↔ assignedOfficer (ManyToOne, optional)
-- Category ↔ Office (ManyToOne)
-- Office ↔ Category (OneToMany)
-
-### PostGIS functions used
-
-ST_Contains, ST_DWithin, ST_Distance, ST_MakePoint, geography casting (::geography) for metrically accurate distances.
-
-### MinIO Object Storage
-
-- Default endpoint: localhost:9000
-- Default bucket: participium-reports
-- Access policy: usually public-read for uploaded files (configured by provider)
-
-Features:
-- Profile pictures stored under profile-pictures/{userId}/
-- Report images under reports/{reportId}/
-- Bucket auto-creation on startup, public policy configuration
-- Filename sanitization and unique prefixing (nanoid)
-- File size and type validation (JPEG, PNG, WebP), default limits 5MB
-
-Provider methods implemented include uploadFile, deleteFile, deleteFiles, extractFileNameFromUrl.
-
----
-
-## Shared Packages
-
-### @repo/api
-
-Shared entities and DTOs used by backend and frontend:
-- entities/: TypeORM definitions (User, Role, Office, Category, Report, etc.)
-- dto/: RegisterDto, LoginDto, Profile DTOs, Report DTOs, Role/Category responses
-
-### Config packages
-
-- eslint-config, jest-config, typescript-config — reusable configs used across workspace
-
----
-
-## Operational Model & Workflow
-
-### Office - Category Mapping
-
-Mapping of categories to offices implemented in seed and configuration data (examples present in seed file):
-
-| Office Name | ID | Competent Categories |
-|-------------|----|----------------------|
-| Maintenance and Technical Services | maintenance | Roads, Urban Furnishings, Architectural Barriers |
-| Infrastructure | infrastructure | Road Signs, Traffic Lights, Public Lighting |
-| Local Public Services | public_services | Water Supply, Drinking Water, Sewer System |
-| Environment Quality | environment | Waste |
-| Green Areas and Parks | green_parks | Public Green Areas, Playgrounds |
-| Decentralization & Civic Services | civic_services | Other/general |
-| Organizational Office | organization | No category (PR/triage) |
-
-### Report Status Lifecycle
-
-Typical lifecycle: pending → assigned → in_progress → resolved / rejected (suspended may be implemented depending on business rules). Exact enum values live in packages/api src entities.
-
-### Workflow
-
-1. Citizen submits a report with category and location.
-2. PR Officers (Organization office) triage: accept/reject. On acceptance the system determines competent office by category.
-3. Assignment options:
-   - Manual: PR officer selects an officer.
-   - Automatic: system chooses officer with lowest workload (implemented in ReportsService.assignOfficerAutomatically).
-4. Technical officer receives assigned reports in their office dashboard and updates status through lifecycle.
-
-### Test users (seeded)
-
-Sample usernames exist for each office (see seed). Example admin/pr/officer usernames: admin, pr_officer_1..4; technicians: tech_infrastructure_1, tech_maintenance_1, etc.
-
----
-
-## Setup and Configuration
-
-### Prerequisites
-
-- Node.js >= 18
-- pnpm >= 8.x
-- Docker Desktop (for local DB)
-
-### Install
-
-```bash
-cd participium
-pnpm install
-```
-
-### Start PostgreSQL (local dev)
-
-```bash
-cd apps/api
-docker compose up -d
-```
-
-Image: postgis/postgis:18-3.6 (PostGIS pre-enabled)
-
-Verify:
-
-```bash
-docker ps
-```
-
-### Environment variables
-
-Create apps/api/.env with required keys. Example:
-
-```env
-# App
-PORT=5000
-FRONTEND_URL=http://localhost:5173
-BACKEND_URL=http://localhost:5000/api
-NODE_ENV=development
-
-# Database
-DB_TYPE=postgres
-DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=admin
-DB_PASSWORD=password
-DB_DATABASE=participium
-
-# Session
-SESSION_EXPIRES_IN_SECONDS=86400
-
-# Cookie
-COOKIE_HTTP_ONLY=true
-COOKIE_SECURE=false
-COOKIE_SAME_SITE=lax
-
-# MinIO
-MINIO_ENDPOINT=localhost
-MINIO_PORT=9000
-MINIO_USE_SSL=false
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET_NAME=participium-reports
-MINIO_PUBLIC_ENDPOINT=localhost
-MINIO_PUBLIC_PORT=9000
-```
-
-Note: provider code may accept alternative env var names (MINIO_ROOT_USER / MINIO_ROOT_PASSWORD). Check apps/api/src/config/app.config.ts and minio provider for exact keys.
-
-### Running the apps
-
-From workspace root:
-
-```bash
-pnpm dev
-```
-
-Or individually:
-
-```bash
-# Backend only
-cd apps/api
-pnpm dev
-
-# Frontend only
-cd apps/web
-pnpm dev
-```
-
-### Database seeding
-
-Auto-seed runs on backend bootstrap (apps/api/src/main.ts) if reports count < 10 (default). Seed file: apps/api/src/providers/database/seed/participium.seed.ts
-
-Manual seed:
-
-```bash
-cd apps/api
-pnpm run seed:participium
-```
-
----
-
-## Available Commands
-
-Root:
-
-```bash
-pnpm dev
-pnpm build
-pnpm test
-pnpm test:e2e
-pnpm lint
-pnpm format
-```
-
-Backend (apps/api):
-
-```bash
-pnpm dev
-pnpm build
-pnpm start
-pnpm start:debug
-pnpm test
-pnpm test:watch
-pnpm test:e2e
-pnpm lint
-pnpm seed:user
-pnpm seed:reports
-```
-
-Frontend (apps/web):
-
-```bash
-pnpm dev
-pnpm build
-pnpm preview
-pnpm lint
-```
-
-Docker DB:
-
-```bash
-# From apps/api/
-docker compose up -d
-docker compose down
-docker compose logs
-docker exec -it participium-postgres psql -U admin -d participium
-```
-
----
-
-## Additional Notes
-
-### Testing
-
-- Coverage available in apps/api/coverage/
-- Unit and e2e tests cover geospatial queries, file upload validation, filename sanitization, Telegram validation, MinIO integration, and municipality restrictions.
-
-### PostGIS
-
-- SRID 4326 (WGS84), spatial indexing with GIST, geography casting for metric distances.
-
-### Security
-
-- bcrypt password hashing
-- session secrets and HTTP-only cookies
-- Helmet headers
-- class-validator for inputs
-- File upload protections: basename sanitization, mime checks, size limits, unique filenames
-
-### Extensibility
-
-- Modular NestJS services and controllers
-- Shared DTOs/entities in packages for cross-app consistency
-- TypeORM migrations supported (configurable)
-
----
-
-**Document Version**: 1.4  
-**Last Update**: 2025-12-09  
-**Project Status**: In Development
+- **Package Manager**: pnpm ^8.15.5
+- **Build System**: Turborepo ^2.6.0
+- **Container**: Docker & Docker Compose
+- **Node**: >=18
 
 ---
 
@@ -709,15 +176,15 @@ participium/
 
 **Endpoint**: `/users`
 
-| Method | Route                    | Description                 |
-| ------ | ------------------------ | --------------------------- |
-| GET    | `/municipality`          | List municipal users (Admin, PR Officer only) |
-| GET    | `/municipality/user/:id` | User details                |
-| POST   | `/municipality`          | Create municipal user       |
-| POST   | `/municipality/user/:id` | Update user                 |
-| DELETE | `/municipality/user/:id` | Delete user                 |
+| Method | Route                    | Description                                            |
+| ------ | ------------------------ | ------------------------------------------------------ |
+| GET    | `/municipality`          | List municipal users (Admin, PR Officer only)          |
+| GET    | `/municipality/user/:id` | User details                                           |
+| POST   | `/municipality`          | Create municipal user                                  |
+| POST   | `/municipality/user/:id` | Update user                                            |
+| DELETE | `/municipality/user/:id` | Delete user                                            |
 | GET    | `/external-maintainers`  | List external maintainers (optional categoryId filter) |
-| PATCH  | `/profile/me`            | Update regular user profile |
+| PATCH  | `/profile/me`            | Update regular user profile                            |
 
 **Functionality**:
 
@@ -880,11 +347,23 @@ File: `src/config/app.config.ts`
 ### Routing
 
 ```typescript
-/                      → HomePage
-/report-map            → MapPage
-/login                 → LoginPage
-/register              → RegistrationPage
-/users-municipality    → (configurable)
+/                                 → Redirects to /reports/map
+/reports/map                      → MapPage (CitizenGuard)
+/reports/create                   → CreateReportPage (CitizenGuard)
+/reports/view/:id                 → ReportDetailsPage (CitizenGuard)
+/profile                          → ProfilePage (CitizenGuard)
+/app/dashboard                    → DashboardPage (MunicipalGuard)
+/app/municipality-users           → MunicipalityUsersPage (MunicipalGuard)
+/app/municipality-users/create    → MunicipalityUsersCreatePage (MunicipalGuard)
+/app/municipality-users/view/:id  → MunicipalityUsersViewPage (MunicipalGuard)
+/app/assign-reports               → AssignReportsPage (MunicipalGuard)
+/app/assign-reports/view/:id      → AssignReportsViewPage (MunicipalGuard)
+/app/assigned-reports             → AssignedReportsPage (MunicipalGuard)
+/app/assigned-reports/view/:id    → AssignedReportsViewPage (MunicipalGuard)
+/app/external/assigned-reports    → ExternalPage (MunicipalGuard)
+/app/external/assigned-reports/:id→ AssignReportsStatusViewPage (MunicipalGuard)
+/auth/login                       → LoginPage
+/auth/register                    → RegistrationPage
 ```
 
 ### Component Structure
@@ -892,9 +371,13 @@ File: `src/config/app.config.ts`
 #### Pages
 
 - **auth/**: Login and registration
-- **home/**: Main dashboard
-- **map/**: Map visualization
-- **users-municipality/**: Municipal user management
+- **reports/**: Map, create, and view report pages
+- **profile/**: User profile page
+- **app/dashboard/**: Municipal dashboard
+- **app/municipality-users/**: Municipal user management (list, create, view)
+- **app/assign-reports/**: Assign reports (list, view)
+- **app/assigned-reports/**: Assigned reports (list, view)
+- **app/external/assigned-reports/**: External assigned reports (list, view)
 
 #### Components
 
@@ -910,8 +393,14 @@ File: `src/config/app.config.ts`
 #### Custom Hooks
 
 - `useAuth`: Authentication hook
+- `useCategories`: Report categories
+- `useExternalMaintainers`: External maintainers
+- `useFilteredReports`: Filtered reports
 - `useMobile`: Mobile device detection
 - `useMunicipalityUsers`: Municipal user management
+- `useOffices`: Office management
+- `useProfile`: User profile
+- `useReports`: Reports data
 - `useRoles`: Role management
 
 #### API Client
@@ -942,41 +431,46 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### User
 
-| Field                     | Type    | Description              | Nullable | Notes                        |
-| ------------------------- | ------- | ------------------------ | -------- | ---------------------------- |
-| id                        | string  | Primary key              | No       | varchar                      |
-| email                     | string  | User email               | No       | Unique                       |
-| username                  | string  | Username                 | No       | Unique                       |
-| firstName                 | string  | First name               | No       |                              |
-| lastName                  | string  | Last name                | No       |                              |
-| roleId                    | string  | Linked role ID           | No       | Foreign key to Role entity   |
-| role                      | Role    | Role entity relation     | No       | Many-to-one, not nullable    |
-| officeId                  | string  | Linked office ID         | Yes      | Foreign key to Office entity |
-| office                    | Office  | Office entity relation   | Yes      | Many-to-one, optional        |
-| telegramUsername          | string  | Telegram handle          | Yes      | Format: @username            |
-| emailNotificationsEnabled | boolean | Email notifications flag | No       | Default: false               |
-| profilePictureUrl         | string  | Profile picture URL      | Yes      | MinIO storage URL            |
-| createdAt                 | Date    | Creation timestamp       | No       | timestamptz, auto-generated  |
-| updatedAt                 | Date    | Last update timestamp    | No       | timestamptz, auto-generated  |
+| Field     | Type   | Description            | Nullable | Notes                        |
+| --------- | ------ | ---------------------- | -------- | ---------------------------- |
+| id        | string | Primary key            | No       | varchar                      |
+| email     | string | User email             | No       | Unique                       |
+| username  | string | Username               | No       | Unique                       |
+| firstName | string | First name             | No       |                              |
+| lastName  | string | Last name              | No       |                              |
+| roleId    | string | Linked role ID         | No       | Foreign key to Role entity   |
+| role      | Role   | Role entity relation   | No       | Many-to-one, not nullable    |
+| officeId  | string | Linked office ID       | Yes      | Foreign key to Office entity |
+| office    | Office | Office entity relation | Yes      | Many-to-one, optional        |
+| createdAt | Date   | Creation timestamp     | No       | timestamptz, auto-generated  |
+| updatedAt | Date   | Last update timestamp  | No       | timestamptz, auto-generated  |
+
+#### Profile
+
+| Field                     | Type    | Description              | Nullable | Notes             |
+| ------------------------- | ------- | ------------------------ | -------- | ----------------- |
+| telegramUsername          | string  | Telegram handle          | Yes      | Format: @username |
+| emailNotificationsEnabled | boolean | Email notifications flag | No       | Default: false    |
+| profilePictureUrl         | string  | Profile picture URL      | Yes      | MinIO storage URL |
 
 #### Role
 
-| Field       | Type    | Description            | Nullable | Notes                                           |
-| ----------- | ------- | ---------------------- | -------- | ----------------------------------------------- |
-| id          | string  | Primary key            | No       | varchar                                         |
-| name        | string  | Role name              | No       | varchar                                         |
-| label       | string  | Display label          | No       | varchar                                         |
+| Field       | Type    | Description            | Nullable | Notes                                                                   |
+| ----------- | ------- | ---------------------- | -------- | ----------------------------------------------------------------------- |
+| id          | string  | Primary key            | No       | varchar                                                                 |
+| name        | string  | Role name              | No       | varchar                                                                 |
+| label       | string  | Display label          | No       | varchar                                                                 |
 | isMunicipal | boolean | Municipality user flag | No       | true for admin/technical officers/PR officers, false for external users |
 
 #### Office
 
-| Field      | Type       | Description                  | Nullable | Notes                                                     |
-| ---------- | ---------- | ---------------------------- | -------- | --------------------------------------------------------- |
-| id         | string     | Primary key                  | No       | varchar                                                   |
-| name       | string     | Office name                  | No       | varchar                                                   |
-| label      | string     | Office label                 | No       | varchar                                                   |
-| isExternal | boolean    | External company office flag | No       | true for external companies, false for municipal offices  |
-| categories | Category[] | Related categories list      | -        | One-to-many with Category table                           |
+| Field      | Type       | Description                  | Nullable | Notes                                                    |
+| ---------- | ---------- | ---------------------------- | -------- | -------------------------------------------------------- |
+| id         | string     | Primary key                  | No       | varchar                                                  |
+| name       | string     | Office name                  | No       | varchar                                                  |
+| label      | string     | Office label                 | No       | varchar                                                  |
+| isExternal | boolean    | External company office flag | No       | true for external companies, false for municipal offices |
+| categories | Category[] | Related categories list      | -        | One-to-many with Category table                          |
 
 #### Account
 
@@ -1008,22 +502,22 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### Category
 
-| Field            | Type   | Description                      | Nullable | Notes                                                              |
-| ---------------- | ------ | -------------------------------- | -------- | ------------------------------------------------------------------ |
-| id               | string | Primary key                      | No       | varchar                                                            |
-| name             | string | Category name                    | No       | varchar                                                            |
-| office           | Office | Linked municipal office          | -        | Many-to-one with Office entity                                     |
-| externalOfficeId | string | Linked external company ID       | Yes      | Foreign key auto-generated by TypeORM (database only)              |
-| externalOffice   | Office | Linked external company office   | Yes      | Many-to-one with Office entity. For categories handled by external companies |
+| Field            | Type   | Description                    | Nullable | Notes                                                                        |
+| ---------------- | ------ | ------------------------------ | -------- | ---------------------------------------------------------------------------- |
+| id               | string | Primary key                    | No       | varchar                                                                      |
+| name             | string | Category name                  | No       | varchar                                                                      |
+| office           | Office | Linked municipal office        | -        | Many-to-one with Office entity                                               |
+| externalOfficeId | string | Linked external company ID     | Yes      | Foreign key auto-generated by TypeORM (database only)                        |
+| externalOffice   | Office | Linked external company office | Yes      | Many-to-one with Office entity. For categories handled by external companies |
 
 #### Boundary
 
-| Field    | Type         | Description            | Nullable | Notes                                   |
-| -------- | ------------ | ---------------------- | -------- | --------------------------------------- |
-| id       | string       | Primary key            | No       | varchar                                 |
-| name     | string       | Boundary name          | No       | varchar, unique                         |
-| label    | string       | Display label          | No       | varchar                                 |
-| geometry | MultiPolygon | Geographic boundaries  | No       | PostGIS geometry(MultiPolygon, 4326)    |
+| Field    | Type         | Description           | Nullable | Notes                                |
+| -------- | ------------ | --------------------- | -------- | ------------------------------------ |
+| id       | string       | Primary key           | No       | varchar                              |
+| name     | string       | Boundary name         | No       | varchar, unique                      |
+| label    | string       | Display label         | No       | varchar                              |
+| geometry | MultiPolygon | Geographic boundaries | No       | PostGIS geometry(MultiPolygon, 4326) |
 
 **PostGIS Integration**:
 
@@ -1034,27 +528,27 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### Report
 
-| Field             | Type     | Description               | Nullable | Notes                                                                                                      |
-| ----------------- | -------- | ------------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
-| id                | string   | Primary key               | No       | varchar                                                                                                    |
-| title             | string   | Report title              | Yes      | varchar, optional                                                                                          |
-| description       | string   | Report description        | Yes      | text type, optional                                                                                        |
-| status            | enum     | Report status             | No       | Values: pending, in_progress, resolved, rejected, assigned. Default: pending. Visibility rules apply.     |
-| location          | Point    | Geographic coordinates    | No       | PostGIS geometry(Point, 4326). Must be within municipal boundaries.                                       |
-| address           | string   | Physical address          | Yes      | varchar, optional                                                                                          |
-| images            | string[] | Array of image paths/URLs | No       | varchar array                                                                                              |
-| userId            | string   | Linked user ID            | No       | Foreign key to User entity                                                                                 |
-| user              | User     | User entity relation      | No       | Many-to-one, cascade delete                                                                                |
-| isAnonymous       | boolean  | Anonymous report flag     | No       | Default: false                                                                                             |
-| categoryId        | string   | Linked category ID        | Yes      | Foreign key to Category entity, optional                                                                   |
-| category          | Category | Category entity relation  | Yes      | Many-to-one, optional                                                                                      |
-| createdAt         | Date     | Creation timestamp        | No       | timestamptz, auto-generated                                                                                |
-| updatedAt         | Date     | Last update timestamp     | No       | timestamptz, auto-generated                                                                                |
-| explanation       | string   | Rejection/action reason   | Yes      | text type, optional                                                                                        |
-| assignedOfficerId | string   | Assigned officer ID       | Yes      | Foreign key to User entity, optional                                                                       |
-| assignedOfficer   | User     | Assigned officer relation | Yes      | Many-to-one with User entity, optional                                                                     |
-| processedById                | string   | Processing officer ID          | Yes      | Foreign key to User entity. Set when report is assigned or rejected. Tracks who handled the initial review |
-| assignedExternalMaintainerId | string   | Assigned external maintainer ID| Yes      | Foreign key to User entity. For reports assigned to external companies                                     |
+| Field                        | Type     | Description                     | Nullable | Notes                                                                                                      |
+| ---------------------------- | -------- | ------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| id                           | string   | Primary key                     | No       | varchar                                                                                                    |
+| title                        | string   | Report title                    | Yes      | varchar, optional                                                                                          |
+| description                  | string   | Report description              | Yes      | text type, optional                                                                                        |
+| status                       | enum     | Report status                   | No       | Values: pending, in_progress, resolved, rejected, assigned. Default: pending. Visibility rules apply.      |
+| location                     | Point    | Geographic coordinates          | No       | PostGIS geometry(Point, 4326). Must be within municipal boundaries.                                        |
+| address                      | string   | Physical address                | Yes      | varchar, optional                                                                                          |
+| images                       | string[] | Array of image paths/URLs       | No       | varchar array                                                                                              |
+| userId                       | string   | Linked user ID                  | No       | Foreign key to User entity                                                                                 |
+| user                         | User     | User entity relation            | No       | Many-to-one, cascade delete                                                                                |
+| isAnonymous                  | boolean  | Anonymous report flag           | No       | Default: false                                                                                             |
+| categoryId                   | string   | Linked category ID              | Yes      | Foreign key to Category entity, optional                                                                   |
+| category                     | Category | Category entity relation        | Yes      | Many-to-one, optional                                                                                      |
+| createdAt                    | Date     | Creation timestamp              | No       | timestamptz, auto-generated                                                                                |
+| updatedAt                    | Date     | Last update timestamp           | No       | timestamptz, auto-generated                                                                                |
+| explanation                  | string   | Rejection/action reason         | Yes      | text type, optional                                                                                        |
+| assignedOfficerId            | string   | Assigned officer ID             | Yes      | Foreign key to User entity, optional                                                                       |
+| assignedOfficer              | User     | Assigned officer relation       | Yes      | Many-to-one with User entity, optional                                                                     |
+| processedById                | string   | Processing officer ID           | Yes      | Foreign key to User entity. Set when report is assigned or rejected. Tracks who handled the initial review |
+| assignedExternalMaintainerId | string   | Assigned external maintainer ID | Yes      | Foreign key to User entity. For reports assigned to external companies                                     |
 
 **PostGIS Integration**:
 
@@ -1207,16 +701,16 @@ This section outlines how the platform manages departments, categories, and the 
 
 This table shows which office is competent for specific problem categories
 
-| Office Name                             | ID (Database)     | Type              | Competent Categories                               |
-| :-------------------------------------- | :---------------- | :---------------- | :------------------------------------------------- |
-| **Maintenance and Technical Services**  | `maintenance`     | Municipal         | Roads and Urban Furnishings Architectural Barriers |
-| **Infrastructure**                      | `infrastructure`  | Municipal         | Road Signs and Traffic Lights Public Lighting      |
-| **Local Public Services**               | `public_services` | Municipal         | Water Supply Drinking Water Sewer System           |
-| **Environment Quality**                 | `environment`     | Municipal         | Waste                                              |
-| **Green Areas and Parks**               | `green_parks`     | Municipal         | Public Green Areas and Playgrounds                 |
-| **Decentralization and Civic Services** | `civic_services`  | Municipal         | Other (General issues)                             |
-| **Organizational Office**               | `organization`    | Municipal         | No category                                        |
-| **External Companies**                  | Custom IDs        | External Company  | Categories requiring external service providers    |
+| Office Name                             | ID (Database)     | Type             | Competent Categories                               |
+| :-------------------------------------- | :---------------- | :--------------- | :------------------------------------------------- |
+| **Maintenance and Technical Services**  | `maintenance`     | Municipal        | Roads and Urban Furnishings Architectural Barriers |
+| **Infrastructure**                      | `infrastructure`  | Municipal        | Road Signs and Traffic Lights Public Lighting      |
+| **Local Public Services**               | `public_services` | Municipal        | Water Supply Drinking Water Sewer System           |
+| **Environment Quality**                 | `environment`     | Municipal        | Waste                                              |
+| **Green Areas and Parks**               | `green_parks`     | Municipal        | Public Green Areas and Playgrounds                 |
+| **Decentralization and Civic Services** | `civic_services`  | Municipal        | Other (General issues)                             |
+| **Organizational Office**               | `organization`    | Municipal        | No category                                        |
+| **External Companies**                  | Custom IDs        | External Company | Categories requiring external service providers    |
 
 ### Report Status Lifecycle
 
@@ -1235,13 +729,13 @@ The platform implements role-based visibility controls for reports based on thei
 
 #### Report Visibility by Role and Status
 
-| User Role                                      | Pending (Own) | Pending (Others) | Assigned    | In Progress | Resolved | Rejected (Others) | Rejected (Own) |
-| :--------------------------------------------- | :-----------: | :--------------: | :---------: | :---------: | :------: | :---------------: | :------------: |
-| Citizen (`role: 'user'`)                       | Yes           | No               | Yes         | Yes         | Yes      | No                | Yes            |
-| PR Officer (`role: 'pr_officer'`)              | -             | Yes              | No          | No          | No       | No                | -              |
-| Technical Officer (`role: 'tech_officer'`)     | -             | Yes              | Yes         | Yes         | Yes      | Yes               | -              |
-| Admin (`role: 'admin'`)                        | -             | Yes              | Yes         | Yes         | Yes      | Yes               | -              |
-| External Maintainer (`role: 'external_maintainer'`) | -       | No               | Only Assigned| Only Assigned| Only Assigned | No          | -              |
+| User Role                                           | Pending (Own) | Pending (Others) |   Assigned    |  In Progress  |   Resolved    | Rejected (Others) | Rejected (Own) |
+| :-------------------------------------------------- | :-----------: | :--------------: | :-----------: | :-----------: | :-----------: | :---------------: | :------------: |
+| Citizen (`role: 'user'`)                            |      Yes      |        No        |      Yes      |      Yes      |      Yes      |        No         |      Yes       |
+| PR Officer (`role: 'pr_officer'`)                   |       -       |       Yes        |      No       |      No       |      No       |        No         |       -        |
+| Technical Officer (`role: 'tech_officer'`)          |       -       |       Yes        |      Yes      |      Yes      |      Yes      |        Yes        |       -        |
+| Admin (`role: 'admin'`)                             |       -       |       Yes        |      Yes      |      Yes      |      Yes      |        Yes        |       -        |
+| External Maintainer (`role: 'external_maintainer'`) |       -       |        No        | Only Assigned | Only Assigned | Only Assigned |        No         |       -        |
 
 **Key Notes**:
 
@@ -1327,14 +821,14 @@ For categories that require external service providers, the system supports assi
 
 This table lists the credentials (usernames) to use for testing the workflow
 
-| Office                                | User Type                  | Username                                                                |
-| :------------------------------------ | :------------------------- | :---------------------------------------------------------------------- |
-| **Maintenance & Technical Services**  | Maintenance Technician     | `tech_maintenance_1`, `tech_maintenance_2`                              |
-| **Infrastructure**                    | Infrastructure Technician  | `tech_infrastructure_1`, `tech_infrastructure_2`                        |
-| **Local Public Services**             | Public Services Technician | `tech_public_services_1`, `tech_public_services_2`                      |
-| **Environment Quality**               | Environment Technician     | `tech_environment_1`, `tech_environment_2`                              |
-| **Green Areas and Parks**             | Green Parks Technician     | `tech_green_parks_1`, `tech_green_parks_2`                              |
-| **Decentralization & Civic Services** | Civic Services Technician  | `tech_civic_services_1`, `tech_civic_services_2`                        |
+| Office                                | User Type                  | Username                                                                       |
+| :------------------------------------ | :------------------------- | :----------------------------------------------------------------------------- |
+| **Maintenance & Technical Services**  | Maintenance Technician     | `tech_maintenance_1`, `tech_maintenance_2`                                     |
+| **Infrastructure**                    | Infrastructure Technician  | `tech_infrastructure_1`, `tech_infrastructure_2`                               |
+| **Local Public Services**             | Public Services Technician | `tech_public_services_1`, `tech_public_services_2`                             |
+| **Environment Quality**               | Environment Technician     | `tech_environment_1`, `tech_environment_2`                                     |
+| **Green Areas and Parks**             | Green Parks Technician     | `tech_green_parks_1`, `tech_green_parks_2`                                     |
+| **Decentralization & Civic Services** | Civic Services Technician  | `tech_civic_services_1`, `tech_civic_services_2`                               |
 | **Organizational**                    | System Admin, PR Officer   | `system_admin`, `pr_officer_1`, `pr_officer_2`, `pr_officer_3`, `pr_officer_4` |
 
 ---
@@ -1597,5 +1091,5 @@ The project is structured for future evolutions:
 ---
 
 **Document Version**: 1.4  
-**Last Update**: December 8, 2025  
+**Last Update**: December 10, 2025  
 **Project Status**: In Development
