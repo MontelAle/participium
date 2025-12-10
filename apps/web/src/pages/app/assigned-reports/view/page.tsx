@@ -72,7 +72,11 @@ function AssignedReportsViewPage() {
         </div>
 
         <div className="flex-1 pb-2">
-          <ViewAssignedReport report={report} showAnonymous={false} />
+          <ViewAssignedReport
+            report={report}
+            showAnonymous={false}
+            onClose={() => navigate(-1)}
+          />
         </div>
       </div>
     </div>

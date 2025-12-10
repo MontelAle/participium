@@ -155,20 +155,20 @@ export function ViewAssignedReport({
                     </SelectContent>
                   </Select>
 
-                  {watch('externalOfficeId') && (
-                    <button
-                      disabled={report.status === ReportStatus.RESOLVED}
-                      type="button"
-                      className="absolute right-12 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setValue('externalOfficeId', '');
-                      }}
-                    >
-                      ✕
-                    </button>
-                  )}
+                  {watch('externalOfficeId') &&
+                    report.status !== ReportStatus.RESOLVED && (
+                      <button
+                        type="button"
+                        className="absolute right-12 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setValue('externalOfficeId', '');
+                        }}
+                      >
+                        ✕
+                      </button>
+                    )}
                 </div>
               </div>
 

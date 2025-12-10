@@ -76,7 +76,11 @@ function AssignReportsStatusViewPage() {
 
         {/* Form */}
         <div className="flex-1 pb-2">
-          <ViewAssignedExternalReport report={report} showAnonymous={false} />
+          <ViewAssignedExternalReport
+            report={report}
+            showAnonymous={false}
+            onClose={() => navigate(-1)}
+          />
         </div>
       </div>
     </div>
