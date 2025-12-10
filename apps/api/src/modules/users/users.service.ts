@@ -12,6 +12,7 @@ import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dt
 import { Account } from '../../common/entities/account.entity';
 import { Category } from '../../common/entities/category.entity';
 import { Office } from '../../common/entities/office.entity';
+import { Profile } from '../../common/entities/profile.entity';
 import { Role } from '../../common/entities/role.entity';
 import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
@@ -166,6 +167,15 @@ export class UsersService {
       });
 
       await manager.getRepository(Account).save(newAccount);
+
+      const newProfile = manager.getRepository(Profile).create({
+        id: nanoid(),
+        userId: user.id,
+        user,
+        emailNotificationsEnabled: true,
+      });
+
+      await manager.getRepository(Profile).save(newProfile);
 
       return user;
     });

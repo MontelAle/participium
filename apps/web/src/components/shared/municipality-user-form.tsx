@@ -48,7 +48,10 @@ type MunicipalityUserFormProps =
 
 type FormData = CreateMunicipalityUserDto;
 
-export function MunicipalityUserForm({ mode, user }: MunicipalityUserFormProps) {
+export function MunicipalityUserForm({
+  mode,
+  user,
+}: MunicipalityUserFormProps) {
   const navigate = useNavigate();
   const { mutateAsync: createMunicipalityUser } = useCreateMunicipalityUser();
   const { mutateAsync: updateMunicipalityUser } = useUpdateMunicipalityUser();
@@ -84,7 +87,7 @@ export function MunicipalityUserForm({ mode, user }: MunicipalityUserFormProps) 
   };
 
   const handleRoleChange = (value: string) => {
-    setForm({ ...form, roleId: value });
+    setForm({ ...form, roleId: value, officeId: '' });
   };
 
   const handleOfficeChange = (value: string) => {
@@ -123,13 +126,36 @@ export function MunicipalityUserForm({ mode, user }: MunicipalityUserFormProps) 
     }
   };
 
-  const title = mode === 'create' ? 'Create Municipality User' : 'Edit Municipality User';
+  const title =
+    mode === 'create' ? 'Create Municipality User' : 'Edit Municipality User';
   const description =
     mode === 'create'
       ? 'Enter the details below to create a new account.'
       : 'Update user details and permissions.';
   const submitText = mode === 'create' ? 'Create User' : 'Save Changes';
   const loadingText = mode === 'create' ? 'Creating...' : 'Updating...';
+
+  const selectedRoleName = roles.find((r) => r.id === form.roleId)?.name;
+
+  let availableOffices: typeof offices = [];
+  switch (selectedRoleName) {
+    case 'external_maintainer':
+      availableOffices = offices.filter((office) => office.isExternal);
+      break;
+    case 'pr_officer':
+      availableOffices = offices.filter(
+        (office) => office.name === 'organization_office',
+      );
+      break;
+    case 'tech_officer':
+      availableOffices = offices.filter(
+        (office) => !office.isExternal && office.name !== 'organization_office',
+      );
+      break;
+    default:
+      availableOffices = offices;
+      break;
+  }
 
   return (
     <Card className="w-full h-full flex flex-col border-none bg-white/90 backdrop-blur-sm ring-1 ring-gray-200">
@@ -247,7 +273,7 @@ export function MunicipalityUserForm({ mode, user }: MunicipalityUserFormProps) 
                     <SelectValue placeholder="Select Office" />
                   </SelectTrigger>
                   <SelectContent>
-                    {offices.map((office) => (
+                    {availableOffices.map((office) => (
                       <SelectItem
                         key={office.id}
                         value={office.id}
