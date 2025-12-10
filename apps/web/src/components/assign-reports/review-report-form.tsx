@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/contexts/auth-context';
 import { useCategories } from '@/hooks/use-categories';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
 import { useUpdateReport } from '@/hooks/use-reports';
@@ -42,6 +43,7 @@ type FormData = {
 export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
   const { data: categories = [] } = useCategories();
   const { data: municipalityUsers = [] } = useMunicipalityUsers();
+  const { isExternal } = useAuth();
 
   const updateReportMutation = useUpdateReport();
 
@@ -179,6 +181,7 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
                 </div>
               )}
             </div>
+            {!isExternal &&
             <div>
               <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
                 Competent Office
@@ -200,6 +203,7 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
                 {competentOfficeName}
               </div>
             </div>
+            }
             <div className="w-full">
               <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">
                 Description
@@ -208,7 +212,7 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
                 {report.description}
               </div>
             </div>
-            {!isPending && report.status === ReportStatus.ASSIGNED && (
+            {!isPending && report.status === ReportStatus.ASSIGNED && !isExternal && (
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
                   <UserIcon className="size-3.5 text-slate-500 shrink-0" />
