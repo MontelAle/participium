@@ -72,7 +72,7 @@ function AssignedReportsViewPage() {
         </div>
 
         <div className="flex-1 pb-2">
-          <ViewAssignedReport report={report} />
+          <ViewAssignedReport report={report} showAnonymous={false} />
         </div>
       </div>
     </div>

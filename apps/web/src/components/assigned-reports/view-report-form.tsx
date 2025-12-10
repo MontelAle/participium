@@ -140,6 +140,7 @@ export function ViewAssignedReport({
                   <Select
                     value={watch('externalOfficeId') ?? ''}
                     onValueChange={(v) => setValue('externalOfficeId', v)}
+                    disabled={report.status === ReportStatus.RESOLVED}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select an external company" />
@@ -156,6 +157,7 @@ export function ViewAssignedReport({
 
                   {watch('externalOfficeId') && (
                     <button
+                      disabled={report.status === ReportStatus.RESOLVED}
                       type="button"
                       className="absolute right-12 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
                       onMouseDown={(e) => {
