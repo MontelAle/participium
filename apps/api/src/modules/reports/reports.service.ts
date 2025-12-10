@@ -607,19 +607,19 @@ export class ReportsService {
         'rejected_global',
       )
       .addSelect(
-        `SUM(CASE WHEN report.status = 'assigned' AND (report.assignedOfficerId = :userId OR report.processedById = :userId) THEN 1 ELSE 0 END)`,
+        `SUM(CASE WHEN report.status = 'assigned' AND (report.assignedOfficerId = :userId OR report.processedById = :userId OR report.assignedExternalMaintainerId = :userId) THEN 1 ELSE 0 END)`,
         'user_assigned',
       )
       .addSelect(
-        `SUM(CASE WHEN report.status = 'rejected' AND (report.assignedOfficerId = :userId OR report.processedById = :userId) THEN 1 ELSE 0 END)`,
+        `SUM(CASE WHEN report.status = 'rejected' AND (report.assignedOfficerId = :userId OR report.processedById = :userId OR report.assignedExternalMaintainerId = :userId) THEN 1 ELSE 0 END)`,
         'user_rejected',
       )
       .addSelect(
-        `SUM(CASE WHEN report.status = 'in_progress' AND report.assignedOfficerId = :userId THEN 1 ELSE 0 END)`,
+        `SUM(CASE WHEN report.status = 'in_progress' AND (report.assignedOfficerId = :userId OR report.assignedExternalMaintainerId = :userId) THEN 1 ELSE 0 END)`,
         'user_in_progress',
       )
       .addSelect(
-        `SUM(CASE WHEN report.status = 'resolved' AND report.assignedOfficerId = :userId THEN 1 ELSE 0 END)`,
+        `SUM(CASE WHEN report.status = 'resolved' AND (report.assignedOfficerId = :userId OR report.assignedExternalMaintainerId = :userId) THEN 1 ELSE 0 END)`,
         'user_resolved',
       )
       .setParameters({ userId: user.id })
