@@ -967,8 +967,9 @@ pnpm dev
 pnpm dev           # Start all apps in dev mode
 pnpm build         # Build all apps
 pnpm test          # Run all unit tests
+pnpm test:int      # Run integration tests
 pnpm test:e2e      # Run end-to-end tests
-pnpm test:all      # Run all tests (unit + e2e)
+pnpm test:all      # Run all tests (unit + integration + e2e)
 pnpm lint          # Lint entire workspace
 pnpm format        # Format code with Prettier
 ```
@@ -982,6 +983,7 @@ pnpm start         # Start production
 pnpm start:debug   # Start debug mode
 pnpm test          # Unit tests
 pnpm test:watch    # Tests in watch mode
+pnpm test:int      # Integration tests
 pnpm test:e2e      # End-to-end tests
 pnpm lint          # Linting
 pnpm seed:user     # Seed test users
@@ -1015,8 +1017,9 @@ docker exec -it participium-postgres psql -U admin -d participium  # psql connec
 
 - **Coverage available**: `apps/api/coverage/`
 - Coverage reports in formats: HTML, LCOV, Clover, JSON
-- E2E tests configured for the API (82 tests)
-- Unit tests for all modules (189 tests)
+- **Unit Tests**: 189 tests for all modules
+- **E2E Tests**: 82 tests for end-to-end workflows
+- **Integration Tests**: 91 tests across 7 test suites
 - 100% coverage for users module
 - Tests include:
   - Geospatial queries with PostGIS
@@ -1090,6 +1093,6 @@ The project is structured for future evolutions:
 
 ---
 
-**Document Version**: 1.4  
+**Document Version**: 1.5  
 **Last Update**: December 10, 2025  
 **Project Status**: In Development

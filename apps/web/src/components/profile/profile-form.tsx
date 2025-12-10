@@ -66,6 +66,11 @@ export function ProfileForm({
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {
+      if (data.username.length < 6) {
+        toast.error('Username must be at least 6 characters');
+        return;
+      }
+
       if (data.profilePicture) {
         const validation = validateFile(data.profilePicture);
         if (validation) {
