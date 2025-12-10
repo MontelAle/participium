@@ -121,7 +121,7 @@ const ROLES_DATA = [
   {
     name: 'external_maintainer',
     label: 'External Maintainer',
-    isMunicipal: false,
+    isMunicipal: true,
   },
 ];
 
@@ -278,7 +278,7 @@ const REAL_REPORTS = [
     lat: 45.054293,
     lng: 7.642011,
     categoryName: 'Roads and Urban Furnishings',
-    images: ['FadedBikeLine1.jpg', 'FadedBikeLine2.jpg', 'FadedBikeLine3.jpg' ],
+    images: ['FadedBikeLine1.jpg', 'FadedBikeLine2.jpg', 'FadedBikeLine3.jpg'],
   },
   {
     title: 'Damaged Pedestrian Railing',
@@ -348,7 +348,7 @@ const REAL_REPORTS = [
     lat: 45.057927,
     lng: 7.654953,
     categoryName: 'Road Signs and Traffic Lights',
-    images: ['BentAndIllegibleRoadSign1.jpg','BentAndIllegibleRoadSign2.jpg'],
+    images: ['BentAndIllegibleRoadSign1.jpg', 'BentAndIllegibleRoadSign2.jpg'],
   },
   {
     title: 'Damaged Wall in the Park',
@@ -358,7 +358,11 @@ const REAL_REPORTS = [
     lat: 45.060608,
     lng: 7.657127,
     categoryName: 'Public Green Areas and Playgrounds',
-    images: ['DamagedWallInThePark1.jpg','DamagedWallInThePark2.jpg','DamagedWallInThePark3.jpg'],
+    images: [
+      'DamagedWallInThePark1.jpg',
+      'DamagedWallInThePark2.jpg',
+      'DamagedWallInThePark3.jpg',
+    ],
   },
   {
     title: 'Wall Covered with Graffiti',
@@ -375,10 +379,10 @@ const REAL_REPORTS = [
     description:
       'I am reporting vegetation encroaching on the sidewalk from the side, obstructing pedestrian passage. Pruning or removal would be advisable.',
     address: 'Via Tolmino, 80a, Torino',
-    lat: 45.054390,
+    lat: 45.05439,
     lng: 7.642114,
     categoryName: 'Roads and Urban Furnishings',
-    images: ['VegetationOnSidewalk1.jpg','VegetationOnSidewalk2.jpg'],
+    images: ['VegetationOnSidewalk1.jpg', 'VegetationOnSidewalk2.jpg'],
   },
   {
     title: 'Scattered Trash',
@@ -388,14 +392,18 @@ const REAL_REPORTS = [
     lat: 45.055148,
     lng: 7.646663,
     categoryName: 'Waste',
-    images: ['ScatteredTrash1.jpg','ScatteredTrash2.jpg','ScatteredTrash3.jpg'],
+    images: [
+      'ScatteredTrash1.jpg',
+      'ScatteredTrash2.jpg',
+      'ScatteredTrash3.jpg',
+    ],
   },
   {
     title: 'Confusing Road Markings',
     description:
       'I am reporting that after construction work, new pedestrian crossings and stop lines were painted without removing the old ones. The presence of double lines causes confusion for both pedestrians and drivers, and the markings need clarification.',
     address: 'Via Gorizia, 9a, Torino',
-    lat: 45.052070,
+    lat: 45.05207,
     lng: 7.641613,
     categoryName: 'Roads and Urban Furnishings',
     images: ['ConfusingRoadMarking.jpg'],
@@ -406,7 +414,7 @@ const REAL_REPORTS = [
       'I am reporting vegetation growing from the ground in the parking lot, occupying some parking spaces and reducing the available area.',
     address: 'Via Spalato, 14, Torino',
     lat: 45.061404,
-    lng: 7.653820,
+    lng: 7.65382,
     categoryName: 'Roads and Urban Furnishings',
     images: ['VegetationParkingSpace.jpg'],
   },
@@ -418,7 +426,11 @@ const REAL_REPORTS = [
     lat: 45.061338,
     lng: 7.658394,
     categoryName: 'Road Signs and Traffic Lights',
-    images: ['TrafficLightsDamaged1.jpg','TrafficLightsDamaged2.jpg','TrafficLightsDamaged3.jpg'],
+    images: [
+      'TrafficLightsDamaged1.jpg',
+      'TrafficLightsDamaged2.jpg',
+      'TrafficLightsDamaged3.jpg',
+    ],
   },
   {
     title: 'Damaged Traffic Lights and Road Sign',
@@ -428,7 +440,11 @@ const REAL_REPORTS = [
     lat: 45.061494,
     lng: 7.657612,
     categoryName: 'Road Signs and Traffic Lights',
-    images: ['TrafficLightAndRoadSign1.jpg','TrafficLightAndRoadSign2.jpg','TrafficLightAndRoadSign3.jpg'],
+    images: [
+      'TrafficLightAndRoadSign1.jpg',
+      'TrafficLightAndRoadSign2.jpg',
+      'TrafficLightAndRoadSign3.jpg',
+    ],
   },
 ];
 
