@@ -48,7 +48,10 @@ type MunicipalityUserFormProps =
 
 type FormData = CreateMunicipalityUserDto;
 
-export function MunicipalityUserForm({ mode, user }: MunicipalityUserFormProps) {
+export function MunicipalityUserForm({
+  mode,
+  user,
+}: MunicipalityUserFormProps) {
   const navigate = useNavigate();
   const { mutateAsync: createMunicipalityUser } = useCreateMunicipalityUser();
   const { mutateAsync: updateMunicipalityUser } = useUpdateMunicipalityUser();
@@ -123,13 +126,19 @@ export function MunicipalityUserForm({ mode, user }: MunicipalityUserFormProps) 
     }
   };
 
-  const title = mode === 'create' ? 'Create Municipality User' : 'Edit Municipality User';
+  const title =
+    mode === 'create' ? 'Create Municipality User' : 'Edit Municipality User';
   const description =
     mode === 'create'
       ? 'Enter the details below to create a new account.'
       : 'Update user details and permissions.';
   const submitText = mode === 'create' ? 'Create User' : 'Save Changes';
   const loadingText = mode === 'create' ? 'Creating...' : 'Updating...';
+
+  const availableOffices =
+    roles.find((r) => r.id === form.roleId)?.name === 'external_maintainer'
+      ? offices.filter((office) => office.isExternal)
+      : offices.filter((office) => !office.isExternal);
 
   return (
     <Card className="w-full h-full flex flex-col border-none bg-white/90 backdrop-blur-sm ring-1 ring-gray-200">
@@ -247,7 +256,7 @@ export function MunicipalityUserForm({ mode, user }: MunicipalityUserFormProps) 
                     <SelectValue placeholder="Select Office" />
                   </SelectTrigger>
                   <SelectContent>
-                    {offices.map((office) => (
+                    {availableOffices.map((office) => (
                       <SelectItem
                         key={office.id}
                         value={office.id}
