@@ -1,4 +1,4 @@
-import { ViewReportForm } from '@/components/assigned-reports/view-report-form';
+import { ViewAssignedReport } from '@/components/assigned-reports/view-report-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useReport } from '@/hooks/use-reports';
@@ -72,7 +72,7 @@ function AssignedReportsViewPage() {
         </div>
 
         <div className="flex-1 pb-2">
-          <ViewReportForm report={report} />
+          <ViewAssignedReport report={report} />
         </div>
       </div>
     </div>

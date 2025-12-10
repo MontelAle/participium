@@ -18,6 +18,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import {
   CreateReportDto,
+  DashboardStatsResponseDto,
   FilterReportsDto,
   ReportResponseDto,
   ReportsResponseDto,
@@ -96,6 +97,16 @@ export class ReportsController {
   }
 
   /**
+   * Retrieves dashboard statistics for reports.
+   */
+  @Get('stats')
+  @UseGuards(SessionGuard)
+  async getStats(@Request() req): Promise<DashboardStatsResponseDto> {
+    const stats = await this.reportsService.getDashboardStats(req.user);
+    return { success: true, data: stats };
+  }
+
+  /**
    * Finds nearby reports based on location and radius.
    */
   @Get('nearby')
@@ -106,10 +117,10 @@ export class ReportsController {
     @Query('latitude') latitude: string,
     @Query('radius') radius?: string,
   ): Promise<ReportsResponseDto> {
-    const radiusMeters = radius ? parseFloat(radius) : 5000;
+    const radiusMeters = radius ? Number.parseFloat(radius) : 5000;
     const reports = await this.reportsService.findNearby(
-      parseFloat(longitude),
-      parseFloat(latitude),
+      Number.parseFloat(longitude),
+      Number.parseFloat(latitude),
       radiusMeters,
       req.user,
     );
@@ -140,24 +151,29 @@ export class ReportsController {
    */
   @Patch(':id')
   @UseGuards(SessionGuard, RolesGuard)
-  @Roles('pr_officer', 'officer')
+  @Roles('pr_officer', 'tech_officer', 'external_maintainer')
   async update(
     @Param('id') id: string,
     @Body() updateReportDto: UpdateReportDto,
+    @Request() req,
   ): Promise<ReportResponseDto> {
-    const report = await this.reportsService.update(id, updateReportDto);
+    const report = await this.reportsService.update(
+      id,
+      updateReportDto,
+      req.user,
+    );
     return { success: true, data: report };
   }
 
   /**
-   * Finds reports assigned to a specific user (officer).
+   * Finds reports assigned to a specific user (technical officer).
    *
    * @throws {401} Unauthorized - Invalid or missing session
-   * @throws {403} Forbidden - Insufficient permissions (pr_officer, or officer role required)
+   * @throws {403} Forbidden - Insufficient permissions (pr_officer, or tech_officer role required)
    * */
   @Get('/user/:userId')
   @UseGuards(SessionGuard, RolesGuard)
-  @Roles('pr_officer', 'officer')
+  @Roles('pr_officer', 'tech_officer')
   async findByUserId(
     @Param('userId') userId: string,
     @Request() req,

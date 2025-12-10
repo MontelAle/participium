@@ -2,19 +2,20 @@ import { MunicipalityUsersTable } from '@/components/municipality-users/municipa
 import { UsersToolbar } from '@/components/municipality-users/user-toolbar';
 import { Button } from '@/components/ui/button';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
+import { User } from '@repo/api';
 import { Plus } from 'lucide-react';
-import * as React from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const MunicipalityUsersPage = () => {
   const navigate = useNavigate();
   const { data: municipalUsers = [] } = useMunicipalityUsers();
 
-  const [query, setQuery] = React.useState('');
-  const [selectedRoles, setSelectedRoles] = React.useState<string[]>([]);
-  const [selectedOffices, setSelectedOffices] = React.useState<string[]>([]);
+  const [query, setQuery] = useState('');
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [selectedOffices, setSelectedOffices] = useState<string[]>([]);
 
-  const availableRoles = React.useMemo(() => {
+  const availableRoles = useMemo(() => {
     const names = new Set<string>();
     for (const u of municipalUsers) {
       if (u.role?.name && u.role.name !== 'admin') names.add(u.role.name);
@@ -22,7 +23,7 @@ const MunicipalityUsersPage = () => {
     return Array.from(names).sort((a, b) => a.localeCompare(b));
   }, [municipalUsers]);
 
-  const availableOffices = React.useMemo(() => {
+  const availableOffices = useMemo(() => {
     const labels = new Set<string>();
     for (const u of municipalUsers) {
       if (u.office?.label) labels.add(u.office.label);
@@ -30,10 +31,10 @@ const MunicipalityUsersPage = () => {
     return Array.from(labels).sort((a, b) => a.localeCompare(b));
   }, [municipalUsers]);
 
-  const filteredData = React.useMemo(() => {
+  const filteredData = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    const byUsername = (u: any) =>
+    const byUsername = (u: User) =>
       !normalizedQuery ||
       String(u.username ?? '')
         .toLowerCase()
@@ -48,10 +49,10 @@ const MunicipalityUsersPage = () => {
         .toLowerCase()
         .includes(normalizedQuery);
 
-    const byRole = (u: any) =>
+    const byRole = (u: User) =>
       selectedRoles.length === 0 || selectedRoles.includes(u.role?.name);
 
-    const byOffice = (u: any) =>
+    const byOffice = (u: User) =>
       selectedOffices.length === 0 ||
       (u.office?.label && selectedOffices.includes(u.office.label));
 

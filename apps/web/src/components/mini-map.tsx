@@ -52,7 +52,7 @@ export function MiniMap({
       mapInstanceRef.current?.remove();
       mapInstanceRef.current = null;
     };
-  }, []);
+  }, [latitude, longitude]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;

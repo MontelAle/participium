@@ -630,6 +630,7 @@ participium/
 │   │   │   │   ├── auth/       # Authentication
 │   │   │   │   ├── categories/ # Report categories
 │   │   │   │   ├── offices/    # Office management
+│   │   │   │   ├── profiles/   # User profile management
 │   │   │   │   ├── reports/    # Report management
 │   │   │   │   ├── roles/      # Role management
 │   │   │   │   └── users/      # User management
@@ -698,17 +699,24 @@ participium/
 - Session management with HTTP-only cookies
 - Guards: `LocalAuthGuard`, `SessionGuard`, `RolesGuard`
 
+**Input Validation**:
+
+- Username and password must be between 6-20 characters (`@MinLength(6)`, `@MaxLength(20)`)
+- Email must be a valid email format (`@IsEmail()`)
+- All required fields validated with `@IsNotEmpty()`
+
 #### Users Module
 
 **Endpoint**: `/users`
 
 | Method | Route                    | Description                 |
 | ------ | ------------------------ | --------------------------- |
-| GET    | `/municipality`          | List municipal users        |
+| GET    | `/municipality`          | List municipal users (Admin, PR Officer only) |
 | GET    | `/municipality/user/:id` | User details                |
 | POST   | `/municipality`          | Create municipal user       |
 | POST   | `/municipality/user/:id` | Update user                 |
 | DELETE | `/municipality/user/:id` | Delete user                 |
+| GET    | `/external-maintainers`  | List external maintainers (optional categoryId filter) |
 | PATCH  | `/profile/me`            | Update regular user profile |
 
 **Functionality**:
@@ -731,7 +739,7 @@ participium/
   - Maximum size: 5MB
   - Automatic filename sanitization (path traversal protection)
   - Old pictures automatically deleted on replacement
-- **Security**: Municipality users (admin, officers) cannot edit their profile via this endpoint
+- **Security**: Municipality users (admin, technical officers) cannot edit their profile via this endpoint
 
 #### Roles Module
 
@@ -787,6 +795,8 @@ participium/
 - Location-based filtering (bounding box, radius search)
 - Distance calculations with nearby reports
 - Support for OpenStreetMap coordinates (SRID 4326)
+- Municipal boundary validation for report coordinates
+- Role-based report visibility (see Access Control section below)
 
 **Query Parameters**:
 
@@ -794,6 +804,30 @@ participium/
 - Bounding box: `minLongitude`, `maxLongitude`, `minLatitude`, `maxLatitude`
 - Radius search: `searchLongitude`, `searchLatitude`, `radiusMeters`
 - Nearby: `longitude`, `latitude`, `radius` (default: 5000m)
+
+**Access Control & Visibility Rules**:
+
+- **Rejected Reports** (`status: 'rejected'`):
+  - Regular citizens (`role: 'user'`) can only see their own rejected reports
+  - Citizens attempting to access other users' rejected reports receive a 404 Not Found error
+  - Municipal users (admin, technical officers) can see all rejected reports
+  - Rejected reports are excluded from nearby/map searches for all users
+
+- **PR Officer Filtering** (`role: 'pr_officer'`):
+  - PR Officers always see only reports with `status: 'pending'`
+  - Status filter is overridden regardless of query parameters
+  - This ensures PR Officers focus on reports awaiting initial review
+
+- **Boundary Validation**:
+  - Report coordinates must fall within municipal boundaries (Turin)
+  - Validation performed using PostGIS `ST_Contains` function
+  - Returns `400 Bad Request` if coordinates are outside boundaries
+
+**Input Validation**:
+
+- Required fields: `title`, `description`, `categoryId` (`@IsNotEmpty()`)
+- Coordinates validated with `@Min()` and `@Max()` decorators
+- Longitude: -180 to 180, Latitude: -90 to 90
 
 ### App Configuration
 
@@ -819,7 +853,7 @@ File: `src/config/app.config.ts`
     type: 'postgres',
     host: 'localhost',
     port: 5432,
-    username: 'admin',
+    username: 'system_admin',
     password: 'password',
     database: 'participium'
   }
@@ -927,21 +961,22 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### Role
 
-| Field       | Type    | Description            | Nullable | Notes                   |
-| ----------- | ------- | ---------------------- | -------- | ----------------------- |
-| id          | string  | Primary key            | No       | varchar                 |
-| name        | string  | Role name              | No       | varchar                 |
-| label       | string  | Display label          | No       | varchar                 |
-| isMunicipal | boolean | Municipality user flag | No       | true for admin/officers |
+| Field       | Type    | Description            | Nullable | Notes                                           |
+| ----------- | ------- | ---------------------- | -------- | ----------------------------------------------- |
+| id          | string  | Primary key            | No       | varchar                                         |
+| name        | string  | Role name              | No       | varchar                                         |
+| label       | string  | Display label          | No       | varchar                                         |
+| isMunicipal | boolean | Municipality user flag | No       | true for admin/technical officers/PR officers, false for external users |
 
 #### Office
 
-| Field      | Type       | Description             | Nullable | Notes                           |
-| ---------- | ---------- | ----------------------- | -------- | ------------------------------- |
-| id         | string     | Primary key             | No       | varchar                         |
-| name       | string     | Office name             | No       | varchar                         |
-| label      | string     | Office label            | No       | varchar                         |
-| categories | Category[] | Related categories list | -        | One-to-many with Category table |
+| Field      | Type       | Description                  | Nullable | Notes                                                     |
+| ---------- | ---------- | ---------------------------- | -------- | --------------------------------------------------------- |
+| id         | string     | Primary key                  | No       | varchar                                                   |
+| name       | string     | Office name                  | No       | varchar                                                   |
+| label      | string     | Office label                 | No       | varchar                                                   |
+| isExternal | boolean    | External company office flag | No       | true for external companies, false for municipal offices  |
+| categories | Category[] | Related categories list      | -        | One-to-many with Category table                           |
 
 #### Account
 
@@ -973,33 +1008,53 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### Category
 
-| Field  | Type   | Description   | Nullable | Notes                          |
-| ------ | ------ | ------------- | -------- | ------------------------------ |
-| id     | string | Primary key   | No       | varchar                        |
-| name   | string | Category name | No       | varchar                        |
-| office | Office | Linked office | -        | Many-to-one with Office entity |
+| Field            | Type   | Description                      | Nullable | Notes                                                              |
+| ---------------- | ------ | -------------------------------- | -------- | ------------------------------------------------------------------ |
+| id               | string | Primary key                      | No       | varchar                                                            |
+| name             | string | Category name                    | No       | varchar                                                            |
+| office           | Office | Linked municipal office          | -        | Many-to-one with Office entity                                     |
+| externalOfficeId | string | Linked external company ID       | Yes      | Foreign key auto-generated by TypeORM (database only)              |
+| externalOffice   | Office | Linked external company office   | Yes      | Many-to-one with Office entity. For categories handled by external companies |
+
+#### Boundary
+
+| Field    | Type         | Description            | Nullable | Notes                                   |
+| -------- | ------------ | ---------------------- | -------- | --------------------------------------- |
+| id       | string       | Primary key            | No       | varchar                                 |
+| name     | string       | Boundary name          | No       | varchar, unique                         |
+| label    | string       | Display label          | No       | varchar                                 |
+| geometry | MultiPolygon | Geographic boundaries  | No       | PostGIS geometry(MultiPolygon, 4326)    |
+
+**PostGIS Integration**:
+
+- `geometry` column stores municipal boundaries as MultiPolygon
+- SRID 4326 (WGS84) for GPS/OpenStreetMap compatibility
+- Automatic spatial index (GIST) for optimized boundary queries
+- Used for validating report coordinates are within municipality
 
 #### Report
 
-| Field             | Type     | Description               | Nullable | Notes                                                                        |
-| ----------------- | -------- | ------------------------- | -------- | ---------------------------------------------------------------------------- |
-| id                | string   | Primary key               | No       | varchar                                                                      |
-| title             | string   | Report title              | Yes      | varchar, optional                                                            |
-| description       | string   | Report description        | Yes      | text type, optional                                                          |
-| status            | enum     | Report status             | No       | Values: pending, in_progress, resolved, rejected, assigned. Default: pending |
-| location          | Point    | Geographic coordinates    | No       | PostGIS geometry(Point, 4326)                                                |
-| address           | string   | Physical address          | Yes      | varchar, optional                                                            |
-| images            | string[] | Array of image paths/URLs | No       | varchar array                                                                |
-| userId            | string   | Linked user ID            | No       | Foreign key to User entity                                                   |
-| user              | User     | User entity relation      | No       | Many-to-one, cascade delete                                                  |
-| isAnonymous       | boolean  | Anonymous report flag     | No       | Default: false                                                               |
-| categoryId        | string   | Linked category ID        | Yes      | Foreign key to Category entity, optional                                     |
-| category          | Category | Category entity relation  | Yes      | Many-to-one, optional                                                        |
-| createdAt         | Date     | Creation timestamp        | No       | timestamptz, auto-generated                                                  |
-| updatedAt         | Date     | Last update timestamp     | No       | timestamptz, auto-generated                                                  |
-| explanation       | string   | Rejection/action reason   | Yes      | text type, optional                                                          |
-| assignedOfficerId | string   | Assigned officer ID       | Yes      | Foreign key to User entity, optional                                         |
-| assignedOfficer   | User     | Assigned officer relation | Yes      | Many-to-one with User entity, optional                                       |
+| Field             | Type     | Description               | Nullable | Notes                                                                                                      |
+| ----------------- | -------- | ------------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| id                | string   | Primary key               | No       | varchar                                                                                                    |
+| title             | string   | Report title              | Yes      | varchar, optional                                                                                          |
+| description       | string   | Report description        | Yes      | text type, optional                                                                                        |
+| status            | enum     | Report status             | No       | Values: pending, in_progress, resolved, rejected, assigned. Default: pending. Visibility rules apply.     |
+| location          | Point    | Geographic coordinates    | No       | PostGIS geometry(Point, 4326). Must be within municipal boundaries.                                       |
+| address           | string   | Physical address          | Yes      | varchar, optional                                                                                          |
+| images            | string[] | Array of image paths/URLs | No       | varchar array                                                                                              |
+| userId            | string   | Linked user ID            | No       | Foreign key to User entity                                                                                 |
+| user              | User     | User entity relation      | No       | Many-to-one, cascade delete                                                                                |
+| isAnonymous       | boolean  | Anonymous report flag     | No       | Default: false                                                                                             |
+| categoryId        | string   | Linked category ID        | Yes      | Foreign key to Category entity, optional                                                                   |
+| category          | Category | Category entity relation  | Yes      | Many-to-one, optional                                                                                      |
+| createdAt         | Date     | Creation timestamp        | No       | timestamptz, auto-generated                                                                                |
+| updatedAt         | Date     | Last update timestamp     | No       | timestamptz, auto-generated                                                                                |
+| explanation       | string   | Rejection/action reason   | Yes      | text type, optional                                                                                        |
+| assignedOfficerId | string   | Assigned officer ID       | Yes      | Foreign key to User entity, optional                                                                       |
+| assignedOfficer   | User     | Assigned officer relation | Yes      | Many-to-one with User entity, optional                                                                     |
+| processedById                | string   | Processing officer ID          | Yes      | Foreign key to User entity. Set when report is assigned or rejected. Tracks who handled the initial review |
+| assignedExternalMaintainerId | string   | Assigned external maintainer ID| Yes      | Foreign key to User entity. For reports assigned to external companies                                     |
 
 **PostGIS Integration**:
 
@@ -1017,8 +1072,10 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 - Report ⟷ User (ManyToOne, cascade delete)
 - Report ⟷ Category (ManyToOne, optional)
 - Report ⟷ User (as assignedOfficer, ManyToOne, optional)
+- Report ⟷ User (as processedBy, ManyToOne, optional)
 - Category ⟷ Office (ManyToOne)
 - Office ⟷ Category (OneToMany)
+- Boundary (standalone entity, no foreign relations)
 
 ### PostGIS Geospatial Features
 
@@ -1046,10 +1103,12 @@ radiusMeters = 5000;
 
 #### PostGIS Functions Used
 
-- `ST_Contains`: Check if point is within bounding box
+- `ST_Contains`: Check if point is within bounding box or boundary polygon
 - `ST_DWithin`: Find points within radius (meters)
 - `ST_Distance`: Calculate distance between points
 - `ST_MakePoint`: Create point geometry from coordinates
+- `ST_SetSRID`: Set spatial reference system for geometries
+- `ST_MakeEnvelope`: Create bounding box from coordinates
 - Geography cast (`::geography`) for accurate metric calculations
 
 ### MinIO Object Storage
@@ -1093,13 +1152,14 @@ radiusMeters = 5000;
 
 **Content**:
 
-- `entities/`: TypeORM definitions (User, Role, Office, Account, Session, Category, Report)
+- `entities/`: TypeORM definitions (User, Role, Office, Account, Session, Category, Report, Boundary, Profile)
 - `dto/`: Data Transfer Objects
   - `auth.dto.ts` (RegisterDto, LoginDto, LoginResponseDto, LogoutResponseDto)
   - `municipality-user.dto.ts` (CreateMunicipalityUserDto, UpdateMunicipalityUserDto, responses)
   - `profile.dto.ts` (UpdateProfileDto, ProfileResponseDto)
   - `report.dto.ts` (CreateReportDto, UpdateReportDto, FilterReportsDto, responses)
   - `role.dto.ts` (RolesResponseDto)
+  - `office.dto.ts` (OfficesResponseDto)
   - `category.dto.ts` (CategoriesResponseDto)
   - `response.dto.ts` (Base ResponseDto interface)
 
@@ -1147,15 +1207,16 @@ This section outlines how the platform manages departments, categories, and the 
 
 This table shows which office is competent for specific problem categories
 
-| Office Name                             | ID (Database)     | Competent Categories                               |
-| :-------------------------------------- | :---------------- | :------------------------------------------------- |
-| **Maintenance and Technical Services**  | `maintenance`     | Roads and Urban Furnishings Architectural Barriers |
-| **Infrastructure**                      | `infrastructure`  | Road Signs and Traffic Lights Public Lighting      |
-| **Local Public Services**               | `public_services` | Water Supply Drinking Water Sewer System           |
-| **Environment Quality**                 | `environment`     | Waste                                              |
-| **Green Areas and Parks**               | `green_parks`     | Public Green Areas and Playgrounds                 |
-| **Decentralization and Civic Services** | `civic_services`  | Other (General issues)                             |
-| **Organizational Office**               | `organization`    | No category                                        |
+| Office Name                             | ID (Database)     | Type              | Competent Categories                               |
+| :-------------------------------------- | :---------------- | :---------------- | :------------------------------------------------- |
+| **Maintenance and Technical Services**  | `maintenance`     | Municipal         | Roads and Urban Furnishings Architectural Barriers |
+| **Infrastructure**                      | `infrastructure`  | Municipal         | Road Signs and Traffic Lights Public Lighting      |
+| **Local Public Services**               | `public_services` | Municipal         | Water Supply Drinking Water Sewer System           |
+| **Environment Quality**                 | `environment`     | Municipal         | Waste                                              |
+| **Green Areas and Parks**               | `green_parks`     | Municipal         | Public Green Areas and Playgrounds                 |
+| **Decentralization and Civic Services** | `civic_services`  | Municipal         | Other (General issues)                             |
+| **Organizational Office**               | `organization`    | Municipal         | No category                                        |
+| **External Companies**                  | Custom IDs        | External Company  | Categories requiring external service providers    |
 
 ### Report Status Lifecycle
 
@@ -1167,6 +1228,47 @@ According to the project specifications, a report can be in one of the following
 4. **Suspended**
 5. **Rejected**
 6. **Resolved**
+
+### Report Visibility Rules
+
+The platform implements role-based visibility controls for reports based on their status:
+
+#### Report Visibility by Role and Status
+
+| User Role                                      | Pending (Own) | Pending (Others) | Assigned    | In Progress | Resolved | Rejected (Others) | Rejected (Own) |
+| :--------------------------------------------- | :-----------: | :--------------: | :---------: | :---------: | :------: | :---------------: | :------------: |
+| Citizen (`role: 'user'`)                       | Yes           | No               | Yes         | Yes         | Yes      | No                | Yes            |
+| PR Officer (`role: 'pr_officer'`)              | -             | Yes              | No          | No          | No       | No                | -              |
+| Technical Officer (`role: 'tech_officer'`)     | -             | Yes              | Yes         | Yes         | Yes      | Yes               | -              |
+| Admin (`role: 'admin'`)                        | -             | Yes              | Yes         | Yes         | Yes      | Yes               | -              |
+| External Maintainer (`role: 'external_maintainer'`) | -       | No               | Only Assigned| Only Assigned| Only Assigned | No          | -              |
+
+**Key Notes**:
+
+- **Citizens**: Can only see their own pending reports. Reports become public (visible to all citizens) once they reach 'assigned' status or beyond. Rejected reports from other users return 404 errors.
+- **PR Officers**: Only see pending reports (enforced server-side). This filter overrides all other status parameters to maintain focus on new submissions requiring initial review.
+- **Technical Officers & Admins**: Full visibility across all statuses and all users.
+- **External Maintainers**: Only see reports explicitly assigned to them via the assignedExternalMaintainerId field. Cannot see pending, rejected, or reports assigned to other maintainers. Limited to viewing and updating status of their assigned reports only.
+- **Map & Nearby Searches**: Rejected reports are excluded from map and nearby searches for all users to prevent displaying rejected reports in public visualizations.
+- **Access Control**: Filtering is enforced at the database query level for security and performance.
+
+#### PR Officer Dashboard Filtering
+
+Public Relations Officers have a specialized view that automatically filters reports:
+
+- PR Officers **only see reports with status 'pending'**
+- This filter is enforced server-side regardless of frontend parameters
+- Other status filters are ignored to maintain focus on new submissions
+- This ensures PR Officers concentrate on reports requiring initial review
+
+#### Geographic Boundary Validation
+
+All report submissions are validated against municipal boundaries:
+
+- Report coordinates must fall within the defined boundary geometry
+- Validation uses PostGIS `ST_Contains` function for accuracy
+- Reports outside boundaries are rejected with `400 Bad Request`
+- Currently configured for Turin municipality boundaries
 
 ### Management Workflow
 
@@ -1189,6 +1291,38 @@ The system follows a workflow where the **Organization Office** (PR Officers) ac
     - They access their specific office dashboard
     - **Action**: The officer **views** the list of reports that have been accepted and assigned to their department
 
+### External Company Workflow
+
+For categories that require external service providers, the system supports assignment to External Maintainers:
+
+1.  **External Company Setup**:
+    - System administrators create offices with `isExternal: true` to represent external companies
+    - Categories can optionally link to external offices via `externalOffice` relation
+    - External Maintainer users are created with role `external_maintainer` and must be assigned to an external office
+
+2.  **Assignment to External Maintainer**:
+    - Technical Officers can assign reports to specific external maintainers (filtered by category if needed)
+    - Technical Officers can query available external maintainers via `GET /users/external-maintainers?categoryId=xxx`
+    - Assignment sets the `assignedExternalMaintainerId` field on the report
+    - Report status changes to `assigned`
+    - Only users with role `external_maintainer` can be assigned
+    - System validates that assigned technical officer belongs to the correct office for the report's category
+
+3.  **External Maintainer View**:
+    - External Maintainers can only view reports assigned to them
+    - Dashboard automatically filters to show only their assigned reports
+    - **Restricted Status Transitions**:
+      - From `assigned` can only move to `in_progress`
+      - From `in_progress` can only move to `resolved`
+      - Cannot reject reports or move to regression states
+    - These restrictions ensure external maintainers follow a simplified workflow
+
+4.  **Validation Rules**:
+    - External Maintainer users must have an office assigned
+    - External Maintainer users can only be assigned to external offices (isExternal: true)
+    - Regular users (citizens, officers) cannot be assigned to external offices
+    - Status transitions are validated server-side to prevent unauthorized changes
+
 ### Office - Technical User - PR User Table
 
 This table lists the credentials (usernames) to use for testing the workflow
@@ -1201,7 +1335,7 @@ This table lists the credentials (usernames) to use for testing the workflow
 | **Environment Quality**               | Environment Technician     | `tech_environment_1`, `tech_environment_2`                              |
 | **Green Areas and Parks**             | Green Parks Technician     | `tech_green_parks_1`, `tech_green_parks_2`                              |
 | **Decentralization & Civic Services** | Civic Services Technician  | `tech_civic_services_1`, `tech_civic_services_2`                        |
-| **Organizational**                    | System Admin, PR Officer   | `admin`, `pr_officer_1`, `pr_officer_2`, `pr_officer_3`, `pr_officer_4` |
+| **Organizational**                    | System Admin, PR Officer   | `system_admin`, `pr_officer_1`, `pr_officer_2`, `pr_officer_3`, `pr_officer_4` |
 
 ---
 
@@ -1296,6 +1430,7 @@ The application includes an auto-seeding mechanism that runs automatically on ap
 3. **Data Population:** It populates the database with:
    - System Roles (User, Admin, Officers)
    - Real Turin Municipal Offices & Categories
+   - Municipal Boundaries (Turin geometry with PostGIS)
    - Staff users (Tech Officers & PRs) and Sample Citizens
    - 60 Real geolocated reports in Turin
 
@@ -1386,8 +1521,8 @@ docker exec -it participium-postgres psql -U admin -d participium  # psql connec
 
 - **Coverage available**: `apps/api/coverage/`
 - Coverage reports in formats: HTML, LCOV, Clover, JSON
-- E2E tests configured for the API (49 tests)
-- Unit tests for all modules (181 tests)
+- E2E tests configured for the API (82 tests)
+- Unit tests for all modules (189 tests)
 - 100% coverage for users module
 - Tests include:
   - Geospatial queries with PostGIS
@@ -1396,6 +1531,10 @@ docker exec -it participium-postgres psql -U admin -d participium  # psql connec
   - Telegram username format validation
   - MinIO integration
   - Municipality user restrictions
+  - Rejected report access control (unit and e2e)
+  - PR Officer status filtering
+  - Boundary validation for report coordinates
+  - Input validation for all DTOs
 
 ### PostGIS & Geospatial Features
 
@@ -1405,6 +1544,8 @@ The database uses the **PostGIS 3.6** extension for advanced geographic features
 - Spatial indexing with GIST for performance
 - Distance calculations in meters
 - Bounding box and radius queries
+- Municipal boundary validation with MultiPolygon geometries
+- Spatial containment checks (`ST_Contains`) for boundary enforcement
 - SRID 4326 (WGS84) standard for GPS/OpenStreetMap compatibility
 - TypeORM native support without additional packages
 
@@ -1422,7 +1563,13 @@ Turborepo optimizes builds and tests through intelligent caching:
 - Sessions with hashed secrets
 - HTTP-only cookies for CSRF protection
 - Helmet for security headers
-- Class-validator for input validation
+- Class-validator for comprehensive input validation
+- **Input Validation**:
+  - Username/password length constraints (6-20 characters)
+  - Email format validation
+  - Required fields enforcement with `@IsNotEmpty()`
+  - Coordinate range validation (longitude/latitude bounds)
+  - Telegram username format validation
 - **File Upload Security**:
   - Filename sanitization with `path.basename()` and regex
   - Path traversal attack prevention
@@ -1431,6 +1578,11 @@ Turborepo optimizes builds and tests through intelligent caching:
 - **Role-based Access Control**:
   - Municipality users cannot edit profiles
   - Guards enforce isMunicipal flag checks
+  - Rejected report visibility restrictions for citizens
+  - PR Officer automatic filtering to pending reports
+- **Geographic Security**:
+  - Report coordinates validated against municipal boundaries
+  - PostGIS spatial queries prevent out-of-bounds submissions
 - **Centralized Error Messages**: Constants pattern for consistency
 
 ### Extensibility
@@ -1444,6 +1596,6 @@ The project is structured for future evolutions:
 
 ---
 
-**Document Version**: 1.3  
-**Last Update**: November 27, 2025  
+**Document Version**: 1.4  
+**Last Update**: December 8, 2025  
 **Project Status**: In Development

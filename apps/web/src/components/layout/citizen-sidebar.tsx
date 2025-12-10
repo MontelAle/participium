@@ -5,42 +5,13 @@ import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/auth-context';
 import { useReports } from '@/hooks/use-reports';
 import { cn } from '@/lib/utils';
-import { useActiveReportStore } from '@/store/activeReportStore';
 import { useFilterStore } from '@/store/filterStore';
 import { CitizenSidebarProps } from '@/types/ui';
 import { GripHorizontal, Lock, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 
-export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
-  const navigate = useNavigate();
-  const { isCitizenUser, isGuestUser } = useAuth();
-  const { locationData } = useActiveReportStore();
-
-  const { data: reports = [] } = useReports({ enabled: !isGuestUser });
-  const { searchTerm, setSearchTerm, showOnlyMyReports, setShowOnlyMyReports } =
-    useFilterStore();
-
-  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
-
-  const categories = useMemo(() => {
-    if (!reports) return [];
-    const cats = new Set(reports.map((r) => r.category.name));
-    return Array.from(cats);
-  }, [reports]);
-
-  const handleAddReport = () => {
-    if (!locationData) {
-      toast.warning(
-        'Please select a location on the map before adding a report.',
-      );
-      return;
-    }
-    navigate('/reports/create', { state: { ...locationData } });
-  };
-
-  const GuestState = () => (
+function GuestState() {
+  return (
     <div className="flex flex-col items-center justify-center h-[60vh] p-8 text-center space-y-6">
       <div className="size-20 rounded-full bg-slate-100 flex items-center justify-center mb-2 shadow-inner">
         <Lock className="size-10 text-slate-400" />
@@ -56,10 +27,29 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
       </div>
     </div>
   );
+}
+
+export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
+  const { isCitizenUser, isGuestUser } = useAuth();
+
+  const { data: reports = [] } = useReports(undefined, {
+    enabled: !isGuestUser,
+  });
+  const { searchTerm, setSearchTerm, showOnlyMyReports, setShowOnlyMyReports } =
+    useFilterStore();
+
+  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+
+  useMemo(() => {
+    if (!reports) return [];
+    const cats = new Set(reports.map((r) => r.category.name));
+    return Array.from(cats);
+  }, [reports]);
 
   return (
     <>
-      <div
+      <button
+        type="button"
         className={cn(
           'fixed inset-0 bg-black/40 z-30 md:hidden transition-opacity duration-300',
           isMobileExpanded
@@ -67,6 +57,7 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
             : 'opacity-0 pointer-events-none',
         )}
         onClick={() => setIsMobileExpanded(false)}
+        aria-label="Close sidebar"
       />
 
       <aside
@@ -87,12 +78,14 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
           }
         `}</style>
 
-        <div
+        <button
+          type="button"
           className="flex w-full justify-center pt-3 pb-1 md:hidden cursor-pointer shrink-0 touch-none"
           onClick={() => setIsMobileExpanded(!isMobileExpanded)}
+          aria-label={isMobileExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
         >
           <GripHorizontal className="text-slate-300" />
-        </div>
+        </button>
 
         {!isGuestUser && (
           <div className="px-4 pb-4 pt-2 md:pt-4 bg-slate-50 border-b space-y-3 shrink-0 z-10">
@@ -107,13 +100,6 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onFocus={() => setIsMobileExpanded(true)}
               />
-              {/*}
-            <FilterDialog
-              filters={filters}
-              setFilters={setFilters}
-              categories={categories}
-            />
-            */}
             </div>
 
             {isCitizenUser && (

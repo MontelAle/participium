@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Check, ChevronsUpDown, RotateCcw, Search, X } from 'lucide-react';
-import * as React from 'react';
+import { useCallback, useState } from 'react';
 
 export type ToolbarProps = {
   query: string;
@@ -39,11 +39,11 @@ export function Toolbar({
   onCategoriesChange,
   availableCategories,
   className,
-}: ToolbarProps) {
-  const [openStatus, setOpenStatus] = React.useState(false);
-  const [openCategory, setOpenCategory] = React.useState(false);
+}: Readonly<ToolbarProps>) {
+  const [openStatus, setOpenStatus] = useState(false);
+  const [openCategory, setOpenCategory] = useState(false);
 
-  const toggleStatus = React.useCallback(
+  const toggleStatus = useCallback(
     (status: string) => {
       onStatusesChange(
         selectedStatuses.includes(status)
@@ -54,7 +54,7 @@ export function Toolbar({
     [onStatusesChange, selectedStatuses],
   );
 
-  const toggleCategory = React.useCallback(
+  const toggleCategory = useCallback(
     (category: string) => {
       onCategoriesChange(
         selectedCategories.includes(category)
@@ -65,13 +65,15 @@ export function Toolbar({
     [onCategoriesChange, selectedCategories],
   );
 
-  const clearAll = React.useCallback(() => {
+  const clearAll = useCallback(() => {
     onStatusesChange([]);
     onCategoriesChange([]);
   }, [onStatusesChange, onCategoriesChange]);
 
   const hasFilters =
     selectedStatuses.length > 0 || selectedCategories.length > 0;
+
+  const showStatusFilter = availableStatuses.length > 0;
 
   return (
     <div className={cn('flex flex-col gap-4 w-full', className)}>
@@ -94,66 +96,66 @@ export function Toolbar({
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-4 w-full xl:w-auto">
-          <Popover open={openStatus} onOpenChange={setOpenStatus}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                className="h-12 w-full lg:w-[200px] justify-between text-base border-slate-200 px-4"
-              >
-                <div className="flex items-center gap-2 truncate mr-2">
-                  <span className="truncate">
-                    {selectedStatuses.length > 0
-                      ? `${selectedStatuses.length} status${selectedStatuses.length > 1 ? 'es' : ''}`
-                      : 'Filter by status'}
-                  </span>
-                </div>
-                <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="min-w-[200px] p-0" align="start">
-              <Command>
-                <CommandInput
-                  placeholder="Search status..."
-                  className="h-12 text-base"
-                />
-                <CommandList>
-                  <CommandEmpty>No statuses found</CommandEmpty>
-                  <CommandGroup>
-                    {availableStatuses.map((status) => {
-                      const checked = selectedStatuses.includes(status);
-                      return (
-                        <CommandItem
-                          key={status}
-                          onSelect={() => toggleStatus(status)}
-                          className="cursor-pointer py-2 text-base"
-                        >
-                          <div
-                            className={cn(
-                              'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary shrink-0',
-                              checked
-                                ? 'bg-primary text-primary-foreground'
-                                : 'opacity-50 [&_svg]:invisible',
-                            )}
+          {showStatusFilter && (
+            <Popover open={openStatus} onOpenChange={setOpenStatus}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-12 w-full lg:w-[200px] justify-between text-base border-slate-200 px-4"
+                >
+                  <div className="flex items-center gap-2 truncate mr-2">
+                    <span className="truncate">
+                      {selectedStatuses.length > 0
+                        ? `${selectedStatuses.length} status${selectedStatuses.length > 1 ? 'es' : ''}`
+                        : 'Filter by status'}
+                    </span>
+                  </div>
+                  <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="min-w-[200px] p-0" align="start">
+                <Command>
+                  <CommandInput
+                    placeholder="Search status..."
+                    className="h-12 text-base"
+                  />
+                  <CommandList>
+                    <CommandEmpty>No statuses found</CommandEmpty>
+                    <CommandGroup>
+                      {availableStatuses.map((status) => {
+                        const checked = selectedStatuses.includes(status);
+                        return (
+                          <CommandItem
+                            key={status}
+                            onSelect={() => toggleStatus(status)}
+                            className="cursor-pointer py-2 text-base"
                           >
-                            <Check className="h-4 w-4" />
-                          </div>
-                          <span className="truncate">
-                            {status.replaceAll('_', ' ')}
-                          </span>
-                        </CommandItem>
-                      );
-                    })}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+                            <div
+                              className={cn(
+                                'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary shrink-0',
+                                checked
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'opacity-50 [&_svg]:invisible',
+                              )}
+                            >
+                              <Check className="h-4 w-4" />
+                            </div>
+                            <span className="truncate">
+                              {status.replaceAll('_', ' ')}
+                            </span>
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          )}
           <Popover open={openCategory} onOpenChange={setOpenCategory}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                role="combobox"
                 className="h-12 w-full lg:w-[220px] justify-between text-base border-slate-200 px-4"
               >
                 <div className="flex items-center gap-2 truncate mr-2">

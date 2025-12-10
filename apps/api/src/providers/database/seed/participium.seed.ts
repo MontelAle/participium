@@ -1,10 +1,12 @@
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
-import * as fs from 'fs';
 import { nanoid } from 'nanoid';
-import * as path from 'path';
-import { DataSource } from 'typeorm';
+import { randomInt } from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { DataSource, Repository } from 'typeorm';
 import { Account } from '../../../common/entities/account.entity';
+import { Boundary } from '../../../common/entities/boundary.entity';
 import { Category } from '../../../common/entities/category.entity';
 import { Office } from '../../../common/entities/office.entity';
 import { Profile } from '../../../common/entities/profile.entity';
@@ -12,6 +14,131 @@ import { Report, ReportStatus } from '../../../common/entities/report.entity';
 import { Role } from '../../../common/entities/role.entity';
 import { User } from '../../../common/entities/user.entity';
 import { MinioProvider } from '../../minio/minio.provider';
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const OFFICES_DATA = [
+  {
+    name: 'maintenance',
+    label: 'Maintenance and Technical Services',
+    isExternal: false,
+  },
+  { name: 'infrastructure', label: 'Infrastructure', isExternal: false },
+  {
+    name: 'public_services',
+    label: 'Local Public Services',
+    isExternal: false,
+  },
+  { name: 'environment', label: 'Environment Quality', isExternal: false },
+  { name: 'green_parks', label: 'Green Areas and Parks', isExternal: false },
+  {
+    name: 'civic_services',
+    label: 'Decentralization and Civic Services',
+    isExternal: false,
+  },
+  {
+    name: 'organization_office',
+    label: 'Organization Office',
+    isExternal: false,
+  },
+];
+
+const EXTERNAL_OFFICES_DATA = [
+  {
+    name: 'external_company_1',
+    label: 'External Company 1',
+    isExternal: true,
+  },
+  {
+    name: 'external_company_2',
+    label: 'External Company 2',
+    isExternal: true,
+  },
+  {
+    name: 'external_company_3',
+    label: 'External Company 3',
+    isExternal: true,
+  },
+];
+
+const BOUNDARIES_DATA = [{ name: 'torino', label: 'Comune di Torino' }];
+
+const CATEGORIES_DATA = [
+  {
+    name: 'Roads and Urban Furnishings',
+    office: 'maintenance',
+    externalOffice: 'external_company_1',
+  },
+  {
+    name: 'Architectural Barriers',
+    office: 'maintenance',
+    externalOffice: 'external_company_2',
+  },
+  {
+    name: 'Road Signs and Traffic Lights',
+    office: 'infrastructure',
+    externalOffice: 'external_company_3',
+  },
+  {
+    name: 'Public Lighting',
+    office: 'infrastructure',
+    externalOffice: 'external_company_1',
+  },
+  {
+    name: 'Water Supply – Drinking Water',
+    office: 'public_services',
+    externalOffice: 'external_company_2',
+  },
+  {
+    name: 'Sewer System',
+    office: 'public_services',
+    externalOffice: 'external_company_3',
+  },
+  {
+    name: 'Waste',
+    office: 'environment',
+    externalOffice: 'external_company_1',
+  },
+  {
+    name: 'Public Green Areas and Playgrounds',
+    office: 'green_parks',
+    externalOffice: 'external_company_2',
+  },
+  {
+    name: 'Other',
+    office: 'civic_services',
+    externalOffice: 'external_company_3',
+  },
+];
+
+const ROLES_DATA = [
+  { name: 'user', label: 'User', isMunicipal: false },
+  { name: 'admin', label: 'Admin', isMunicipal: true },
+  { name: 'pr_officer', label: 'PR Officer', isMunicipal: true },
+  { name: 'tech_officer', label: 'Technical Officer', isMunicipal: true },
+  {
+    name: 'external_maintainer',
+    label: 'External Maintainer',
+    isMunicipal: false,
+  },
+];
+
+const CITIZENS_DATA = [
+  {
+    username: 'mario_rossi',
+    first: 'Mario',
+    last: 'Rossi',
+    email: 'mario.rossi@gmail.com',
+  },
+  {
+    username: 'luigi_verdi',
+    first: 'Luigi',
+    last: 'Verdi',
+    email: 'luigi.verdi@gmail.com',
+  },
+];
 
 const REAL_REPORTS = [
   {
@@ -133,333 +260,683 @@ const REAL_REPORTS = [
     categoryName: 'Roads and Urban Furnishings',
     images: ['PoleOnTheGround1.jpg', 'PoleOnTheGround2.jpg'],
   },
+  {
+    title: 'Faded Pedestrian Crossing',
+    description:
+      'Poorly visible crosswalk that needs repainting to ensure pedestrian safety. The faded markings make it difficult for drivers to notice pedestrians, especially at night or in bad weather, increasing the risk of accidents.',
+    address: 'Via Osoppo, 20e, Torino',
+    lat: 45.052893,
+    lng: 7.638379,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['FadedPedestrianCrossing1.jpg', 'FadedPedestrianCrossing2.jpg'],
+  },
+  {
+    title: 'Faded Bike Line Markings',
+    description:
+      'The bike lane markings on the road are no longer clearly visible, making it difficult for both cyclists and drivers to notice them. This increases the risk of accidents, especially during low-light conditions or heavy traffic.',
+    address: 'Via Tolmino, Torino',
+    lat: 45.054293,
+    lng: 7.642011,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['FadedBikeLine1.jpg', 'FadedBikeLine2.jpg', 'FadedBikeLine3.jpg' ],
+  },
+  {
+    title: 'Damaged Pedestrian Railing',
+    description:
+      'The green railing along the sidewalk is damaged. Repair needed to ensure pedestrian safety.',
+    address: 'Corso Racconigi, 208, Torino',
+    lat: 45.056554,
+    lng: 7.647711,
+    categoryName: 'Architectural Barriers',
+    images: ['DamagedPedestrianRailing.jpg'],
+  },
+  {
+    title: 'Vandalized road sign',
+    description:
+      'The sign has graffiti that compromises its visibility and effectiveness.',
+    address: 'Via Spalato, Torino',
+    lat: 45.059737,
+    lng: 7.652716,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['VandalizedRoadSign.jpg'],
+  },
+  {
+    title: 'Damaged Road Signs with Graffiti',
+    description:
+      'Two road signs have graffiti, reducing their readability and compromising road safety for drivers and pedestrians. Immediate cleaning or replacement is recommended.',
+    address: 'Via Paolo Braccini, Torino',
+    lat: 45.059915,
+    lng: 7.652474,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['RoadSignWithGraffiti.jpg'],
+  },
+  {
+    title: 'Severely Damaged Reflective Panel',
+    description:
+      'The sign is almost completely destroyed; the reflective film is no longer effective. Immediate replacement required.',
+    address: 'Corso Peschiera, Torino',
+    lat: 45.062229,
+    lng: 7.655716,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['DamagedReflectivePanel.jpg'],
+  },
+  {
+    title: 'Skating Rink with Damaged Wooden Edges',
+    description:
+      'The skating rink located inside the park has low wooden edges that are severely damaged along the entire perimeter. In several areas, the wood is broken, unstable, or completely detached, and numerous pieces are scattered throughout the surrounding area. This situation poses a concrete risk to children and animals who frequent the park, as they may trip, get injured, or come into contact with sharp or unstable fragments.',
+    address: 'Via Osoppo, Torino',
+    lat: 45.053219,
+    lng: 7.639716,
+    categoryName: 'Public Green Areas and Playgrounds',
+    images: ['SkatingRink1.jpg', 'SkatingRink2.jpg', 'SkatingRink3.jpg'],
+  },
+  {
+    title: 'Bent Sign',
+    description:
+      'The sign in the area is bent, and the deformation makes it difficult to read, reducing the effectiveness of the signal.',
+    address: 'Via Paolo Braccini, 2, Torino',
+    lat: 45.059449,
+    lng: 7.656176,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['BentSign.jpg'],
+  },
+  {
+    title: 'Bent and Illegible Road Sign',
+    description:
+      'I report a bent road sign that is crooked and difficult to read, causing confusion for drivers. Intervention is requested to restore the sign and ensure it is clearly visible.',
+    address: 'Via Bobbio, 3, Torino',
+    lat: 45.057927,
+    lng: 7.654953,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['BentAndIllegibleRoadSign1.jpg','BentAndIllegibleRoadSign2.jpg'],
+  },
+  {
+    title: 'Damaged Wall in the Park',
+    description:
+      'I am reporting a wall in a park that is in poor condition, visibly damaged and deteriorated, requiring maintenance and restoration.',
+    address: 'Corso Mediterraneo, Torino',
+    lat: 45.060608,
+    lng: 7.657127,
+    categoryName: 'Public Green Areas and Playgrounds',
+    images: ['DamagedWallInThePark1.jpg','DamagedWallInThePark2.jpg','DamagedWallInThePark3.jpg'],
+  },
+  {
+    title: 'Wall Covered with Graffiti',
+    description:
+      'I am reporting a wall covered with graffiti, which damages its appearance. Cleaning or restoration of the surface would be advisable.',
+    address: 'Via Gorizia, 9a, Torino',
+    lat: 45.051959,
+    lng: 7.641575,
+    categoryName: 'Other',
+    images: ['WallWithGraffiti.jpg'],
+  },
+  {
+    title: 'Vegetation Encroaching on the Sidewalk',
+    description:
+      'I am reporting vegetation encroaching on the sidewalk from the side, obstructing pedestrian passage. Pruning or removal would be advisable.',
+    address: 'Via Tolmino, 80a, Torino',
+    lat: 45.054390,
+    lng: 7.642114,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['VegetationOnSidewalk1.jpg','VegetationOnSidewalk2.jpg'],
+  },
+  {
+    title: 'Scattered Trash',
+    description:
+      'I am reporting scattered trash in the area, which makes the place look neglected and in need of cleaning.',
+    address: 'Corso Carlo e Nello Rosselli, 153, Torino',
+    lat: 45.055148,
+    lng: 7.646663,
+    categoryName: 'Waste',
+    images: ['ScatteredTrash1.jpg','ScatteredTrash2.jpg','ScatteredTrash3.jpg'],
+  },
+  {
+    title: 'Confusing Road Markings',
+    description:
+      'I am reporting that after construction work, new pedestrian crossings and stop lines were painted without removing the old ones. The presence of double lines causes confusion for both pedestrians and drivers, and the markings need clarification.',
+    address: 'Via Gorizia, 9a, Torino',
+    lat: 45.052070,
+    lng: 7.641613,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['ConfusingRoadMarking.jpg'],
+  },
+  {
+    title: 'Vegetation Occupying Parking Spaces',
+    description:
+      'I am reporting vegetation growing from the ground in the parking lot, occupying some parking spaces and reducing the available area.',
+    address: 'Via Spalato, 14, Torino',
+    lat: 45.061404,
+    lng: 7.653820,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['VegetationParkingSpace.jpg'],
+  },
+  {
+    title: 'Traffic Lights with Damaged or Missing Sun Protection',
+    description:
+      'I am reporting traffic lights with damaged or missing sun protection, making the signals harder to see for drivers.',
+    address: 'Corso Luigi Einaudi, Torino',
+    lat: 45.061338,
+    lng: 7.658394,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['TrafficLightsDamaged1.jpg','TrafficLightsDamaged2.jpg','TrafficLightsDamaged3.jpg'],
+  },
+  {
+    title: 'Damaged Traffic Lights and Road Sign',
+    description:
+      'I am reporting that some traffic lights have damaged or missing sun protection, reducing the visibility of the signals for drivers. Additionally, a road sign is damaged and has graffiti on it, affecting the clarity of the information.',
+    address: 'Corso Peschiera, Torino',
+    lat: 45.061494,
+    lng: 7.657612,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['TrafficLightAndRoadSign1.jpg','TrafficLightAndRoadSign2.jpg','TrafficLightAndRoadSign3.jpg'],
+  },
 ];
 
-export async function seedDatabase(
-  dataSource: DataSource,
-  minioProvider: MinioProvider,
-) {
-  const roleRepo = dataSource.getRepository(Role);
-  const userRepo = dataSource.getRepository(User);
-  const accountRepo = dataSource.getRepository(Account);
-  const categoryRepo = dataSource.getRepository(Category);
-  const reportRepo = dataSource.getRepository(Report);
-  const officeRepo = dataSource.getRepository(Office);
-  const profileRepo = dataSource.getRepository(Profile);
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
-  const commonPassword = await bcrypt.hash('password', 10);
+interface Repositories {
+  roleRepo: Repository<Role>;
+  userRepo: Repository<User>;
+  accountRepo: Repository<Account>;
+  categoryRepo: Repository<Category>;
+  reportRepo: Repository<Report>;
+  officeRepo: Repository<Office>;
+  profileRepo: Repository<Profile>;
+  boundaryRepo: Repository<Boundary>;
+}
 
-  const officesData = [
-    {
-      name: 'maintenance',
-      label: 'Maintenance and Technical Services',
-    },
-    {
-      name: 'infrastructure',
-      label: 'Infrastructure',
-    },
-    {
-      name: 'public_services',
-      label: 'Local Public Services',
-    },
-    {
-      name: 'environment',
-      label: 'Environment Quality',
-    },
-    {
-      name: 'green_parks',
-      label: 'Green Areas and Parks',
-    },
-    {
-      name: 'civic_services',
-      label: 'Decentralization and Civic Services',
-    },
-    {
-      name: 'organization_office',
-      label: 'Organization Office',
-    },
-  ];
+interface UserCreationContext {
+  userRepo: Repository<User>;
+  accountRepo: Repository<Account>;
+  profileRepo: Repository<Profile>;
+  commonPassword: string;
+  rolesMap: Map<string, Role>;
+  officesMap: Map<string, Office>;
+}
 
+interface UserData {
+  username: string;
+  roleName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  officeName?: string;
+}
+
+function getRepositories(dataSource: DataSource): Repositories {
+  return {
+    roleRepo: dataSource.getRepository(Role),
+    userRepo: dataSource.getRepository(User),
+    accountRepo: dataSource.getRepository(Account),
+    categoryRepo: dataSource.getRepository(Category),
+    reportRepo: dataSource.getRepository(Report),
+    officeRepo: dataSource.getRepository(Office),
+    profileRepo: dataSource.getRepository(Profile),
+    boundaryRepo: dataSource.getRepository(Boundary),
+  };
+}
+
+async function seedOffices(
+  officeRepo: Repository<Office>,
+): Promise<Map<string, Office>> {
   const officesMap = new Map<string, Office>();
 
-  for (const o of officesData) {
-    let office = await officeRepo.findOne({ where: { name: o.name } });
+  const OFFICES = [...OFFICES_DATA, ...EXTERNAL_OFFICES_DATA];
+
+  for (const officeData of OFFICES) {
+    let office = await officeRepo.findOne({ where: { name: officeData.name } });
+
     if (!office) {
       office = officeRepo.create({
         id: nanoid(),
-        name: o.name,
-        label: o.label,
+        name: officeData.name,
+        label: officeData.label,
+        isExternal: officeData.isExternal,
       });
       await officeRepo.save(office);
     }
-    officesMap.set(o.name, office);
+
+    officesMap.set(officeData.name, office);
   }
 
-  const categoriesData = [
-    { name: 'Roads and Urban Furnishings', office: 'maintenance' },
-    { name: 'Architectural Barriers', office: 'maintenance' },
+  return officesMap;
+}
 
-    { name: 'Road Signs and Traffic Lights', office: 'infrastructure' },
-    { name: 'Public Lighting', office: 'infrastructure' },
+function getBoundariesGeoJsonPath(): string {
+  let assetsDir = path.join(__dirname, 'assets');
 
-    { name: 'Water Supply – Drinking Water', office: 'public_services' },
-    { name: 'Sewer System', office: 'public_services' },
+  if (__dirname.includes('/dist/') || __dirname.includes('\\dist\\')) {
+    assetsDir = path.join(
+      __dirname,
+      '../../../../../src/providers/database/seed/assets',
+    );
+  }
 
-    { name: 'Waste', office: 'environment' },
+  return path.join(assetsDir, 'torino_boundaries.json');
+}
 
-    { name: 'Public Green Areas and Playgrounds', office: 'green_parks' },
+async function seedBoundaries(
+  boundaryRepo: Repository<Boundary>,
+): Promise<void> {
+  for (const boundaryData of BOUNDARIES_DATA) {
+    const existing = await boundaryRepo.findOne({
+      where: { name: boundaryData.name },
+    });
 
-    { name: 'Other', office: 'civic_services' },
-  ];
+    if (!existing) {
+      const geoJsonPath = getBoundariesGeoJsonPath();
+      const geoJsonContent = fs.readFileSync(geoJsonPath, 'utf-8');
+      const geometry = JSON.parse(geoJsonContent);
 
+      const boundary = boundaryRepo.create({
+        id: nanoid(),
+        name: boundaryData.name,
+        label: boundaryData.label,
+        geometry,
+      });
+      await boundaryRepo.save(boundary);
+      console.log(`Created boundary: ${boundaryData.label}`);
+    }
+  }
+}
+
+async function seedCategories(
+  categoryRepo: Repository<Category>,
+  officesMap: Map<string, Office>,
+): Promise<Map<string, Category>> {
   const categoriesMap = new Map<string, Category>();
 
-  for (const c of categoriesData) {
-    let category = await categoryRepo.findOne({ where: { name: c.name } });
+  for (const categoryData of CATEGORIES_DATA) {
+    let category = await categoryRepo.findOne({
+      where: { name: categoryData.name },
+    });
+
     if (!category) {
-      const assignedOffice = officesMap.get(c.office);
+      const assignedOffice = officesMap.get(categoryData.office);
+      const externalOffice = officesMap.get(categoryData.externalOffice);
       if (assignedOffice) {
         category = categoryRepo.create({
           id: nanoid(),
-          name: c.name,
+          name: categoryData.name,
           office: assignedOffice,
+          externalOffice: externalOffice || null,
         });
         await categoryRepo.save(category);
       }
     }
-    if (!category)
-      category = await categoryRepo.findOne({ where: { name: c.name } });
-    if (category) categoriesMap.set(c.name, category);
+
+    if (category) {
+      categoriesMap.set(categoryData.name, category);
+    }
   }
 
-  const rolesData = [
-    { name: 'user', label: 'User', isMunicipal: false },
-    { name: 'admin', label: 'Admin', isMunicipal: true },
-    { name: 'pr_officer', label: 'PR Officer', isMunicipal: true },
-    { name: 'tech_officer', label: 'Technical Officer', isMunicipal: true },
-  ];
+  return categoriesMap;
+}
 
+async function seedRoles(
+  roleRepo: Repository<Role>,
+): Promise<Map<string, Role>> {
   const rolesMap = new Map<string, Role>();
-  for (const r of rolesData) {
-    let role = await roleRepo.findOne({ where: { name: r.name } });
+
+  for (const roleData of ROLES_DATA) {
+    let role = await roleRepo.findOne({ where: { name: roleData.name } });
+
     if (!role) {
-      role = roleRepo.create({ id: nanoid(), ...r });
+      role = roleRepo.create({ id: nanoid(), ...roleData });
       await roleRepo.save(role);
     }
-    rolesMap.set(r.name, role);
+
+    rolesMap.set(roleData.name, role);
   }
 
-  const createUser = async (
-    username: string,
-    roleName: string,
-    firstName: string,
-    lastName: string,
-    email: string,
-    officeName?: string,
-  ) => {
-    let user = await userRepo.findOne({ where: { username } });
-    if (!user) {
-      user = userRepo.create({
-        id: nanoid(),
-        firstName,
-        lastName,
-        username,
-        email: email,
-        role: rolesMap.get(roleName),
-        office: officeName ? officesMap.get(officeName) : null,
-      });
-      await userRepo.save(user);
+  return rolesMap;
+}
 
-      await accountRepo.save({
-        id: nanoid(),
-        user,
-        providerId: 'local',
-        accountId: username,
-        password: commonPassword,
-      });
+async function createUserWithAccountAndProfile(
+  context: UserCreationContext,
+  userData: UserData,
+): Promise<User> {
+  const {
+    userRepo,
+    accountRepo,
+    profileRepo,
+    commonPassword,
+    rolesMap,
+    officesMap,
+  } = context;
+  const { username, roleName, firstName, lastName, email, officeName } =
+    userData;
 
-      await profileRepo.save(
-        profileRepo.create({
-          id: nanoid(),
-          userId: user.id,
-          user: user,
-        }),
-      );
-    }
-    return user;
-  };
+  const existingUser = await userRepo.findOne({ where: { username } });
+  if (existingUser) {
+    return existingUser;
+  }
 
-  await createUser(
-    'admin',
-    'admin',
-    'System',
-    'Admin',
-    'admin@participium.com',
-    'organization_office',
+  const user = userRepo.create({
+    id: nanoid(),
+    firstName,
+    lastName,
+    username,
+    email,
+    role: rolesMap.get(roleName),
+    office: officeName ? officesMap.get(officeName) : null,
+  });
+  await userRepo.save(user);
+
+  await accountRepo.save({
+    id: nanoid(),
+    user,
+    providerId: 'local',
+    accountId: username,
+    password: commonPassword,
+  });
+
+  await profileRepo.save(
+    profileRepo.create({
+      id: nanoid(),
+      userId: user.id,
+      user: user,
+    }),
   );
 
-  for (const officeData of officesData) {
-    for (let i = 1; i <= 2; i++) {
-      const fakeFirstName = faker.person.firstName();
-      const fakeLastName = faker.person.lastName();
-      const techUsername = `tech_${officeData.name}_${i}`;
+  return user;
+}
 
-      if (officeData.name === 'organization_office') continue;
-      await createUser(
-        techUsername,
-        'tech_officer',
-        fakeFirstName,
-        fakeLastName,
-        `${techUsername}@participium.com`.toLowerCase(),
-        officeData.name,
-      );
+async function seedMunicipalUsers(context: UserCreationContext): Promise<void> {
+  await createUserWithAccountAndProfile(context, {
+    username: 'system_admin',
+    roleName: 'admin',
+    firstName: 'System',
+    lastName: 'Admin',
+    email: 'admin@participium.com',
+    officeName: 'organization_office',
+  });
+
+  for (const officeData of OFFICES_DATA) {
+    if (officeData.name === 'organization_office') continue;
+
+    for (let i = 1; i <= 2; i++) {
+      const techUsername = `tech_${officeData.name}_${i}`;
+      await createUserWithAccountAndProfile(context, {
+        username: techUsername,
+        roleName: 'tech_officer',
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+        email: `${techUsername}@participium.com`.toLowerCase(),
+        officeName: officeData.name,
+      });
     }
   }
 
-  const prOfficersCount = 4;
-  for (let i = 1; i <= prOfficersCount; i++) {
-    await createUser(
-      `pr_officer_${i}`,
-      'pr_officer',
-      'PR',
-      `Officer ${i}`,
-      `pr.officer.${i}@participium.com`,
-      'organization_office',
+  for (let i = 1; i <= 4; i++) {
+    await createUserWithAccountAndProfile(context, {
+      username: `pr_officer_${i}`,
+      roleName: 'pr_officer',
+      firstName: 'PR',
+      lastName: `Officer ${i}`,
+      email: `pr.officer.${i}@participium.com`,
+      officeName: 'organization_office',
+    });
+  }
+}
+
+async function seedExternalMaintainers(
+  context: UserCreationContext,
+): Promise<void> {
+  for (const officeData of EXTERNAL_OFFICES_DATA) {
+    for (let i = 1; i <= 2; i++) {
+      const externalMaintainerUsername = `${officeData.name}_${i}`;
+      await createUserWithAccountAndProfile(context, {
+        username: externalMaintainerUsername,
+        roleName: 'external_maintainer',
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+        email: `${externalMaintainerUsername}@participium.com`.toLowerCase(),
+        officeName: officeData.name,
+      });
+    }
+  }
+}
+
+async function seedCitizenUsers(context: UserCreationContext): Promise<User[]> {
+  const citizenUsers: User[] = [];
+
+  for (const citizenData of CITIZENS_DATA) {
+    const user = await createUserWithAccountAndProfile(context, {
+      username: citizenData.username,
+      roleName: 'user',
+      firstName: citizenData.first,
+      lastName: citizenData.last,
+      email: citizenData.email,
+    });
+    citizenUsers.push(user);
+  }
+
+  return citizenUsers;
+}
+
+function getImagesDirectory(): string {
+  let imagesDir = path.join(__dirname, 'images');
+
+  if (__dirname.includes('/dist/') || __dirname.includes('\\dist\\')) {
+    imagesDir = path.join(
+      __dirname,
+      '../../../../../src/providers/database/seed/images',
     );
   }
 
-  const citizenUsers: User[] = [];
-  const citizensData = [
-    {
-      username: 'mario_rossi',
-      first: 'Mario',
-      last: 'Rossi',
-      email: 'mario.rossi@gmail.com',
-    },
-    {
-      username: 'luigi_verdi',
-      first: 'Luigi',
-      last: 'Verdi',
-      email: 'luigi.verdi@gmail.com',
-    },
-  ];
+  return imagesDir;
+}
 
-  for (const c of citizensData) {
-    const u = await createUser(c.username, 'user', c.first, c.last, c.email);
-    citizenUsers.push(u);
+function determineReportUser(
+  idx: number,
+  luigiVerdi: User | undefined,
+  citizenUsers: User[],
+): { user: User; isAnonymous: boolean } {
+  if (idx === 0 && luigiVerdi) {
+    return { user: luigiVerdi, isAnonymous: false };
   }
 
-  const currentReportCount = await reportRepo.count();
+  if (idx === 1 && luigiVerdi) {
+    return { user: luigiVerdi, isAnonymous: true };
+  }
 
+  const randomUser = citizenUsers[randomInt(0, citizenUsers.length)];
+  const isAnonymous = randomInt(0, 100) < 20;
+
+  return { user: randomUser, isAnonymous };
+}
+
+function getMimeType(fileName: string): string {
+  return fileName.endsWith('.png') ? 'image/png' : 'image/jpeg';
+}
+
+async function uploadReportImage(
+  minioProvider: MinioProvider,
+  imagesDir: string,
+  imageName: string,
+  reportId: string,
+): Promise<string | null> {
+  try {
+    const imagePath = path.join(imagesDir, imageName);
+
+    if (!fs.existsSync(imagePath)) {
+      console.warn(`Image file not found: ${imagePath}`);
+      return null;
+    }
+
+    const imageBuffer = fs.readFileSync(imagePath);
+    const mimeType = getMimeType(imageName);
+    const timestamp = Date.now();
+    const minioFileName = `reports/${reportId}/${timestamp}-${imageName}`;
+
+    const imageUrl = await minioProvider.uploadFile(
+      minioFileName,
+      imageBuffer,
+      mimeType,
+    );
+
+    console.log(`Uploaded image: ${imageName} -> ${imageUrl}`);
+    return imageUrl;
+  } catch (error) {
+    console.error(`Failed to upload image ${imageName}:`, error);
+    return null;
+  }
+}
+
+async function uploadReportImages(
+  minioProvider: MinioProvider,
+  imagesDir: string,
+  imageNames: string[],
+  reportId: string,
+): Promise<string[]> {
+  const uploadedUrls: string[] = [];
+
+  for (const imageName of imageNames) {
+    const imageUrl = await uploadReportImage(
+      minioProvider,
+      imagesDir,
+      imageName,
+      reportId,
+    );
+    if (imageUrl) {
+      uploadedUrls.push(imageUrl);
+    }
+  }
+
+  return uploadedUrls;
+}
+
+async function createReport(
+  reportRepo: Repository<Report>,
+  minioProvider: MinioProvider,
+  realReport: (typeof REAL_REPORTS)[0],
+  user: User,
+  isAnonymous: boolean,
+  category: Category,
+  imagesDir: string,
+): Promise<Report> {
+  const reportId = nanoid();
+
+  const uploadedImageUrls = await uploadReportImages(
+    minioProvider,
+    imagesDir,
+    realReport.images,
+    reportId,
+  );
+
+  const report = reportRepo.create({
+    id: reportId,
+    title: realReport.title,
+    description: realReport.description,
+    status: ReportStatus.RESOLVED,
+    address: realReport.address,
+    location: {
+      type: 'Point',
+      coordinates: [realReport.lng, realReport.lat],
+    },
+    images: uploadedImageUrls,
+    user,
+    category,
+    createdAt: faker.date.recent({ days: 30 }),
+    isAnonymous,
+  });
+
+  return report;
+}
+
+async function seedReports(
+  reportRepo: Repository<Report>,
+  minioProvider: MinioProvider,
+  citizenUsers: User[],
+  categoriesMap: Map<string, Category>,
+): Promise<void> {
+  const currentReportCount = await reportRepo.count();
   const shouldSeed =
     process.env.FORCE_SEED === 'true' || currentReportCount < 10;
 
-  if (shouldSeed) {
-    const reportsToSave: Report[] = [];
-
-    let imagesDir = path.join(__dirname, 'images');
-
-    if (__dirname.includes('/dist/')) {
-      imagesDir = path.join(
-        __dirname,
-        '../../../../../src/providers/database/seed/images',
-      );
-    }
-
-    console.log('Looking for images in:', imagesDir);
-
-    // Get Luigi Verdi user (the second citizen user)
-    const luigiVerdi = citizenUsers.find((u) => u.username === 'luigi_verdi');
-
-    for (let idx = 0; idx < REAL_REPORTS.length; idx++) {
-      const realReport = REAL_REPORTS[idx];
-
-      // Assign first 2 reports to Luigi Verdi (one anonymous, one not)
-      let reportUser: User;
-      let isAnonymous: boolean;
-
-      if (idx === 0 && luigiVerdi) {
-        // First report: Luigi Verdi, not anonymous
-        reportUser = luigiVerdi;
-        isAnonymous = false;
-      } else if (idx === 1 && luigiVerdi) {
-        // Second report: Luigi Verdi, anonymous
-        reportUser = luigiVerdi;
-        isAnonymous = true;
-      } else {
-        // Other reports: random user with 20% chance of being anonymous
-        reportUser =
-          citizenUsers[Math.floor(Math.random() * citizenUsers.length)];
-        isAnonymous = Math.random() < 0.2;
-      }
-
-      const category = categoriesMap.get(realReport.categoryName);
-      if (!category) {
-        console.warn(`Category not found for report: ${realReport.title}`);
-        continue;
-      }
-
-      const reportId = nanoid();
-
-      const uploadedImageUrls: string[] = [];
-      for (const imageName of realReport.images) {
-        try {
-          const imagePath = path.join(imagesDir, imageName);
-
-          // Check if file exists
-          if (!fs.existsSync(imagePath)) {
-            console.warn(`Image file not found: ${imagePath}`);
-            continue;
-          }
-
-          const imageBuffer = fs.readFileSync(imagePath);
-          const mimeType = imageName.endsWith('.png')
-            ? 'image/png'
-            : 'image/jpeg';
-
-          // Generate unique filename for MinIO
-          const timestamp = Date.now();
-          const minioFileName = `reports/${reportId}/${timestamp}-${imageName}`;
-
-          // Upload to MinIO
-          const imageUrl = await minioProvider.uploadFile(
-            minioFileName,
-            imageBuffer,
-            mimeType,
-          );
-
-          uploadedImageUrls.push(imageUrl);
-          console.log(`Uploaded image: ${imageName} -> ${imageUrl}`);
-        } catch (error) {
-          console.error(`Failed to upload image ${imageName}:`, error);
-        }
-      }
-
-      const report = reportRepo.create({
-        id: reportId,
-        title: realReport.title,
-        description: realReport.description,
-        status: ReportStatus.RESOLVED,
-        address: realReport.address,
-        location: {
-          type: 'Point',
-          coordinates: [realReport.lng, realReport.lat],
-        },
-        images: uploadedImageUrls,
-        user: reportUser,
-        category: category,
-        createdAt: faker.date.recent({ days: 30 }),
-        isAnonymous: isAnonymous,
-      });
-
-      reportsToSave.push(report);
-    }
-
-    await reportRepo.save(reportsToSave);
-    console.log(`Created ${reportsToSave.length} real reports in Torino.`);
-  } else {
+  if (!shouldSeed) {
     console.log(
       `Reports already present (${currentReportCount}). Skipping generation.`,
     );
+    return;
   }
+
+  const imagesDir = getImagesDirectory();
+  console.log('Looking for images in:', imagesDir);
+
+  const luigiVerdi = citizenUsers.find((u) => u.username === 'luigi_verdi');
+  const reportsToSave: Report[] = [];
+
+  for (let idx = 0; idx < REAL_REPORTS.length; idx++) {
+    const realReport = REAL_REPORTS[idx];
+    const { user, isAnonymous } = determineReportUser(
+      idx,
+      luigiVerdi,
+      citizenUsers,
+    );
+
+    const category = categoriesMap.get(realReport.categoryName);
+    if (!category) {
+      console.warn(`Category not found for report: ${realReport.title}`);
+      continue;
+    }
+
+    const report = await createReport(
+      reportRepo,
+      minioProvider,
+      realReport,
+      user,
+      isAnonymous,
+      category,
+      imagesDir,
+    );
+
+    reportsToSave.push(report);
+  }
+
+  await reportRepo.save(reportsToSave);
+  console.log(`Created ${reportsToSave.length} real reports in Torino.`);
+}
+
+// ============================================================================
+// Main Seed Function
+// ============================================================================
+
+export async function seedDatabase(
+  dataSource: DataSource,
+  minioProvider: MinioProvider,
+): Promise<void> {
+  const repositories = getRepositories(dataSource);
+  const commonPassword = await bcrypt.hash('password', 10);
+
+  const officesMap = await seedOffices(repositories.officeRepo);
+  await seedBoundaries(repositories.boundaryRepo);
+  const categoriesMap = await seedCategories(
+    repositories.categoryRepo,
+    officesMap,
+  );
+  const rolesMap = await seedRoles(repositories.roleRepo);
+
+  const userContext: UserCreationContext = {
+    userRepo: repositories.userRepo,
+    accountRepo: repositories.accountRepo,
+    profileRepo: repositories.profileRepo,
+    commonPassword,
+    rolesMap,
+    officesMap,
+  };
+
+  await seedMunicipalUsers(userContext);
+  await seedExternalMaintainers(userContext);
+  const citizenUsers = await seedCitizenUsers(userContext);
+
+  await seedReports(
+    repositories.reportRepo,
+    minioProvider,
+    citizenUsers,
+    categoriesMap,
+  );
 }

@@ -1,19 +1,15 @@
-name: CI - Build and Test
+name: CI - Build, Test & Analyze
 
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches: [main, dev]
   pull_request:
-    branches:
-      - main
-      - dev
+    branches: [main, dev]
 
 jobs:
-  ci:
+  build-and-analyze:
+    name: Build & SonarCloud
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,17 +24,33 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Build packages (turbo)
+      - name: Build packages
         run: pnpm turbo run build
 
-      - name: Run Unit Tests (Backend)
-        run: pnpm turbo run test --filter=api
+      - name: Run Unit Tests with Coverage (backend)
+        run: pnpm turbo run test --filter=api -- --coverage
 
-      - name: Run E2E tests (Backend)
+      - name: Fix LCOV paths for Sonar
+        run: |
+          if [ -f apps/api/coverage/lcov.info ]; then
+            sed -i 's|SF:src/|SF:apps/api/src/|g' apps/api/coverage/lcov.info
+            echo "Corrected path in apps/api/coverage/lcov.info"
+          else
+            echo "Warn: no coverage report found!"
+            exit 1
+          fi
+
+      - name: Run E2E Tests (backend)
         run: pnpm turbo run test:e2e --filter=api
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

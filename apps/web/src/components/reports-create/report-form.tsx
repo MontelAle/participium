@@ -33,8 +33,8 @@ export function ReportForm() {
 
   const { register, handleSubmit, setValue, watch } = useForm<FormData>({
     defaultValues: {
-      latitude: location.state?.latitude!,
-      longitude: location.state?.longitude!,
+      latitude: location.state?.latitude,
+      longitude: location.state?.longitude,
       address: location.state?.address || '',
       title: '',
       description: '',

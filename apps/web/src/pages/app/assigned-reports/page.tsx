@@ -4,7 +4,7 @@ import { useReports } from '@/hooks/use-reports';
 import { useMemo } from 'react';
 
 const AssignedReportsPage = () => {
-  const { data: reports = [], isLoading } = useReports(); // Recupera i report dal server
+  const { data: reports = [] } = useReports();
 
   const { user } = useAuth();
 

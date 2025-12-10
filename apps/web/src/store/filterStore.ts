@@ -1,28 +1,13 @@
-import { DateRange } from 'react-day-picker';
+import { ReportFilterState } from '@/types';
 import { create } from 'zustand';
 
-interface FilterState {
-  searchTerm: string;
-  showOnlyMyReports: boolean;
-  filters: {
-    status: string | null;
-    category: string | null;
-    dateRange: string | null;
-    customDate: DateRange | undefined;
-  };
-  setSearchTerm: (term: string) => void;
-  setShowOnlyMyReports: (show: boolean) => void;
-  setFilters: (filters: Partial<FilterState['filters']>) => void;
-  resetFilters: () => void;
-}
-
-export const useFilterStore = create<FilterState>((set) => ({
+export const useFilterStore = create<ReportFilterState>((set) => ({
   searchTerm: '',
   showOnlyMyReports: false,
   filters: {
-    status: null,
-    category: null,
-    dateRange: null,
+    status: undefined,
+    category: undefined,
+    dateRange: undefined,
     customDate: undefined,
   },
   setSearchTerm: (term) => set({ searchTerm: term }),
@@ -34,9 +19,9 @@ export const useFilterStore = create<FilterState>((set) => ({
       searchTerm: '',
       showOnlyMyReports: false,
       filters: {
-        status: null,
-        category: null,
-        dateRange: null,
+        status: undefined,
+        category: undefined,
+        dateRange: undefined,
         customDate: undefined,
       },
     }),

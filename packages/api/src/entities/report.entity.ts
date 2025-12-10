@@ -28,4 +28,6 @@ export interface Report {
   explanation?: string;
   assignedOfficerId?: string;
   assignedOfficer?: User;
+  assignedExternalMaintainerId?: string;
+  assignedExternalMaintainer?: User;
 }
