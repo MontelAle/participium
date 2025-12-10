@@ -137,24 +137,22 @@ export function MunicipalityUserForm({
 
   const selectedRoleName = roles.find((r) => r.id === form.roleId)?.name;
 
-  let availableOffices: typeof offices = [];
-  switch (selectedRoleName) {
-    case 'external_maintainer':
-      availableOffices = offices.filter((office) => office.isExternal);
-      break;
-    case 'pr_officer':
-      availableOffices = offices.filter(
-        (office) => office.name === 'organization_office',
-      );
-      break;
-    case 'tech_officer':
-      availableOffices = offices.filter(
-        (office) => !office.isExternal && office.name !== 'organization_office',
-      );
-      break;
-    default:
-      availableOffices = offices;
-      break;
+  function getAvailableOffices() {
+    switch (selectedRoleName) {
+      case 'external_maintainer':
+        return offices.filter((office) => office.isExternal);
+      case 'pr_officer':
+        return offices.filter(
+          (office) => office.name === 'organization_office',
+        );
+      case 'tech_officer':
+        return offices.filter(
+          (office) =>
+            !office.isExternal && office.name !== 'organization_office',
+        );
+      default:
+        return [];
+    }
   }
 
   return (
@@ -269,11 +267,14 @@ export function MunicipalityUserForm({
                   value={form.officeId}
                   onValueChange={handleOfficeChange}
                 >
-                  <SelectTrigger className="h-full w-full border-0 bg-transparent shadow-none focus:ring-0 text-base px-3">
+                  <SelectTrigger
+                    disabled={!form.roleId}
+                    className="h-full w-full border-0 bg-transparent shadow-none focus:ring-0 text-base px-3"
+                  >
                     <SelectValue placeholder="Select Office" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableOffices.map((office) => (
+                    {getAvailableOffices().map((office) => (
                       <SelectItem
                         key={office.id}
                         value={office.id}
