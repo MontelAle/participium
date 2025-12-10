@@ -3,11 +3,30 @@ import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql';
+import { Injectable } from '@nestjs/common';
+
+/////////// COMMON FUNCTIONS FOR INTEGRATION TESTINGS ///////////
 
 /**
- * Setup function for PostgreSQL testcontainer with PostGIS extension
- * This container will be used for all integration tests
+ * Mock MinioProvider for testing
+ * This prevents real MinIO connections during integration tests
+ * Uses the same structure as e2e tests for consistency
  */
+@Injectable()
+export class MockMinioProvider {
+  uploadFile = jest
+    .fn()
+    .mockResolvedValue(
+      'http://localhost:9000/bucket/reports/mocked-id/test.jpg',
+    );
+  
+  deleteFile = jest.fn().mockResolvedValue(undefined);
+  
+  deleteFiles = jest.fn().mockResolvedValue(undefined);
+  
+  extractFileNameFromUrl = jest.fn((url: string) => url.split('/').pop());
+}
+
 export const setupTestDB = async (): Promise<StartedPostgreSqlContainer> => {
   const container = await new PostgreSqlContainer('postgis/postgis:15-3.3')
     .withDatabase('test_db')
@@ -19,10 +38,7 @@ export const setupTestDB = async (): Promise<StartedPostgreSqlContainer> => {
   return container;
 };
 
-/**
- * TypeORM configuration for testing
- * Automatically loads all entities from src directory using glob pattern
- */
+
 export const TypeOrmTestModule = (container: StartedPostgreSqlContainer) =>
   TypeOrmModule.forRoot({
     type: 'postgres',
@@ -31,6 +47,6 @@ export const TypeOrmTestModule = (container: StartedPostgreSqlContainer) =>
     username: container.getUsername(),
     password: container.getPassword(),
     database: container.getDatabase(),
-    entities: ['src/**/*.entity.ts'], // Point to entity files in src
+    entities: ['src/**/*.entity.ts'],
     synchronize: true,
   });
