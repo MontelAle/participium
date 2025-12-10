@@ -13,6 +13,9 @@ export class Office implements OfficeType {
   @Column('varchar')
   label: string;
 
+  @Column('boolean', { default: false })
+  isExternal: boolean;
+
   @OneToMany(() => Category, (category) => category.office)
   categories: Category[];
 }

@@ -36,6 +36,15 @@ export function MunicipalSidebar({ isOpen, onToggle }: MunicipalSidebarProps) {
       icon: FileText,
     });
   }
+
+  if (hasRole(['external_maintainer'])) {
+    menuItems.push({
+      title: 'Assigned Reports',
+      href: '/app/external/assigned-reports',
+      icon: FileText,
+    });
+  }
+
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-20 items-center justify-around border-t bg-background px-2 pb-safe shadow-[0_-5px_15px_rgba(0,0,0,0.05)] md:hidden">

@@ -1,43 +1,116 @@
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
+import { randomInt } from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { DataSource, Repository } from 'typeorm';
 import { Account } from '../../../common/entities/account.entity';
+import { Boundary } from '../../../common/entities/boundary.entity';
 import { Category } from '../../../common/entities/category.entity';
 import { Office } from '../../../common/entities/office.entity';
+import { Profile } from '../../../common/entities/profile.entity';
 import { Report, ReportStatus } from '../../../common/entities/report.entity';
 import { Role } from '../../../common/entities/role.entity';
 import { User } from '../../../common/entities/user.entity';
 import { MinioProvider } from '../../minio/minio.provider';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { Profile } from '../../../common/entities/profile.entity';
-import { randomInt } from 'node:crypto';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
 const OFFICES_DATA = [
-  { name: 'maintenance', label: 'Maintenance and Technical Services' },
-  { name: 'infrastructure', label: 'Infrastructure' },
-  { name: 'public_services', label: 'Local Public Services' },
-  { name: 'environment', label: 'Environment Quality' },
-  { name: 'green_parks', label: 'Green Areas and Parks' },
-  { name: 'civic_services', label: 'Decentralization and Civic Services' },
-  { name: 'organization_office', label: 'Organization Office' },
+  {
+    name: 'maintenance',
+    label: 'Maintenance and Technical Services',
+    isExternal: false,
+  },
+  { name: 'infrastructure', label: 'Infrastructure', isExternal: false },
+  {
+    name: 'public_services',
+    label: 'Local Public Services',
+    isExternal: false,
+  },
+  { name: 'environment', label: 'Environment Quality', isExternal: false },
+  { name: 'green_parks', label: 'Green Areas and Parks', isExternal: false },
+  {
+    name: 'civic_services',
+    label: 'Decentralization and Civic Services',
+    isExternal: false,
+  },
+  {
+    name: 'organization_office',
+    label: 'Organization Office',
+    isExternal: false,
+  },
 ];
 
+const EXTERNAL_OFFICES_DATA = [
+  {
+    name: 'external_company_1',
+    label: 'External Company 1',
+    isExternal: true,
+  },
+  {
+    name: 'external_company_2',
+    label: 'External Company 2',
+    isExternal: true,
+  },
+  {
+    name: 'external_company_3',
+    label: 'External Company 3',
+    isExternal: true,
+  },
+];
+
+const BOUNDARIES_DATA = [{ name: 'torino', label: 'Comune di Torino' }];
+
 const CATEGORIES_DATA = [
-  { name: 'Roads and Urban Furnishings', office: 'maintenance' },
-  { name: 'Architectural Barriers', office: 'maintenance' },
-  { name: 'Road Signs and Traffic Lights', office: 'infrastructure' },
-  { name: 'Public Lighting', office: 'infrastructure' },
-  { name: 'Water Supply – Drinking Water', office: 'public_services' },
-  { name: 'Sewer System', office: 'public_services' },
-  { name: 'Waste', office: 'environment' },
-  { name: 'Public Green Areas and Playgrounds', office: 'green_parks' },
-  { name: 'Other', office: 'civic_services' },
+  {
+    name: 'Roads and Urban Furnishings',
+    office: 'maintenance',
+    externalOffice: 'external_company_1',
+  },
+  {
+    name: 'Architectural Barriers',
+    office: 'maintenance',
+    externalOffice: 'external_company_2',
+  },
+  {
+    name: 'Road Signs and Traffic Lights',
+    office: 'infrastructure',
+    externalOffice: 'external_company_3',
+  },
+  {
+    name: 'Public Lighting',
+    office: 'infrastructure',
+    externalOffice: 'external_company_1',
+  },
+  {
+    name: 'Water Supply – Drinking Water',
+    office: 'public_services',
+    externalOffice: 'external_company_2',
+  },
+  {
+    name: 'Sewer System',
+    office: 'public_services',
+    externalOffice: 'external_company_3',
+  },
+  {
+    name: 'Waste',
+    office: 'environment',
+    externalOffice: 'external_company_1',
+  },
+  {
+    name: 'Public Green Areas and Playgrounds',
+    office: 'green_parks',
+    externalOffice: 'external_company_2',
+  },
+  {
+    name: 'Other',
+    office: 'civic_services',
+    externalOffice: 'external_company_3',
+  },
 ];
 
 const ROLES_DATA = [
@@ -45,6 +118,11 @@ const ROLES_DATA = [
   { name: 'admin', label: 'Admin', isMunicipal: true },
   { name: 'pr_officer', label: 'PR Officer', isMunicipal: true },
   { name: 'tech_officer', label: 'Technical Officer', isMunicipal: true },
+  {
+    name: 'external_maintainer',
+    label: 'External Maintainer',
+    isMunicipal: true,
+  },
 ];
 
 const CITIZENS_DATA = [
@@ -182,6 +260,192 @@ const REAL_REPORTS = [
     categoryName: 'Roads and Urban Furnishings',
     images: ['PoleOnTheGround1.jpg', 'PoleOnTheGround2.jpg'],
   },
+  {
+    title: 'Faded Pedestrian Crossing',
+    description:
+      'Poorly visible crosswalk that needs repainting to ensure pedestrian safety. The faded markings make it difficult for drivers to notice pedestrians, especially at night or in bad weather, increasing the risk of accidents.',
+    address: 'Via Osoppo, 20e, Torino',
+    lat: 45.052893,
+    lng: 7.638379,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['FadedPedestrianCrossing1.jpg', 'FadedPedestrianCrossing2.jpg'],
+  },
+  {
+    title: 'Faded Bike Line Markings',
+    description:
+      'The bike lane markings on the road are no longer clearly visible, making it difficult for both cyclists and drivers to notice them. This increases the risk of accidents, especially during low-light conditions or heavy traffic.',
+    address: 'Via Tolmino, Torino',
+    lat: 45.054293,
+    lng: 7.642011,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['FadedBikeLine1.jpg', 'FadedBikeLine2.jpg', 'FadedBikeLine3.jpg'],
+  },
+  {
+    title: 'Damaged Pedestrian Railing',
+    description:
+      'The green railing along the sidewalk is damaged. Repair needed to ensure pedestrian safety.',
+    address: 'Corso Racconigi, 208, Torino',
+    lat: 45.056554,
+    lng: 7.647711,
+    categoryName: 'Architectural Barriers',
+    images: ['DamagedPedestrianRailing.jpg'],
+  },
+  {
+    title: 'Vandalized road sign',
+    description:
+      'The sign has graffiti that compromises its visibility and effectiveness.',
+    address: 'Via Spalato, Torino',
+    lat: 45.059737,
+    lng: 7.652716,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['VandalizedRoadSign.jpg'],
+  },
+  {
+    title: 'Damaged Road Signs with Graffiti',
+    description:
+      'Two road signs have graffiti, reducing their readability and compromising road safety for drivers and pedestrians. Immediate cleaning or replacement is recommended.',
+    address: 'Via Paolo Braccini, Torino',
+    lat: 45.059915,
+    lng: 7.652474,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['RoadSignWithGraffiti.jpg'],
+  },
+  {
+    title: 'Severely Damaged Reflective Panel',
+    description:
+      'The sign is almost completely destroyed; the reflective film is no longer effective. Immediate replacement required.',
+    address: 'Corso Peschiera, Torino',
+    lat: 45.062229,
+    lng: 7.655716,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['DamagedReflectivePanel.jpg'],
+  },
+  {
+    title: 'Skating Rink with Damaged Wooden Edges',
+    description:
+      'The skating rink located inside the park has low wooden edges that are severely damaged along the entire perimeter. In several areas, the wood is broken, unstable, or completely detached, and numerous pieces are scattered throughout the surrounding area. This situation poses a concrete risk to children and animals who frequent the park, as they may trip, get injured, or come into contact with sharp or unstable fragments.',
+    address: 'Via Osoppo, Torino',
+    lat: 45.053219,
+    lng: 7.639716,
+    categoryName: 'Public Green Areas and Playgrounds',
+    images: ['SkatingRink1.jpg', 'SkatingRink2.jpg', 'SkatingRink3.jpg'],
+  },
+  {
+    title: 'Bent Sign',
+    description:
+      'The sign in the area is bent, and the deformation makes it difficult to read, reducing the effectiveness of the signal.',
+    address: 'Via Paolo Braccini, 2, Torino',
+    lat: 45.059449,
+    lng: 7.656176,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['BentSign.jpg'],
+  },
+  {
+    title: 'Bent and Illegible Road Sign',
+    description:
+      'I report a bent road sign that is crooked and difficult to read, causing confusion for drivers. Intervention is requested to restore the sign and ensure it is clearly visible.',
+    address: 'Via Bobbio, 3, Torino',
+    lat: 45.057927,
+    lng: 7.654953,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['BentAndIllegibleRoadSign1.jpg', 'BentAndIllegibleRoadSign2.jpg'],
+  },
+  {
+    title: 'Damaged Wall in the Park',
+    description:
+      'I am reporting a wall in a park that is in poor condition, visibly damaged and deteriorated, requiring maintenance and restoration.',
+    address: 'Corso Mediterraneo, Torino',
+    lat: 45.060608,
+    lng: 7.657127,
+    categoryName: 'Public Green Areas and Playgrounds',
+    images: [
+      'DamagedWallInThePark1.jpg',
+      'DamagedWallInThePark2.jpg',
+      'DamagedWallInThePark3.jpg',
+    ],
+  },
+  {
+    title: 'Wall Covered with Graffiti',
+    description:
+      'I am reporting a wall covered with graffiti, which damages its appearance. Cleaning or restoration of the surface would be advisable.',
+    address: 'Via Gorizia, 9a, Torino',
+    lat: 45.051959,
+    lng: 7.641575,
+    categoryName: 'Other',
+    images: ['WallWithGraffiti.jpg'],
+  },
+  {
+    title: 'Vegetation Encroaching on the Sidewalk',
+    description:
+      'I am reporting vegetation encroaching on the sidewalk from the side, obstructing pedestrian passage. Pruning or removal would be advisable.',
+    address: 'Via Tolmino, 80a, Torino',
+    lat: 45.05439,
+    lng: 7.642114,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['VegetationOnSidewalk1.jpg', 'VegetationOnSidewalk2.jpg'],
+  },
+  {
+    title: 'Scattered Trash',
+    description:
+      'I am reporting scattered trash in the area, which makes the place look neglected and in need of cleaning.',
+    address: 'Corso Carlo e Nello Rosselli, 153, Torino',
+    lat: 45.055148,
+    lng: 7.646663,
+    categoryName: 'Waste',
+    images: [
+      'ScatteredTrash1.jpg',
+      'ScatteredTrash2.jpg',
+      'ScatteredTrash3.jpg',
+    ],
+  },
+  {
+    title: 'Confusing Road Markings',
+    description:
+      'I am reporting that after construction work, new pedestrian crossings and stop lines were painted without removing the old ones. The presence of double lines causes confusion for both pedestrians and drivers, and the markings need clarification.',
+    address: 'Via Gorizia, 9a, Torino',
+    lat: 45.05207,
+    lng: 7.641613,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['ConfusingRoadMarking.jpg'],
+  },
+  {
+    title: 'Vegetation Occupying Parking Spaces',
+    description:
+      'I am reporting vegetation growing from the ground in the parking lot, occupying some parking spaces and reducing the available area.',
+    address: 'Via Spalato, 14, Torino',
+    lat: 45.061404,
+    lng: 7.65382,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['VegetationParkingSpace.jpg'],
+  },
+  {
+    title: 'Traffic Lights with Damaged or Missing Sun Protection',
+    description:
+      'I am reporting traffic lights with damaged or missing sun protection, making the signals harder to see for drivers.',
+    address: 'Corso Luigi Einaudi, Torino',
+    lat: 45.061338,
+    lng: 7.658394,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: [
+      'TrafficLightsDamaged1.jpg',
+      'TrafficLightsDamaged2.jpg',
+      'TrafficLightsDamaged3.jpg',
+    ],
+  },
+  {
+    title: 'Damaged Traffic Lights and Road Sign',
+    description:
+      'I am reporting that some traffic lights have damaged or missing sun protection, reducing the visibility of the signals for drivers. Additionally, a road sign is damaged and has graffiti on it, affecting the clarity of the information.',
+    address: 'Corso Peschiera, Torino',
+    lat: 45.061494,
+    lng: 7.657612,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: [
+      'TrafficLightAndRoadSign1.jpg',
+      'TrafficLightAndRoadSign2.jpg',
+      'TrafficLightAndRoadSign3.jpg',
+    ],
+  },
 ];
 
 // ============================================================================
@@ -196,6 +460,7 @@ interface Repositories {
   reportRepo: Repository<Report>;
   officeRepo: Repository<Office>;
   profileRepo: Repository<Profile>;
+  boundaryRepo: Repository<Boundary>;
 }
 
 interface UserCreationContext {
@@ -225,6 +490,7 @@ function getRepositories(dataSource: DataSource): Repositories {
     reportRepo: dataSource.getRepository(Report),
     officeRepo: dataSource.getRepository(Office),
     profileRepo: dataSource.getRepository(Profile),
+    boundaryRepo: dataSource.getRepository(Boundary),
   };
 }
 
@@ -233,22 +499,63 @@ async function seedOffices(
 ): Promise<Map<string, Office>> {
   const officesMap = new Map<string, Office>();
 
-  for (const officeData of OFFICES_DATA) {
+  const OFFICES = [...OFFICES_DATA, ...EXTERNAL_OFFICES_DATA];
+
+  for (const officeData of OFFICES) {
     let office = await officeRepo.findOne({ where: { name: officeData.name } });
-    
+
     if (!office) {
       office = officeRepo.create({
         id: nanoid(),
         name: officeData.name,
         label: officeData.label,
+        isExternal: officeData.isExternal,
       });
       await officeRepo.save(office);
     }
-    
+
     officesMap.set(officeData.name, office);
   }
 
   return officesMap;
+}
+
+function getBoundariesGeoJsonPath(): string {
+  let assetsDir = path.join(__dirname, 'assets');
+
+  if (__dirname.includes('/dist/') || __dirname.includes('\\dist\\')) {
+    assetsDir = path.join(
+      __dirname,
+      '../../../../../src/providers/database/seed/assets',
+    );
+  }
+
+  return path.join(assetsDir, 'torino_boundaries.json');
+}
+
+async function seedBoundaries(
+  boundaryRepo: Repository<Boundary>,
+): Promise<void> {
+  for (const boundaryData of BOUNDARIES_DATA) {
+    const existing = await boundaryRepo.findOne({
+      where: { name: boundaryData.name },
+    });
+
+    if (!existing) {
+      const geoJsonPath = getBoundariesGeoJsonPath();
+      const geoJsonContent = fs.readFileSync(geoJsonPath, 'utf-8');
+      const geometry = JSON.parse(geoJsonContent);
+
+      const boundary = boundaryRepo.create({
+        id: nanoid(),
+        name: boundaryData.name,
+        label: boundaryData.label,
+        geometry,
+      });
+      await boundaryRepo.save(boundary);
+      console.log(`Created boundary: ${boundaryData.label}`);
+    }
+  }
 }
 
 async function seedCategories(
@@ -264,11 +571,13 @@ async function seedCategories(
 
     if (!category) {
       const assignedOffice = officesMap.get(categoryData.office);
+      const externalOffice = officesMap.get(categoryData.externalOffice);
       if (assignedOffice) {
         category = categoryRepo.create({
           id: nanoid(),
           name: categoryData.name,
           office: assignedOffice,
+          externalOffice: externalOffice || null,
         });
         await categoryRepo.save(category);
       }
@@ -289,12 +598,12 @@ async function seedRoles(
 
   for (const roleData of ROLES_DATA) {
     let role = await roleRepo.findOne({ where: { name: roleData.name } });
-    
+
     if (!role) {
       role = roleRepo.create({ id: nanoid(), ...roleData });
       await roleRepo.save(role);
     }
-    
+
     rolesMap.set(roleData.name, role);
   }
 
@@ -305,8 +614,16 @@ async function createUserWithAccountAndProfile(
   context: UserCreationContext,
   userData: UserData,
 ): Promise<User> {
-  const { userRepo, accountRepo, profileRepo, commonPassword, rolesMap, officesMap } = context;
-  const { username, roleName, firstName, lastName, email, officeName } = userData;
+  const {
+    userRepo,
+    accountRepo,
+    profileRepo,
+    commonPassword,
+    rolesMap,
+    officesMap,
+  } = context;
+  const { username, roleName, firstName, lastName, email, officeName } =
+    userData;
 
   const existingUser = await userRepo.findOne({ where: { username } });
   if (existingUser) {
@@ -343,11 +660,9 @@ async function createUserWithAccountAndProfile(
   return user;
 }
 
-async function seedMunicipalUsers(
-  context: UserCreationContext,
-): Promise<void> {
+async function seedMunicipalUsers(context: UserCreationContext): Promise<void> {
   await createUserWithAccountAndProfile(context, {
-    username: 'admin',
+    username: 'system_admin',
     roleName: 'admin',
     firstName: 'System',
     lastName: 'Admin',
@@ -383,9 +698,25 @@ async function seedMunicipalUsers(
   }
 }
 
-async function seedCitizenUsers(
+async function seedExternalMaintainers(
   context: UserCreationContext,
-): Promise<User[]> {
+): Promise<void> {
+  for (const officeData of EXTERNAL_OFFICES_DATA) {
+    for (let i = 1; i <= 2; i++) {
+      const externalMaintainerUsername = `${officeData.name}_${i}`;
+      await createUserWithAccountAndProfile(context, {
+        username: externalMaintainerUsername,
+        roleName: 'external_maintainer',
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+        email: `${externalMaintainerUsername}@participium.com`.toLowerCase(),
+        officeName: officeData.name,
+      });
+    }
+  }
+}
+
+async function seedCitizenUsers(context: UserCreationContext): Promise<User[]> {
   const citizenUsers: User[] = [];
 
   for (const citizenData of CITIZENS_DATA) {
@@ -405,7 +736,7 @@ async function seedCitizenUsers(
 function getImagesDirectory(): string {
   let imagesDir = path.join(__dirname, 'images');
 
-  if (__dirname.includes('/dist/')) {
+  if (__dirname.includes('/dist/') || __dirname.includes('\\dist\\')) {
     imagesDir = path.join(
       __dirname,
       '../../../../../src/providers/database/seed/images',
@@ -497,7 +828,7 @@ async function uploadReportImages(
 async function createReport(
   reportRepo: Repository<Report>,
   minioProvider: MinioProvider,
-  realReport: typeof REAL_REPORTS[0],
+  realReport: (typeof REAL_REPORTS)[0],
   user: User,
   isAnonymous: boolean,
   category: Category,
@@ -598,6 +929,7 @@ export async function seedDatabase(
   const commonPassword = await bcrypt.hash('password', 10);
 
   const officesMap = await seedOffices(repositories.officeRepo);
+  await seedBoundaries(repositories.boundaryRepo);
   const categoriesMap = await seedCategories(
     repositories.categoryRepo,
     officesMap,
@@ -614,6 +946,7 @@ export async function seedDatabase(
   };
 
   await seedMunicipalUsers(userContext);
+  await seedExternalMaintainers(userContext);
   const citizenUsers = await seedCitizenUsers(userContext);
 
   await seedReports(

@@ -18,14 +18,14 @@ export class Profile implements ProfileType {
   @Column({ nullable: false })
   userId: string;
 
-  @OneToOne(() => User, { nullable: false })
+  @OneToOne(() => User, { nullable: false, eager: true })
   @JoinColumn({ name: 'userId' })
   user: User;
 
   @Column({ nullable: true })
   telegramUsername: string | null;
 
-  @Column({ default: false })
+  @Column({ default: true })
   emailNotificationsEnabled: boolean;
 
   @Column({ nullable: true })

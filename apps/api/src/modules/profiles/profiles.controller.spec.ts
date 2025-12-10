@@ -125,7 +125,7 @@ describe('ProfilesController', () => {
       const req = {
         user: {
           id: 'user-1',
-          role: { isMunicipal: true, name: 'officer' },
+          role: { isMunicipal: true, name: 'tech_officer' },
         },
       } as any;
       const dto = { telegramUsername: '@newusername' };

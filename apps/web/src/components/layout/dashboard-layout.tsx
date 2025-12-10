@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
 export function DashboardLayout() {
-  const { isMunicipalityUser, isAdminUser, isCitizenUser, isGuestUser } =
+  const { isMunicipalityUser, isAdminUser, isCitizenUser, isGuestUser, isExternal } =
     useAuth();
   const [municipalSidebarOpen, setMunicipalSidebarOpen] = useState(true);
   const location = useLocation();
@@ -24,7 +24,7 @@ export function DashboardLayout() {
     }
   }, [location.pathname]);
 
-  const showLeftSidebar = isMunicipalityUser || isAdminUser;
+  const showLeftSidebar = isMunicipalityUser || isAdminUser || isExternal;
   const showRightSidebar = (isCitizenUser || isGuestUser) && isMapPage;
 
   return (

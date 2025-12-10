@@ -1,31 +1,38 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { nanoid } from 'nanoid';
+import path from 'node:path';
 import { Point, Repository } from 'typeorm';
 import {
   CreateReportDto,
+  DashboardStatsDto,
   FilterReportsDto,
   UpdateReportDto,
 } from '../../common/dto/report.dto';
+import { Boundary } from '../../common/entities/boundary.entity';
 import { Category } from '../../common/entities/category.entity';
 import { Report } from '../../common/entities/report.entity';
 import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
-import path from 'node:path';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 
-const PRIVILEGED_ROLES = ['pr_officer', 'officer'];
+const PRIVILEGED_ROLES = ['pr_officer', 'tech_officer'];
 
 @Injectable()
 export class ReportsService {
   constructor(
-    @InjectRepository(Report) private readonly reportRepository: Repository<Report>,
-    @InjectRepository(Category) private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(Report)
+    private readonly reportRepository: Repository<Report>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(Boundary)
+    private readonly boundaryRepository: Repository<Boundary>,
     private readonly minioProvider: MinioProvider,
   ) {}
 
@@ -39,7 +46,13 @@ export class ReportsService {
   private async findReportEntity(id: string): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ['user', 'user.role', 'category', 'assignedOfficer'],
+      relations: [
+        'user',
+        'user.role',
+        'category',
+        'assignedOfficer',
+        'assignedExternalMaintainer',
+      ],
     });
 
     if (!report) {
@@ -67,12 +80,33 @@ export class ReportsService {
     return sanitized as Report;
   }
 
+  private async validateCoordinatesWithinBoundary(
+    longitude: number,
+    latitude: number,
+  ): Promise<void> {
+    const result = await this.boundaryRepository
+      .createQueryBuilder('boundary')
+      .where(
+        `ST_Contains(boundary.geometry, ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326))`,
+        { longitude, latitude },
+      )
+      .getOne();
+
+    if (!result) {
+      throw new BadRequestException(
+        REPORT_ERROR_MESSAGES.COORDINATES_OUTSIDE_BOUNDARY,
+      );
+    }
+  }
+
   async create(
     createReportDto: CreateReportDto,
     userId: string,
     images: Express.Multer.File[],
   ): Promise<Report> {
     const { longitude, latitude, isAnonymous, ...reportData } = createReportDto;
+
+    await this.validateCoordinatesWithinBoundary(longitude, latitude);
 
     const reportId = nanoid();
     const imageUrls: string[] = [];
@@ -115,9 +149,30 @@ export class ReportsService {
       .leftJoinAndSelect('report.user', 'user')
       .leftJoinAndSelect('user.role', 'role')
       .leftJoinAndSelect('report.category', 'category')
-      .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer');
+      .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer')
+      .leftJoinAndSelect(
+        'report.assignedExternalMaintainer',
+        'assignedExternalMaintainer',
+      );
 
-    if (filters?.status) {
+    if (viewer.role?.name === 'user') {
+      query.andWhere(
+        `(report.status != 'rejected' OR report.userId = :viewerId)`,
+        { viewerId: viewer.id },
+      );
+    }
+
+    if (viewer.role?.name === 'external_maintainer') {
+      query.andWhere('report.assignedExternalMaintainerId = :viewerId', {
+        viewerId: viewer.id,
+      });
+    }
+
+    if (viewer.role?.name === 'pr_officer') {
+      query.andWhere('report.status = :forcedStatus', {
+        forcedStatus: 'pending',
+      });
+    } else if (filters?.status) {
       query.andWhere('report.status = :status', { status: filters.status });
     }
 
@@ -180,18 +235,52 @@ export class ReportsService {
   async findOne(id: string, viewer: User): Promise<Report> {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ['user', 'user.role', 'category', 'assignedOfficer'],
+      relations: [
+        'user',
+        'user.role',
+        'category',
+        'assignedOfficer',
+        'assignedExternalMaintainer',
+      ],
     });
 
     if (!report) {
       throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
     }
 
+    if (
+      viewer.role?.name === 'user' &&
+      report.status === 'rejected' &&
+      report.userId !== viewer.id
+    ) {
+      throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
+    }
+
+    if (
+      viewer.role?.name === 'external_maintainer' &&
+      report.assignedExternalMaintainerId !== viewer.id
+    ) {
+      throw new NotFoundException(REPORT_ERROR_MESSAGES.REPORT_NOT_FOUND(id));
+    }
+
     return this.sanitizeReport(report, viewer);
   }
 
-  async update(id: string, updateReportDto: UpdateReportDto): Promise<Report> {
+  async update(
+    id: string,
+    updateReportDto: UpdateReportDto,
+    actor?: User,
+  ): Promise<Report> {
     const report = await this.findReportEntity(id);
+
+    if (actor?.role?.name === 'external_maintainer') {
+      if (report.assignedExternalMaintainerId !== actor.id) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NOT_ASSIGNED_TO_REPORT,
+        );
+      }
+      this.validateExternalMaintainerStatusChange(report, updateReportDto);
+    }
 
     this.updateReportLocation(report, updateReportDto);
 
@@ -204,6 +293,20 @@ export class ReportsService {
       );
     }
 
+    if (updateReportDto.assignedExternalMaintainerId !== undefined) {
+      await this.assignExternalMaintainerToReport(
+        report,
+        updateReportDto.assignedExternalMaintainerId,
+      );
+    }
+
+    if (
+      actor &&
+      (updateReportDto.status === 'assigned' ||
+        updateReportDto.status === 'rejected')
+    ) {
+      report.processedById = actor.id;
+    }
     this.applyBasicUpdates(report, updateReportDto);
 
     return await this.reportRepository.save(report);
@@ -263,11 +366,34 @@ export class ReportsService {
   ): Promise<void> {
     const officer = await this.userRepository.findOne({
       where: { id: officerId },
+      relations: ['office'],
     });
-    if (officer) {
-      report.assignedOfficer = officer;
-      report.assignedOfficerId = officer.id;
+
+    if (!officer) {
+      throw new NotFoundException(
+        REPORT_ERROR_MESSAGES.OFFICER_NOT_FOUND(officerId),
+      );
     }
+
+    // Validate officer belongs to the correct office for the report's category
+    const category =
+      report.category ||
+      (await this.categoryRepository.findOne({
+        where: { id: report.categoryId },
+        relations: ['office'],
+      }));
+
+    if (category?.office && officer.officeId !== category.office.id) {
+      throw new BadRequestException(
+        REPORT_ERROR_MESSAGES.OFFICER_NOT_FOR_CATEGORY(
+          officerId,
+          report.categoryId,
+        ),
+      );
+    }
+
+    report.assignedOfficer = officer;
+    report.assignedOfficerId = officer.id;
   }
 
   private async assignOfficerAutomatically(report: Report): Promise<void> {
@@ -290,6 +416,81 @@ export class ReportsService {
     }
   }
 
+  private async assignExternalMaintainerToReport(
+    report: Report,
+    assignedExternalMaintainerId?: string,
+  ): Promise<void> {
+    if (assignedExternalMaintainerId) {
+      const externalMaintainer = await this.userRepository.findOne({
+        where: { id: assignedExternalMaintainerId },
+        relations: ['role', 'office'],
+      });
+
+      if (
+        !externalMaintainer ||
+        externalMaintainer.role?.name !== 'external_maintainer'
+      ) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_USER,
+        );
+      }
+
+      // Validate external maintainer belongs to the correct office for the report's category
+      const category =
+        report.category ||
+        (await this.categoryRepository.findOne({
+          where: { id: report.categoryId },
+          relations: ['externalOffice'],
+        }));
+
+      if (
+        category?.externalOffice &&
+        externalMaintainer.officeId !== category.externalOffice.id
+      ) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NOT_FOR_CATEGORY(
+            assignedExternalMaintainerId,
+            report.categoryId,
+          ),
+        );
+      }
+
+      report.assignedExternalMaintainer = externalMaintainer;
+      report.assignedExternalMaintainerId = externalMaintainer.id;
+    } else {
+      report.assignedExternalMaintainer = null;
+      report.assignedExternalMaintainerId = null;
+    }
+  }
+
+  private validateExternalMaintainerStatusChange(
+    report: Report,
+    updateDto: UpdateReportDto,
+  ): void {
+    if (!updateDto.status) {
+      return;
+    }
+
+    const allowedTransitions = {
+      assigned: ['in_progress'],
+      in_progress: ['resolved'],
+    };
+
+    const allowedNextStatuses = allowedTransitions[report.status];
+
+    if (
+      !allowedNextStatuses ||
+      !allowedNextStatuses.includes(updateDto.status)
+    ) {
+      throw new BadRequestException(
+        REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_STATUS_TRANSITION(
+          report.status,
+          updateDto.status,
+        ),
+      );
+    }
+  }
+
   private async findOfficerWithFewestReports(
     officeId: string,
   ): Promise<User | null> {
@@ -299,9 +500,7 @@ export class ReportsService {
     });
 
     const technicalOfficers = officers.filter(
-      (officer) =>
-        officer.role?.name === 'officer' ||
-        officer.role?.name === 'tech_officer',
+      (officer) => officer.role?.name === 'tech_officer',
     );
 
     if (technicalOfficers.length === 0) {
@@ -358,6 +557,9 @@ export class ReportsService {
         )`,
         { lng: longitude, lat: latitude, radius: radiusMeters },
       )
+      .andWhere('report.status != :rejectedStatus', {
+        rejectedStatus: 'rejected',
+      })
       .orderBy('distance', 'ASC')
       .getRawAndEntities();
 
@@ -377,5 +579,63 @@ export class ReportsService {
       order: { createdAt: 'DESC' },
     });
     return reports.map((report) => this.sanitizeReport(report, viewer));
+  }
+
+  async getDashboardStats(user: User): Promise<DashboardStatsDto> {
+    const qb = this.reportRepository.createQueryBuilder('report');
+
+    const stats = await qb
+      .select('COUNT(report.id)', 'total')
+      .addSelect(
+        `SUM(CASE WHEN report.status = 'pending' THEN 1 ELSE 0 END)`,
+        'pending',
+      )
+      .addSelect(
+        `SUM(CASE WHEN report.status = 'in_progress' THEN 1 ELSE 0 END)`,
+        'in_progress',
+      )
+      .addSelect(
+        `SUM(CASE WHEN report.status = 'resolved' THEN 1 ELSE 0 END)`,
+        'resolved',
+      )
+      .addSelect(
+        `SUM(CASE WHEN report.status = 'assigned' THEN 1 ELSE 0 END)`,
+        'assigned_global',
+      )
+      .addSelect(
+        `SUM(CASE WHEN report.status = 'rejected' THEN 1 ELSE 0 END)`,
+        'rejected_global',
+      )
+      .addSelect(
+        `SUM(CASE WHEN report.status = 'assigned' AND (report.assignedOfficerId = :userId OR report.processedById = :userId OR report.assignedExternalMaintainerId = :userId) THEN 1 ELSE 0 END)`,
+        'user_assigned',
+      )
+      .addSelect(
+        `SUM(CASE WHEN report.status = 'rejected' AND (report.assignedOfficerId = :userId OR report.processedById = :userId OR report.assignedExternalMaintainerId = :userId) THEN 1 ELSE 0 END)`,
+        'user_rejected',
+      )
+      .addSelect(
+        `SUM(CASE WHEN report.status = 'in_progress' AND (report.assignedOfficerId = :userId OR report.assignedExternalMaintainerId = :userId) THEN 1 ELSE 0 END)`,
+        'user_in_progress',
+      )
+      .addSelect(
+        `SUM(CASE WHEN report.status = 'resolved' AND (report.assignedOfficerId = :userId OR report.assignedExternalMaintainerId = :userId) THEN 1 ELSE 0 END)`,
+        'user_resolved',
+      )
+      .setParameters({ userId: user.id })
+      .getRawOne();
+
+    return {
+      total: Number(stats.total || 0),
+      pending: Number(stats.pending || 0),
+      in_progress: Number(stats.in_progress || 0),
+      resolved: Number(stats.resolved || 0),
+      assigned: Number(stats.assigned_global || 0),
+      rejected: Number(stats.rejected_global || 0),
+      user_assigned: Number(stats.user_assigned || 0),
+      user_rejected: Number(stats.user_rejected || 0),
+      user_in_progress: Number(stats.user_in_progress || 0),
+      user_resolved: Number(stats.user_resolved || 0),
+    };
   }
 }

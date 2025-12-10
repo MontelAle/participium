@@ -2,7 +2,7 @@ import type {
   ProfileResponseDto as ProfileResponseDtoType,
   UpdateProfileDto as UpdateProfileDtoType,
 } from '@repo/api';
-import { IsOptional, IsString, Matches, ValidateIf } from 'class-validator';
+import { IsEmail, IsOptional, IsString, Matches, ValidateIf } from 'class-validator';
 import { Profile } from '../entities/profile.entity';
 
 export class UpdateProfileDto implements UpdateProfileDtoType {
@@ -18,6 +18,22 @@ export class UpdateProfileDto implements UpdateProfileDtoType {
   @IsString()
   @IsOptional()
   emailNotificationsEnabled?: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+  
+  @IsString()
+  @IsOptional()
+  username?: string;
+  
+  @IsString()
+  @IsOptional()
+  firstName?: string;
+  
+  @IsString()
+  @IsOptional()
+  lastName?: string;
 }
 
 export class ProfileResponseDto implements ProfileResponseDtoType {

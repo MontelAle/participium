@@ -25,10 +25,9 @@ export function Navbar() {
 
   const getUserInitials = () => {
     if (!user) return '?';
-    return (
-      (user.firstName?.charAt(0) + user.lastName?.charAt(0)).toUpperCase() ||
-      '?'
-    );
+    const firstName = profile?.user.firstName.charAt(0) || '?';
+    const lastName = profile?.user.lastName.charAt(0) || '?';
+    return (firstName + lastName).toUpperCase();
   };
 
   return (
@@ -66,7 +65,7 @@ export function Navbar() {
                 <div className="flex-col items-end text-right hidden md:flex max-w-[200px]">
                   {' '}
                   <span className="text-sm font-medium leading-none truncate">
-                    {user.firstName} {user.lastName}
+                    {profile?.user.firstName} {profile?.user.lastName}
                   </span>
                 </div>
 
@@ -77,13 +76,13 @@ export function Navbar() {
               <DropdownMenuItem>
                 <div className="flex flex-col space-y-1 w-full min-w-0">
                   <p className="text-base font-medium truncate">
-                    {user.firstName} {user.lastName}
+                    {profile?.user.firstName} {profile?.user.lastName}
                   </p>
                   <p className="text-sm text-muted-foreground truncate">
-                    {user.email}
+                    {profile?.user.email}
                   </p>
                   <p className="text-sm text-muted-foreground capitalize truncate">
-                    {user.role.label}
+                    {profile?.user.role?.label}
                   </p>
                 </div>
               </DropdownMenuItem>

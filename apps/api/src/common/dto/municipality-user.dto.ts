@@ -5,7 +5,14 @@ import type {
   MunicipalityUsersResponseDto as MunicipalityUsersResponseDtoType,
   UpdateMunicipalityUserDto as UpdateMunicipalityUserDtoType,
 } from '@repo/api';
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { User } from '../entities/user.entity';
 
 export class UpdateMunicipalityUserDto
@@ -17,6 +24,8 @@ export class UpdateMunicipalityUserDto
 
   @IsString()
   @IsOptional()
+  @MinLength(6)
+  @MaxLength(30)
   username?: string;
 
   @IsString()
@@ -40,21 +49,31 @@ export class CreateMunicipalityUserDto
   implements CreateMunicipalityUserDtoType
 {
   @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
+  @MaxLength(30)
   password: string;
 
   @IsEmail()
+  @IsNotEmpty()
   email: string;
 
   @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
+  @MaxLength(30)
   username: string;
 
   @IsString()
+  @IsNotEmpty()
   firstName: string;
 
   @IsString()
+  @IsNotEmpty()
   lastName: string;
 
   @IsString()
+  @IsNotEmpty()
   roleId: string;
 
   @IsString()
@@ -80,5 +99,10 @@ export class MunicipalityUserIdResponseDto
   implements MunicipalityUserIdResponseDtoType
 {
   data: { id: string };
+  success: boolean;
+}
+
+export class ExternalMaintainersResponseDto {
+  data: User[];
   success: boolean;
 }
