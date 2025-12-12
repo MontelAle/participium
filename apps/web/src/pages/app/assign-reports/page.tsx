@@ -20,7 +20,7 @@ const AssignReportsPage = () => {
     for (const r of reports) {
       if (r.status) setStatus.add(r.status);
     }
-    return Array.from(setStatus).sort();
+    return Array.from(setStatus).sort((a, b) => a.localeCompare(b));
   }, [reports, isMunicipalPrOfficer]);
 
   const availableCategories = useMemo(() => {
@@ -28,7 +28,7 @@ const AssignReportsPage = () => {
     for (const r of reports) {
       if (r.category?.name) setCategories.add(r.category.name);
     }
-    return Array.from(setCategories).sort();
+    return Array.from(setCategories).sort((a, b) => a.localeCompare(b));
   }, [reports]);
 
   const filteredReports = useMemo(() => {
@@ -86,7 +86,10 @@ const AssignReportsPage = () => {
         />
       </div>
       <div className="overflow-hidden">
-        <ReportsTable data={filteredReports} viewBasePath="/app/assign-reports/view" />
+        <ReportsTable
+          data={filteredReports}
+          viewBasePath="/app/assign-reports/view"
+        />
       </div>
     </div>
   );

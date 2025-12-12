@@ -41,7 +41,12 @@ export class AuthService {
     });
 
     if (!account) return null;
-    const isPasswordValid = await bcrypt.compare(password, account.password);
+
+    const isPasswordValid: boolean = await bcrypt.compare(
+      password,
+      account.password,
+    );
+
     if (!isPasswordValid) return null;
     return { user: account.user };
   }
