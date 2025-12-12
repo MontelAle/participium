@@ -25,5 +25,14 @@
   "packageManager": "pnpm@8.15.5",
   "engines": {
     "node": ">=18"
+  },
+  "supportedArchitectures": {
+    "os": [
+      "linux"
+    ],
+    "cpu": [
+      "x64",
+      "arm64"
+    ]
   }
 }
