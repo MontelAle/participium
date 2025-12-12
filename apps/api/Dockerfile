@@ -29,10 +29,12 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 USER nestjs
 
-COPY --from=installer --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=installer --chown=nestjs:nodejs --chmod=555 /app/node_modules ./node_modules
 
-COPY --from=installer --chown=nestjs:nodejs /app/apps/api/dist ./apps/api/dist
-COPY --from=installer --chown=nestjs:nodejs /app/apps/api/package.json ./apps/api/package.json
-COPY --from=installer --chown=nestjs:nodejs /app/apps/api/src/providers/database/seed/images ./apps/api/src/providers/database/seed/images
+COPY --from=installer --chown=nestjs:nodejs --chmod=555 /app/apps/api/dist ./apps/api/dist
+
+COPY --from=installer --chown=nestjs:nodejs --chmod=555 /app/apps/api/package.json ./apps/api/package.json
+
+COPY --from=installer --chown=nestjs:nodejs --chmod=555 /app/apps/api/src/providers/database/seed/images ./apps/api/src/providers/database/seed/images
 
 CMD ["node", "apps/api/dist/src/main"]
