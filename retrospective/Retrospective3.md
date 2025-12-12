@@ -101,16 +101,16 @@ Much better than last time. We didnt make the same mistake during the sprint pla
 
 - What caused your errors in estimation (if any)?
   - Not particular mistakes
-  - Sometimes takes more times to fix other things that you break during dev
+  - Sometimes it takes more times to fix other things that you break during dev
   - Changing requirement interpretation
 
 - What lessons did you learn (both positive and negative) in this sprint?
   - Refactor takes a long time and is not always apparent
-    - we shold reflect on how much effort we put on technical debt
-  - Complex structure of the repo is starting wheigh down
+    - We should reflect on how much effort we put on technical debt
+  - Complex structure of the repo is starting to wheigh us down
 
 - Which improvement goals set in the previous retrospective were you able to achieve?
-  - We followed more requirements and avoided implementing extra stuff
+  - We followed more requirements and avoided implementing unnecessary features
 
 - Which ones you were not able to achieve? Why?
   - We couldn't plan the technical aspects during sprint planning as well as we hoped
