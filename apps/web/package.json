@@ -50,7 +50,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
-    "@repo/eslint-config": "workspace:*",
     "@types/leaflet.markercluster": "^1.5.6",
     "@types/node": "^22.10.7",
     "@types/react": "^19.0.1",
