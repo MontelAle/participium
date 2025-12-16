@@ -140,7 +140,7 @@ export function ViewAssignedExternalReport({
                   <SelectContent>
                     {getNextStatusOptions(report.status).map((s) => (
                       <SelectItem key={s} value={s}>
-                        {getStatusConfig(s).label}
+                        {getStatusConfig(s as ReportStatus).label}
                       </SelectItem>
                     ))}
                   </SelectContent>
