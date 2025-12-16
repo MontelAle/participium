@@ -1,4 +1,4 @@
-import { User } from '../entities/user.entity';
+import { User } from '@entities';
 import { ResponseDto } from './response.dto';
 
 export interface UpdateMunicipalityUserDto {

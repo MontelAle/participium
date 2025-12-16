@@ -1,4 +1,3 @@
-import type { Session as SessionType } from '@repo/api';
 import { Exclude } from 'class-transformer';
 import {
   Column,
@@ -12,7 +11,7 @@ import {
 import { User } from './user.entity';
 
 @Entity('session')
-export class Session implements SessionType {
+export class Session {
   @PrimaryColumn('varchar')
   id: string;
 

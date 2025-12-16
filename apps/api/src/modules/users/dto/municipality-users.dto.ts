@@ -1,10 +1,4 @@
-import type {
-  CreateMunicipalityUserDto as CreateMunicipalityUserDtoType,
-  MunicipalityUserIdResponseDto as MunicipalityUserIdResponseDtoType,
-  MunicipalityUserResponseDto as MunicipalityUserResponseDtoType,
-  MunicipalityUsersResponseDto as MunicipalityUsersResponseDtoType,
-  UpdateMunicipalityUserDto as UpdateMunicipalityUserDtoType,
-} from '@repo/api';
+import { User } from '@entities';
 import {
   IsEmail,
   IsNotEmpty,
@@ -13,11 +7,8 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { User } from '../entities/user.entity';
 
-export class UpdateMunicipalityUserDto
-  implements UpdateMunicipalityUserDtoType
-{
+export class UpdateMunicipalityUserDto {
   @IsEmail()
   @IsOptional()
   email?: string;
@@ -45,9 +36,7 @@ export class UpdateMunicipalityUserDto
   officeId?: string;
 }
 
-export class CreateMunicipalityUserDto
-  implements CreateMunicipalityUserDtoType
-{
+export class CreateMunicipalityUserDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
@@ -81,23 +70,17 @@ export class CreateMunicipalityUserDto
   officeId?: string;
 }
 
-export class MunicipalityUserResponseDto
-  implements MunicipalityUserResponseDtoType
-{
+export class MunicipalityUserResponseDto {
   data: User;
   success: boolean;
 }
 
-export class MunicipalityUsersResponseDto
-  implements MunicipalityUsersResponseDtoType
-{
+export class MunicipalityUsersResponseDto {
   data: User[];
   success: boolean;
 }
 
-export class MunicipalityUserIdResponseDto
-  implements MunicipalityUserIdResponseDtoType
-{
+export class MunicipalityUserIdResponseDto {
   data: { id: string };
   success: boolean;
 }

@@ -1,11 +1,9 @@
+import { Account, Profile, User } from '@entities';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
-import { UpdateProfileDto } from '../../common/dto/user.dto';
-import { Account } from '../../common/entities/account.entity';
-import { Profile } from '../../common/entities/profile.entity';
-import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
+import { UpdateProfileDto } from './dto/profiles.dto';
 import { ProfilesService } from './profiles.service';
 
 import { getRepositoryToken } from '@nestjs/typeorm';

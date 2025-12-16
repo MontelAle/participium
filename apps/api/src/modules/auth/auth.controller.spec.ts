@@ -1,12 +1,11 @@
+import { Profile, Session } from '@entities';
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { LoginDto, RegisterDto } from '../../common/dto/auth.dto';
-import { Profile } from '../../common/entities/profile.entity';
-import { Session } from '../../common/entities/session.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { SessionGuard } from './guards/session-auth.guard';
 
 jest.mock('nanoid', () => ({

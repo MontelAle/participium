@@ -3,18 +3,16 @@ jest.mock('nanoid', () => ({
   nanoid: () => 'test-id-' + Math.random().toString(36).substring(7),
 }));
 
-import { Test, TestingModule } from '@nestjs/testing';
-import cookieParser from 'cookie-parser';
+import { Category, Office, Role } from '@entities';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import cookieParser from 'cookie-parser';
 import { DataSource } from 'typeorm';
-import { CategoriesModule } from '../../../src/modules/categories/categories.module';
-import { AuthModule } from '../../../src/modules/auth/auth.module';
-import { Role } from '../../../src/common/entities/role.entity';
-import { Category } from '../../../src/common/entities/category.entity';
-import { Office } from '../../../src/common/entities/office.entity';
 import appConfig from '../../../src/config/app.config';
+import { AuthModule } from '../../../src/modules/auth/auth.module';
+import { CategoriesModule } from '../../../src/modules/categories/categories.module';
 import { setupTestDB, TypeOrmTestModule } from '../test-helpers';
 
 const request = require('supertest');
@@ -106,24 +104,26 @@ describe('CategoriesController (Integration)', () => {
 
     const userCookies = userResponse.headers['set-cookie'];
     if (userCookies && userCookies.length > 0) {
-      const userCookie = userCookies.find((c: string) => c.startsWith('session_token='));
+      const userCookie = userCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (userCookie) {
         userToken = userCookie.split(';')[0].split('=')[1];
       }
     }
 
     // Create tech officer user
-    await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        email: 'techofficer@example.com',
-        username: 'techuser',
-        firstName: 'Tech',
-        lastName: 'Officer',
-        password: 'TechPassword123!',
-      });
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email: 'techofficer@example.com',
+      username: 'techuser',
+      firstName: 'Tech',
+      lastName: 'Officer',
+      password: 'TechPassword123!',
+    });
 
-    await dataSource.query(`UPDATE "user" SET "roleId" = '${techOfficerRole.id}' WHERE username = 'techuser'`);
+    await dataSource.query(
+      `UPDATE "user" SET "roleId" = '${techOfficerRole.id}' WHERE username = 'techuser'`,
+    );
 
     const techLoginResponse = await request(app.getHttpServer())
       .post('/auth/login')
@@ -131,7 +131,9 @@ describe('CategoriesController (Integration)', () => {
 
     const techCookies = techLoginResponse.headers['set-cookie'];
     if (techCookies && techCookies.length > 0) {
-      const techCookie = techCookies.find((c: string) => c.startsWith('session_token='));
+      const techCookie = techCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (techCookie) {
         techOfficerToken = techCookie.split(';')[0].split('=')[1];
       }
@@ -175,9 +177,7 @@ describe('CategoriesController (Integration)', () => {
     });
 
     it('should reject request without authentication', async () => {
-      await request(app.getHttpServer())
-        .get('/categories')
-        .expect(401);
+      await request(app.getHttpServer()).get('/categories').expect(401);
     });
   });
 });

@@ -1,3 +1,4 @@
+import { Account, Profile, Role, Session, User } from '@entities';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,12 +7,7 @@ import { instanceToPlain } from 'class-transformer';
 import { nanoid } from 'nanoid';
 import { createHash } from 'node:crypto';
 import { Repository } from 'typeorm';
-import { RegisterDto } from '../../common/dto/auth.dto';
-import { Account } from '../../common/entities/account.entity';
-import { Profile } from '../../common/entities/profile.entity';
-import { Role } from '../../common/entities/role.entity';
-import { Session } from '../../common/entities/session.entity';
-import { User } from '../../common/entities/user.entity';
+import { RegisterDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {

@@ -25,6 +25,10 @@ const config: Config = {
   displayName: 'api',
   rootDir: '.',
   coverageDirectory: './coverage',
+  moduleNameMapper: {
+    '^@entities$': '<rootDir>/src/common/entities/index.ts',
+    '^@entities/(.*)$': '<rootDir>/src/common/entities/$1',
+  },
   coverageReporters: ['lcov', 'text-summary'],
   collectCoverageFrom: [
     'src/**/*.(t|j)s',

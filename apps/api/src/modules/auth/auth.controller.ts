@@ -12,14 +12,14 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
+import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
+import { AuthService } from './auth.service';
 import {
   LoginDto,
   LoginResponseDto,
   LogoutResponseDto,
   RegisterDto,
-} from '../../common/dto/auth.dto';
-import type { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
-import { AuthService } from './auth.service';
+} from './dto/auth.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { SessionGuard } from './guards/session-auth.guard';
 

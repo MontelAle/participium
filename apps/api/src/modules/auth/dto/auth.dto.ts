@@ -1,9 +1,4 @@
-import type {
-  LoginDto as LoginDtoType,
-  LoginResponseDto as LoginResponseDtoType,
-  LogoutResponseDto as LogoutResponseDtoType,
-  RegisterDto as RegisterDtoType,
-} from '@repo/api';
+import { Session, User } from '@entities';
 import {
   IsEmail,
   IsNotEmpty,
@@ -11,10 +6,8 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { Session } from '../entities/session.entity';
-import { User } from '../entities/user.entity';
 
-export class LoginDto implements LoginDtoType {
+export class LoginDto {
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
@@ -28,7 +21,7 @@ export class LoginDto implements LoginDtoType {
   password: string;
 }
 
-export class RegisterDto implements RegisterDtoType {
+export class RegisterDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
@@ -54,7 +47,7 @@ export class RegisterDto implements RegisterDtoType {
   password: string;
 }
 
-export class LoginResponseDto implements LoginResponseDtoType {
+export class LoginResponseDto {
   success: boolean;
   data: {
     user: User;
@@ -62,6 +55,6 @@ export class LoginResponseDto implements LoginResponseDtoType {
   };
 }
 
-export class LogoutResponseDto implements LogoutResponseDtoType {
+export class LogoutResponseDto {
   success: boolean;
 }

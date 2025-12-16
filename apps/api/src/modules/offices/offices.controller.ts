@@ -1,9 +1,9 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
-import { OfficesResponseDto } from '../../common/dto/office.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
+import { OfficesResponseDto } from './dto/offices.dto';
 import { OfficesService } from './offices.service';
 
 @ApiTags('Offices')

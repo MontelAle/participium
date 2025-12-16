@@ -1,7 +1,7 @@
+import { Office } from '@entities';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Office } from '../../common/entities/office.entity';
 
 @Injectable()
 export class OfficesService {

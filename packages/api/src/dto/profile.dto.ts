@@ -1,4 +1,4 @@
-import { Profile } from '../entities/profile.entity';
+import { Profile } from '@entities';
 import { ResponseDto } from './response.dto';
 
 export interface UpdateProfileDto {

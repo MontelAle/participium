@@ -1,15 +1,17 @@
+import {
+  Account,
+  Boundary,
+  Category,
+  Office,
+  Profile,
+  Report,
+  Role,
+  Session,
+  User,
+} from '@entities';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Account } from '../../common/entities/account.entity';
-import { Boundary } from '../../common/entities/boundary.entity';
-import { Category } from '../../common/entities/category.entity';
-import { Office } from '../../common/entities/office.entity';
-import { Profile } from '../../common/entities/profile.entity';
-import { Report } from '../../common/entities/report.entity';
-import { Role } from '../../common/entities/role.entity';
-import { Session } from '../../common/entities/session.entity';
-import { User } from '../../common/entities/user.entity';
 
 @Module({
   imports: [

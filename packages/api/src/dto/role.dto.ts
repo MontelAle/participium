@@ -1,4 +1,4 @@
-import { Role } from '../entities/role.entity';
+import { Role } from '@entities';
 import { ResponseDto } from './response.dto';
 
 export interface RolesResponseDto extends ResponseDto {

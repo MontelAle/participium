@@ -1,3 +1,14 @@
+import {
+  Account,
+  Boundary,
+  Category,
+  Office,
+  Profile,
+  Report,
+  ReportStatus,
+  Role,
+  User,
+} from '@entities';
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
@@ -5,14 +16,6 @@ import { randomInt } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { DataSource, Repository } from 'typeorm';
-import { Account } from '../../../common/entities/account.entity';
-import { Boundary } from '../../../common/entities/boundary.entity';
-import { Category } from '../../../common/entities/category.entity';
-import { Office } from '../../../common/entities/office.entity';
-import { Profile } from '../../../common/entities/profile.entity';
-import { Report, ReportStatus } from '../../../common/entities/report.entity';
-import { Role } from '../../../common/entities/role.entity';
-import { User } from '../../../common/entities/user.entity';
 import { MinioProvider } from '../../minio/minio.provider';
 
 // ============================================================================

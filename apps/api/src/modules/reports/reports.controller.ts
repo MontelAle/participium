@@ -17,14 +17,6 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { RequestWithUserSession } from 'src/common/types/request-with-user-session.type';
-import {
-  CreateReportDto,
-  DashboardStatsResponseDto,
-  FilterReportsDto,
-  ReportResponseDto,
-  ReportsResponseDto,
-  UpdateReportDto,
-} from '../../common/dto/report.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
@@ -35,6 +27,14 @@ import {
   MIN_IMAGES,
   REPORT_ERROR_MESSAGES,
 } from './constants/error-messages';
+import {
+  CreateReportDto,
+  DashboardStatsResponseDto,
+  FilterReportsDto,
+  ReportResponseDto,
+  ReportsResponseDto,
+  UpdateReportDto,
+} from './dto/reports.dto';
 import { ReportsService } from './reports.service';
 
 @ApiTags('Reports')

@@ -1,5 +1,4 @@
-import { Session } from '../entities/session.entity';
-import { User } from '../entities/user.entity';
+import { Session, User } from '@entities';
 import { ResponseDto } from './response.dto';
 
 export interface RegisterDto {

@@ -1,4 +1,4 @@
-import { Report, ReportStatus } from '../entities/report.entity';
+import { Report, ReportStatus } from '@entities';
 import { ResponseDto } from './response.dto';
 
 export interface CreateReportDto {

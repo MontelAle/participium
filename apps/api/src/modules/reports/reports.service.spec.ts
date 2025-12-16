@@ -1,3 +1,4 @@
+import { Boundary, Category, Report, ReportStatus, User } from '@entities';
 import {
   BadRequestException,
   InternalServerErrorException,
@@ -6,17 +7,13 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { MinioProvider } from '../../providers/minio/minio.provider';
+import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 import {
   CreateReportDto,
   FilterReportsDto,
   UpdateReportDto,
-} from '../../common/dto/report.dto';
-import { Boundary } from '../../common/entities/boundary.entity';
-import { Category } from '../../common/entities/category.entity';
-import { Report, ReportStatus } from '../../common/entities/report.entity';
-import { User } from '../../common/entities/user.entity';
-import { MinioProvider } from '../../providers/minio/minio.provider';
-import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
+} from './dto/reports.dto';
 import { ReportsService } from './reports.service';
 
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
@@ -1360,7 +1357,7 @@ describe('ReportsService', () => {
       const expectedSavedReport = {
         ...reportWithCategory,
         status: ReportStatus.ASSIGNED,
-        assignedOfficer: undefined,
+        assignedOfficer: undefined as User,
       };
 
       reportRepository.save.mockResolvedValue(expectedSavedReport as Report);
@@ -1712,7 +1709,10 @@ describe('ReportsService', () => {
 
       const mockCategory = {
         id: 'cat-1',
-        externalOffice: { id: 'external-office-2', name: 'Wrong External Office' },
+        externalOffice: {
+          id: 'external-office-2',
+          name: 'Wrong External Office',
+        },
       } as Category;
 
       const reportWithoutCategory = {
@@ -1729,9 +1729,7 @@ describe('ReportsService', () => {
       userRepository.findOne.mockResolvedValue(mockExternalMaintainer);
       categoryRepository.findOne.mockResolvedValue(mockCategory);
 
-      await expect(
-        service.update('mocked-id', updateDto),
-      ).rejects.toThrow(
+      await expect(service.update('mocked-id', updateDto)).rejects.toThrow(
         new BadRequestException(
           REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NOT_FOR_CATEGORY(
             'ext-maint-1',

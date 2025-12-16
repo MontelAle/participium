@@ -1,4 +1,4 @@
-import { Category } from '../entities/category.entity';
+import { Category } from '@entities';
 import { ResponseDto } from './response.dto';
 
 export interface CategoriesResponseDto extends ResponseDto {

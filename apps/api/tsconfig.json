@@ -20,9 +20,9 @@
     "outDir": "./dist",
     "sourceMap": true,
     "paths": {
-      "@repo/api": ["../../packages/api/src"]
+      "@entities": ["src/common/entities/index"]
     }
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "test", "dist"]
+  "include": ["src", "jest.config.ts", "test"],
+  "exclude": ["node_modules", "dist"]
 }

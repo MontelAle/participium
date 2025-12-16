@@ -3,18 +3,15 @@ jest.mock('nanoid', () => ({
   nanoid: () => 'test-id-' + Math.random().toString(36).substring(7),
 }));
 
-import { Test, TestingModule } from '@nestjs/testing';
-import cookieParser from 'cookie-parser';
+import { Account, Profile, Session, User } from '@entities';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import cookieParser from 'cookie-parser';
 import { DataSource } from 'typeorm';
-import { AuthModule } from '../../../src/modules/auth/auth.module';
-import { User } from '../../../src/common/entities/user.entity';
-import { Account } from '../../../src/common/entities/account.entity';
-import { Profile } from '../../../src/common/entities/profile.entity';
-import { Session } from '../../../src/common/entities/session.entity';
 import appConfig from '../../../src/config/app.config';
+import { AuthModule } from '../../../src/modules/auth/auth.module';
 import { setupTestDB, TypeOrmTestModule } from '../test-helpers';
 
 const request = require('supertest');
@@ -74,7 +71,7 @@ describe('AuthController (Integration)', () => {
   beforeEach(async () => {
     // Create default user role needed for registration
     await dataSource.query(
-      `INSERT INTO "role" (id, name, label, "isMunicipal") VALUES ('user-role-id', 'user', 'User', false) ON CONFLICT DO NOTHING`
+      `INSERT INTO "role" (id, name, label, "isMunicipal") VALUES ('user-role-id', 'user', 'User', false) ON CONFLICT DO NOTHING`,
     );
   });
 
@@ -117,12 +114,17 @@ describe('AuthController (Integration)', () => {
       // Verify session cookie is set
       const cookies = response.headers['set-cookie'];
       expect(cookies).toBeDefined();
-      expect(cookies.some((cookie: string) => cookie.startsWith('session_token='))).toBe(true);
+      expect(
+        cookies.some((cookie: string) => cookie.startsWith('session_token=')),
+      ).toBe(true);
 
       // Verify user was created in database
       const user = await dataSource
         .getRepository(User)
-        .findOne({ where: { username: registerDto.username }, relations: ['role'] });
+        .findOne({
+          where: { username: registerDto.username },
+          relations: ['role'],
+        });
       expect(user).toBeDefined();
       expect(user.email).toBe(registerDto.email);
 
@@ -166,7 +168,9 @@ describe('AuthController (Integration)', () => {
         .send(duplicateDto)
         .expect(409);
 
-      expect(response.body.message).toContain('Username or Email already in use');
+      expect(response.body.message).toContain(
+        'Username or Email already in use',
+      );
     });
 
     it('should reject registration with invalid email', async () => {
@@ -200,15 +204,13 @@ describe('AuthController (Integration)', () => {
   describe('POST /auth/login', () => {
     beforeEach(async () => {
       // Create a test user for login tests
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({
-          email: 'login@example.com',
-          username: 'loginuser',
-          firstName: 'Login',
-          lastName: 'Test',
-          password: 'LoginPassword123!',
-        });
+      await request(app.getHttpServer()).post('/auth/register').send({
+        email: 'login@example.com',
+        username: 'loginuser',
+        firstName: 'Login',
+        lastName: 'Test',
+        password: 'LoginPassword123!',
+      });
     });
 
     it('should login successfully with valid credentials', async () => {
@@ -239,7 +241,9 @@ describe('AuthController (Integration)', () => {
       // Verify session cookie is set
       const cookies = response.headers['set-cookie'];
       expect(cookies).toBeDefined();
-      expect(cookies.some((cookie: string) => cookie.startsWith('session_token='))).toBe(true);
+      expect(
+        cookies.some((cookie: string) => cookie.startsWith('session_token=')),
+      ).toBe(true);
 
       // Verify session was created in database
       const sessions = await dataSource.getRepository(Session).find();
@@ -316,8 +320,11 @@ describe('AuthController (Integration)', () => {
       const cookies = response.headers['set-cookie'];
       expect(cookies).toBeDefined();
       expect(
-        cookies.some((cookie: string) =>
-          cookie.includes('session_token') && (cookie.includes('Max-Age=0') || cookie.includes('Expires=Thu, 01 Jan 1970')),
+        cookies.some(
+          (cookie: string) =>
+            cookie.includes('session_token') &&
+            (cookie.includes('Max-Age=0') ||
+              cookie.includes('Expires=Thu, 01 Jan 1970')),
         ),
       ).toBe(true);
 
@@ -329,9 +336,7 @@ describe('AuthController (Integration)', () => {
     });
 
     it('should reject logout without session token', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/logout')
-        .expect(401);
+      await request(app.getHttpServer()).post('/auth/logout').expect(401);
     });
 
     it('should reject logout with invalid session token', async () => {
@@ -361,30 +366,30 @@ describe('AuthController (Integration)', () => {
 
       const regularCookies = regularResponse.headers['set-cookie'];
       if (regularCookies && regularCookies.length > 0) {
-        const regularCookie = regularCookies.find((c: string) => c.startsWith('session_token='));
+        const regularCookie = regularCookies.find((c: string) =>
+          c.startsWith('session_token='),
+        );
         if (regularCookie) {
           regularUserToken = regularCookie.split(';')[0].split('=')[1];
         }
       }
 
       // Create admin user
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({
-          email: 'admin@example.com',
-          username: 'adminuser',
-          firstName: 'Admin',
-          lastName: 'User',
-          password: 'AdminPassword123!',
-        });
+      await request(app.getHttpServer()).post('/auth/register').send({
+        email: 'admin@example.com',
+        username: 'adminuser',
+        firstName: 'Admin',
+        lastName: 'User',
+        password: 'AdminPassword123!',
+      });
 
       // Create admin role and assign to user
       const adminRole = await dataSource.query(
-        `INSERT INTO "role" (id, name, label, "isMunicipal") VALUES ('admin-role', 'admin', 'Administrator', true) ON CONFLICT DO NOTHING RETURNING id`
+        `INSERT INTO "role" (id, name, label, "isMunicipal") VALUES ('admin-role', 'admin', 'Administrator', true) ON CONFLICT DO NOTHING RETURNING id`,
       );
-      
+
       await dataSource.query(
-        `UPDATE "user" SET "roleId" = 'admin-role' WHERE username = 'adminuser'`
+        `UPDATE "user" SET "roleId" = 'admin-role' WHERE username = 'adminuser'`,
       );
 
       const adminLoginResponse = await request(app.getHttpServer())
@@ -393,29 +398,29 @@ describe('AuthController (Integration)', () => {
 
       const adminCookies = adminLoginResponse.headers['set-cookie'];
       if (adminCookies && adminCookies.length > 0) {
-        const adminCookie = adminCookies.find((c: string) => c.startsWith('session_token='));
+        const adminCookie = adminCookies.find((c: string) =>
+          c.startsWith('session_token='),
+        );
         if (adminCookie) {
           adminToken = adminCookie.split(';')[0].split('=')[1];
         }
       }
 
       // Create tech officer user
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({
-          email: 'tech@example.com',
-          username: 'techuser',
-          firstName: 'Tech',
-          lastName: 'Officer',
-          password: 'TechPassword123!',
-        });
+      await request(app.getHttpServer()).post('/auth/register').send({
+        email: 'tech@example.com',
+        username: 'techuser',
+        firstName: 'Tech',
+        lastName: 'Officer',
+        password: 'TechPassword123!',
+      });
 
       const techRole = await dataSource.query(
-        `INSERT INTO "role" (id, name, label, "isMunicipal") VALUES ('tech-role', 'tech_officer', 'Technical Officer', true) ON CONFLICT DO NOTHING RETURNING id`
+        `INSERT INTO "role" (id, name, label, "isMunicipal") VALUES ('tech-role', 'tech_officer', 'Technical Officer', true) ON CONFLICT DO NOTHING RETURNING id`,
       );
 
       await dataSource.query(
-        `UPDATE "user" SET "roleId" = 'tech-role' WHERE username = 'techuser'`
+        `UPDATE "user" SET "roleId" = 'tech-role' WHERE username = 'techuser'`,
       );
 
       const techLoginResponse = await request(app.getHttpServer())
@@ -424,7 +429,9 @@ describe('AuthController (Integration)', () => {
 
       const techCookies = techLoginResponse.headers['set-cookie'];
       if (techCookies && techCookies.length > 0) {
-        const techCookie = techCookies.find((c: string) => c.startsWith('session_token='));
+        const techCookie = techCookies.find((c: string) =>
+          c.startsWith('session_token='),
+        );
         if (techCookie) {
           techOfficerToken = techCookie.split(';')[0].split('=')[1];
         }
@@ -433,9 +440,7 @@ describe('AuthController (Integration)', () => {
 
     it('should verify SessionGuard blocks unauthenticated requests', async () => {
       // Test on logout endpoint which requires SessionGuard
-      await request(app.getHttpServer())
-        .post('/auth/logout')
-        .expect(401);
+      await request(app.getHttpServer()).post('/auth/logout').expect(401);
     });
 
     it('should verify SessionGuard allows authenticated requests', async () => {
@@ -458,14 +463,14 @@ describe('AuthController (Integration)', () => {
       const user = await dataSource
         .getRepository(User)
         .findOne({ where: { username: 'regularuser' } });
-      
+
       expect(user).toBeDefined();
 
       // Session should exist in database
       const sessions = await dataSource
         .getRepository(Session)
         .find({ where: { userId: user.id } });
-      
+
       expect(sessions.length).toBeGreaterThan(0);
     });
 
@@ -488,7 +493,7 @@ describe('AuthController (Integration)', () => {
       const regularUser = await dataSource
         .getRepository(User)
         .findOne({ where: { username: 'regularuser' } });
-      
+
       const techUser = await dataSource
         .getRepository(User)
         .findOne({ where: { username: 'techuser' } });
@@ -503,48 +508,40 @@ describe('AuthController (Integration)', () => {
 
       expect(regularSessions.length).toBeGreaterThan(0);
       expect(techSessions.length).toBeGreaterThan(0);
-      
+
       // Session IDs should be different
       expect(regularSessions[0].id).not.toBe(techSessions[0].id);
     });
 
     it('should verify role information is attached to session', async () => {
-      const adminUser = await dataSource
-        .getRepository(User)
-        .findOne({ 
-          where: { username: 'adminuser' },
-          relations: ['role']
-        });
+      const adminUser = await dataSource.getRepository(User).findOne({
+        where: { username: 'adminuser' },
+        relations: ['role'],
+      });
 
       expect(adminUser.role).toBeDefined();
       expect(adminUser.role.name).toBe('admin');
       expect(adminUser.role.isMunicipal).toBe(true);
 
-      const regularUser = await dataSource
-        .getRepository(User)
-        .findOne({ 
-          where: { username: 'regularuser' },
-          relations: ['role']
-        });
+      const regularUser = await dataSource.getRepository(User).findOne({
+        where: { username: 'regularuser' },
+        relations: ['role'],
+      });
 
       expect(regularUser.role).toBeDefined();
       expect(regularUser.role.name).toBe('user');
     });
 
     it('should verify session contains user information after authentication', async () => {
-      const user = await dataSource
-        .getRepository(User)
-        .findOne({ 
-          where: { username: 'adminuser' },
-          relations: ['role']
-        });
+      const user = await dataSource.getRepository(User).findOne({
+        where: { username: 'adminuser' },
+        relations: ['role'],
+      });
 
-      const session = await dataSource
-        .getRepository(Session)
-        .findOne({ 
-          where: { userId: user.id },
-          relations: ['user', 'user.role']
-        });
+      const session = await dataSource.getRepository(Session).findOne({
+        where: { userId: user.id },
+        relations: ['user', 'user.role'],
+      });
 
       expect(session).toBeDefined();
       expect(session.user.id).toBe(user.id);

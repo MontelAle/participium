@@ -1,4 +1,4 @@
-import type { Office } from '../entities/office.entity';
+import type { Office } from '@entities';
 
 export interface OfficesResponseDto {
   success: boolean;

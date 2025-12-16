@@ -1,4 +1,3 @@
-import type { Report as ReportType } from '@repo/api';
 import {
   Column,
   CreateDateColumn,
@@ -21,7 +20,7 @@ export enum ReportStatus {
 }
 
 @Entity('report')
-export class Report implements ReportType {
+export class Report {
   @PrimaryColumn('varchar')
   id: string;
 
