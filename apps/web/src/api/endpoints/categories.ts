@@ -1,4 +1,4 @@
-import type { CategoriesResponseDto, Category } from '@repo/api';
+import type { CategoriesResponseDto, Category } from '@/types';
 import { apiFetch } from '../client';
 
 export async function getCategories(): Promise<Category[]> {

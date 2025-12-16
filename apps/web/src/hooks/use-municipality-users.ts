@@ -1,5 +1,4 @@
-import type { User } from '@repo/api';
-import { UpdateMunicipalityUserDto } from '@repo/api';
+import type { UpdateMunicipalityUserDto, User } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createMunicipalityUser,

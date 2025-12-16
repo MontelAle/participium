@@ -1,5 +1,9 @@
-import { NominatimSearchResult, ReportFilters } from '@/types';
-import { Report, ReportStatus } from '@repo/api';
+import {
+  NominatimSearchResult,
+  Report,
+  ReportFilters,
+  ReportStatus,
+} from '@/types';
 import {
   endOfDay,
   isAfter,
@@ -11,31 +15,31 @@ import {
 import L from 'leaflet';
 
 export const STATUS_COLORS = {
-  [ReportStatus.PENDING]: {
+  ['pending']: {
     hex: '#eab308',
     label: 'Pending',
     class: 'cluster-pending',
     badgeClass: 'bg-yellow-500/15 text-yellow-700 border-yellow-200',
   },
-  [ReportStatus.IN_PROGRESS]: {
+  ['in_progress']: {
     hex: '#3b82f6',
     label: 'In Progress',
     class: 'cluster-progress',
     badgeClass: 'bg-blue-500/15 text-blue-700 border-blue-200',
   },
-  [ReportStatus.RESOLVED]: {
+  ['resolved']: {
     hex: '#22c55e',
     label: 'Resolved',
     class: 'cluster-resolved',
     badgeClass: 'bg-green-500/15 text-green-700 border-green-200',
   },
-  [ReportStatus.REJECTED]: {
+  ['rejected']: {
     hex: '#ef4444',
     label: 'Rejected',
     class: 'cluster-rejected',
     badgeClass: 'bg-red-500/15 text-red-700 border-red-200',
   },
-  [ReportStatus.ASSIGNED]: {
+  ['assigned']: {
     hex: '#8112b5ff',
     label: 'Assigned',
     class: 'cluster-assigned',

@@ -4,10 +4,10 @@ import { useAuth } from '@/contexts/auth-context';
 import { useFilteredReports } from '@/hooks/use-filtered-reports';
 import { cn, getStatusConfig } from '@/lib/utils';
 import { useActiveReportStore } from '@/store/activeReportStore';
+import type { Report } from '@/types';
 import type { ReportsListProps } from '@/types/report';
-import type { Report } from '@repo/api';
 import { CalendarDays, Ghost, MapPin, Tag, User } from 'lucide-react';
-import { useMemo, MouseEvent } from 'react';
+import { MouseEvent, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export function ReportsList({

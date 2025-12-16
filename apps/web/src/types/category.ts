@@ -1,4 +1,4 @@
-import { Category } from '@repo/api';
+import type { Category } from '@/types';
 
 export type CategoryResponse = {
   success: boolean;

@@ -10,8 +10,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useUpdateReport } from '@/hooks/use-reports';
 import { getStatusConfig } from '@/lib/utils';
-import type { Report, UpdateReportDto } from '@repo/api';
-import { ReportStatus } from '@repo/api';
+import type { Report, ReportStatus, UpdateReportDto } from '@/types';
 import {
   CalendarClock,
   Ghost,
@@ -51,12 +50,12 @@ export function ViewAssignedExternalReport({
 
   const getNextStatusOptions = (currentStatus: ReportStatus) => {
     switch (currentStatus) {
-      case ReportStatus.ASSIGNED:
-        return [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS];
-      case ReportStatus.IN_PROGRESS:
-        return [ReportStatus.IN_PROGRESS, ReportStatus.RESOLVED];
-      case ReportStatus.RESOLVED:
-        return [ReportStatus.RESOLVED];
+      case 'assigned':
+        return ['assigned', 'in_progress'];
+      case 'in_progress':
+        return ['in_progress', 'resolved'];
+      case 'resolved':
+        return ['resolved'];
       default:
         return [];
     }
@@ -151,7 +150,7 @@ export function ViewAssignedExternalReport({
               {report.explanation && (
                 <div
                   className={`rounded-lg border p-3 text-sm animate-in fade-in w-full ${
-                    report.status === ReportStatus.REJECTED
+                    report.status === 'rejected'
                       ? 'border-red-200 bg-red-50'
                       : 'border-amber-200 bg-amber-50'
                   }`}
@@ -159,7 +158,7 @@ export function ViewAssignedExternalReport({
                   <div className="flex gap-2">
                     <Info
                       className={`h-4 w-4 mt-0.5 shrink-0 ${
-                        report.status === ReportStatus.REJECTED
+                        report.status === 'rejected'
                           ? 'text-red-600'
                           : 'text-amber-600'
                       }`}
@@ -167,18 +166,18 @@ export function ViewAssignedExternalReport({
                     <div className="space-y-0.5 w-full">
                       <h5
                         className={`font-semibold ${
-                          report.status === ReportStatus.REJECTED
+                          report.status === 'rejected'
                             ? 'text-red-900'
                             : 'text-amber-900'
                         }`}
                       >
-                        {report.status === ReportStatus.REJECTED
+                        {report.status === 'rejected'
                           ? 'Rejection Reason'
                           : 'Admin Note'}
                       </h5>
                       <p
                         className={`leading-relaxed break-words ${
-                          report.status === ReportStatus.REJECTED
+                          report.status === 'rejected'
                             ? 'text-red-800'
                             : 'text-amber-800'
                         }`}

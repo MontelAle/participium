@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { ReportStatus } from '@repo/api';
 import { format } from 'date-fns';
 import { CalendarIcon, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -166,7 +165,13 @@ export function FilterDialog({
               >
                 All
               </Button>
-              {Object.values(ReportStatus).map((status) => (
+              {[
+                'pending',
+                'in_progress',
+                'assigned',
+                'resolved',
+                'rejected',
+              ].map((status) => (
                 <Button
                   key={status}
                   variant="ghost"

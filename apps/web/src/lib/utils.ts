@@ -1,4 +1,4 @@
-import { ReportStatus } from '@repo/api';
+import type { ReportStatus } from '@/types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -8,30 +8,30 @@ export function cn(...inputs: ClassValue[]) {
 
 export const getStatusConfig = (status: ReportStatus) => {
   switch (status) {
-    case ReportStatus.PENDING:
+    case 'pending':
       return {
         label: 'Pending',
         color:
           'bg-yellow-500/15 text-yellow-700 hover:bg-yellow-500/25 border-yellow-200',
       };
-    case ReportStatus.IN_PROGRESS:
+    case 'in_progress':
       return {
         label: 'In Progress',
         color:
           'bg-blue-500/15 text-blue-700 hover:bg-blue-500/25 border-blue-200',
       };
-    case ReportStatus.RESOLVED:
+    case 'resolved':
       return {
         label: 'Resolved',
         color:
           'bg-green-500/15 text-green-700 hover:bg-green-500/25 border-green-200',
       };
-    case ReportStatus.REJECTED:
+    case 'rejected':
       return {
         label: 'Rejected',
         color: 'bg-red-500/15 text-red-700 hover:bg-red-500/25 border-red-200',
       };
-    case ReportStatus.ASSIGNED:
+    case 'assigned':
       return {
         label: 'Assigned',
         color:

@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useFilteredReports } from '@/hooks/use-filtered-reports';
 import { useActiveReportStore } from '@/store/activeReportStore';
-import { Report, ReportStatus } from '@repo/api';
+import type { Report, ReportStatus } from '@/types';
 import L from 'leaflet';
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
