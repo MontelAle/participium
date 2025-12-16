@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ReportStatus } from '@repo/api';
 import { nanoid } from 'nanoid';
 import path from 'node:path';
 import { Point, Repository } from 'typeorm';
@@ -471,9 +472,12 @@ export class ReportsService {
       return;
     }
 
-    const allowedTransitions = {
+    const allowedTransitions: Record<ReportStatus, string[]> = {
+      pending: [],
       assigned: ['in_progress'],
       in_progress: ['resolved'],
+      resolved: [],
+      rejected: [],
     };
 
     const allowedNextStatuses = allowedTransitions[report.status];
