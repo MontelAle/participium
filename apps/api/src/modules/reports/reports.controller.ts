@@ -27,6 +27,7 @@ import {
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
+import { PublicGuard } from '../auth/guards/public.guard';
 import {
   ALLOWED_IMAGE_MIMETYPES,
   MAX_IMAGE_SIZE,
@@ -87,7 +88,7 @@ export class ReportsController {
    *
    */
   @Get()
-  @UseGuards(SessionGuard)
+  @UseGuards(PublicGuard)
   async findAll(
     @Request() req,
     @Query() filters: FilterReportsDto,

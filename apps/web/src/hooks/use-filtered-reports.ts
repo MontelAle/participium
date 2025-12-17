@@ -113,13 +113,12 @@ export function useFilteredReports() {
   const { user, isCitizenUser, isGuestUser } = useAuth();
 
   const { data: reports = [], isLoading } = useReports(undefined, {
-    enabled: !isGuestUser,
+    enabled: true,
   });
 
   const { searchTerm, filters, showOnlyMyReports } = useFilterStore();
 
   const filteredReports = useMemo(() => {
-    if (isGuestUser) return [];
     if (!reports.length) return [];
 
     const today = new Date();

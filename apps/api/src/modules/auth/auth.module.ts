@@ -8,11 +8,13 @@ import { User } from '../../common/entities/user.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { SessionGuard } from './guards/session-auth.guard';
+import { PublicGuard } from './guards/public.guard';
 import { LocalStrategy } from './strategies/local.strategy';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Account, Session, Role, Profile])],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, SessionGuard],
+  providers: [AuthService, LocalStrategy, SessionGuard, PublicGuard],
+  exports: [SessionGuard, PublicGuard],
 })
 export class AuthModule {}
