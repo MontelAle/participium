@@ -3,6 +3,15 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "assets": ["**/*.jpg", "**/*.png", "**/*.jpeg"],
-    "watchAssets": true
+    "watchAssets": true,
+    "plugins": [
+      {
+        "name": "@nestjs/swagger/plugin",
+        "options": {
+          "classValidatorShim": true,
+          "introspectComments": true
+        }
+      }
+    ]
   }
 }

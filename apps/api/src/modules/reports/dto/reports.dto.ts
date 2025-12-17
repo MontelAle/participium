@@ -1,4 +1,5 @@
-import { Report, ReportStatus } from '@entities';
+import type { Report } from '@entities';
+import { ReportStatus } from '@entities';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,

@@ -1,4 +1,4 @@
-import { Office } from '@entities';
+import type { Office } from '@entities';
 
 export class OfficesResponseDto {
   success: boolean;

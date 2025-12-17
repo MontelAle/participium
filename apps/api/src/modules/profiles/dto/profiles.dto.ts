@@ -1,4 +1,4 @@
-import { Profile } from '@entities';
+import type { Profile } from '@entities';
 import {
   IsEmail,
   IsOptional,

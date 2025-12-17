@@ -1,4 +1,4 @@
-import { User } from '@entities';
+import type { User } from '@entities';
 import {
   IsEmail,
   IsNotEmpty,
