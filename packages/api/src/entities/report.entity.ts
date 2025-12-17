@@ -5,6 +5,7 @@ import { User } from './user.entity';
 export enum ReportStatus {
   PENDING = 'pending',
   IN_PROGRESS = 'in_progress',
+  SUSPENDED = 'suspended',
   RESOLVED = 'resolved',
   REJECTED = 'rejected',
   ASSIGNED = 'assigned',

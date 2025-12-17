@@ -29,6 +29,7 @@ const DashboardPage = () => {
     total: 0,
     pending: 0,
     in_progress: 0,
+    suspended: 0,
     assigned: 0,
     rejected: 0,
     resolved: 0,

@@ -23,6 +23,12 @@ export const STATUS_COLORS = {
     class: 'cluster-progress',
     badgeClass: 'bg-blue-500/15 text-blue-700 border-blue-200',
   },
+  [ReportStatus.SUSPENDED]: {
+    hex: '#8b5cf6',
+    label: 'Suspended',
+    class: 'cluster-suspended',
+    badgeClass: 'bg-purple-500/15 text-purple-700 border-purple-200',
+  },
   [ReportStatus.RESOLVED]: {
     hex: '#22c55e',
     label: 'Resolved',

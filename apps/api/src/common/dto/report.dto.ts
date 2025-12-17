@@ -189,6 +189,9 @@ export class DashboardStatsDto implements DashboardStatsDtoType {
   in_progress: number;
 
   @IsNumber()
+  suspended: number;
+
+  @IsNumber()
   assigned: number;
 
   @IsNumber()

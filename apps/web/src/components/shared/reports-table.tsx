@@ -37,6 +37,7 @@ const StatusCell = ({ getValue }: CellContext<Report, Report['status']>) => {
   let bgColor = 'bg-gray-100 text-gray-700';
   if (status === 'pending') bgColor = 'bg-yellow-100 text-yellow-800';
   else if (status === 'in_progress') bgColor = 'bg-blue-100 text-blue-800';
+  else if (status === 'suspended') bgColor = 'bg-purple-100 text-purple-800';
   else if (status === 'resolved') bgColor = 'bg-green-100 text-green-800';
   else if (status === 'rejected') bgColor = 'bg-red-100 text-red-800';
   else if (status === 'assigned') bgColor = 'bg-purple-100 text-purple-800';

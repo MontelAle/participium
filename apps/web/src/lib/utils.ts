@@ -20,6 +20,12 @@ export const getStatusConfig = (status: ReportStatus) => {
         color:
           'bg-blue-500/15 text-blue-700 hover:bg-blue-500/25 border-blue-200',
       };
+    case ReportStatus.SUSPENDED:
+      return {
+        label: 'Suspended',
+        color:
+          'bg-purple-500/15 text-purple-700 hover:bg-purple-500/25 border-purple-200',
+      };
     case ReportStatus.RESOLVED:
       return {
         label: 'Resolved',
@@ -35,7 +41,7 @@ export const getStatusConfig = (status: ReportStatus) => {
       return {
         label: 'Assigned',
         color:
-          'bg-red-500/15 text-purple-700 hover:bg-purple-500/25 border-purple-200',
+          'bg-purple-500/15 text-purple-700 hover:bg-purple-500/25 border-purple-200',
       };
     default:
       return { label: status, color: 'bg-gray-100 text-gray-700' };

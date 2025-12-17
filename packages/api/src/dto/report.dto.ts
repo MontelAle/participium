@@ -50,6 +50,7 @@ export interface DashboardStatsDto {
   total: number;
   pending: number;
   in_progress: number;
+  suspended: number;
   assigned: number;
   rejected: number;
   resolved: number;

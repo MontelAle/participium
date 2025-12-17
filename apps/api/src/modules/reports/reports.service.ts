@@ -20,6 +20,7 @@ import { Report } from '../../common/entities/report.entity';
 import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
+import { subscribe } from 'node:diagnostics_channel';
 
 const PRIVILEGED_ROLES = ['pr_officer', 'tech_officer'];
 
@@ -472,8 +473,10 @@ export class ReportsService {
     }
 
     const allowedTransitions = {
-      assigned: ['in_progress'],
-      in_progress: ['resolved'],
+      assigned: ['assigned', 'in_progress', 'suspended'],
+      in_progress: ['in_progress', 'resolved', 'suspended'],
+      suspended: ['suspended', 'in_progress'],
+      resolved: ['resolved'],
     };
 
     const allowedNextStatuses = allowedTransitions[report.status];
@@ -629,6 +632,7 @@ export class ReportsService {
       total: Number(stats.total || 0),
       pending: Number(stats.pending || 0),
       in_progress: Number(stats.in_progress || 0),
+      suspended: Number(stats.suspended || 0),
       resolved: Number(stats.resolved || 0),
       assigned: Number(stats.assigned_global || 0),
       rejected: Number(stats.rejected_global || 0),

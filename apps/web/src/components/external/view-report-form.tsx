@@ -52,9 +52,11 @@ export function ViewAssignedExternalReport({
   const getNextStatusOptions = (currentStatus: ReportStatus) => {
     switch (currentStatus) {
       case ReportStatus.ASSIGNED:
-        return [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS];
+        return [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.SUSPENDED];
       case ReportStatus.IN_PROGRESS:
-        return [ReportStatus.IN_PROGRESS, ReportStatus.RESOLVED];
+        return [ReportStatus.IN_PROGRESS, ReportStatus.RESOLVED, ReportStatus.SUSPENDED];
+      case ReportStatus.SUSPENDED:
+        return [ReportStatus.SUSPENDED, ReportStatus.IN_PROGRESS];
       case ReportStatus.RESOLVED:
         return [ReportStatus.RESOLVED];
       default:
