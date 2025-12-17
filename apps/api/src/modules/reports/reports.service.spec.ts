@@ -61,6 +61,10 @@ describe('ReportsService', () => {
     id: 'citizen-123',
     role: { name: 'user' },
   } as User;
+  const mockMunicipalUser = {
+    id: 'officer-999',
+    role: { name: 'tech_officer' },
+  } as User;
 
   const mockReport: Partial<Report> = {
     id: 'mocked-id',
@@ -456,11 +460,13 @@ describe('ReportsService', () => {
         mockQueryBuilder as any,
       );
 
-      const result = await service.findAll(mockCitizenUser, filters);
+      // Use municipal user (not citizen) for status filters to work
+      const result = await service.findAll(mockMunicipalUser, filters);
 
       expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith(
         'report',
       );
+      // Municipal users (not pr_officer) get status filter applied
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'report.status = :status',
         {
@@ -618,8 +624,10 @@ describe('ReportsService', () => {
         mockQueryBuilder as any,
       );
 
-      const result = await service.findAll(mockCitizenUser, filters);
+      // Use municipal user (not citizen) for status filters to work
+      const result = await service.findAll(mockMunicipalUser, filters);
 
+      // Municipal users get status filter applied
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'report.status = :status',
         {

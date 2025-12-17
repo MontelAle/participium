@@ -387,10 +387,15 @@ describe('ReportsController (Integration)', () => {
       expect(response.body.success).toBe(true);
     });
 
-    it('should reject request without authentication (401)', async () => {
-      await request(app.getHttpServer())
+    it('should allow unauthenticated users to retrieve reports (200)', async () => {
+      const response = await request(app.getHttpServer())
         .get('/reports')
-        .expect(401);
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.data)).toBe(true);
+      // Guest users should see reports (non-rejected ones)
+      expect(response.body.data.length).toBeGreaterThanOrEqual(0);
     });
   });
 

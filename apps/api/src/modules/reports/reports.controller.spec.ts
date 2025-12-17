@@ -13,6 +13,7 @@ import { ReportsService } from './reports.service';
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
 
 const mockSessionGuard = { canActivate: jest.fn(() => true) };
+const mockPublicGuard = { canActivate: jest.fn(() => true) };
 const mockRolesGuard = { canActivate: jest.fn(() => true) };
 
 describe('ReportsController', () => {
@@ -70,6 +71,8 @@ describe('ReportsController', () => {
     })
       .overrideGuard(require('../auth/guards/session-auth.guard').SessionGuard)
       .useValue(mockSessionGuard)
+      .overrideGuard(require('../auth/guards/public.guard').PublicGuard)
+      .useValue(mockPublicGuard)
       .overrideGuard(require('../auth/guards/roles.guard').RolesGuard)
       .useValue(mockRolesGuard)
       .compile();
