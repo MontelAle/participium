@@ -2057,4 +2057,37 @@ describe('ReportsService', () => {
       });
     });
   });
+
+  describe('getCommentsForReport', () => {
+    it('should fetch comments for a report with correct relations and order', async () => {
+      const mockViewer = { id: 'user-123', role: { name: 'user' } } as User;
+      const mockComments = [
+        {
+          id: 'c1',
+          content: 'First',
+          reportId: 'r1',
+          user: mockViewer,
+          createdAt: new Date('2023-01-01'),
+        },
+        {
+          id: 'c2',
+          content: 'Second',
+          reportId: 'r1',
+          user: mockViewer,
+          createdAt: new Date('2023-01-02'),
+        },
+      ] as unknown as Comment[];
+      jest.spyOn(service, 'findOne').mockResolvedValue({ id: 'r1' } as Report);
+      commentRepository.find.mockResolvedValue(mockComments);
+
+      const result = await service.getCommentsForReport('r1', mockViewer);
+      expect(service.findOne).toHaveBeenCalledWith('r1', mockViewer);
+      expect(commentRepository.find).toHaveBeenCalledWith({
+        where: { reportId: 'r1' },
+        relations: ['user'],
+        order: { createdAt: 'ASC' },
+      });
+      expect(result).toBe(mockComments);
+    });
+  });
 });
