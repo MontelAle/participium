@@ -1,3 +1,4 @@
+import { Comment } from '@entities';
 import {
   BadRequestException,
   Body,
@@ -16,8 +17,7 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
-import { Comment } from 'src/common/entities/comment.entity';
-import { RequestWithUserSession } from 'src/common/types/request-with-user-session.type';
+import { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { SessionGuard } from '../auth/guards/session-auth.guard';

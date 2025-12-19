@@ -1,4 +1,11 @@
-import { Boundary, Category, Report, ReportStatus, User } from '@entities';
+import {
+  Boundary,
+  Category,
+  Comment,
+  Report,
+  ReportStatus,
+  User,
+} from '@entities';
 import {
   BadRequestException,
   Injectable,
@@ -8,7 +15,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { nanoid } from 'nanoid';
 import path from 'node:path';
-import { Comment } from 'src/common/entities/comment.entity';
 import { Point, Repository } from 'typeorm';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';

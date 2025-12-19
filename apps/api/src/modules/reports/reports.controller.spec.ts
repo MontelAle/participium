@@ -62,6 +62,8 @@ describe('ReportsController', () => {
       update: jest.fn(),
       findByUserId: jest.fn(),
       getDashboardStats: jest.fn(),
+      getCommentsForReport: jest.fn(),
+      addCommentToReport: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({

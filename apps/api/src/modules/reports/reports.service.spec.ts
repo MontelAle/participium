@@ -1,4 +1,11 @@
-import { Boundary, Category, Report, ReportStatus, User } from '@entities';
+import {
+  Boundary,
+  Category,
+  Comment,
+  Report,
+  ReportStatus,
+  User,
+} from '@entities';
 import {
   BadRequestException,
   InternalServerErrorException,
@@ -52,6 +59,7 @@ describe('ReportsService', () => {
   let userRepository: jest.Mocked<Repository<User>>;
   let boundaryRepository: jest.Mocked<Repository<Boundary>>;
   let minioProvider: jest.Mocked<MinioProvider>;
+  let commentRepository: jest.Mocked<Repository<Comment>>;
 
   const mockCitizenUser = { id: 'user-123', role: { name: 'user' } } as User;
   const mockOtherCitizenUser = {
@@ -115,6 +123,18 @@ describe('ReportsService', () => {
           },
         },
         {
+          provide: getRepositoryToken(Comment),
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn(),
+            find: jest.fn(),
+            findOne: jest.fn(),
+            remove: jest.fn(),
+            count: jest.fn(),
+            createQueryBuilder: jest.fn(() => createMockQueryBuilder()),
+          },
+        },
+        {
           provide: MinioProvider,
           useValue: {
             uploadFile: jest.fn(),
@@ -132,6 +152,7 @@ describe('ReportsService', () => {
     boundaryRepository = module.get(getRepositoryToken(Boundary));
     minioProvider = module.get(MinioProvider);
     userRepository = module.get(getRepositoryToken(User));
+    commentRepository = module.get(getRepositoryToken(Comment));
   });
 
   it('should be defined', () => {
