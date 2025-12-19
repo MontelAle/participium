@@ -153,3 +153,7 @@ export type UpdateProfileDto = {
 export type ProfileResponseDto = ResponseDto & {
   data: Profile;
 };
+
+export type CreateCommentDto = {
+  content: string;
+};

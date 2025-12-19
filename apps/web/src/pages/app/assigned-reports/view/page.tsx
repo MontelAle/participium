@@ -1,4 +1,5 @@
 import { ViewAssignedReport } from '@/components/assigned-reports/view-report-form';
+import { ReportComments } from '@/components/shared/report-comments';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useReport } from '@/hooks/use-reports';
@@ -78,6 +79,8 @@ function AssignedReportsViewPage() {
             onClose={() => navigate(-1)}
           />
         </div>
+
+        <ReportComments reportId={id!} />
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { ReviewReportForm } from '@/components/assign-reports/review-report-form';
+import { ReportComments } from '@/components/shared/report-comments';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useReport } from '@/hooks/use-reports';
@@ -74,6 +75,8 @@ function AssignReportsViewPage() {
         <div className="flex-1 pb-2">
           <ReviewReportForm report={report} onClose={() => navigate(-1)} />
         </div>
+
+        <ReportComments reportId={id!} />
       </div>
     </div>
   );
