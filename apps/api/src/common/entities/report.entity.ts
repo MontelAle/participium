@@ -4,11 +4,13 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   Point,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Category } from './category.entity';
+import { Comment } from './comment.entity';
 import { User } from './user.entity';
 
 export enum ReportStatus {
@@ -56,6 +58,10 @@ export class Report {
   @ManyToOne(() => User, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  // One report can have many comments
+  @OneToMany(() => Comment, (comment) => comment.report, { cascade: true })
+  comments: Comment[];
   @Column({ type: 'boolean', default: false })
   isAnonymous: boolean;
 

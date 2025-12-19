@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
+import { Comment } from 'src/common/entities/comment.entity';
 import { RequestWithUserSession } from 'src/common/types/request-with-user-session.type';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -27,6 +28,7 @@ import {
   MIN_IMAGES,
   REPORT_ERROR_MESSAGES,
 } from './constants/error-messages';
+import { CreateCommentDto } from './dto/create-comment.dto';
 import {
   CreateReportDto,
   DashboardStatsResponseDto,
@@ -42,6 +44,39 @@ import { ReportsService } from './reports.service';
 @ApiCookieAuth('session_token')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
+  /**
+   * Retrieves all comments for a report by its ID.
+   */
+  @Get(':id/comments')
+  @UseGuards(SessionGuard)
+  async getComments(
+    @Param('id') id: string,
+    @Request() req: RequestWithUserSession,
+  ): Promise<{ success: boolean; data: Comment[] }> {
+    const comments = await this.reportsService.getCommentsForReport(
+      id,
+      req.user,
+    );
+    return { success: true, data: comments };
+  }
+
+  /**
+   * Creates a new comment for a report by its ID.
+   */
+  @Post(':id/comments')
+  @UseGuards(SessionGuard)
+  async addComment(
+    @Param('id') id: string,
+    @Body() createCommentDto: CreateCommentDto,
+    @Request() req: RequestWithUserSession,
+  ): Promise<{ success: boolean; data: Comment }> {
+    const comment = await this.reportsService.addCommentToReport(
+      id,
+      req.user.id,
+      createCommentDto,
+    );
+    return { success: true, data: comment };
+  }
 
   /**
    * Creates a new report.
