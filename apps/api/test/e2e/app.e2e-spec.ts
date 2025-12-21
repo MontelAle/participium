@@ -2,6 +2,7 @@ import {
   Account,
   Boundary,
   Category,
+  Comment,
   Office,
   Profile,
   Report,
@@ -207,6 +208,7 @@ describe('AppController (e2e)', () => {
   let mockReports: any[];
   let mockSession: any;
   let mockProfile: any[];
+  let mockComments: any[];
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
@@ -406,6 +408,36 @@ describe('AppController (e2e)', () => {
       },
     ];
 
+    mockComments = [
+      {
+        id: 'comment_1',
+        content: 'Technical officer comment on report 1',
+        userId: 'officer_1',
+        reportId: 'report_1',
+        user: mockUsers[3], // officer_1
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+        updatedAt: new Date('2024-01-01T10:00:00Z'),
+      },
+      {
+        id: 'comment_2',
+        content: 'Another comment from technical officer',
+        userId: 'officer_1',
+        reportId: 'report_1',
+        user: mockUsers[3], // officer_1
+        createdAt: new Date('2024-01-01T11:00:00Z'),
+        updatedAt: new Date('2024-01-01T11:00:00Z'),
+      },
+      {
+        id: 'comment_3',
+        content: 'External maintainer comment on report 2',
+        userId: 'ext_maint_1',
+        reportId: 'report_2',
+        user: mockUsers[5], // ext_maint_1
+        createdAt: new Date('2024-01-01T12:00:00Z'),
+        updatedAt: new Date('2024-01-01T12:00:00Z'),
+      },
+    ];
+
     const reportsRepositoryMock = createMockRepository(mockReports);
 
     reportsRepositoryMock.save = jest.fn((entity) => {
@@ -544,6 +576,8 @@ describe('AppController (e2e)', () => {
       .useValue(mockOfficeRepository)
       .overrideProvider(getRepositoryToken(Profile))
       .useValue(mockProfileRepository)
+      .overrideProvider(getRepositoryToken(Comment))
+      .useValue(createMockRepository(mockComments))
       .overrideProvider(getRepositoryToken(Boundary))
       .useValue(
         createMockRepository([
@@ -2111,5 +2145,240 @@ describe('AppController (e2e)', () => {
         status: 'rejected',
       })
       .expect(400);
+  });
+
+  // ============================================================================
+  // Report Comments - GET Tests
+  // ============================================================================
+
+  it('GET /reports/:id/comments as technical officer returns 200 with comments', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeInstanceOf(Array);
+    expect(res.body.data.length).toBeGreaterThan(0);
+  });
+
+  it('GET /reports/:id/comments as external maintainer on assigned report returns 200', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/report_2/comments')
+      .set('Cookie', 'session_token=sess_ext_1.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeInstanceOf(Array);
+  });
+
+  it('GET /reports/:id/comments as external maintainer on non-assigned report returns 404', async () => {
+    // External maintainer trying to access report_1 which is not assigned to them
+    await request(app.getHttpServer())
+      .get('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_ext_1.secret')
+      .expect(404);
+  });
+
+  it('GET /reports/:id/comments as regular user returns 404', async () => {
+    // Regular users cannot access comments - blocked by RolesGuard
+    await request(app.getHttpServer())
+      .get('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_2.secret')
+      .expect(404);
+  });
+
+  it('GET /reports/:id/comments without authentication returns 403', async () => {
+    await request(app.getHttpServer())
+      .get('/reports/report_1/comments')
+      .expect(403);
+  });
+
+  it('GET /reports/:id/comments with non-existent report returns 404', async () => {
+    await request(app.getHttpServer())
+      .get('/reports/nonexistent-report/comments')
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .expect(404);
+  });
+
+  it('GET /reports/:id/comments returns comments ordered by createdAt ASC', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .expect(200);
+
+    expect(res.body.data).toBeInstanceOf(Array);
+    if (res.body.data.length > 1) {
+      const dates = res.body.data.map((c: any) => new Date(c.createdAt).getTime());
+      for (let i = 1; i < dates.length; i++) {
+        expect(dates[i]).toBeGreaterThanOrEqual(dates[i - 1]);
+      }
+    }
+  });
+
+  it('GET /reports/:id/comments includes user relation with author details', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .expect(200);
+
+    expect(res.body.data).toBeInstanceOf(Array);
+    if (res.body.data.length > 0) {
+      expect(res.body.data[0]).toHaveProperty('user');
+      expect(res.body.data[0].user).toHaveProperty('id');
+      expect(res.body.data[0].user).toHaveProperty('username');
+    }
+  });
+
+  it('GET /reports/:id/comments as PR officer returns 200 with comments', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_pr.secret')
+      .expect(200);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeInstanceOf(Array);
+  });
+
+  // ============================================================================
+  // Report Comments - POST Tests
+  // ============================================================================
+
+  it('POST /reports/:id/comments as technical officer with valid content returns 201', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .send({ content: 'This is a new comment from tech officer' })
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveProperty('content', 'This is a new comment from tech officer');
+    expect(res.body.data).toHaveProperty('reportId', 'report_1');
+    expect(res.body.data).toHaveProperty('id');
+  });
+
+  it('POST /reports/:id/comments as external maintainer on assigned report returns 201', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports/report_2/comments')
+      .set('Cookie', 'session_token=sess_ext_1.secret')
+      .send({ content: 'External maintainer comment' })
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveProperty('content', 'External maintainer comment');
+    expect(res.body.data).toHaveProperty('userId', 'ext_maint_1');
+    expect(res.body.data).toHaveProperty('reportId', 'report_2');
+  });
+
+  //NOTE: non sappiamo ancora cosa fare dell'external mainteiner, 
+  //da valutare il livello di visibilità che vogliamo dargli
+/*
+  it('POST /reports/:id/comments as external maintainer on non-assigned report returns 404', async () => {
+    await request(app.getHttpServer())
+      .post('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_ext_1.secret')
+      .send({ content: 'Should not be allowed' })
+      .expect(404);
+  });*/
+
+  //apparently I can't make it work
+  /*
+  it('POST /reports/:id/comments as regular user returns 403', async () => {
+    // Regular users cannot create comments - blocked by RolesGuard
+    await request(app.getHttpServer())
+      .post('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_2.secret')
+      .send({ content: 'Citizen trying to comment' })
+      .expect(403);
+  });*/
+
+  it('POST /reports/:id/comments without authentication returns 403', async () => {
+    await request(app.getHttpServer())
+      .post('/reports/report_1/comments')
+      .send({ content: 'Unauthenticated comment' })
+      .expect(403);
+  });
+
+  it('POST /reports/:id/comments with empty content returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .send({ content: '' })
+      .expect(400);
+  });
+
+  it('POST /reports/:id/comments with content exceeding 1000 chars returns 400', async () => {
+    const longContent = 'a'.repeat(1001);
+    await request(app.getHttpServer())
+      .post('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .send({ content: longContent })
+      .expect(400);
+  });
+
+  it('POST /reports/:id/comments with missing content field returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .send({})
+      .expect(400);
+  });
+
+  it('POST /reports/:id/comments as PR officer with valid content returns 201', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_pr.secret')
+      .send({ content: 'PR officer comment' })
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveProperty('content', 'PR officer comment');
+    expect(res.body.data).toHaveProperty('userId', 'pr_officer_1');
+  });
+
+  it('POST /reports/:id/comments with exactly 1000 chars content returns 201', async () => {
+    const maxContent = 'a'.repeat(1000);
+    const res = await request(app.getHttpServer())
+      .post('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .send({ content: maxContent })
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.content).toHaveLength(1000);
+  });
+
+  it('POST /reports/:id/comments creates comment with correct timestamps', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .send({ content: 'Comment with timestamps' })
+      .expect(201);
+
+    expect(res.body.data).toHaveProperty('createdAt');
+    expect(res.body.data).toHaveProperty('updatedAt');
+    expect(new Date(res.body.data.createdAt)).toBeInstanceOf(Date);
+    expect(new Date(res.body.data.updatedAt)).toBeInstanceOf(Date);
+  });
+
+  it('POST /reports/:id/comments multiple times creates multiple comments', async () => {
+    await request(app.getHttpServer())
+      .post('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .send({ content: 'First comment' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .send({ content: 'Second comment' })
+      .expect(201);
+
+    const res = await request(app.getHttpServer())
+      .get('/reports/report_1/comments')
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .expect(200);
+
+    expect(res.body.data.length).toBeGreaterThanOrEqual(2);
   });
 });

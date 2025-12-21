@@ -48,7 +48,8 @@ export class ReportsController {
    * Retrieves all comments for a report by its ID.
    */
   @Get(':id/comments')
-  @UseGuards(SessionGuard)
+  @UseGuards(SessionGuard, RolesGuard)
+  @Roles('municipal_pr_officer', 'technical_officer', 'external_maintainer')
   async getComments(
     @Param('id') id: string,
     @Request() req: RequestWithUserSession,
@@ -64,7 +65,8 @@ export class ReportsController {
    * Creates a new comment for a report by its ID.
    */
   @Post(':id/comments')
-  @UseGuards(SessionGuard)
+  @UseGuards(SessionGuard, RolesGuard)
+  @Roles('municipal_pr_officer', 'technical_officer', 'external_maintainer')
   async addComment(
     @Param('id') id: string,
     @Body() createCommentDto: CreateCommentDto,
