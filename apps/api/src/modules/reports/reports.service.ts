@@ -62,16 +62,16 @@ export class ReportsService {
     return report;
   }
 
-  private sanitizeReport(report: Report, viewer: User): Report {
+  private sanitizeReport(report: Report, viewer: User | null): Report {
     if (!report.isAnonymous) {
       return report;
     }
 
-    if (viewer.id === report.userId) {
+    if (viewer && viewer.id === report.userId) {
       return report;
     }
 
-    if (viewer.role && PRIVILEGED_ROLES.includes(viewer.role.name)) {
+    if (viewer?.role && PRIVILEGED_ROLES.includes(viewer.role.name)) {
       return report;
     }
 
@@ -143,7 +143,7 @@ export class ReportsService {
     return await this.reportRepository.save(report);
   }
 
-  async findAll(viewer: User, filters?: FilterReportsDto): Promise<Report[]> {
+  async findAll(viewer: User | null, filters?: FilterReportsDto): Promise<Report[]> {
     const query = this.reportRepository
       .createQueryBuilder('report')
       .leftJoinAndSelect('report.user', 'user')
@@ -155,35 +155,42 @@ export class ReportsService {
         'assignedExternalMaintainer',
       );
 
-    if (viewer.role?.name === 'user') {
-      query.andWhere(
-        `(report.status != 'rejected' OR report.userId = :viewerId)`,
-        { viewerId: viewer.id },
-      );
+    // Guest user filtering: hide pending and rejected reports
+    if (!viewer) {
+      query.andWhere(`report.status NOT IN ('pending', 'rejected')`);
+    } else {
+      // Authenticated user filtering based on role
+      if (viewer.role?.name === 'user') {
+        query.andWhere(
+          `(report.status != 'rejected' OR report.userId = :viewerId)`,
+          { viewerId: viewer.id },
+        );
+      }
+
+      if (viewer.role?.name === 'external_maintainer') {
+        query.andWhere('report.assignedExternalMaintainerId = :viewerId', {
+          viewerId: viewer.id,
+        });
+      }
+
+      if (viewer.role?.name === 'pr_officer') {
+        query.andWhere('report.status = :forcedStatus', {
+          forcedStatus: 'pending',
+        });
+      } else if (filters?.status) {
+        query.andWhere('report.status = :status', { status: filters.status });
+      }
+
+      if (filters?.userId) {
+        query.andWhere('report.userId = :userId', { userId: filters.userId });
+      }
     }
 
-    if (viewer.role?.name === 'external_maintainer') {
-      query.andWhere('report.assignedExternalMaintainerId = :viewerId', {
-        viewerId: viewer.id,
-      });
-    }
-
-    if (viewer.role?.name === 'pr_officer') {
-      query.andWhere('report.status = :forcedStatus', {
-        forcedStatus: 'pending',
-      });
-    } else if (filters?.status) {
-      query.andWhere('report.status = :status', { status: filters.status });
-    }
-
+    // Category filter applies to both guests and authenticated users
     if (filters?.categoryId) {
       query.andWhere('report.categoryId = :categoryId', {
         categoryId: filters.categoryId,
       });
-    }
-
-    if (filters?.userId) {
-      query.andWhere('report.userId = :userId', { userId: filters.userId });
     }
 
     if (

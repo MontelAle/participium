@@ -4,12 +4,14 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Session } from '../../../common/entities/session.entity';
 import type { RequestWithUserSession } from '../../../common/types/request-with-user-session.type';
 import { createHash } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
 export class SessionGuard implements CanActivate {
@@ -17,16 +19,32 @@ export class SessionGuard implements CanActivate {
     @InjectRepository(Session)
     private readonly sessionRepository: Repository<Session>,
     private readonly configService: ConfigService,
+    private readonly reflector: Reflector,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
     const req = context.switchToHttp().getRequest<RequestWithUserSession>();
 
     const token = req.cookies?.session_token;
-    if (!token) throw new UnauthorizedException('No session token');
+    if (!token) {
+      if (isPublic) {
+        req.user = null;
+        return true;
+      }
+      throw new UnauthorizedException('No session token');
+    }
 
     const tokenParts = token.split('.');
     if (tokenParts.length !== 2) {
+      if (isPublic) {
+        req.user = null;
+        return true;
+      }
       throw new UnauthorizedException('Invalid session token format');
     }
 
@@ -39,6 +57,10 @@ export class SessionGuard implements CanActivate {
     });
 
     if (!session) {
+      if (isPublic) {
+        req.user = null;
+        return true;
+      }
       throw new UnauthorizedException('Invalid or expired session');
     }
 
@@ -46,6 +68,10 @@ export class SessionGuard implements CanActivate {
       new Date().getTime() - session.updatedAt.getTime() >
       this.configService.get<number>('session.expiresInSeconds') * 1000
     ) {
+      if (isPublic) {
+        req.user = null;
+        return true;
+      }
       throw new UnauthorizedException('Invalid or expired session');
     }
 
@@ -54,6 +80,10 @@ export class SessionGuard implements CanActivate {
       .digest('hex');
 
     if (!this.constantTimeEqual(hashedSecret, session.hashedSecret)) {
+      if (isPublic) {
+        req.user = null;
+        return true;
+      }
       throw new UnauthorizedException('Invalid session secret');
     }
 

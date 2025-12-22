@@ -24,6 +24,7 @@ import {
   ReportsResponseDto,
   UpdateReportDto,
 } from '../../common/dto/report.dto';
+import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
@@ -84,9 +85,11 @@ export class ReportsController {
 
   /**
    * Retrieves all reports with optional filters.
-   *
+   * Public endpoint - accessible to guests (unauthenticated users).
+   * Guests will see all reports except pending and rejected ones.
    */
   @Get()
+  @Public()
   @UseGuards(SessionGuard)
   async findAll(
     @Request() req,

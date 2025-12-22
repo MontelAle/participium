@@ -39,7 +39,7 @@ export default function ReportsMap() {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
 
-  const { isCitizenUser } = useAuth();
+  const { isCitizenUser, isGuestUser } = useAuth();
   const setLocation = useActiveReportStore((state) => state.setLocation);
   const location = useActiveReportStore((state) => state.locationData);
   const clearLocation = useActiveReportStore((s) => s.clearLocation);
@@ -103,9 +103,11 @@ export default function ReportsMap() {
     };
     fetchTorinoBoundary();
 
-    map.on('click', (e: L.LeafletMouseEvent) =>
-      handleLocationSelect(e.latlng.lat, e.latlng.lng),
-    );
+    if (!isGuestUser) {
+      map.on('click', (e: L.LeafletMouseEvent) =>
+        handleLocationSelect(e.latlng.lat, e.latlng.lng),
+      );
+    }
     mapInstanceRef.current = map;
 
     return () => {
@@ -260,15 +262,16 @@ export default function ReportsMap() {
         ${userHtml} 
       `;
 
-      const detailsBtn = document.createElement('button');
-      detailsBtn.className = 'popup-btn-action mt-3';
-      detailsBtn.textContent = 'SHOW DETAILS';
-      detailsBtn.onclick = (e) => {
-        e.stopPropagation();
-        navigate(`/reports/view/${report.id}`);
-      };
-
-      popupDiv.appendChild(detailsBtn);
+      if (!isGuestUser) {
+        const detailsBtn = document.createElement('button');
+        detailsBtn.className = 'popup-btn-action mt-3';
+        detailsBtn.textContent = 'SHOW DETAILS';
+        detailsBtn.onclick = (e) => {
+          e.stopPropagation();
+          navigate(`/reports/view/${report.id}`);
+        };
+        popupDiv.appendChild(detailsBtn);
+      }
 
       const m = L.marker([lat, lng], {
         icon: smallDivIcon({ status: report.status }),

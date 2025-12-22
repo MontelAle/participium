@@ -32,9 +32,7 @@ function GuestState() {
 export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
   const { isCitizenUser, isGuestUser } = useAuth();
 
-  const { data: reports = [] } = useReports(undefined, {
-    enabled: !isGuestUser,
-  });
+  const { data: reports = [] } = useReports();
   const { searchTerm, setSearchTerm, showOnlyMyReports, setShowOnlyMyReports } =
     useFilterStore();
 
@@ -130,11 +128,7 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
               'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto hidden md:block',
           )}
         >
-          {isGuestUser ? (
-            <GuestState />
-          ) : (
-            <ReportsList setIsMobileExpanded={setIsMobileExpanded} />
-          )}
+          <ReportsList setIsMobileExpanded={setIsMobileExpanded} />
 
           <div className="h-24 md:h-20" />
         </div>
