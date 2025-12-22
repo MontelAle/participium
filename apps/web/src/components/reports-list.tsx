@@ -19,9 +19,10 @@ export function ReportsList({
   const setLocation = useActiveReportStore((state) => state.setLocation);
 
   const sidebarReports = useMemo(() => {
+    if (isGuestUser) return [];
     if (!isCitizenUser || !user) return baseFilteredReports;
     return [...baseFilteredReports];
-  }, [baseFilteredReports, isCitizenUser, user]);
+  }, [baseFilteredReports, isCitizenUser, isGuestUser, user]);
 
   const handleReportClick = (e: MouseEvent, report: Report) => {
     setIsMobileExpanded(false);
@@ -81,13 +82,7 @@ export function ReportsList({
             <div className="mb-3">
               <button
                 onClick={() => handleShowDetails(report.id)}
-                disabled={isGuestUser}
-                className={cn(
-                  "text-left w-full font-bold text-xl leading-tight text-foreground mb-1 transition-colors after:absolute after:inset-0 outline-none focus-visible:underline",
-                  isGuestUser
-                    ? "cursor-not-allowed opacity-60"
-                    : "group-hover:text-primary cursor-pointer"
-                )}
+                className="text-left w-full font-bold text-xl leading-tight text-foreground mb-1 group-hover:text-primary transition-colors after:absolute after:inset-0 outline-none focus-visible:underline"
               >
                 {report.title}
               </button>

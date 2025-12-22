@@ -67,13 +67,6 @@ export class ReportsService {
       return report;
     }
 
-    // If viewer is null (guest user), sanitize anonymous reports
-    if (!viewer) {
-      const sanitized = { ...report };
-      sanitized.user = null;
-      return sanitized as Report;
-    }
-
     if (viewer.id === report.userId) {
       return report;
     }
@@ -162,19 +155,20 @@ export class ReportsService {
         'assignedExternalMaintainer',
       );
 
-    // Handle unauthenticated (guest) users - show only non-rejected reports
-    if (!viewer) {
-      query.andWhere(`report.status != 'rejected'`);
-    } else if (viewer.role?.name === 'user') {
+    if (viewer.role?.name === 'user') {
       query.andWhere(
         `(report.status != 'rejected' OR report.userId = :viewerId)`,
         { viewerId: viewer.id },
       );
-    } else if (viewer.role?.name === 'external_maintainer') {
+    }
+
+    if (viewer.role?.name === 'external_maintainer') {
       query.andWhere('report.assignedExternalMaintainerId = :viewerId', {
         viewerId: viewer.id,
       });
-    } else if (viewer.role?.name === 'pr_officer') {
+    }
+
+    if (viewer.role?.name === 'pr_officer') {
       query.andWhere('report.status = :forcedStatus', {
         forcedStatus: 'pending',
       });

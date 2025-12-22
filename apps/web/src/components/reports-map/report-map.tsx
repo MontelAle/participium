@@ -39,7 +39,7 @@ export default function ReportsMap() {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
 
-  const { isCitizenUser, isGuestUser } = useAuth();
+  const { isCitizenUser } = useAuth();
   const setLocation = useActiveReportStore((state) => state.setLocation);
   const location = useActiveReportStore((state) => state.locationData);
   const clearLocation = useActiveReportStore((s) => s.clearLocation);
@@ -260,21 +260,15 @@ export default function ReportsMap() {
         ${userHtml} 
       `;
 
-      if (!isGuestUser) {
-        const detailsBtn = document.createElement('button');
-        detailsBtn.className = 'popup-btn-action mt-3';
-        detailsBtn.textContent = 'SHOW DETAILS';
-        detailsBtn.onclick = (e) => {
-          e.stopPropagation();
-          navigate(`/reports/view/${report.id}`);
-        };
-        popupDiv.appendChild(detailsBtn);
-      } else {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'text-xs text-center text-slate-400 mt-3 italic';
-        msgDiv.textContent = 'Log in to view details';
-        popupDiv.appendChild(msgDiv);
-      }
+      const detailsBtn = document.createElement('button');
+      detailsBtn.className = 'popup-btn-action mt-3';
+      detailsBtn.textContent = 'SHOW DETAILS';
+      detailsBtn.onclick = (e) => {
+        e.stopPropagation();
+        navigate(`/reports/view/${report.id}`);
+      };
+
+      popupDiv.appendChild(detailsBtn);
 
       const m = L.marker([lat, lng], {
         icon: smallDivIcon({ status: report.status }),
