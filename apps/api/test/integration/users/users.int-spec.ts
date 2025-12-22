@@ -13,7 +13,6 @@ import { UsersModule } from '../../../src/modules/users/users.module';
 import { AuthModule } from '../../../src/modules/auth/auth.module';
 import { Role } from '../../../src/common/entities/role.entity';
 import { User } from '../../../src/common/entities/user.entity';
-import { Profile } from '../../../src/common/entities/profile.entity';
 import { Office } from '../../../src/common/entities/office.entity';
 import { Category } from '../../../src/common/entities/category.entity';
 import appConfig from '../../../src/config/app.config';
@@ -549,9 +548,6 @@ describe('UsersController (Integration)', () => {
     });
 
     it('should delete municipality user as admin', async () => {
-      // Delete associated profile first to avoid foreign key constraint violation
-      await dataSource.getRepository(Profile).delete({ userId: testUserId });
-
       const response = await request(app.getHttpServer())
         .delete(`/users/municipality/user/${testUserId}`)
         .set('Cookie', `session_token=${adminToken}`)
