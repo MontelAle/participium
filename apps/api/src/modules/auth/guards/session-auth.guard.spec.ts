@@ -1,5 +1,6 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Session } from '../../../common/entities/session.entity';
@@ -13,6 +14,7 @@ type MockRepository<T = any> = {
 describe('SessionGuard', () => {
   let guard: SessionGuard;
   let sessionRepository: MockRepository<Session>;
+  let reflector: Reflector;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -32,6 +34,12 @@ describe('SessionGuard', () => {
             }),
           },
         },
+        {
+          provide: Reflector,
+          useValue: {
+            getAllAndOverride: jest.fn().mockReturnValue(false),
+          },
+        },
       ],
     }).compile();
 
@@ -39,6 +47,7 @@ describe('SessionGuard', () => {
     sessionRepository = module.get(
       getRepositoryToken(Session),
     ) as unknown as MockRepository<Session>;
+    reflector = module.get<Reflector>(Reflector);
   });
 
   const mockExecutionContext = (cookies?: Record<string, string>) => {
@@ -52,6 +61,8 @@ describe('SessionGuard', () => {
       switchToHttp: () => ({
         getRequest: () => req,
       }),
+      getHandler: () => ({}),
+      getClass: () => ({}),
       req,
     } as unknown as any;
   };
@@ -144,5 +155,116 @@ describe('SessionGuard', () => {
     expect(result).toBe(true);
     expect(req.user).toEqual(expectedUser);
     expect(req.session).toEqual({ ...validSession, user: undefined });
+  });
+
+  describe('Public endpoints', () => {
+    beforeEach(() => {
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(true);
+    });
+
+    it('should allow access with req.user = null when endpoint is public and no token provided', async () => {
+      const context = mockExecutionContext();
+      const req = context.req;
+
+      const result = await guard.canActivate(context);
+
+      expect(result).toBe(true);
+      expect(req.user).toBeNull();
+    });
+
+    it('should allow access with req.user = null when endpoint is public and token format is invalid', async () => {
+      const context = mockExecutionContext({ session_token: 'invalid-format' });
+      const req = context.req;
+
+      const result = await guard.canActivate(context);
+
+      expect(result).toBe(true);
+      expect(req.user).toBeNull();
+    });
+
+    it('should allow access with req.user = null when endpoint is public and session not found', async () => {
+      sessionRepository.findOne.mockResolvedValue(null);
+
+      const context = mockExecutionContext({
+        session_token: 'sessionId.secret123',
+      });
+      const req = context.req;
+
+      const result = await guard.canActivate(context);
+
+      expect(result).toBe(true);
+      expect(req.user).toBeNull();
+    });
+
+    it('should allow access with req.user = null when endpoint is public and session expired', async () => {
+      const expiredSession: Partial<Session> = {
+        id: 'sessionId',
+        hashedSecret: 'somehash',
+        expiresAt: new Date(Date.now() + 10000),
+        updatedAt: new Date(Date.now() - 3700000),
+        user: { id: 'user1', role: { name: 'admin' } } as User,
+      };
+      sessionRepository.findOne.mockResolvedValue(expiredSession);
+
+      const context = mockExecutionContext({
+        session_token: 'sessionId.secret123',
+      });
+      const req = context.req;
+
+      const result = await guard.canActivate(context);
+
+      expect(result).toBe(true);
+      expect(req.user).toBeNull();
+    });
+
+    it('should allow access with req.user = null when endpoint is public and secret is invalid', async () => {
+      const validSession: Partial<Session> = {
+        id: 'sessionId',
+        hashedSecret: 'correcthash',
+        expiresAt: new Date(Date.now() + 10000),
+        updatedAt: new Date(),
+        user: { id: 'user1', role: { name: 'admin' } } as User,
+      };
+      sessionRepository.findOne.mockResolvedValue(validSession);
+
+      const context = mockExecutionContext({
+        session_token: 'sessionId.wrongsecret',
+      });
+      const req = context.req;
+
+      const result = await guard.canActivate(context);
+
+      expect(result).toBe(true);
+      expect(req.user).toBeNull();
+    });
+
+    it('should attach user when endpoint is public but valid session is provided', async () => {
+      const crypto = require('node:crypto');
+      const correctHash = crypto
+        .createHash('sha256')
+        .update('secret123')
+        .digest('hex');
+
+      const expectedUser = { id: 'user1', role: { name: 'admin' } } as User;
+      const validSession: Partial<Session> = {
+        id: 'sessionId',
+        hashedSecret: correctHash,
+        expiresAt: new Date(Date.now() + 10000),
+        updatedAt: new Date(),
+        user: expectedUser,
+      };
+      sessionRepository.findOne.mockResolvedValue(validSession);
+
+      const context = mockExecutionContext({
+        session_token: 'sessionId.secret123',
+      });
+      const req = context.req;
+
+      const result = await guard.canActivate(context);
+
+      expect(result).toBe(true);
+      expect(req.user).toEqual(expectedUser);
+      expect(req.session).toEqual({ ...validSession, user: undefined });
+    });
   });
 });

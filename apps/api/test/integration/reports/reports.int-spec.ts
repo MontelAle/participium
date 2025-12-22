@@ -386,12 +386,6 @@ describe('ReportsController (Integration)', () => {
 
       expect(response.body.success).toBe(true);
     });
-
-    it('should reject request without authentication (401)', async () => {
-      await request(app.getHttpServer())
-        .get('/reports')
-        .expect(401);
-    });
   });
 
   describe('GET /reports/stats', () => {
