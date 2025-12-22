@@ -446,6 +446,43 @@ const REAL_REPORTS = [
       'TrafficLightAndRoadSign3.jpg',
     ],
   },
+  {
+    title: 'Report of Missing Pedestrian Safety Barrier',
+    description:
+      'A section of the pedestrian safety barrier along the sidewalk is missing. The barrier is located on the side opposite the roadway, where the ground level is lower, and its absence creates a potentially hazardous situation due to the existing height difference.',
+    address: 'Via San Paolo, 160a, Torino',
+    lat: 45.056609,
+    lng: 7.635214,
+    categoryName: 'Architectural Barriers',
+    images: [
+      'MissingPedestrianBarrier.jpg',
+    ],
+  },
+  {
+    title: 'Damaged Bench Seat',
+    description:
+      'The bench in the park has one of the two planks on its seat missing. This makes sitting on the bench uncomfortable and uneven, reducing its usability for park visitors.',
+    address: 'Viale Leonardo Bistolfi, 20a, Torino',
+    lat: 45.058771,
+    lng: 7.632521,
+    categoryName: 'Public Green Areas and Playgrounds',
+    images: [
+      'DamagedBenchSeat1.jpg',
+      'DamagedBenchSeat2.jpg',
+    ],
+  },
+    {
+    title: 'Bench Missing Backrest',
+    description:
+      'The bench in the park is missing its backrest, making it less comfortable to sit on.',
+    address: 'Corso Siracusa, Torino',
+    lat: 45.054345,
+    lng: 7.635278,
+    categoryName: 'Public Green Areas and Playgrounds',
+    images: [
+      'BenchMissingBackrest.jpg',
+    ],
+  },
 ];
 
 // ============================================================================
