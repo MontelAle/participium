@@ -13,7 +13,6 @@ import { User } from '../../src/common/entities/user.entity';
 import { LocalAuthGuard } from '../../src/modules/auth/guards/local-auth.guard';
 import { RolesGuard } from '../../src/modules/auth/guards/roles.guard';
 import { SessionGuard } from '../../src/modules/auth/guards/session-auth.guard';
-import { PublicGuard } from '../../src/modules/auth/guards/public.guard';
 import request = require('supertest');
 
 jest.mock('nanoid', () => ({
@@ -634,38 +633,6 @@ describe('AppController (e2e)', () => {
 
     testingModuleBuilder.overrideGuard(RolesGuard).useValue({
       canActivate: () => true,
-    });
-
-    testingModuleBuilder.overrideGuard(PublicGuard).useValue({
-      canActivate: (context: any) => {
-        const req = context.switchToHttp().getRequest();
-        if (req.cookies?.session_token) {
-          const cookieValue = req.cookies.session_token;
-          
-          if (cookieValue === 'sess_2.secret') {
-            req.user = mockUsers[1];
-            return true;
-          }
-          
-          if (cookieValue === 'sess_pr.secret') {
-            const prUser = mockUsers.find((u) => u.username === 'pr_officer');
-            req.user = prUser;
-            return true;
-          }
-          
-          if (cookieValue === 'sess_ext_1.secret' || cookieValue === 'sess_ext_maint.secret') {
-            const extMaintUser = mockUsers.find((u) => u.username === 'ext_maintainer');
-            req.user = extMaintUser;
-            return true;
-          }
-          
-          req.user = mockUser;
-          return true;
-        }
-        // Allow unauthenticated access (guest user)
-        req.user = null;
-        return true;
-      },
     });
 
     const moduleFixture: TestingModule = await testingModuleBuilder.compile();
@@ -1726,10 +1693,8 @@ describe('AppController (e2e)', () => {
       .expect(403);
   });
 
-  it('GET /reports without authentication returns 200 (public access)', async () => {
-    const res = await request(app.getHttpServer()).get('/reports').expect(200);
-    expect(res.body.success).toBe(true);
-    expect(Array.isArray(res.body.data)).toBe(true);
+  it('GET /reports without authentication returns 403', async () => {
+    await request(app.getHttpServer()).get('/reports').expect(403);
   });
 
   it('POST /reports without authentication returns 403', async () => {
