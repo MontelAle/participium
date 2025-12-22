@@ -471,7 +471,7 @@ const REAL_REPORTS = [
       'DamagedBenchSeat2.jpg',
     ],
   },
-    {
+  {
     title: 'Bench Missing Backrest',
     description:
       'The bench in the park is missing its backrest, making it less comfortable to sit on.',
@@ -481,6 +481,47 @@ const REAL_REPORTS = [
     categoryName: 'Public Green Areas and Playgrounds',
     images: [
       'BenchMissingBackrest.jpg',
+    ],
+  },
+  {
+    title: 'Wall and Fence in Poor Condition',
+    description:
+      'The wall is damaged and in several areas is detached and disconnected, showing clear signs of instability. The red metal fence above it is tilted in multiple points and is not continuously fixed between its elements. Overall, the structure appears precarious and may pose a potential risk to pedestrians.',
+    address: 'Via Mombasiglio, 111, Torino',
+    lat: 45.051319,
+    lng: 7.637198,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'WallFencePoorCondition1.jpg',
+      'WallFencePoorCondition2.jpg',
+      'WallFencePoorCondition3.jpg',
+    ],
+  },
+  {
+    title: 'Street Sign on the Ground',
+    description:
+      'A steet sign is lying on the ground.',
+    address: 'Via Boston, 139a, Torino',
+    lat: 45.044602,
+    lng: 7.629369,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: [
+      'StreetSignOnTheGround1.jpg',
+      'StreetSignOnTheGround2.jpg',
+    ],
+  },
+  {
+    title: 'Broken Transparent Panel at Bus Stop',
+    description:
+      'The transparent panel at the bus stop is damaged. There is a hole in the panel, several scratches across its surface, and part of the frame seems to be detached from the panel.',
+    address: 'Via Guido Reni, 230a, Torino',
+    lat: 45.039402,
+    lng: 7.628599,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'BrokenPanelBusStop1.jpg',
+      'BrokenPanelBusStop2.jpg',
+      'BrokenPanelBusStop3.jpg',
     ],
   },
 ];
