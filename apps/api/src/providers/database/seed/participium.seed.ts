@@ -524,6 +524,45 @@ const REAL_REPORTS = [
       'BrokenPanelBusStop3.jpg',
     ],
   },
+  {
+    title: 'Street Light Not Turning On',
+    description:
+      'The street light is not working. It remains off in the evenings, making the area less illuminated than usual.',
+    address: 'Via Tolmino, 80a, Torino',
+    lat: 45.054348,
+    lng: 7.642136,
+    categoryName: 'Public Lighting',
+    images: [
+      'StreetLightNotTurningOn1.jpg',
+      'StreetLightNotTurningOn2.jpg',
+    ],
+  },
+  {
+    title: 'Missing Road Sign',
+    description:
+      'The road sign is missing, leaving only the metal pole and an empty circular frame where the sign should be. The structure is still standing, but without the sign it is unclear what type of instruction or warning was intended. The empty frame is noticeable and could be confusing for drivers.',
+    address: 'Via Gabriele D\'Annunzio, 2a, Torino',
+    lat: 45.060403,
+    lng: 7.656218,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: [
+      'MissingRoadSign.jpg',
+    ],
+  },
+  {
+    title: 'Bike Stand Leaning Badly',
+    description:
+      'There is a bike stand that is leaning badly . In its current condition, it doesn’t seem usable for locking a bike safely.',
+    address: 'Via Guido Reni, 188a, Torino',
+    lat: 45.042308,
+    lng: 7.628811,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'BikeStandLeaningBadly1.jpg',
+      'BikeStandLeaningBadly2.jpg',
+      'BikeStandLeaningBadly3.jpg',
+    ],
+  },
 ];
 
 // ============================================================================
