@@ -563,6 +563,44 @@ const REAL_REPORTS = [
       'BikeStandLeaningBadly3.jpg',
     ],
   },
+  {
+    title: 'Leaning Post',
+    description:
+      'The post in front of the crosswalk is leaning to one side.',
+    address: 'Via Giuseppe Peano, 11i, Torino',
+    lat: 45.060776,
+    lng: 7.660105,
+    categoryName: 'Architectural Barriers',
+    images: [
+      'LeaningPost.jpg',
+    ],
+  },
+  {
+    title: 'Leaning Road Sign and Barrier',
+    description:
+      'The road sign post is leaning, and the barriers next to it is also leaning and misaligned.',
+    address: 'Corso Siracusa, 51, Torino',
+    lat: 45.050265,
+    lng: 7.634725,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: [
+      'LeanRoadSignAndBarrier1.jpg',
+      'LeanRoadSignAndBarrier2.jpg',
+      'LeanRoadSignAndBarrier3.jpg',
+    ],
+  },
+  {
+    title: 'Cracked Road/Sidewalk',
+    description:
+      'The road/sidewalk is in very poor condition, with potholes and cracks that make walking and driving difficult.',
+    address: 'Corso Siracusa, 49b, Torino',
+    lat: 45.050587,
+    lng: 7.635093,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'CrackedRoadSidewalk.jpg',
+    ],
+  },
 ];
 
 // ============================================================================
