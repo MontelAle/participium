@@ -99,6 +99,7 @@ describe('UsersService', () => {
           useValue: {
             create: jest.fn(),
             save: jest.fn(),
+            delete: jest.fn(),
           },
         },
       ],
@@ -383,6 +384,9 @@ describe('UsersService', () => {
       await service.deleteMunicipalityUserById('user-1');
 
       expect(accountRepository.delete).toHaveBeenCalledWith({
+        userId: 'user-1',
+      });
+      expect(profileRepository.delete).toHaveBeenCalledWith({
         userId: 'user-1',
       });
       expect(userRepository.delete).toHaveBeenCalledWith({ id: 'user-1' });

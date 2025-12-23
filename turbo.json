@@ -37,6 +37,9 @@
         "coverage/**"
       ]
     },
+    "test:int": {
+      "cache": false
+    },
     "test:e2e": {
       "cache": false
     }
