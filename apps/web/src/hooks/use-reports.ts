@@ -1,6 +1,7 @@
 import {
   getReport,
   getReports,
+  getReportsPublic,
   getReportStats,
   postReportWithImages,
   updateReport,
@@ -15,11 +16,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useReports(
   filters?: FilterReportsDto,
-  options?: { enabled: boolean },
+  options?: { enabled: boolean; isGuest?: boolean },
 ) {
   return useQuery<Report[]>({
-    queryKey: ['reports', filters],
-    queryFn: () => getReports(filters),
+    queryKey: ['reports', filters, options?.isGuest],
+    queryFn: () =>
+      options?.isGuest ? getReportsPublic(filters) : getReports(filters),
     enabled: options?.enabled !== false,
     retry: false,
   });

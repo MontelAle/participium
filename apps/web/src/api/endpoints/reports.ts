@@ -28,6 +28,25 @@ export async function getReports(
   return response.data;
 }
 
+export async function getReportsPublic(
+  filters?: FilterReportsDto,
+): Promise<Report[]> {
+  const queryString = filters
+    ? '?' +
+      new URLSearchParams(
+        filters as unknown as Record<string, string>,
+      ).toString()
+    : '';
+
+  const response = await apiFetch<ReportsResponseDto>(
+    `/reports/public${queryString}`,
+    {
+      method: 'GET',
+    },
+  );
+  return response.data;
+}
+
 export async function getReportStats(): Promise<DashboardStatsDto> {
   const response = await apiFetch<DashboardStatsResponseDto>('/reports/stats', {
     method: 'GET',
