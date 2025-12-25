@@ -1,7 +1,6 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useFilteredReports } from '@/hooks/use-filtered-reports';
 import { useActiveReportStore } from '@/store/activeReportStore';
-import type { Report, ReportStatus } from '@/types';
 import L from 'leaflet';
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -11,7 +10,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import type { NominatimSearchResult, StatusMarker } from '@/types';
+import type {
+  NominatimSearchResult,
+  Report,
+  ReportStatus,
+  StatusMarker,
+} from '@/types';
 import { MapControls } from './map-controls';
 import { SearchBox } from './map-searchbox';
 import {
