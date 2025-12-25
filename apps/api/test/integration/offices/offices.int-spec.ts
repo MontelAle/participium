@@ -3,17 +3,16 @@ jest.mock('nanoid', () => ({
   nanoid: () => 'test-id-' + Math.random().toString(36).substring(7),
 }));
 
-import { Test, TestingModule } from '@nestjs/testing';
-import cookieParser from 'cookie-parser';
+import { Office, Role } from '@entities';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import cookieParser from 'cookie-parser';
 import { DataSource } from 'typeorm';
-import { OfficesModule } from '../../../src/modules/offices/offices.module';
-import { AuthModule } from '../../../src/modules/auth/auth.module';
-import { Role } from '../../../src/common/entities/role.entity';
-import { Office } from '../../../src/common/entities/office.entity';
 import appConfig from '../../../src/config/app.config';
+import { AuthModule } from '../../../src/modules/auth/auth.module';
+import { OfficesModule } from '../../../src/modules/offices/offices.module';
 import { setupTestDB, TypeOrmTestModule } from '../test-helpers';
 
 const request = require('supertest');
@@ -96,17 +95,17 @@ describe('OfficesController (Integration)', () => {
     await dataSource.getRepository(Office).save([office1, office2]);
 
     // Create admin user
-    await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        email: 'admin@example.com',
-        username: 'adminuser',
-        firstName: 'Admin',
-        lastName: 'User',
-        password: 'AdminPassword123!',
-      });
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email: 'admin@example.com',
+      username: 'adminuser',
+      firstName: 'Admin',
+      lastName: 'User',
+      password: 'AdminPassword123!',
+    });
 
-    await dataSource.query(`UPDATE "user" SET "roleId" = '${adminRole.id}' WHERE username = 'adminuser'`);
+    await dataSource.query(
+      `UPDATE "user" SET "roleId" = '${adminRole.id}' WHERE username = 'adminuser'`,
+    );
 
     const adminLoginResponse = await request(app.getHttpServer())
       .post('/auth/login')
@@ -114,24 +113,26 @@ describe('OfficesController (Integration)', () => {
 
     const adminCookies = adminLoginResponse.headers['set-cookie'];
     if (adminCookies && adminCookies.length > 0) {
-      const adminCookie = adminCookies.find((c: string) => c.startsWith('session_token='));
+      const adminCookie = adminCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (adminCookie) {
         adminToken = adminCookie.split(';')[0].split('=')[1];
       }
     }
 
     // Create PR officer user
-    await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        email: 'profficer@example.com',
-        username: 'profficeruser',
-        firstName: 'PR',
-        lastName: 'Officer',
-        password: 'PRPassword123!',
-      });
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email: 'profficer@example.com',
+      username: 'profficeruser',
+      firstName: 'PR',
+      lastName: 'Officer',
+      password: 'PRPassword123!',
+    });
 
-    await dataSource.query(`UPDATE "user" SET "roleId" = '${prOfficerRole.id}' WHERE username = 'profficeruser'`);
+    await dataSource.query(
+      `UPDATE "user" SET "roleId" = '${prOfficerRole.id}' WHERE username = 'profficeruser'`,
+    );
 
     const prOfficerLoginResponse = await request(app.getHttpServer())
       .post('/auth/login')
@@ -139,7 +140,9 @@ describe('OfficesController (Integration)', () => {
 
     const prCookies = prOfficerLoginResponse.headers['set-cookie'];
     if (prCookies && prCookies.length > 0) {
-      const prCookie = prCookies.find((c: string) => c.startsWith('session_token='));
+      const prCookie = prCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (prCookie) {
         prOfficerToken = prCookie.split(';')[0].split('=')[1];
       }
@@ -158,7 +161,9 @@ describe('OfficesController (Integration)', () => {
 
     const userCookies = userResponse.headers['set-cookie'];
     if (userCookies && userCookies.length > 0) {
-      const userCookie = userCookies.find((c: string) => c.startsWith('session_token='));
+      const userCookie = userCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (userCookie) {
         userToken = userCookie.split(';')[0].split('=')[1];
       }
@@ -203,9 +208,7 @@ describe('OfficesController (Integration)', () => {
     });
 
     it('should reject request without authentication', async () => {
-      await request(app.getHttpServer())
-        .get('/offices')
-        .expect(401);
+      await request(app.getHttpServer()).get('/offices').expect(401);
     });
 
     it('should reject request for regular user (403 Forbidden)', async () => {

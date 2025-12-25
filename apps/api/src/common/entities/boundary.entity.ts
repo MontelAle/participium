@@ -1,8 +1,12 @@
-import type { Boundary as BoundaryType, MultiPolygon } from '@repo/api';
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm';
 
+type MultiPolygon = {
+  type: 'MultiPolygon';
+  coordinates: number[][][][];
+};
+
 @Entity('boundary')
-export class Boundary implements BoundaryType {
+export class Boundary {
   @PrimaryColumn('varchar')
   id: string;
 

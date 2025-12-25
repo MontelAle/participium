@@ -1,8 +1,7 @@
-import type { Role as RoleType } from '@repo/api';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('role')
-export class Role implements RoleType {
+export class Role {
   @PrimaryColumn('varchar')
   id: string;
 

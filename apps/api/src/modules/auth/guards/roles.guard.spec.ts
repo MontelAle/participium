@@ -28,7 +28,7 @@ describe('RolesGuard', () => {
 
   it('should throw ForbiddenException if no user or role is present', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['admin']);
-    const requestMock = { user: null };
+    const requestMock: { user: any } = { user: null };
     (context.switchToHttp().getRequest as jest.Mock).mockReturnValue(
       requestMock,
     );

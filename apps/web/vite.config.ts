@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -19,12 +19,9 @@ export default defineConfig({
       },
     },
   },
-  optimizeDeps: {
-    include: ['@repo/api'],
-  },
   build: {
     commonjsOptions: {
-      include: [/packages\/api/, /node_modules/],
+      include: [/node_modules/],
     },
   },
 });

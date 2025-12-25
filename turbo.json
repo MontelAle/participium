@@ -1,8 +1,6 @@
 {
   "$schema": "https://turborepo.com/schema.json",
-  "globalDependencies": [
-    "**/.env.*local"
-  ],
+  "globalDependencies": ["**/.env.*local"],
   "globalEnv": [
     "DB_URL",
     "FRONTEND_URL",
@@ -18,24 +16,19 @@
     "dev": {
       "cache": true,
       "persistent": true,
-      "dependsOn": [
-        "^build"
-      ]
+      "dependsOn": []
     },
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        "dist/**"
-      ]
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
     },
     "lint": {},
     "test": {
       "cache": false,
-      "outputs": [
-        "coverage/**"
-      ]
+      "outputs": ["coverage/**"]
+    },
+    "test:int": {
+      "cache": false
     },
     "test:e2e": {
       "cache": false

@@ -10,15 +10,15 @@ import {
   TableRow,
 } from '@/components/ui/shadcn-io/table';
 import { cn, prettifyRole } from '@/lib/utils';
+import type { Office, Role, User } from '@/types';
 import { MunicipalityUsersTableProps } from '@/types/ui';
-import type { Office, Role, User } from '@repo/api';
-import type { ColumnDef } from '@tanstack/react-table'; // Aggiungi ColumnDef
+import type { ColumnDef } from '@tanstack/react-table';
 import { Pencil, Search } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DeleteMunicipalityUserDialog } from './delete-municipality-user-dialog';
 
-const UserInfoCell = ({ user }: { user: User }) => {
+const UserInfoCell = ({ user }: Readonly<{ user: User }>) => {
   const initials =
     (
       (user.firstName?.charAt(0) || '') + (user.lastName?.charAt(0) || '')
@@ -44,7 +44,7 @@ const UserInfoCell = ({ user }: { user: User }) => {
   );
 };
 
-const RoleCell = ({ role }: { role: Role | undefined }) => {
+const RoleCell = ({ role }: Readonly<{ role: Role | undefined }>) => {
   const name = role?.name || '';
   const isSuperAdmin = name === 'super_admin';
 
@@ -62,7 +62,7 @@ const RoleCell = ({ role }: { role: Role | undefined }) => {
   );
 };
 
-const OfficeCell = ({ office }: { office: Office | undefined }) => {
+const OfficeCell = ({ office }: Readonly<{ office: Office | undefined }>) => {
   const label = office?.label || '-';
   return (
     <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
@@ -71,7 +71,7 @@ const OfficeCell = ({ office }: { office: Office | undefined }) => {
   );
 };
 
-const OperationsCell = ({ user }: { user: User }) => {
+const OperationsCell = ({ user }: Readonly<{ user: User }>) => {
   const navigate = useNavigate();
 
   return (
@@ -90,7 +90,9 @@ const OperationsCell = ({ user }: { user: User }) => {
   );
 };
 
-export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
+export function MunicipalityUsersTable({
+  data,
+}: Readonly<MunicipalityUsersTableProps>) {
   const columns = useMemo<ColumnDef<User>[]>(
     () => [
       {
@@ -124,7 +126,7 @@ export function MunicipalityUsersTable({ data }: MunicipalityUsersTableProps) {
         cell: ({ row }) => <OperationsCell user={row.original} />,
       },
     ],
-    [], // Dipendenze vuote! Molto più efficiente.
+    [],
   );
 
   if (data.length === 0) {

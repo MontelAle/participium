@@ -1,5 +1,5 @@
 import * as authApi from '@/api/endpoints/auth';
-import type { LoginDto, RegisterDto } from '@repo/api';
+import type { LoginDto, RegisterDto } from '@/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useLogin() {

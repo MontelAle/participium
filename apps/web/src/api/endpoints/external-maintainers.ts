@@ -1,4 +1,4 @@
-import type { MunicipalityUsersResponseDto, User } from '@repo/api';
+import type { MunicipalityUsersResponseDto, User } from '@/types';
 import { apiFetch } from '../client';
 
 export async function getExternalMaintainers(): Promise<User[]> {

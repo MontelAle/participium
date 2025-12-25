@@ -1,10 +1,10 @@
+import { User } from '@entities';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   CreateMunicipalityUserDto,
   UpdateMunicipalityUserDto,
-} from '../../common/dto/municipality-user.dto';
-import { User } from '../../common/entities/user.entity';
+} from './dto/municipality-users.dto';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
@@ -210,11 +210,15 @@ describe('UsersController', () => {
         { id: '2', username: 'maintainer2' },
       ];
 
-      usersService.findExternalMaintainers.mockResolvedValue(mockMaintainers as User[]);
+      usersService.findExternalMaintainers.mockResolvedValue(
+        mockMaintainers as User[],
+      );
 
       const result = await controller.getExternalMaintainers();
 
-      expect(usersService.findExternalMaintainers).toHaveBeenCalledWith(undefined);
+      expect(usersService.findExternalMaintainers).toHaveBeenCalledWith(
+        undefined,
+      );
       expect(result).toEqual({ success: true, data: mockMaintainers });
     });
 
@@ -223,11 +227,15 @@ describe('UsersController', () => {
         { id: '1', username: 'maintainer1' },
       ];
 
-      usersService.findExternalMaintainers.mockResolvedValue(mockMaintainers as User[]);
+      usersService.findExternalMaintainers.mockResolvedValue(
+        mockMaintainers as User[],
+      );
 
       const result = await controller.getExternalMaintainers('category-1');
 
-      expect(usersService.findExternalMaintainers).toHaveBeenCalledWith('category-1');
+      expect(usersService.findExternalMaintainers).toHaveBeenCalledWith(
+        'category-1',
+      );
       expect(result).toEqual({ success: true, data: mockMaintainers });
     });
   });

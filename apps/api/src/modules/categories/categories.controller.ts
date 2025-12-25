@@ -1,10 +1,10 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
-import { CategoriesResponseDto } from '../../common/dto/category.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
 import { CategoriesService } from './categories.service';
+import { CategoriesResponseDto } from './dto/category.dto';
 
 @ApiTags('Categories')
 @Controller('categories')

@@ -40,6 +40,7 @@ export function ReportForm() {
       description: '',
       categoryId: '',
       photos: [],
+      isAnonymous: false,
     },
   });
 
@@ -140,6 +141,27 @@ export function ReportForm() {
                 <FileText className="absolute top-4 right-4 size-5 text-muted-foreground/50 pointer-events-none" />
               </div>
             </Field>
+
+
+            <Field>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...register('isAnonymous')}
+                  className="mt-1 h-4 w-4 rounded border-black-300 text-primary focus:ring-primary"
+                />
+                <div className="flex flex-col">
+                  <span className="mb-1 ml-1 text-base font-medium">
+                    Submit this report anonymously
+                  </span>
+                  <span className="ml-1 text-xs text-muted-foreground/70">
+                    Your identity will be hidden from the public.
+                  </span>
+                </div>
+              </label>
+            </Field>
+
+
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-6 mt-4 border-t border-dashed">

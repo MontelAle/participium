@@ -4,27 +4,24 @@ import { useAuth } from '@/contexts/auth-context';
 import { useFilteredReports } from '@/hooks/use-filtered-reports';
 import { cn, getStatusConfig } from '@/lib/utils';
 import { useActiveReportStore } from '@/store/activeReportStore';
+import type { Report } from '@/types';
 import type { ReportsListProps } from '@/types/report';
-import type { Report } from '@repo/api';
 import { CalendarDays, Ghost, MapPin, Tag, User } from 'lucide-react';
-import { useMemo, MouseEvent } from 'react';
+import { type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export function ReportsList({
-  setIsMobileExpanded = () => {},
-}: ReportsListProps) {
+  setIsMobileExpanded = () => undefined,
+}: Readonly<ReportsListProps>) {
   const { reports: baseFilteredReports } = useFilteredReports();
-  const { user, isCitizenUser, isGuestUser } = useAuth();
+  const { isGuestUser } = useAuth();
   const navigate = useNavigate();
   const setLocation = useActiveReportStore((state) => state.setLocation);
 
-  const sidebarReports = useMemo(() => {
-    if (isGuestUser) return [];
-    if (!isCitizenUser || !user) return baseFilteredReports;
-    return [...baseFilteredReports];
-  }, [baseFilteredReports, isCitizenUser, isGuestUser, user]);
+  const sidebarReports = baseFilteredReports;
 
   const handleReportClick = (e: MouseEvent, report: Report) => {
+    e.stopPropagation();
     setIsMobileExpanded(false);
     setLocation({
       latitude: report.location.coordinates[1] ?? 0,
@@ -81,8 +78,16 @@ export function ReportsList({
 
             <div className="mb-3">
               <button
-                onClick={() => handleShowDetails(report.id)}
-                className="text-left w-full font-bold text-xl leading-tight text-foreground mb-1 group-hover:text-primary transition-colors after:absolute after:inset-0 outline-none focus-visible:underline"
+                type="button"
+                onClick={() => !isGuestUser && handleShowDetails(report.id)}
+                disabled={isGuestUser}
+                className={cn(
+                  'text-left w-full font-bold text-xl leading-tight mb-1 transition-colors outline-none focus-visible:underline',
+                  isGuestUser
+                    ? 'text-foreground/60 cursor-not-allowed'
+                    : 'text-foreground group-hover:text-primary cursor-pointer',
+                )}
+                title={isGuestUser ? 'Login to view report details' : ''}
               >
                 {report.title}
               </button>

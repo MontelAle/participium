@@ -8,7 +8,7 @@ import {
   TableProvider,
   TableRow,
 } from '@/components/ui/shadcn-io/table';
-import type { Report } from '@repo/api';
+import type { Report } from '@/types';
 import {
   type CellContext,
   type ColumnDef,

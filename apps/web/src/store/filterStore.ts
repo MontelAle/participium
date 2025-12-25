@@ -1,4 +1,4 @@
-import { ReportFilterState } from '@/types';
+import type { ReportFilterState } from '@/types';
 import { create } from 'zustand';
 
 export const useFilterStore = create<ReportFilterState>((set) => ({

@@ -1,5 +1,4 @@
-import type { Profile } from '@repo/api';
-import { ProfileResponseDto } from '@repo/api';
+import type { Profile, ProfileResponseDto } from '@/types';
 import { apiFetch } from '../client';
 
 export async function updateProfileWithFile(

@@ -12,10 +12,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes } from '@nestjs/swagger';
-import {
-  ProfileResponseDto,
-  UpdateProfileDto,
-} from '../../common/dto/user.dto';
 import { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
 import { SessionGuard } from '../../modules/auth/guards/session-auth.guard';
 import {
@@ -23,6 +19,7 @@ import {
   MAX_PROFILE_PICTURE_SIZE,
   USER_ERROR_MESSAGES,
 } from '../../modules/users/constants/error-messages';
+import { ProfileResponseDto, UpdateProfileDto } from './dto/profiles.dto';
 import { ProfilesService } from './profiles.service';
 
 @Controller('profiles')

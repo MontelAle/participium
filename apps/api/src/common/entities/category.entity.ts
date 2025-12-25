@@ -1,9 +1,8 @@
-import type { Category as CategoryType } from '@repo/api';
 import { Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm';
 import { Office } from './office.entity';
 
 @Entity('category')
-export class Category implements CategoryType {
+export class Category {
   @PrimaryColumn('varchar')
   id: string;
 

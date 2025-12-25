@@ -12,8 +12,7 @@ import { useCategories } from '@/hooks/use-categories';
 import { useExternalMaintainers } from '@/hooks/use-external-maintainers';
 import { useOffices } from '@/hooks/use-offices';
 import { useUpdateReport } from '@/hooks/use-reports';
-import type { Report, UpdateReportDto } from '@repo/api';
-import { ReportStatus } from '@repo/api';
+import type { Report, UpdateReportDto } from '@/types';
 import {
   CalendarClock,
   Ghost,
@@ -140,7 +139,7 @@ export function ViewAssignedReport({
                   <Select
                     value={watch('externalOfficeId') ?? ''}
                     onValueChange={(v) => setValue('externalOfficeId', v)}
-                    disabled={report.status !== ReportStatus.ASSIGNED}
+                    disabled={report.status !== 'assigned'}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select an external company" />
@@ -156,7 +155,7 @@ export function ViewAssignedReport({
                   </Select>
 
                   {watch('externalOfficeId') &&
-                    report.status === ReportStatus.ASSIGNED && (
+                    report.status === 'assigned' && (
                       <button
                         type="button"
                         className="absolute right-12 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
@@ -175,7 +174,7 @@ export function ViewAssignedReport({
               {report.explanation && (
                 <div
                   className={`rounded-lg border p-3 text-sm animate-in fade-in w-full ${
-                    report.status === ReportStatus.REJECTED
+                    report.status === 'rejected'
                       ? 'border-red-200 bg-red-50'
                       : 'border-amber-200 bg-amber-50'
                   }`}
@@ -183,7 +182,7 @@ export function ViewAssignedReport({
                   <div className="flex gap-2">
                     <Info
                       className={`h-4 w-4 mt-0.5 shrink-0 ${
-                        report.status === ReportStatus.REJECTED
+                        report.status === 'rejected'
                           ? 'text-red-600'
                           : 'text-amber-600'
                       }`}
@@ -191,18 +190,18 @@ export function ViewAssignedReport({
                     <div className="space-y-0.5 w-full">
                       <h5
                         className={`font-semibold ${
-                          report.status === ReportStatus.REJECTED
+                          report.status === 'rejected'
                             ? 'text-red-900'
                             : 'text-amber-900'
                         }`}
                       >
-                        {report.status === ReportStatus.REJECTED
+                        {report.status === 'rejected'
                           ? 'Rejection Reason'
                           : 'Admin Note'}
                       </h5>
                       <p
                         className={`leading-relaxed break-words ${
-                          report.status === ReportStatus.REJECTED
+                          report.status === 'rejected'
                             ? 'text-red-800'
                             : 'text-amber-800'
                         }`}

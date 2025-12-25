@@ -1,3 +1,4 @@
+import { Boundary, Category, Report, ReportStatus, User } from '@entities';
 import {
   BadRequestException,
   Injectable,
@@ -8,18 +9,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { nanoid } from 'nanoid';
 import path from 'node:path';
 import { Point, Repository } from 'typeorm';
+import { MinioProvider } from '../../providers/minio/minio.provider';
+import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 import {
   CreateReportDto,
   DashboardStatsDto,
   FilterReportsDto,
   UpdateReportDto,
-} from '../../common/dto/report.dto';
-import { Boundary } from '../../common/entities/boundary.entity';
-import { Category } from '../../common/entities/category.entity';
-import { Report } from '../../common/entities/report.entity';
-import { User } from '../../common/entities/user.entity';
-import { MinioProvider } from '../../providers/minio/minio.provider';
-import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
+} from './dto/reports.dto';
 
 const PRIVILEGED_ROLES = ['pr_officer', 'tech_officer'];
 
@@ -230,6 +227,85 @@ export class ReportsService {
     const reports = await query.getMany();
 
     return reports.map((report) => this.sanitizeReport(report, viewer));
+  }
+
+  async findAllPublic(filters?: FilterReportsDto): Promise<Report[]> {
+    const query = this.reportRepository
+      .createQueryBuilder('report')
+      .leftJoinAndSelect('report.user', 'user')
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('report.category', 'category')
+      .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer')
+      .leftJoinAndSelect(
+        'report.assignedExternalMaintainer',
+        'assignedExternalMaintainer',
+      );
+
+    // For public users, only show reports that are not rejected
+    query.andWhere(`report.status != 'rejected'`);
+
+    if (filters?.status) {
+      query.andWhere('report.status = :status', { status: filters.status });
+    }
+
+    if (filters?.categoryId) {
+      query.andWhere('report.categoryId = :categoryId', {
+        categoryId: filters.categoryId,
+      });
+    }
+
+    if (
+      filters?.minLongitude !== undefined &&
+      filters?.maxLongitude !== undefined &&
+      filters?.minLatitude !== undefined &&
+      filters?.maxLatitude !== undefined
+    ) {
+      query.andWhere(
+        `ST_Contains(
+          ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326),
+          report.location
+        )`,
+        {
+          minLng: filters.minLongitude,
+          minLat: filters.minLatitude,
+          maxLng: filters.maxLongitude,
+          maxLat: filters.maxLatitude,
+        },
+      );
+    }
+
+    if (
+      filters?.searchLongitude !== undefined &&
+      filters?.searchLatitude !== undefined &&
+      filters?.radiusMeters !== undefined
+    ) {
+      query.andWhere(
+        `ST_DWithin(
+          report.location::geography,
+          ST_SetSRID(ST_MakePoint(:searchLng, :searchLat), 4326)::geography,
+          :radius
+        )`,
+        {
+          searchLng: filters.searchLongitude,
+          searchLat: filters.searchLatitude,
+          radius: filters.radiusMeters,
+        },
+      );
+    }
+
+    query.orderBy('report.createdAt', 'DESC');
+
+    const reports = await query.getMany();
+
+    // For public view, always sanitize anonymous reports (no viewer to compare against)
+    return reports.map((report) => {
+      if (!report.isAnonymous) {
+        return report;
+      }
+      const sanitized = { ...report };
+      sanitized.user = null;
+      return sanitized as Report;
+    });
   }
 
   async findOne(id: string, viewer: User): Promise<Report> {
@@ -471,9 +547,12 @@ export class ReportsService {
       return;
     }
 
-    const allowedTransitions = {
+    const allowedTransitions: Record<ReportStatus, string[]> = {
+      pending: [],
       assigned: ['in_progress'],
       in_progress: ['resolved'],
+      resolved: [],
+      rejected: [],
     };
 
     const allowedNextStatuses = allowedTransitions[report.status];

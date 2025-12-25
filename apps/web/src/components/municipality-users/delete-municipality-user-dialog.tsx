@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { useDeleteMunicipalityUser } from '@/hooks/use-municipality-users';
+import type { User } from '@/types';
 import * as Dialog from '@radix-ui/react-dialog';
-import type { User } from '@repo/api';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';

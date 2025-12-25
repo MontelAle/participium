@@ -1,5 +1,5 @@
 import { getRoles } from '@/api/endpoints/roles';
-import type { Role } from '@repo/api';
+import type { Role } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 
 export function useRoles() {

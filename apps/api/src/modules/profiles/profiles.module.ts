@@ -1,9 +1,6 @@
+import { Account, Profile, Session, User } from '@entities';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Account } from '../../common/entities/account.entity';
-import { Profile } from '../../common/entities/profile.entity';
-import { Session } from '../../common/entities/session.entity';
-import { User } from '../../common/entities/user.entity';
 import { ProfilesController } from './profiles.controller';
 import { ProfilesService } from './profiles.service';
 

@@ -12,7 +12,6 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "-": "^0.0.1",
     "@radix-ui/react-avatar": "^1.1.4",
     "@radix-ui/react-collapsible": "^1.1.4",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -51,9 +50,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
-    "@repo/api": "workspace:*",
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
     "@types/leaflet.markercluster": "^1.5.6",
     "@types/node": "^22.10.7",
     "@types/react": "^19.0.1",
