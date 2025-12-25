@@ -1,4 +1,4 @@
-import type { CreateMunicipalityUserDto, Role, User } from '@/types';
+import type { CreateMunicipalityUserDto, Report, Role, User } from '@/types';
 import { LucideIcon } from 'lucide-react';
 import { ComponentProps, ElementType, type ReactNode } from 'react';
 
@@ -71,4 +71,50 @@ export type ActionButtonProps = {
   icon: LucideIcon;
   className?: string;
   disabled?: boolean;
+};
+
+export type ReportLightboxProps = {
+  images: string[];
+  selectedIndex: number | null;
+  onClose: () => void;
+  onIndexChange: (index: number) => void;
+};
+
+export type ReportContentLayoutProps = {
+  report: Report;
+  showAnonymous?: boolean;
+  categoryOverride?: ReactNode;
+  afterCategoryContent?: ReactNode;
+  afterDescriptionContent?: ReactNode;
+  sidebarActions?: ReactNode;
+};
+
+export type ReportDetailLayoutProps = {
+  report: Report | undefined | null;
+  isLoading: boolean;
+  isError: boolean;
+  children: ReactNode;
+  fallbackRoute?: string;
+};
+
+export type FilterPopoverProps = {
+  title: string;
+  options: string[];
+  selected: string[];
+  onSelect: (value: string) => void;
+  icon?: LucideIcon;
+  formatLabel?: (label: string) => string;
+  searchPlaceholder?: string;
+  emptyMessage?: string;
+  width?: string;
+};
+
+export type ReviewReportFormProps = {
+  report: Report;
+  onClose?: () => void;
+};
+
+export type ReportViewProps = {
+  report: Report;
+  showAnonymous?: boolean;
 };
