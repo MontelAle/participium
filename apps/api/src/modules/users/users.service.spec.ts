@@ -1,3 +1,4 @@
+import { Account, Category, Office, Profile, Role, User } from '@entities';
 import {
   BadRequestException,
   ConflictException,
@@ -6,15 +7,9 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateMunicipalityUserDto } from '../../common/dto/municipality-user.dto';
-import { Account } from '../../common/entities/account.entity';
-import { Category } from '../../common/entities/category.entity';
-import { Office } from '../../common/entities/office.entity';
-import { Profile } from '../../common/entities/profile.entity';
-import { Role } from '../../common/entities/role.entity';
-import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { USER_ERROR_MESSAGES } from './constants/error-messages';
+import { CreateMunicipalityUserDto } from './dto/municipality-users.dto';
 import { UsersService } from './users.service';
 
 jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
@@ -231,7 +226,7 @@ describe('UsersService', () => {
     });
 
     it('should throw BadRequestException when external_maintainer has no office', async () => {
-      const externalMaintainerDto = {
+      const externalMaintainerDto: CreateMunicipalityUserDto = {
         ...createDto,
         roleId: 'ext-role',
         officeId: undefined,
@@ -525,11 +520,18 @@ describe('UsersService', () => {
     it('should throw BadRequestException when updating to external_maintainer without office', async () => {
       const existingUser = {
         ...mockUser,
-        role: { id: 'old-role', name: 'tech_officer' },
+        role: {
+          id: 'old-role',
+          name: 'tech_officer',
+          label: 'Tech Officer',
+          isMunicipal: true,
+        },
       };
       const externalMaintainerRole = {
         id: 'ext-role',
         name: 'external_maintainer',
+        label: 'External Maintainer',
+        isMunicipal: true,
       };
 
       userRepository.findOne.mockResolvedValue(existingUser);
@@ -550,16 +552,25 @@ describe('UsersService', () => {
     it('should throw BadRequestException when updating to external_maintainer with non-external office', async () => {
       const existingUser = {
         ...mockUser,
-        role: { id: 'old-role', name: 'tech_officer' },
+        role: {
+          id: 'old-role',
+          name: 'tech_officer',
+          label: 'Tech Officer',
+          isMunicipal: true,
+        },
       };
       const externalMaintainerRole = {
         id: 'ext-role',
         name: 'external_maintainer',
+        label: 'External Maintainer',
+        isMunicipal: true,
       };
       const internalOffice = {
         id: 'office-1',
         name: 'Internal Office',
+        label: 'Internal Office',
         isExternal: false,
+        categories: [] as Category[],
       };
 
       userRepository.findOne.mockResolvedValue(existingUser);
@@ -581,13 +592,25 @@ describe('UsersService', () => {
     it('should throw BadRequestException when updating regular role to external office', async () => {
       const existingUser = {
         ...mockUser,
-        role: { id: 'officer-role', name: 'tech_officer' },
+        role: {
+          id: 'officer-role',
+          name: 'tech_officer',
+          label: 'Tech Officer',
+          isMunicipal: true,
+        },
       };
-      const regularRole = { id: 'officer-role', name: 'tech_officer' };
+      const regularRole = {
+        id: 'officer-role',
+        name: 'tech_officer',
+        label: 'Tech Officer',
+        isMunicipal: true,
+      };
       const externalOffice = {
         id: 'ext-office',
         name: 'External Company',
         isExternal: true,
+        label: 'External Company',
+        categories: [] as Category[],
       };
 
       userRepository.findOne.mockResolvedValue(existingUser);
@@ -609,17 +632,32 @@ describe('UsersService', () => {
     it('should successfully update user to external_maintainer with external office', async () => {
       const existingUser = {
         ...mockUser,
-        role: { id: 'old-role', name: 'tech_officer' },
-        office: { id: 'old-office', name: 'Old Office', isExternal: false },
+        role: {
+          id: 'old-role',
+          name: 'tech_officer',
+          label: 'Tech Officer',
+          isMunicipal: true,
+        },
+        office: {
+          id: 'old-office',
+          name: 'Old Office',
+          isExternal: false,
+          label: 'Old Office',
+          categories: [] as Category[],
+        },
       };
       const externalMaintainerRole = {
         id: 'ext-role',
         name: 'external_maintainer',
+        label: 'External Maintainer',
+        isMunicipal: true,
       };
       const externalOffice = {
         id: 'ext-office',
         name: 'External Company',
         isExternal: true,
+        label: 'External Company',
+        categories: [] as Category[],
       };
 
       userRepository.findOne.mockResolvedValue(existingUser);
@@ -731,7 +769,7 @@ describe('UsersService', () => {
       const mockCategory = {
         id: 'cat-1',
         name: 'Category 1',
-        externalOffice: null,
+        externalOffice: null as string,
       };
 
       const categoryRepository = module.get(getRepositoryToken(Category));
@@ -818,7 +856,7 @@ describe('UsersService', () => {
       const mockCategory = {
         id: 'cat-1',
         name: 'Category 1',
-        office: null,
+        office: null as Office,
       };
 
       const categoryRepository = module.get(getRepositoryToken(Category));

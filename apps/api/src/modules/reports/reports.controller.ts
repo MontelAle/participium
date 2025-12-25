@@ -16,14 +16,7 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
-import {
-  CreateReportDto,
-  DashboardStatsResponseDto,
-  FilterReportsDto,
-  ReportResponseDto,
-  ReportsResponseDto,
-  UpdateReportDto,
-} from '../../common/dto/report.dto';
+import { RequestWithUserSession } from 'src/common/types/request-with-user-session.type';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
@@ -34,6 +27,14 @@ import {
   MIN_IMAGES,
   REPORT_ERROR_MESSAGES,
 } from './constants/error-messages';
+import {
+  CreateReportDto,
+  DashboardStatsResponseDto,
+  FilterReportsDto,
+  ReportResponseDto,
+  ReportsResponseDto,
+  UpdateReportDto,
+} from './dto/reports.dto';
 import { ReportsService } from './reports.service';
 
 @ApiTags('Reports')
@@ -56,7 +57,7 @@ export class ReportsController {
   async create(
     @Body() createReportDto: CreateReportDto,
     @UploadedFiles() images: Express.Multer.File[],
-    @Request() req,
+    @Request() req: RequestWithUserSession,
   ): Promise<ReportResponseDto> {
     if (!images || images.length < MIN_IMAGES || images.length > MAX_IMAGES) {
       throw new BadRequestException(REPORT_ERROR_MESSAGES.IMAGES_REQUIRED);
@@ -101,7 +102,7 @@ export class ReportsController {
   @Get()
   @UseGuards(SessionGuard)
   async findAll(
-    @Request() req,
+    @Request() req: RequestWithUserSession,
     @Query() filters: FilterReportsDto,
   ): Promise<ReportsResponseDto> {
     const reports = await this.reportsService.findAll(req.user, filters);
@@ -113,7 +114,9 @@ export class ReportsController {
    */
   @Get('stats')
   @UseGuards(SessionGuard)
-  async getStats(@Request() req): Promise<DashboardStatsResponseDto> {
+  async getStats(
+    @Request() req: RequestWithUserSession,
+  ): Promise<DashboardStatsResponseDto> {
     const stats = await this.reportsService.getDashboardStats(req.user);
     return { success: true, data: stats };
   }
@@ -124,7 +127,7 @@ export class ReportsController {
   @Get('nearby')
   @UseGuards(SessionGuard)
   async findNearby(
-    @Request() req,
+    @Request() req: RequestWithUserSession,
     @Query('longitude') longitude: string,
     @Query('latitude') latitude: string,
     @Query('radius') radius?: string,
@@ -148,7 +151,7 @@ export class ReportsController {
   @UseGuards(SessionGuard)
   async findOne(
     @Param('id') id: string,
-    @Request() req,
+    @Request() req: RequestWithUserSession,
   ): Promise<ReportResponseDto> {
     const report = await this.reportsService.findOne(id, req.user);
     return { success: true, data: report };
@@ -167,7 +170,7 @@ export class ReportsController {
   async update(
     @Param('id') id: string,
     @Body() updateReportDto: UpdateReportDto,
-    @Request() req,
+    @Request() req: RequestWithUserSession,
   ): Promise<ReportResponseDto> {
     const report = await this.reportsService.update(
       id,
@@ -188,7 +191,7 @@ export class ReportsController {
   @Roles('pr_officer', 'tech_officer')
   async findByUserId(
     @Param('userId') userId: string,
-    @Request() req,
+    @Request() req: RequestWithUserSession,
   ): Promise<ReportsResponseDto> {
     const reports = await this.reportsService.findByUserId(userId, req.user);
     return { success: true, data: reports };

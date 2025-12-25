@@ -1,8 +1,7 @@
 import { MiniMap } from '@/components/mini-map';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import type { Report } from '@repo/api';
-import { ReportStatus } from '@repo/api';
+import type { Report } from '@/types';
 import {
   CalendarClock,
   Ghost,
@@ -73,7 +72,7 @@ export function ReportView({
               {report.explanation && (
                 <div
                   className={`rounded-lg border p-3 text-sm animate-in fade-in w-full ${
-                    report.status === ReportStatus.REJECTED
+                    report.status === 'rejected'
                       ? 'border-red-200 bg-red-50'
                       : 'border-amber-200 bg-amber-50'
                   }`}
@@ -81,7 +80,7 @@ export function ReportView({
                   <div className="flex gap-2">
                     <Info
                       className={`h-4 w-4 mt-0.5 shrink-0 ${
-                        report.status === ReportStatus.REJECTED
+                        report.status === 'rejected'
                           ? 'text-red-600'
                           : 'text-amber-600'
                       }`}
@@ -89,18 +88,18 @@ export function ReportView({
                     <div className="space-y-0.5 w-full">
                       <h5
                         className={`font-semibold ${
-                          report.status === ReportStatus.REJECTED
+                          report.status === 'rejected'
                             ? 'text-red-900'
                             : 'text-amber-900'
                         }`}
                       >
-                        {report.status === ReportStatus.REJECTED
+                        {report.status === 'rejected'
                           ? 'Rejection Reason'
                           : 'Admin Note'}
                       </h5>
                       <p
                         className={`leading-relaxed break-words ${
-                          report.status === ReportStatus.REJECTED
+                          report.status === 'rejected'
                             ? 'text-red-800'
                             : 'text-amber-800'
                         }`}

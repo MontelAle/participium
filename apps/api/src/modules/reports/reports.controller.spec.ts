@@ -1,12 +1,12 @@
+import { Report, ReportStatus } from '@entities';
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 import {
   CreateReportDto,
   FilterReportsDto,
   UpdateReportDto,
-} from '../../common/dto/report.dto';
-import { Report, ReportStatus } from '../../common/entities/report.entity';
-import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
+} from './dto/reports.dto';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 
@@ -20,7 +20,7 @@ describe('ReportsController', () => {
   let reportsService: jest.Mocked<ReportsService>;
 
   const mockUser = { id: 'user-123', role: { name: 'user' } };
-  const mockReq = { user: mockUser };
+  const mockReq = { user: mockUser } as any;
 
   const mockReport: Partial<Report> = {
     id: 'report-123',
@@ -102,7 +102,9 @@ describe('ReportsController', () => {
         },
       ] as Express.Multer.File[];
 
-      const mockReq = { user: { id: 'user-123' } };
+      const mockReq = {
+        user: { id: 'user-123' },
+      } as any;
 
       reportsService.create.mockResolvedValue(mockReport as Report);
 
@@ -147,7 +149,7 @@ describe('ReportsController', () => {
         },
       ] as Express.Multer.File[];
 
-      const mockReq = { user: { id: 'user-123' } };
+      const mockReq = { user: { id: 'user-123' } } as any;
 
       reportsService.create.mockResolvedValue(mockReport as Report);
 
@@ -171,7 +173,7 @@ describe('ReportsController', () => {
         isAnonymous: false,
       };
 
-      const mockReq = { user: { id: 'user-123' } };
+      const mockReq = { user: { id: 'user-123' } } as any;
 
       await expect(controller.create(createDto, [], mockReq)).rejects.toThrow(
         REPORT_ERROR_MESSAGES.IMAGES_REQUIRED,
@@ -195,7 +197,7 @@ describe('ReportsController', () => {
         { originalname: 'test4.jpg', mimetype: 'image/jpeg', size: 1024 },
       ] as Express.Multer.File[];
 
-      const mockReq = { user: { id: 'user-123' } };
+      const mockReq = { user: { id: 'user-123' } } as any;
 
       await expect(
         controller.create(createDto, mockFiles, mockReq),
@@ -221,7 +223,7 @@ describe('ReportsController', () => {
         },
       ] as Express.Multer.File[];
 
-      const mockReq = { user: { id: 'user-123' } };
+      const mockReq = { user: { id: 'user-123' } } as any;
 
       await expect(
         controller.create(createDto, mockFiles, mockReq),
@@ -249,7 +251,7 @@ describe('ReportsController', () => {
         },
       ] as Express.Multer.File[];
 
-      const mockReq = { user: { id: 'user-123' } };
+      const mockReq = { user: { id: 'user-123' } } as any;
 
       await expect(
         controller.create(createDto, mockFiles, mockReq),

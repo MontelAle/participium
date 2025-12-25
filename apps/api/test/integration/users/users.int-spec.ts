@@ -3,22 +3,23 @@ jest.mock('nanoid', () => ({
   nanoid: () => 'test-id-' + Math.random().toString(36).substring(7),
 }));
 
-import { Test, TestingModule } from '@nestjs/testing';
-import cookieParser from 'cookie-parser';
+import { Category, Office, Role, User } from '@entities';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import cookieParser from 'cookie-parser';
 import { DataSource } from 'typeorm';
-import { UsersModule } from '../../../src/modules/users/users.module';
-import { AuthModule } from '../../../src/modules/auth/auth.module';
-import { Role } from '../../../src/common/entities/role.entity';
-import { User } from '../../../src/common/entities/user.entity';
-import { Office } from '../../../src/common/entities/office.entity';
-import { Category } from '../../../src/common/entities/category.entity';
 import appConfig from '../../../src/config/app.config';
-import { setupTestDB, TypeOrmTestModule, MockMinioProvider } from '../test-helpers';
-import { MinioProvider } from '../../../src/providers/minio/minio.provider';
+import { AuthModule } from '../../../src/modules/auth/auth.module';
+import { UsersModule } from '../../../src/modules/users/users.module';
 import { MinioModule } from '../../../src/providers/minio/minio.module';
+import { MinioProvider } from '../../../src/providers/minio/minio.provider';
+import {
+  MockMinioProvider,
+  setupTestDB,
+  TypeOrmTestModule,
+} from '../test-helpers';
 
 const request = require('supertest');
 
@@ -130,17 +131,17 @@ describe('UsersController (Integration)', () => {
     categoryId = category.id;
 
     // Create admin user
-    await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        email: 'admin@example.com',
-        username: 'adminuser',
-        firstName: 'Admin',
-        lastName: 'User',
-        password: 'AdminPassword123!',
-      });
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email: 'admin@example.com',
+      username: 'adminuser',
+      firstName: 'Admin',
+      lastName: 'User',
+      password: 'AdminPassword123!',
+    });
 
-    await dataSource.query(`UPDATE "user" SET "roleId" = '${adminRole.id}' WHERE username = 'adminuser'`);
+    await dataSource.query(
+      `UPDATE "user" SET "roleId" = '${adminRole.id}' WHERE username = 'adminuser'`,
+    );
 
     const adminLoginResponse = await request(app.getHttpServer())
       .post('/auth/login')
@@ -148,24 +149,26 @@ describe('UsersController (Integration)', () => {
 
     const adminCookies = adminLoginResponse.headers['set-cookie'];
     if (adminCookies && adminCookies.length > 0) {
-      const adminCookie = adminCookies.find((c: string) => c.startsWith('session_token='));
+      const adminCookie = adminCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (adminCookie) {
         adminToken = adminCookie.split(';')[0].split('=')[1];
       }
     }
 
     // Create tech officer
-    await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        email: 'tech@example.com',
-        username: 'techuser',
-        firstName: 'Tech',
-        lastName: 'Officer',
-        password: 'TechPassword123!',
-      });
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email: 'tech@example.com',
+      username: 'techuser',
+      firstName: 'Tech',
+      lastName: 'Officer',
+      password: 'TechPassword123!',
+    });
 
-    await dataSource.query(`UPDATE "user" SET "roleId" = '${techOfficerRole.id}' WHERE username = 'techuser'`);
+    await dataSource.query(
+      `UPDATE "user" SET "roleId" = '${techOfficerRole.id}' WHERE username = 'techuser'`,
+    );
 
     const techLoginResponse = await request(app.getHttpServer())
       .post('/auth/login')
@@ -173,7 +176,9 @@ describe('UsersController (Integration)', () => {
 
     const techCookies = techLoginResponse.headers['set-cookie'];
     if (techCookies && techCookies.length > 0) {
-      const techCookie = techCookies.find((c: string) => c.startsWith('session_token='));
+      const techCookie = techCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (techCookie) {
         techOfficerToken = techCookie.split(';')[0].split('=')[1];
       }
@@ -192,7 +197,9 @@ describe('UsersController (Integration)', () => {
 
     const userCookies = userResponse.headers['set-cookie'];
     if (userCookies && userCookies.length > 0) {
-      const userCookie = userCookies.find((c: string) => c.startsWith('session_token='));
+      const userCookie = userCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (userCookie) {
         userToken = userCookie.split(';')[0].split('=')[1];
       }
@@ -207,9 +214,15 @@ describe('UsersController (Integration)', () => {
 
   afterEach(async () => {
     // Clean up municipality users created during tests
-    await dataSource.query(`DELETE FROM "account" WHERE "providerId" = 'local' AND "accountId" NOT IN ('adminuser', 'techuser', 'regularuser')`);
-    await dataSource.query(`DELETE FROM "profile" WHERE "userId" NOT IN (SELECT id FROM "user" WHERE username IN ('adminuser', 'techuser', 'regularuser'))`);
-    await dataSource.query(`DELETE FROM "user" WHERE username NOT IN ('adminuser', 'techuser', 'regularuser')`);
+    await dataSource.query(
+      `DELETE FROM "account" WHERE "providerId" = 'local' AND "accountId" NOT IN ('adminuser', 'techuser', 'regularuser')`,
+    );
+    await dataSource.query(
+      `DELETE FROM "profile" WHERE "userId" NOT IN (SELECT id FROM "user" WHERE username IN ('adminuser', 'techuser', 'regularuser'))`,
+    );
+    await dataSource.query(
+      `DELETE FROM "user" WHERE username NOT IN ('adminuser', 'techuser', 'regularuser')`,
+    );
   });
 
   describe('POST /users/municipality', () => {
@@ -242,7 +255,9 @@ describe('UsersController (Integration)', () => {
       });
 
       // Verify user was created
-      const user = await dataSource.getRepository(User).findOne({ where: { username: createDto.username } });
+      const user = await dataSource
+        .getRepository(User)
+        .findOne({ where: { username: createDto.username } });
       expect(user).toBeDefined();
     });
 
@@ -371,9 +386,7 @@ describe('UsersController (Integration)', () => {
     });
 
     it('should reject request without authentication (401)', async () => {
-      await request(app.getHttpServer())
-        .get('/users/municipality')
-        .expect(401);
+      await request(app.getHttpServer()).get('/users/municipality').expect(401);
     });
 
     it('should reject request for regular user (403 Forbidden)', async () => {
@@ -477,7 +490,9 @@ describe('UsersController (Integration)', () => {
       });
 
       // Verify update
-      const user = await dataSource.getRepository(User).findOne({ where: { id: testUserId } });
+      const user = await dataSource
+        .getRepository(User)
+        .findOne({ where: { id: testUserId } });
       expect(user.firstName).toBe('Updated');
       expect(user.lastName).toBe('Name');
     });
@@ -559,7 +574,9 @@ describe('UsersController (Integration)', () => {
       });
 
       // Verify deletion
-      const user = await dataSource.getRepository(User).findOne({ where: { id: testUserId } });
+      const user = await dataSource
+        .getRepository(User)
+        .findOne({ where: { id: testUserId } });
       expect(user).toBeNull();
     });
 

@@ -1,5 +1,5 @@
 import { getProfile, updateProfileWithFile } from '@/api/endpoints/profile';
-import type { Profile } from '@repo/api';
+import type { Profile } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useProfile(options?: { enabled?: boolean }) {

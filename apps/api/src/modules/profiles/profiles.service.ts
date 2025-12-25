@@ -1,18 +1,16 @@
+import { Account, Profile, User } from '@entities';
 import {
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UpdateProfileDto } from '@repo/api';
 import { nanoid } from 'nanoid';
 import path from 'node:path';
 import { Repository } from 'typeorm';
-import { Account } from '../../common/entities/account.entity';
-import { Profile } from '../../common/entities/profile.entity';
-import { User } from '../../common/entities/user.entity';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { USER_ERROR_MESSAGES } from '../users/constants/error-messages';
+import { UpdateProfileDto } from './dto/profiles.dto';
 
 @Injectable()
 export class ProfilesService {

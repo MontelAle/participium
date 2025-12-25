@@ -1,11 +1,13 @@
-import type {
-  ProfileResponseDto as ProfileResponseDtoType,
-  UpdateProfileDto as UpdateProfileDtoType,
-} from '@repo/api';
-import { IsEmail, IsOptional, IsString, Matches, ValidateIf } from 'class-validator';
-import { Profile } from '../entities/profile.entity';
+import type { Profile } from '@entities';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  Matches,
+  ValidateIf,
+} from 'class-validator';
 
-export class UpdateProfileDto implements UpdateProfileDtoType {
+export class UpdateProfileDto {
   @IsString()
   @IsOptional()
   @ValidateIf((o) => o.telegramUsername !== '')
@@ -22,21 +24,21 @@ export class UpdateProfileDto implements UpdateProfileDtoType {
   @IsEmail()
   @IsOptional()
   email?: string;
-  
+
   @IsString()
   @IsOptional()
   username?: string;
-  
+
   @IsString()
   @IsOptional()
   firstName?: string;
-  
+
   @IsString()
   @IsOptional()
   lastName?: string;
 }
 
-export class ProfileResponseDto implements ProfileResponseDtoType {
+export class ProfileResponseDto {
   success: boolean;
   data: Profile;
 }

@@ -10,8 +10,8 @@ import {
   TableRow,
 } from '@/components/ui/shadcn-io/table';
 import { cn, prettifyRole } from '@/lib/utils';
+import type { Office, Role, User } from '@/types';
 import { MunicipalityUsersTableProps } from '@/types/ui';
-import type { Office, Role, User } from '@repo/api';
 import type { ColumnDef } from '@tanstack/react-table'; // Aggiungi ColumnDef
 import { Pencil, Search } from 'lucide-react';
 import { useMemo } from 'react';

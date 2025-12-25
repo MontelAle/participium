@@ -1,4 +1,3 @@
-import type { User as UserType } from '@repo/api';
 import {
   Column,
   CreateDateColumn,
@@ -12,7 +11,7 @@ import { Office } from './office.entity';
 import { Role } from './role.entity';
 
 @Entity('user')
-export class User implements UserType {
+export class User {
   @PrimaryColumn('varchar')
   id: string;
 

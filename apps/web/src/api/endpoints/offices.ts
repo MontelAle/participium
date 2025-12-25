@@ -1,4 +1,4 @@
-import type { Office, OfficesResponseDto } from '@repo/api';
+import type { Office, OfficesResponseDto } from '@/types';
 import { apiFetch } from '../client';
 
 export async function getOffices(): Promise<Office[]> {

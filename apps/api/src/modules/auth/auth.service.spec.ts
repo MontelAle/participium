@@ -1,15 +1,11 @@
+import { Account, Profile, Role, Session, User } from '@entities';
 import { ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import bcrypt from 'bcrypt';
-import { RegisterDto } from '../../common/dto/auth.dto';
-import { Account } from '../../common/entities/account.entity';
-import { Profile } from '../../common/entities/profile.entity';
-import { Role } from '../../common/entities/role.entity';
-import { Session } from '../../common/entities/session.entity';
-import { User } from '../../common/entities/user.entity';
 import { AuthService } from './auth.service';
+import { RegisterDto } from './dto/auth.dto';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',

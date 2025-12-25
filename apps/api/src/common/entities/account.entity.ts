@@ -1,4 +1,3 @@
-import type { Account as AccountType } from '@repo/api';
 import {
   Column,
   CreateDateColumn,
@@ -11,7 +10,7 @@ import {
 import { User } from './user.entity';
 
 @Entity('account')
-export class Account implements AccountType {
+export class Account {
   @PrimaryColumn('varchar')
   id: string;
 

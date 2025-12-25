@@ -1,5 +1,5 @@
 import { getExternalMaintainers } from '@/api/endpoints/external-maintainers';
-import { User } from '@repo/api';
+import type { User } from '@/types';
 import { useQuery } from '@tanstack/react-query';
 
 export function useExternalMaintainers() {

@@ -1,9 +1,9 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useReports } from '@/hooks/use-reports';
 import { useFilterStore } from '@/store/filterStore';
+import type { Report, User } from '@/types';
 import type { ReportFilters } from '@/types/index';
 import { DateCheckStrategy } from '@/types/ui';
-import type { Report, User } from '@repo/api';
 import {
   endOfDay,
   isAfter,

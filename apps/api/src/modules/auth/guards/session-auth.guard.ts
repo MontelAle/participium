@@ -1,15 +1,15 @@
+import { Session } from '@entities';
 import {
   CanActivate,
   ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Session } from '../../../common/entities/session.entity';
-import type { RequestWithUserSession } from '../../../common/types/request-with-user-session.type';
-import { createHash } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { createHash } from 'node:crypto';
+import { Repository } from 'typeorm';
+import type { RequestWithUserSession } from '../../../common/types/request-with-user-session.type';
 
 @Injectable()
 export class SessionGuard implements CanActivate {

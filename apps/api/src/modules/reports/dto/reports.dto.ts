@@ -1,13 +1,6 @@
+import type { Report } from '@entities';
+import { ReportStatus } from '@entities';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type {
-  CreateReportDto as CreateReportDtoType,
-  DashboardStatsDto as DashboardStatsDtoType,
-  DashboardStatsResponseDto as DashboardStatsResponseDtoType,
-  FilterReportsDto as FilterReportsDtoType,
-  ReportResponseDto as ReportResponseDtoType,
-  ReportsResponseDto as ReportsResponseDtoType,
-  UpdateReportDto as UpdateReportDtoType,
-} from '@repo/api';
 import {
   IsArray,
   IsBoolean,
@@ -19,9 +12,8 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { Report, ReportStatus } from '../entities/report.entity';
 
-export class CreateReportDto implements CreateReportDtoType {
+export class CreateReportDto {
   @IsString()
   @IsNotEmpty()
   title: string;
@@ -67,7 +59,7 @@ export class CreateReportDto implements CreateReportDtoType {
   isAnonymous?: boolean;
 }
 
-export class UpdateReportDto implements UpdateReportDtoType {
+export class UpdateReportDto {
   @IsString()
   @IsOptional()
   title?: string;
@@ -126,7 +118,7 @@ export class UpdateReportDto implements UpdateReportDtoType {
   assignedExternalMaintainerId?: string;
 }
 
-export class FilterReportsDto implements FilterReportsDtoType {
+export class FilterReportsDto {
   @IsEnum(ReportStatus)
   @IsOptional()
   status?: ReportStatus;
@@ -168,17 +160,17 @@ export class FilterReportsDto implements FilterReportsDtoType {
   radiusMeters?: number;
 }
 
-export class ReportResponseDto implements ReportResponseDtoType {
+export class ReportResponseDto {
   success: boolean;
   data: Report;
 }
 
-export class ReportsResponseDto implements ReportsResponseDtoType {
+export class ReportsResponseDto {
   success: boolean;
   data: Report[];
 }
 
-export class DashboardStatsDto implements DashboardStatsDtoType {
+export class DashboardStatsDto {
   @IsNumber()
   total: number;
 
@@ -210,9 +202,7 @@ export class DashboardStatsDto implements DashboardStatsDtoType {
   user_resolved: number;
 }
 
-export class DashboardStatsResponseDto
-  implements DashboardStatsResponseDtoType
-{
+export class DashboardStatsResponseDto {
   success: boolean;
   data: DashboardStatsDto;
 }

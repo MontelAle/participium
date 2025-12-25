@@ -2,7 +2,7 @@ import { MunicipalityUsersTable } from '@/components/municipality-users/municipa
 import { UsersToolbar } from '@/components/municipality-users/user-toolbar';
 import { Button } from '@/components/ui/button';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
-import { User } from '@repo/api';
+import type { User } from '@/types';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';

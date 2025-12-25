@@ -1,9 +1,8 @@
+import { Session, User } from '@entities';
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Session } from '../../../common/entities/session.entity';
-import { User } from '../../../common/entities/user.entity';
 import { SessionGuard } from './session-auth.guard';
 
 type MockRepository<T = any> = {

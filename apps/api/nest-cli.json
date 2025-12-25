@@ -6,8 +6,9 @@
     "watchAssets": true,
     "plugins": [
       {
-        "name": "@nestjs/swagger",
+        "name": "@nestjs/swagger/plugin",
         "options": {
+          "classValidatorShim": true,
           "introspectComments": true
         }
       }

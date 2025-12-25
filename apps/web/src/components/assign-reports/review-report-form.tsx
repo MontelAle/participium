@@ -13,8 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCategories } from '@/hooks/use-categories';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
 import { useUpdateReport } from '@/hooks/use-reports';
-import type { Report, UpdateReportDto, User } from '@repo/api';
-import { ReportStatus } from '@repo/api';
+import type { Report, UpdateReportDto, User } from '@/types';
 import {
   CalendarClock,
   MapPin,
@@ -55,7 +54,7 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
     report.category?.office?.name ?? 'Unknown',
   );
 
-  const isPending = report.status === ReportStatus.PENDING;
+  const isPending = report.status === 'pending';
   const isLoading = updateReportMutation.status === 'pending';
 
   const { register, handleSubmit, watch, setValue } = useForm<FormData>({
@@ -101,10 +100,7 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
     if (!canConfirm) return;
 
     const updateData: UpdateReportDto = {
-      status:
-        data.action === 'reject'
-          ? ReportStatus.REJECTED
-          : ReportStatus.ASSIGNED,
+      status: data.action === 'reject' ? 'rejected' : 'assigned',
       categoryId: data.categoryId,
       ...(data.action === 'reject' && {
         explanation: explanation,
@@ -208,7 +204,7 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
                 {report.description}
               </div>
             </div>
-            {!isPending && report.status === ReportStatus.ASSIGNED && (
+            {!isPending && report.status === 'assigned' && (
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
                   <UserIcon className="size-3.5 text-slate-500 shrink-0" />
@@ -303,7 +299,7 @@ export function ReviewReportForm({ report, onClose }: ReviewReportFormProps) {
                 />
               </div>
             )}
-            {!isPending && report.status === ReportStatus.REJECTED && (
+            {!isPending && report.status === 'rejected' && (
               <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm animate-in fade-in w-full">
                 <h4 className="text-sm font-semibold text-red-900 mb-2 uppercase tracking-wider">
                   Rejection Reason

@@ -1,4 +1,4 @@
-import { LoginDto, RegisterDto, User } from '@repo/api';
+import type { LoginDto, RegisterDto, User } from '@/types';
 
 export type AuthContextType = {
   user: User | null;

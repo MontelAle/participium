@@ -21,7 +21,6 @@ import AssignedReportsViewPage from './pages/app/assigned-reports/view/page';
 import ExternalPage from './pages/app/external/page';
 import AssignReportsStatusViewPage from './pages/app/external/view/page';
 
-
 const App = () => {
   return (
     <BrowserRouter>

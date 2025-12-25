@@ -3,23 +3,23 @@ jest.mock('nanoid', () => ({
   nanoid: () => 'test-id-' + Math.random().toString(36).substring(7),
 }));
 
-import { Test, TestingModule } from '@nestjs/testing';
-import cookieParser from 'cookie-parser';
+import { Boundary, Category, Office, Report, Role } from '@entities';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import cookieParser from 'cookie-parser';
 import { DataSource } from 'typeorm';
-import { ReportsModule } from '../../../src/modules/reports/reports.module';
-import { AuthModule } from '../../../src/modules/auth/auth.module';
-import { Role } from '../../../src/common/entities/role.entity';
-import { Report } from '../../../src/common/entities/report.entity';
-import { Category } from '../../../src/common/entities/category.entity';
-import { Office } from '../../../src/common/entities/office.entity';
-import { Boundary } from '../../../src/common/entities/boundary.entity';
 import appConfig from '../../../src/config/app.config';
-import { setupTestDB, TypeOrmTestModule, MockMinioProvider } from '../test-helpers';
-import { MinioProvider } from '../../../src/providers/minio/minio.provider';
+import { AuthModule } from '../../../src/modules/auth/auth.module';
+import { ReportsModule } from '../../../src/modules/reports/reports.module';
 import { MinioModule } from '../../../src/providers/minio/minio.module';
+import { MinioProvider } from '../../../src/providers/minio/minio.provider';
+import {
+  MockMinioProvider,
+  setupTestDB,
+  TypeOrmTestModule,
+} from '../test-helpers';
 
 const request = require('supertest');
 
@@ -146,7 +146,9 @@ describe('ReportsController (Integration)', () => {
 
     const userCookies = userResponse.headers['set-cookie'];
     if (userCookies && userCookies.length > 0) {
-      const userCookie = userCookies.find((c: string) => c.startsWith('session_token='));
+      const userCookie = userCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (userCookie) {
         userToken = userCookie.split(';')[0].split('=')[1];
       }
@@ -155,17 +157,17 @@ describe('ReportsController (Integration)', () => {
     userId = userResponse.body.data.user.id;
 
     // Create tech officer
-    await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        email: 'tech@example.com',
-        username: 'techuser',
-        firstName: 'Tech',
-        lastName: 'Officer',
-        password: 'TechPassword123!',
-      });
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email: 'tech@example.com',
+      username: 'techuser',
+      firstName: 'Tech',
+      lastName: 'Officer',
+      password: 'TechPassword123!',
+    });
 
-    await dataSource.query(`UPDATE "user" SET "roleId" = '${techOfficerRole.id}' WHERE username = 'techuser'`);
+    await dataSource.query(
+      `UPDATE "user" SET "roleId" = '${techOfficerRole.id}' WHERE username = 'techuser'`,
+    );
 
     const techLoginResponse = await request(app.getHttpServer())
       .post('/auth/login')
@@ -173,24 +175,26 @@ describe('ReportsController (Integration)', () => {
 
     const techCookies = techLoginResponse.headers['set-cookie'];
     if (techCookies && techCookies.length > 0) {
-      const techCookie = techCookies.find((c: string) => c.startsWith('session_token='));
+      const techCookie = techCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (techCookie) {
         techOfficerToken = techCookie.split(';')[0].split('=')[1];
       }
     }
 
     // Create PR officer
-    await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        email: 'profficer@example.com',
-        username: 'profficer',
-        firstName: 'PR',
-        lastName: 'Officer',
-        password: 'PRPassword123!',
-      });
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email: 'profficer@example.com',
+      username: 'profficer',
+      firstName: 'PR',
+      lastName: 'Officer',
+      password: 'PRPassword123!',
+    });
 
-    await dataSource.query(`UPDATE "user" SET "roleId" = '${prOfficerRole.id}' WHERE username = 'profficer'`);
+    await dataSource.query(
+      `UPDATE "user" SET "roleId" = '${prOfficerRole.id}' WHERE username = 'profficer'`,
+    );
 
     const prLoginResponse = await request(app.getHttpServer())
       .post('/auth/login')
@@ -198,7 +202,9 @@ describe('ReportsController (Integration)', () => {
 
     const prCookies = prLoginResponse.headers['set-cookie'];
     if (prCookies && prCookies.length > 0) {
-      const prCookie = prCookies.find((c: string) => c.startsWith('session_token='));
+      const prCookie = prCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (prCookie) {
         prOfficerToken = prCookie.split(';')[0].split('=')[1];
       }
@@ -245,8 +251,8 @@ describe('ReportsController (Integration)', () => {
       });
 
       // Verify report was created in database
-      const report = await dataSource.getRepository(Report).findOne({ 
-        where: { title: 'Test Report' } 
+      const report = await dataSource.getRepository(Report).findOne({
+        where: { title: 'Test Report' },
       });
       expect(report).toBeDefined();
       expect(report.userId).toBe(userId);
@@ -388,9 +394,7 @@ describe('ReportsController (Integration)', () => {
     });
 
     it('should reject request without authentication (401)', async () => {
-      await request(app.getHttpServer())
-        .get('/reports')
-        .expect(401);
+      await request(app.getHttpServer()).get('/reports').expect(401);
     });
   });
 
@@ -413,9 +417,7 @@ describe('ReportsController (Integration)', () => {
     });
 
     it('should reject request without authentication (401)', async () => {
-      await request(app.getHttpServer())
-        .get('/reports/stats')
-        .expect(401);
+      await request(app.getHttpServer()).get('/reports/stats').expect(401);
     });
   });
 

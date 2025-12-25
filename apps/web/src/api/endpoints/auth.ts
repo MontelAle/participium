@@ -3,7 +3,7 @@ import {
   LoginResponseDto,
   LogoutResponseDto,
   RegisterDto,
-} from '@repo/api';
+} from '@/types';
 import { apiFetch } from '../client';
 
 export async function login(credentials: LoginDto): Promise<LoginResponseDto> {

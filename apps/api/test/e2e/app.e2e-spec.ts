@@ -1,15 +1,17 @@
+import {
+  Account,
+  Boundary,
+  Category,
+  Office,
+  Profile,
+  Report,
+  Role,
+  Session,
+  User,
+} from '@entities';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Account } from '../../src/common/entities/account.entity';
-import { Boundary } from '../../src/common/entities/boundary.entity';
-import { Category } from '../../src/common/entities/category.entity';
-import { Office } from '../../src/common/entities/office.entity';
-import { Profile } from '../../src/common/entities/profile.entity';
-import { Report } from '../../src/common/entities/report.entity';
-import { Role } from '../../src/common/entities/role.entity';
-import { Session } from '../../src/common/entities/session.entity';
-import { User } from '../../src/common/entities/user.entity';
 import { LocalAuthGuard } from '../../src/modules/auth/guards/local-auth.guard';
 import { RolesGuard } from '../../src/modules/auth/guards/roles.guard';
 import { SessionGuard } from '../../src/modules/auth/guards/session-auth.guard';
@@ -127,7 +129,7 @@ const createMockRepository = (data: any[] = []) => {
       return Promise.resolve({ affected: existing ? 1 : 0 });
     }),
     createQueryBuilder: jest.fn(() => {
-      const qb = {
+      const qb: any = {
         whereConditions: [] as any[],
         where: jest.fn((condition: any, params?: any) => {
           qb.whereConditions.push({ condition, params });

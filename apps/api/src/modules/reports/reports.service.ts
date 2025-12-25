@@ -1,3 +1,4 @@
+import { Boundary, Category, Report, ReportStatus, User } from '@entities';
 import {
   BadRequestException,
   Injectable,
@@ -8,18 +9,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { nanoid } from 'nanoid';
 import path from 'node:path';
 import { Point, Repository } from 'typeorm';
+import { MinioProvider } from '../../providers/minio/minio.provider';
+import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 import {
   CreateReportDto,
   DashboardStatsDto,
   FilterReportsDto,
   UpdateReportDto,
-} from '../../common/dto/report.dto';
-import { Boundary } from '../../common/entities/boundary.entity';
-import { Category } from '../../common/entities/category.entity';
-import { Report } from '../../common/entities/report.entity';
-import { User } from '../../common/entities/user.entity';
-import { MinioProvider } from '../../providers/minio/minio.provider';
-import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
+} from './dto/reports.dto';
 
 const PRIVILEGED_ROLES = ['pr_officer', 'tech_officer'];
 
@@ -550,9 +547,12 @@ export class ReportsService {
       return;
     }
 
-    const allowedTransitions = {
+    const allowedTransitions: Record<ReportStatus, string[]> = {
+      pending: [],
       assigned: ['in_progress'],
       in_progress: ['resolved'],
+      resolved: [],
+      rejected: [],
     };
 
     const allowedNextStatuses = allowedTransitions[report.status];

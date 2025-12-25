@@ -24,7 +24,7 @@ import type {
   CreateMunicipalityUserDto,
   UpdateMunicipalityUserDto,
   User,
-} from '@repo/api';
+} from '@/types';
 import {
   Briefcase,
   Building2,

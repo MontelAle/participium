@@ -1,4 +1,4 @@
-import { CreateMunicipalityUserDto, Role, User } from '@repo/api';
+import type { CreateMunicipalityUserDto, Role, User } from '@/types';
 import { LucideIcon } from 'lucide-react';
 import { ComponentProps, ElementType, type ReactNode } from 'react';
 

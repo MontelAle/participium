@@ -1,4 +1,3 @@
-import type { Profile as ProfileType } from '@repo/api';
 import {
   Column,
   CreateDateColumn,
@@ -11,7 +10,7 @@ import {
 import { User } from './user.entity';
 
 @Entity('profile')
-export class Profile implements ProfileType {
+export class Profile {
   @PrimaryColumn('varchar')
   id: string;
 

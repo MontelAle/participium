@@ -11,7 +11,7 @@ import type {
   FilterReportsDto,
   Report,
   UpdateReportDto,
-} from '@repo/api';
+} from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useReports(

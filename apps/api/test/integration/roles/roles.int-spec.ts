@@ -3,16 +3,16 @@ jest.mock('nanoid', () => ({
   nanoid: () => 'test-id-' + Math.random().toString(36).substring(7),
 }));
 
-import { Test, TestingModule } from '@nestjs/testing';
-import cookieParser from 'cookie-parser';
+import { Role } from '@entities';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import cookieParser from 'cookie-parser';
 import { DataSource } from 'typeorm';
-import { RolesModule } from '../../../src/modules/roles/roles.module';
-import { AuthModule } from '../../../src/modules/auth/auth.module';
-import { Role } from '../../../src/common/entities/role.entity';
 import appConfig from '../../../src/config/app.config';
+import { AuthModule } from '../../../src/modules/auth/auth.module';
+import { RolesModule } from '../../../src/modules/roles/roles.module';
 import { setupTestDB, TypeOrmTestModule } from '../test-helpers';
 
 const request = require('supertest');
@@ -65,18 +65,18 @@ describe('RolesController (Integration)', () => {
     await dataSource.getRepository(Role).save(userRole);
 
     // Create admin role and user
-    await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        email: 'admin@example.com',
-        username: 'adminuser',
-        firstName: 'Admin',
-        lastName: 'User',
-        password: 'AdminPassword123!',
-      });
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email: 'admin@example.com',
+      username: 'adminuser',
+      firstName: 'Admin',
+      lastName: 'User',
+      password: 'AdminPassword123!',
+    });
 
     // Update user to admin role
-    const adminRole = await dataSource.getRepository(Role).findOne({ where: { name: 'admin' } });
+    const adminRole = await dataSource
+      .getRepository(Role)
+      .findOne({ where: { name: 'admin' } });
     if (!adminRole) {
       const newAdminRole = dataSource.getRepository(Role).create({
         id: 'admin-role-id',
@@ -87,7 +87,9 @@ describe('RolesController (Integration)', () => {
       await dataSource.getRepository(Role).save(newAdminRole);
     }
 
-    await dataSource.query(`UPDATE "user" SET "roleId" = (SELECT id FROM role WHERE name = 'admin') WHERE username = 'adminuser'`);
+    await dataSource.query(
+      `UPDATE "user" SET "roleId" = (SELECT id FROM role WHERE name = 'admin') WHERE username = 'adminuser'`,
+    );
 
     // Login as admin
     const adminLoginResponse = await request(app.getHttpServer())
@@ -96,7 +98,9 @@ describe('RolesController (Integration)', () => {
 
     const adminCookies = adminLoginResponse.headers['set-cookie'];
     if (adminCookies && adminCookies.length > 0) {
-      const adminCookie = adminCookies.find((c: string) => c.startsWith('session_token='));
+      const adminCookie = adminCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (adminCookie) {
         adminToken = adminCookie.split(';')[0].split('=')[1];
       }
@@ -115,7 +119,9 @@ describe('RolesController (Integration)', () => {
 
     const userCookies = userResponse.headers['set-cookie'];
     if (userCookies && userCookies.length > 0) {
-      const userCookie = userCookies.find((c: string) => c.startsWith('session_token='));
+      const userCookie = userCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (userCookie) {
         userToken = userCookie.split(';')[0].split('=')[1];
       }
@@ -149,9 +155,7 @@ describe('RolesController (Integration)', () => {
     });
 
     it('should reject request without authentication', async () => {
-      await request(app.getHttpServer())
-        .get('/roles')
-        .expect(401);
+      await request(app.getHttpServer()).get('/roles').expect(401);
     });
 
     it('should reject request for non-admin user (403 Forbidden)', async () => {

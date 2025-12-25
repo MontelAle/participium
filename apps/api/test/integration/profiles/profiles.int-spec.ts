@@ -3,21 +3,23 @@ jest.mock('nanoid', () => ({
   nanoid: () => 'test-id-' + Math.random().toString(36).substring(7),
 }));
 
-import { Test, TestingModule } from '@nestjs/testing';
-import cookieParser from 'cookie-parser';
+import { Profile, Role } from '@entities';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { Test, TestingModule } from '@nestjs/testing';
 import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import cookieParser from 'cookie-parser';
 import { DataSource } from 'typeorm';
-import { ProfilesModule } from '../../../src/modules/profiles/profiles.module';
-import { AuthModule } from '../../../src/modules/auth/auth.module';
-import { Role } from '../../../src/common/entities/role.entity';
-import { User } from '../../../src/common/entities/user.entity';
-import { Profile } from '../../../src/common/entities/profile.entity';
 import appConfig from '../../../src/config/app.config';
-import { setupTestDB, TypeOrmTestModule, MockMinioProvider } from '../test-helpers';
-import { MinioProvider } from '../../../src/providers/minio/minio.provider';
+import { AuthModule } from '../../../src/modules/auth/auth.module';
+import { ProfilesModule } from '../../../src/modules/profiles/profiles.module';
 import { MinioModule } from '../../../src/providers/minio/minio.module';
+import { MinioProvider } from '../../../src/providers/minio/minio.provider';
+import {
+  MockMinioProvider,
+  setupTestDB,
+  TypeOrmTestModule,
+} from '../test-helpers';
 
 const request = require('supertest');
 
@@ -95,7 +97,9 @@ describe('ProfilesController (Integration)', () => {
 
     const userCookies = userResponse.headers['set-cookie'];
     if (userCookies && userCookies.length > 0) {
-      const userCookie = userCookies.find((c: string) => c.startsWith('session_token='));
+      const userCookie = userCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (userCookie) {
         userToken = userCookie.split(';')[0].split('=')[1];
       }
@@ -104,17 +108,17 @@ describe('ProfilesController (Integration)', () => {
     userId = userResponse.body.data.user.id;
 
     // Create municipal user
-    await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        email: 'municipal@example.com',
-        username: 'municipaluser',
-        firstName: 'Municipal',
-        lastName: 'User',
-        password: 'MunicipalPassword123!',
-      });
+    await request(app.getHttpServer()).post('/auth/register').send({
+      email: 'municipal@example.com',
+      username: 'municipaluser',
+      firstName: 'Municipal',
+      lastName: 'User',
+      password: 'MunicipalPassword123!',
+    });
 
-    await dataSource.query(`UPDATE "user" SET "roleId" = '${techOfficerRole.id}' WHERE username = 'municipaluser'`);
+    await dataSource.query(
+      `UPDATE "user" SET "roleId" = '${techOfficerRole.id}' WHERE username = 'municipaluser'`,
+    );
 
     const municipalLoginResponse = await request(app.getHttpServer())
       .post('/auth/login')
@@ -122,7 +126,9 @@ describe('ProfilesController (Integration)', () => {
 
     const municipalCookies = municipalLoginResponse.headers['set-cookie'];
     if (municipalCookies && municipalCookies.length > 0) {
-      const municipalCookie = municipalCookies.find((c: string) => c.startsWith('session_token='));
+      const municipalCookie = municipalCookies.find((c: string) =>
+        c.startsWith('session_token='),
+      );
       if (municipalCookie) {
         municipalUserToken = municipalCookie.split(';')[0].split('=')[1];
       }
@@ -182,7 +188,7 @@ describe('ProfilesController (Integration)', () => {
       });
 
       // Verify in database
-      const profile = await dataSource.getRepository(Profile).findOne({ 
+      const profile = await dataSource.getRepository(Profile).findOne({
         where: { userId },
         relations: ['user'],
       });
@@ -206,7 +212,9 @@ describe('ProfilesController (Integration)', () => {
       expect(response.body.success).toBe(true);
 
       // Verify in database
-      const profile = await dataSource.getRepository(Profile).findOne({ where: { userId } });
+      const profile = await dataSource
+        .getRepository(Profile)
+        .findOne({ where: { userId } });
       expect(profile.emailNotificationsEnabled).toBe(false);
     });
 
@@ -242,7 +250,9 @@ describe('ProfilesController (Integration)', () => {
         })
         .expect(400);
 
-      expect(response.body.message).toContain('Invalid file type: application/pdf. Allowed types: JPEG, PNG, WebP');
+      expect(response.body.message).toContain(
+        'Invalid file type: application/pdf. Allowed types: JPEG, PNG, WebP',
+      );
     });
 
     it('should reject profile picture exceeding size limit (400 Bad Request)', async () => {

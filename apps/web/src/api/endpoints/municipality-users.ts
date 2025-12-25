@@ -1,13 +1,11 @@
 import type {
+  CreateMunicipalityUserDto,
   MunicipalityUserIdResponseDto,
   MunicipalityUserResponseDto,
   MunicipalityUsersResponseDto,
-  User,
-} from '@repo/api';
-import {
-  CreateMunicipalityUserDto,
   UpdateMunicipalityUserDto,
-} from '@repo/api';
+  User,
+} from '@/types';
 import { apiFetch } from '../client';
 
 export async function getMunicipalityUsers(): Promise<User[]> {
