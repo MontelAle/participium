@@ -122,7 +122,7 @@ export function ReviewReportForm({
       <SelectContent>
         {categories.map((cat) => (
           <SelectItem key={cat.id} value={cat.id}>
-            {cat.name.replaceAll(/_/g, ' ')}
+            {cat.name.replaceAll('_', ' ')}
           </SelectItem>
         ))}
       </SelectContent>

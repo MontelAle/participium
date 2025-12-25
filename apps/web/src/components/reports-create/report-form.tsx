@@ -121,7 +121,7 @@ export function ReportForm() {
                       value={cat.id}
                       className="text-base py-3 cursor-pointer"
                     >
-                      {cat.name.replaceAll(/_/g, ' ')}
+                      {cat.name.replaceAll('_', ' ')}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -142,7 +142,6 @@ export function ReportForm() {
               </div>
             </Field>
 
-
             <Field>
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
@@ -160,8 +159,6 @@ export function ReportForm() {
                 </div>
               </label>
             </Field>
-
-
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-6 mt-4 border-t border-dashed">

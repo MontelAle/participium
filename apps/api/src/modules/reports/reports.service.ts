@@ -112,7 +112,7 @@ export class ReportsService {
         const timestamp = Date.now();
         const sanitizedFilename = path
           .basename(image.originalname)
-          .replace(/[^a-zA-Z0-9.-]/g, '_');
+          .replaceAll(/[^a-zA-Z0-9.-]/g, '_');
         const fileName = `reports/${reportId}/${timestamp}-${sanitizedFilename}`;
 
         const imageUrl = await this.minioProvider.uploadFile(
