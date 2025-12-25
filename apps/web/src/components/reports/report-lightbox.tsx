@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ReportLightboxProps } from '@/types/ui';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 export function ReportLightbox({
   images,
@@ -11,6 +11,8 @@ export function ReportLightbox({
 }: Readonly<ReportLightboxProps>) {
   const isOpen = selectedIndex !== null && images.length > 0;
   const currentIndex = selectedIndex ?? 0;
+
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   const handleNext = useCallback(
     (e?: React.MouseEvent) => {
@@ -37,22 +39,30 @@ export function ReportLightbox({
       if (e.key === 'ArrowLeft') handlePrev();
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    globalThis.addEventListener('keydown', handleKeyDown);
+
     document.body.style.overflow = 'hidden';
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      globalThis.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose, handleNext, handlePrev]);
 
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200"
-      onClick={onClose}
-      role="dialog"
+    <dialog
+      ref={dialogRef}
+      open
+      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200 w-full h-full m-0 p-0 border-none max-w-none max-h-none"
+      onClick={handleBackdropClick}
       aria-modal="true"
       aria-label="Image gallery"
     >
@@ -60,7 +70,10 @@ export function ReportLightbox({
         variant="ghost"
         size="icon"
         className="absolute top-4 right-4 text-white/70 hover:text-white hover:bg-white/10 rounded-full z-[60] h-12 w-12"
-        onClick={onClose}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
         aria-label="Close gallery"
       >
         <X className="size-8" />
@@ -89,21 +102,17 @@ export function ReportLightbox({
           </Button>
         </>
       )}
-
-      <div
-        className="relative w-full h-full flex items-center justify-center p-4 md:p-12"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative w-full h-full flex items-center justify-center p-4 md:p-12 pointer-events-none">
         <img
           src={images[currentIndex]}
           alt={`Evidence ${currentIndex + 1} of ${images.length}`}
-          className="max-w-full max-h-full object-contain rounded shadow-2xl select-none"
+          className="max-w-full max-h-full object-contain rounded shadow-2xl select-none pointer-events-auto"
         />
 
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/50 backdrop-blur-md rounded-full text-white text-sm font-medium border border-white/10">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/50 backdrop-blur-md rounded-full text-white text-sm font-medium border border-white/10 pointer-events-auto">
           {currentIndex + 1} / {images.length}
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }
