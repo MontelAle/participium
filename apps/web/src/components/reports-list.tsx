@@ -14,7 +14,7 @@ export function ReportsList({
   setIsMobileExpanded = () => undefined,
 }: Readonly<ReportsListProps>) {
   const { reports: baseFilteredReports } = useFilteredReports();
-  const { user, isCitizenUser, isGuestUser } = useAuth();
+  const { isGuestUser } = useAuth();
   const navigate = useNavigate();
   const setLocation = useActiveReportStore((state) => state.setLocation);
 
