@@ -62,6 +62,8 @@ describe('ReportsController', () => {
       update: jest.fn(),
       findByUserId: jest.fn(),
       getDashboardStats: jest.fn(),
+      getCommentsForReport: jest.fn(),
+      addCommentToReport: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -528,6 +530,64 @@ describe('ReportsController', () => {
 
       expect(reportsService.getDashboardStats).toHaveBeenCalledWith(mockUser);
       expect(result).toEqual({ success: true, data: mockStats });
+    });
+  });
+
+  describe('getCommentsForReport', () => {
+    it('should return comments for a report', async () => {
+      const mockComments = [
+        {
+          id: 'c1',
+          content: 'First',
+          reportId: 'report-123',
+          user: mockUser,
+          createdAt: new Date('2023-01-01'),
+        },
+        {
+          id: 'c2',
+          content: 'Second',
+          reportId: 'report-123',
+          user: mockUser,
+          createdAt: new Date('2023-01-02'),
+        },
+      ];
+      reportsService.getCommentsForReport.mockResolvedValue(
+        mockComments as any,
+      );
+
+      const result = await controller.getComments('report-123', mockReq);
+
+      expect(reportsService.getCommentsForReport).toHaveBeenCalledWith(
+        'report-123',
+        mockUser,
+      );
+      expect(result).toEqual({ success: true, data: mockComments });
+    });
+  });
+
+  describe('addCommentToReport', () => {
+    it('should add a comment to a report', async () => {
+      const createCommentDto = { content: 'A new comment' };
+      const mockComment = {
+        id: 'c1',
+        ...createCommentDto,
+        reportId: 'report-123',
+        userId: 'user-123',
+      };
+      reportsService.addCommentToReport.mockResolvedValue(mockComment as any);
+
+      const result = await controller.addComment(
+        'report-123',
+        createCommentDto,
+        mockReq,
+      );
+
+      expect(reportsService.addCommentToReport).toHaveBeenCalledWith(
+        'report-123',
+        'user-123',
+        createCommentDto,
+      );
+      expect(result).toEqual({ success: true, data: mockComment });
     });
   });
 });

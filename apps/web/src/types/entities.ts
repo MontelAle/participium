@@ -114,3 +114,14 @@ export type User = {
   officeId?: string;
   office?: Office;
 };
+
+export type Comment = {
+  id: string;
+  content: string;
+  userId: string;
+  user: User;
+  reportId: string;
+  report: Report;
+  createdAt: Date;
+  updatedAt: Date;
+};
