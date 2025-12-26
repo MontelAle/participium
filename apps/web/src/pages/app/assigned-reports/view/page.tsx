@@ -17,13 +17,15 @@ function AssignedReportsViewPage() {
       fallbackRoute="/reports"
     >
       {report && (
-        <ViewAssignedReport
-          report={report}
-          showAnonymous={false}
-          onClose={() => navigate(-1)}
-        />
+        <div className="flex flex-col gap-6">
+          <ViewAssignedReport
+            report={report}
+            showAnonymous={false}
+            onClose={() => navigate(-1)}
+          />
+          <ReportComments reportId={id!} />
+        </div>
       )}
-      <ReportComments reportId={id!} />
     </ReportDetailLayout>
   );
 }

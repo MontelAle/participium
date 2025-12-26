@@ -17,9 +17,11 @@ function AssignReportsViewPage() {
       fallbackRoute="/reports"
     >
       {report && (
-        <ReviewReportForm report={report} onClose={() => navigate(-1)} />
+        <div className="flex flex-col gap-6">
+          <ReviewReportForm report={report} onClose={() => navigate(-1)} />
+          <ReportComments reportId={id!} />
+        </div>
       )}
-      <ReportComments reportId={id!} />
     </ReportDetailLayout>
   );
 }
