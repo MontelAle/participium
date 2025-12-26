@@ -195,6 +195,7 @@ export class UsersService {
 
     await this.userRepository.manager.transaction(async (manager) => {
       await manager.getRepository(Account).delete({ userId: id });
+      await manager.getRepository(Profile).delete({ userId: id });
       await manager.getRepository(User).delete({ id });
     });
   }

@@ -121,6 +121,18 @@ export class ReportsController {
   }
 
   /**
+   * Retrieves all reports with optional filters (public endpoint for guest users).
+   *
+   */
+  @Get('public')
+  async findAllPublic(
+    @Query() filters: FilterReportsDto,
+  ): Promise<ReportsResponseDto> {
+    const reports = await this.reportsService.findAllPublic(filters);
+    return { success: true, data: reports };
+  }
+
+  /**
    * Retrieves all reports with optional filters.
    *
    */

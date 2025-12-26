@@ -44,7 +44,7 @@ export const getStatusConfig = (status: ReportStatus) => {
 
 export const prettifyRole = (name: string) =>
   name
-    .replaceAll(/_/g, ' ')
+    .replaceAll('_', ' ')
     .split(' ')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(' ');

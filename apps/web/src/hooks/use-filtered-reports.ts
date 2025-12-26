@@ -113,22 +113,25 @@ export function useFilteredReports() {
   const { user, isCitizenUser, isGuestUser } = useAuth();
 
   const { data: reports = [], isLoading } = useReports(undefined, {
-    enabled: !isGuestUser,
+    enabled: true,
+    isGuest: isGuestUser,
   });
 
   const { searchTerm, filters, showOnlyMyReports } = useFilterStore();
 
   const filteredReports = useMemo(() => {
-    if (isGuestUser) return [];
     if (!reports.length) return [];
 
     const today = new Date();
 
     return reports.filter((report) => {
-      if (
-        failsPermissionCheck(report, user, isCitizenUser, showOnlyMyReports)
-      ) {
-        return false;
+      // For guest users, skip permission checks but still filter by other criteria
+      if (!isGuestUser) {
+        if (
+          failsPermissionCheck(report, user, isCitizenUser, showOnlyMyReports)
+        ) {
+          return false;
+        }
       }
 
       if (failsStaticFilters(report, filters)) {

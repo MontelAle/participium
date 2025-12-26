@@ -11,9 +11,9 @@ export const baseConfig = {
 export const nestConfig = {
   ...baseConfig,
   rootDir: 'src',
-  testRegex: '.*\\.spec\\.ts$',
+  testRegex: String.raw`.*\.spec\.ts$`,
   transform: {
-    '^.+\\.(t|j)s$': 'ts-jest',
+    [String.raw`^.+\.(t|j)s$`]: 'ts-jest',
   },
   collectCoverageFrom: ['**/*.(t|j)s'],
   coverageDirectory: '../coverage',
