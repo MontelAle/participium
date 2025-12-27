@@ -241,8 +241,10 @@ export class ReportsService {
         'assignedExternalMaintainer',
       );
 
-    // For public users, only show reports that are not rejected
-    query.andWhere(`report.status != 'rejected'`);
+    // For public users, only show reports that are assigned, in_progress, suspended, or resolved
+    query.andWhere(
+      `report.status IN ('assigned', 'in_progress', 'suspended', 'resolved')`,
+    );
 
     if (filters?.status) {
       query.andWhere('report.status = :status', { status: filters.status });
@@ -550,9 +552,10 @@ export class ReportsService {
     const allowedTransitions: Record<ReportStatus, string[]> = {
       pending: [],
       assigned: ['in_progress'],
-      in_progress: ['resolved'],
+      in_progress: ['resolved', 'suspended'],
       resolved: [],
       rejected: [],
+      suspended: ['in_progress'],
     };
 
     const allowedNextStatuses = allowedTransitions[report.status];

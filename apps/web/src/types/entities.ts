@@ -57,7 +57,8 @@ export type ReportStatus =
   | 'in_progress'
   | 'resolved'
   | 'rejected'
-  | 'assigned';
+  | 'assigned'
+  | 'suspended';
 
 export type Report = {
   id: string;

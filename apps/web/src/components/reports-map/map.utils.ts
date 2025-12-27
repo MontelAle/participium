@@ -45,6 +45,12 @@ export const STATUS_COLORS = {
     class: 'cluster-assigned',
     badgeClass: 'bg-purple-500/15 text-purple-700 border-purple-200',
   },
+  ['suspended']: {
+    hex: '#6b7280',
+    label: 'Suspended',
+    class: 'cluster-suspended',
+    badgeClass: 'bg-gray-500/15 text-gray-700 border-gray-200',
+  },
 };
 
 export const DEFAULT_COLOR = {
