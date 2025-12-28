@@ -136,3 +136,13 @@ export type Message = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type Notification = {
+  id: string;
+  userId: string;
+  type: string;
+  message?: string;
+  reportId?: string;
+  read: boolean;
+  createdAt: Date;
+};
