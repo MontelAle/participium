@@ -3,6 +3,7 @@ import {
   Category,
   Comment,
   Message,
+  Notification,
   Report,
   Session,
   User,

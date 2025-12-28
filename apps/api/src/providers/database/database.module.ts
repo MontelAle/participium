@@ -4,6 +4,7 @@ import {
   Category,
   Comment,
   Message,
+  Notification,
   Office,
   Profile,
   Report,
