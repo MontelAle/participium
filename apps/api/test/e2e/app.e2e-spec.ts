@@ -2,6 +2,7 @@ import {
   Account,
   Boundary,
   Category,
+  Comment,
   Office,
   Profile,
   Report,
@@ -544,6 +545,8 @@ describe('AppController (e2e)', () => {
       .useValue(mockOfficeRepository)
       .overrideProvider(getRepositoryToken(Profile))
       .useValue(mockProfileRepository)
+      .overrideProvider(getRepositoryToken(Comment))
+      .useValue(createMockRepository([]))
       .overrideProvider(getRepositoryToken(Boundary))
       .useValue(
         createMockRepository([

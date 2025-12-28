@@ -1,6 +1,7 @@
 export { Account } from './account.entity';
 export { Boundary } from './boundary.entity';
 export { Category } from './category.entity';
+export { Comment } from './comment.entity';
 export { Office } from './office.entity';
 export { Profile } from './profile.entity';
 export { Report, ReportStatus } from './report.entity';

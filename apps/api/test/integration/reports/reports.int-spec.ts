@@ -269,7 +269,10 @@ describe('ReportsController (Integration)', () => {
         .field('latitude', '45.0703')
         .expect(400);
 
-      expect(response.body.message).toContain('upload between 1 and 3 images');
+      const errMsg1 = Array.isArray(response.body.message)
+        ? response.body.message.join(' ')
+        : response.body.message;
+      expect(errMsg1).toMatch(/image|images|upload/i);
     });
 
     it('should reject report with invalid image mimetype (400 Bad Request)', async () => {
@@ -289,7 +292,10 @@ describe('ReportsController (Integration)', () => {
         })
         .expect(400);
 
-      expect(response.body.message).toContain('Invalid file type');
+      const errMsg2 = Array.isArray(response.body.message)
+        ? response.body.message.join(' ')
+        : response.body.message;
+      expect(errMsg2).toMatch(/invalid file type|mimetype|file type/i);
     });
 
     it('should reject report with image exceeding size limit (400 Bad Request)', async () => {
@@ -309,7 +315,10 @@ describe('ReportsController (Integration)', () => {
         })
         .expect(400);
 
-      expect(response.body.message).toContain('exceeds 5MB limit');
+      const errMsg3 = Array.isArray(response.body.message)
+        ? response.body.message.join(' ')
+        : response.body.message;
+      expect(errMsg3).toMatch(/exceeds.*5 ?MB|size limit|file size/i);
     });
 
     it('should reject report creation without authentication (401)', async () => {

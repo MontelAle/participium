@@ -1,4 +1,11 @@
-import { Boundary, Category, Report, ReportStatus, User } from '@entities';
+import {
+  Boundary,
+  Category,
+  Comment,
+  Report,
+  ReportStatus,
+  User,
+} from '@entities';
 import {
   BadRequestException,
   InternalServerErrorException,
@@ -52,6 +59,7 @@ describe('ReportsService', () => {
   let userRepository: jest.Mocked<Repository<User>>;
   let boundaryRepository: jest.Mocked<Repository<Boundary>>;
   let minioProvider: jest.Mocked<MinioProvider>;
+  let commentRepository: jest.Mocked<Repository<Comment>>;
 
   const mockCitizenUser = { id: 'user-123', role: { name: 'user' } } as User;
   const mockOtherCitizenUser = {
@@ -115,6 +123,18 @@ describe('ReportsService', () => {
           },
         },
         {
+          provide: getRepositoryToken(Comment),
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn(),
+            find: jest.fn(),
+            findOne: jest.fn(),
+            remove: jest.fn(),
+            count: jest.fn(),
+            createQueryBuilder: jest.fn(() => createMockQueryBuilder()),
+          },
+        },
+        {
           provide: MinioProvider,
           useValue: {
             uploadFile: jest.fn(),
@@ -132,6 +152,7 @@ describe('ReportsService', () => {
     boundaryRepository = module.get(getRepositoryToken(Boundary));
     minioProvider = module.get(MinioProvider);
     userRepository = module.get(getRepositoryToken(User));
+    commentRepository = module.get(getRepositoryToken(Comment));
   });
 
   it('should be defined', () => {
@@ -2034,6 +2055,39 @@ describe('ReportsService', () => {
         user_in_progress: 0,
         user_resolved: 0,
       });
+    });
+  });
+
+  describe('getCommentsForReport', () => {
+    it('should fetch comments for a report with correct relations and order', async () => {
+      const mockViewer = { id: 'user-123', role: { name: 'user' } } as User;
+      const mockComments = [
+        {
+          id: 'c1',
+          content: 'First',
+          reportId: 'r1',
+          user: mockViewer,
+          createdAt: new Date('2023-01-01'),
+        },
+        {
+          id: 'c2',
+          content: 'Second',
+          reportId: 'r1',
+          user: mockViewer,
+          createdAt: new Date('2023-01-02'),
+        },
+      ] as unknown as Comment[];
+      jest.spyOn(service, 'findOne').mockResolvedValue({ id: 'r1' } as Report);
+      commentRepository.find.mockResolvedValue(mockComments);
+
+      const result = await service.getCommentsForReport('r1', mockViewer);
+      expect(service.findOne).toHaveBeenCalledWith('r1', mockViewer);
+      expect(commentRepository.find).toHaveBeenCalledWith({
+        where: { reportId: 'r1' },
+        relations: ['user'],
+        order: { createdAt: 'ASC' },
+      });
+      expect(result).toBe(mockComments);
     });
   });
 });

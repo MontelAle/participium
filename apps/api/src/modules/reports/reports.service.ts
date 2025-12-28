@@ -1,4 +1,11 @@
-import { Boundary, Category, Report, ReportStatus, User } from '@entities';
+import {
+  Boundary,
+  Category,
+  Comment,
+  Report,
+  ReportStatus,
+  User,
+} from '@entities';
 import {
   BadRequestException,
   Injectable,
@@ -11,6 +18,7 @@ import path from 'node:path';
 import { Point, Repository } from 'typeorm';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
+import { CreateCommentDto } from './dto/create-comment.dto';
 import {
   CreateReportDto,
   DashboardStatsDto,
@@ -31,6 +39,8 @@ export class ReportsService {
     @InjectRepository(Boundary)
     private readonly boundaryRepository: Repository<Boundary>,
     private readonly minioProvider: MinioProvider,
+    @InjectRepository(Comment)
+    private readonly commentRepository: Repository<Comment>,
   ) {}
 
   private createPointGeometry(longitude: number, latitude: number): Point {
@@ -716,5 +726,32 @@ export class ReportsService {
       user_in_progress: Number(stats.user_in_progress || 0),
       user_resolved: Number(stats.user_resolved || 0),
     };
+  }
+
+  async getCommentsForReport(
+    reportId: string,
+    viewer: User,
+  ): Promise<Comment[]> {
+    // Optionally: check report exists and user can view
+    await this.findOne(reportId, viewer);
+    return this.commentRepository.find({
+      where: { reportId },
+      relations: ['user'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async addCommentToReport(
+    reportId: string,
+    userId: string,
+    dto: CreateCommentDto,
+  ): Promise<Comment> {
+    // Optionally: check report exists
+    const comment = this.commentRepository.create({
+      content: dto.content,
+      reportId,
+      userId,
+    });
+    return this.commentRepository.save(comment);
   }
 }
