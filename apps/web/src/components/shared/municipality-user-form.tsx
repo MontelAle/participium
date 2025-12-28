@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useCategories } from '@/hooks/use-categories';
 import {
   useCreateMunicipalityUser,
   useUpdateMunicipalityUser,
@@ -57,6 +58,7 @@ export function MunicipalityUserForm({
   const { mutateAsync: updateMunicipalityUser } = useUpdateMunicipalityUser();
   const { data: roles = [] } = useRoles();
   const { data: offices = [] } = useOffices();
+  const { data: categories = [] } = useCategories();
 
   const initialForm: FormData =
     mode === 'edit'
@@ -290,6 +292,32 @@ export function MunicipalityUserForm({
                 </InputGroupAddon>
               </InputGroup>
             </Field>
+
+            {selectedRoleName === 'external_maintainer' && form.officeId && (
+              <Field className="md:col-span-2">
+                <FieldLabel>Categories for this Office</FieldLabel>
+                  <InputGroup className="h-12">
+                    <InputGroupInput
+                      readOnly
+                      value={
+                        (() => {
+                          const selectedOffice = offices.find(o => o.id === form.officeId);
+
+                          if (!selectedOffice) return '';
+
+                          if (selectedOffice.isExternal) {
+                          return categories.filter(c => c.externalOffice?.id === selectedOffice.id).map(c => c.name).join(', ');
+                          }
+
+                          return selectedOffice.categories?.map(c => c.name).join(', ') ?? '';
+                        })()
+                      }
+                      className="text-base bg-gray-100 cursor-not-allowed"
+                    />
+                  </InputGroup>
+              </Field>
+           )}
+
           </div>
           {mode === 'create' && (
             <Field>
