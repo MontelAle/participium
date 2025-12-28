@@ -125,3 +125,14 @@ export type Comment = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type Message = {
+  id: string;
+  content: string;
+  userId: string;
+  user: User;
+  reportId: string;
+  report: Report;
+  createdAt: Date;
+  updatedAt: Date;
+};

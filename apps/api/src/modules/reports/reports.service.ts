@@ -2,6 +2,7 @@ import {
   Boundary,
   Category,
   Comment,
+  Message,
   Report,
   ReportStatus,
   User,
@@ -19,6 +20,7 @@ import { Point, Repository } from 'typeorm';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { REPORT_ERROR_MESSAGES } from './constants/error-messages';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { CreateMessageDto } from './dto/create-message.dto';
 import {
   CreateReportDto,
   DashboardStatsDto,
@@ -41,6 +43,8 @@ export class ReportsService {
     private readonly minioProvider: MinioProvider,
     @InjectRepository(Comment)
     private readonly commentRepository: Repository<Comment>,
+    @InjectRepository(Message)
+    private readonly messageRepository: Repository<Message>,
   ) {}
 
   private createPointGeometry(longitude: number, latitude: number): Point {
@@ -741,6 +745,19 @@ export class ReportsService {
     });
   }
 
+  async getMessagesForReport(
+    reportId: string,
+    viewer: User,
+  ): Promise<Message[]> {
+    // Ensure report exists and viewer can view
+    await this.findOne(reportId, viewer);
+    return this.messageRepository.find({
+      where: { reportId },
+      relations: ['user'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
   async addCommentToReport(
     reportId: string,
     userId: string,
@@ -753,5 +770,18 @@ export class ReportsService {
       userId,
     });
     return this.commentRepository.save(comment);
+  }
+
+  async addMessageToReport(
+    reportId: string,
+    userId: string,
+    dto: CreateMessageDto,
+  ): Promise<Message> {
+    const message = this.messageRepository.create({
+      content: dto.content,
+      reportId,
+      userId,
+    });
+    return this.messageRepository.save(message);
   }
 }

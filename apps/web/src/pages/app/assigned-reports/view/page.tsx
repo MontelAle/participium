@@ -1,6 +1,7 @@
 import { ViewAssignedReport } from '@/components/assigned-reports/view-report-form';
 import { ReportDetailLayout } from '@/components/reports/report-detail-layout';
 import { ReportComments } from '@/components/shared/report-comments';
+import { ReportMessages } from '@/components/shared/report-messages';
 import { useReport } from '@/hooks/use-reports';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -23,7 +24,10 @@ function AssignedReportsViewPage() {
             showAnonymous={false}
             onClose={() => navigate(-1)}
           />
-          <ReportComments reportId={id!} />
+          <div className="flex flex-col gap-4">
+            <ReportComments reportId={id!} />
+            <ReportMessages reportId={id!} />
+          </div>
         </div>
       )}
     </ReportDetailLayout>
