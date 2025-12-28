@@ -3,6 +3,7 @@ import {
   Category,
   Comment,
   Message,
+  Notification,
   Report,
   ReportStatus,
   User,
@@ -45,6 +46,8 @@ export class ReportsService {
     private readonly commentRepository: Repository<Comment>,
     @InjectRepository(Message)
     private readonly messageRepository: Repository<Message>,
+    @InjectRepository(Notification)
+    private readonly notificationRepository: Repository<Notification>,
   ) {}
 
   private createPointGeometry(longitude: number, latitude: number): Point {
@@ -362,6 +365,7 @@ export class ReportsService {
     actor?: User,
   ): Promise<Report> {
     const report = await this.findReportEntity(id);
+    const previousStatus = report.status;
 
     if (actor?.role?.name === 'external_maintainer') {
       if (report.assignedExternalMaintainerId !== actor.id) {
@@ -398,6 +402,28 @@ export class ReportsService {
       report.processedById = actor.id;
     }
     this.applyBasicUpdates(report, updateReportDto);
+
+    // If status changed, create a notification for the report owner
+    if (
+      updateReportDto.status !== undefined &&
+      updateReportDto.status !== previousStatus &&
+      report.userId
+    ) {
+      try {
+        const message = `Your report${report.title ? ` \"${report.title}\"` : ''} status changed to ${updateReportDto.status}`;
+        const notification = this.notificationRepository.create({
+          userId: report.userId,
+          type: 'report_status_changed',
+          message,
+          reportId: report.id,
+          read: false,
+        });
+        await this.notificationRepository.save(notification);
+      } catch (err) {
+        // Do not block report update if notification fails
+        console.error('Failed to create notification', err);
+      }
+    }
 
     return await this.reportRepository.save(report);
   }

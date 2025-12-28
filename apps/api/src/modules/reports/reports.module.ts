@@ -23,6 +23,7 @@ import { ReportsService } from './reports.service';
       Boundary,
       Comment,
       Message,
+      Notification,
     ]),
   ],
   controllers: [ReportsController],

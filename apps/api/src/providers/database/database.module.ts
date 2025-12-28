@@ -35,6 +35,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
           Account,
           Comment,
           Message,
+          Notification,
           Report,
           Office,
           Profile,
