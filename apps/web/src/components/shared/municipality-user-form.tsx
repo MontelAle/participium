@@ -296,27 +296,36 @@ export function MunicipalityUserForm({
             {selectedRoleName === 'external_maintainer' && form.officeId && (
               <Field className="md:col-span-2">
                 <FieldLabel>Categories for this Office</FieldLabel>
-                  <InputGroup className="h-12">
-                    <InputGroupInput
-                      readOnly
-                      value={
-                        (() => {
-                          const selectedOffice = offices.find(o => o.id === form.officeId);
-
-                          if (!selectedOffice) return '';
-
-                          if (selectedOffice.isExternal) {
-                          return categories.filter(c => c.externalOffice?.id === selectedOffice.id).map(c => c.name).join(', ');
-                          }
-
-                          return selectedOffice.categories?.map(c => c.name).join(', ') ?? '';
-                        })()
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {(() => {
+                      const selectedOffice = offices.find(
+                        (o) => o.id === form.officeId,
+                      );
+                      if (!selectedOffice) return null;
+                      const officeCategories = selectedOffice.isExternal? categories.filter((c) => c.externalOffice?.id === selectedOffice.id,)
+                        : selectedOffice.categories ?? [];
+                      if (officeCategories.length === 0) {
+                        return (
+                        <span className="text-sm text-muted-foreground italic">
+                          No categories assigned
+                        </span>
+                        );
                       }
-                      className="text-base bg-gray-100 cursor-not-allowed"
-                    />
-                  </InputGroup>
+                      return officeCategories.map((category) => (
+                        <span
+                          key={category.id}
+                          className="inline-flex items-center px-3 py-1.5 rounded-md
+                            bg-gray-100 border border-gray-200
+                            text-gray-700 text-sm font-medium"
+                        >
+                          {category.name}
+                        </span>
+                      ));
+                    })()}
+                  </div>
               </Field>
-           )}
+            )}
+
 
           </div>
           {mode === 'create' && (
