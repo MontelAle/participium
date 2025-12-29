@@ -139,6 +139,37 @@ participium/
 
 ---
 
+---
+
+## Testing
+
+This project includes both unit and integration tests for the backend. Tests follow the existing patterns used across the repository:
+
+- Unit tests: placed next to the source files and use Jest. Unit tests mock repositories and providers where appropriate. Examples:
+  - `apps/api/src/modules/notifications/notifications.service.spec.ts`
+  - `apps/api/src/modules/notifications/notifications.controller.spec.ts`
+
+- Integration tests: start a PostgreSQL (PostGIS) container using Testcontainers and boot a real NestJS application instance. Integration tests are located under `apps/api/test/integration` and follow the same lifecycle and cleanup strategy as other integration specs in the project. Example:
+  - `apps/api/test/integration/notifications/notifications.int-spec.ts`
+
+Running tests
+
+- From the API folder run:
+
+```bash
+cd apps/api
+pnpm test
+# or
+npm run test
+```
+
+Notes and requirements
+
+- Integration tests require Docker to be available because they use Testcontainers to launch a PostgreSQL container.
+- Tests will create and tear down database resources; expect integration specs to take longer than unit tests.
+- Use Jest's `-t` filter or `--testPathPattern` to run a subset of tests during development.
+
+
 ## Backend API
 
 ### Ports and URLs
