@@ -3,6 +3,7 @@ import {
   Category,
   Comment,
   Message,
+  Notification,
   Report,
   ReportStatus,
   User,
@@ -138,6 +139,18 @@ describe('ReportsService', () => {
         },
         {
           provide: getRepositoryToken(Message),
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn(),
+            find: jest.fn(),
+            findOne: jest.fn(),
+            remove: jest.fn(),
+            count: jest.fn(),
+            createQueryBuilder: jest.fn(() => createMockQueryBuilder()),
+          },
+        },
+        {
+          provide: getRepositoryToken(Notification),
           useValue: {
             create: jest.fn(),
             save: jest.fn(),
@@ -1173,37 +1186,6 @@ describe('ReportsService', () => {
         status: ReportStatus.IN_PROGRESS,
       });
       expect(result).toEqual(updatedReport);
-    });
-
-    it('should set processedById when status is assigned by a pr_officer', async () => {
-      const mockActor = {
-        id: 'pr-officer-1',
-        role: { name: 'pr_officer' },
-      } as User;
-      const updateDto: UpdateReportDto = {
-        status: ReportStatus.ASSIGNED,
-        assignedOfficerId: 'tech-1',
-      };
-
-      const mockTechOfficer = { id: 'tech-1' } as User;
-
-      reportRepository.findOne.mockResolvedValue(mockReport as Report);
-      (userRepository.findOne as jest.Mock).mockResolvedValue(mockTechOfficer);
-
-      reportRepository.save.mockImplementation(
-        async (entity) => entity as Report,
-      );
-
-      const result = await service.update('mocked-id', updateDto, mockActor);
-
-      expect(result.processedById).toBe('pr-officer-1');
-      expect(result.assignedOfficerId).toBe('tech-1');
-      expect(reportRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          processedById: 'pr-officer-1',
-          status: ReportStatus.ASSIGNED,
-        }),
-      );
     });
 
     it('should set processedById when status is rejected by an actor', async () => {

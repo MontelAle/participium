@@ -616,49 +616,56 @@ export class ReportsService {
         ),
       );
     }
+  }
 
-    private validateOfficerStatusChange(
-      report: Report,
-      updateDto: UpdateReportDto,
-      actor: User,
-    ): void {
-      if (!updateDto.status) return;
+  private validateOfficerStatusChange(
+    report: Report,
+    updateDto: UpdateReportDto,
+    actor: User,
+  ): void {
+    if (!updateDto.status) return;
 
-      // Define allowed transitions per officer role
-      const prOfficerTransitions: Record<ReportStatus, ReportStatus[]> = {
-        pending: [ReportStatus.IN_PROGRESS, ReportStatus.ASSIGNED, ReportStatus.REJECTED],
-        assigned: [ReportStatus.IN_PROGRESS, ReportStatus.REJECTED],
-        in_progress: [ReportStatus.RESOLVED, ReportStatus.REJECTED],
-        resolved: [],
-        rejected: [],
-      };
+    // Define allowed transitions per officer role
+    const prOfficerTransitions: Record<ReportStatus, ReportStatus[]> = {
+      pending: [
+        ReportStatus.IN_PROGRESS,
+        ReportStatus.ASSIGNED,
+        ReportStatus.REJECTED,
+      ],
+      assigned: [ReportStatus.IN_PROGRESS, ReportStatus.REJECTED],
+      in_progress: [ReportStatus.RESOLVED, ReportStatus.REJECTED],
+      resolved: [],
+      rejected: [],
+    };
 
-      const techOfficerTransitions: Record<ReportStatus, ReportStatus[]> = {
-        pending: [ReportStatus.ASSIGNED],
-        assigned: [ReportStatus.IN_PROGRESS, ReportStatus.REJECTED],
-        in_progress: [ReportStatus.RESOLVED],
-        resolved: [],
-        rejected: [],
-      };
+    const techOfficerTransitions: Record<ReportStatus, ReportStatus[]> = {
+      pending: [ReportStatus.ASSIGNED],
+      assigned: [ReportStatus.IN_PROGRESS, ReportStatus.REJECTED],
+      in_progress: [ReportStatus.RESOLVED],
+      resolved: [],
+      rejected: [],
+    };
 
-      const roleName = actor.role?.name;
-      let allowedNext: ReportStatus[] | undefined;
+    const roleName = actor.role?.name;
+    let allowedNext: ReportStatus[] | undefined;
 
-      if (roleName === 'pr_officer') {
-        allowedNext = prOfficerTransitions[report.status];
-      } else if (roleName === 'tech_officer') {
-        allowedNext = techOfficerTransitions[report.status];
-      }
+    if (roleName === 'pr_officer') {
+      allowedNext = prOfficerTransitions[report.status];
+    } else if (roleName === 'tech_officer') {
+      allowedNext = techOfficerTransitions[report.status];
+    }
 
-      if (!allowedNext || !allowedNext.includes(updateDto.status as ReportStatus)) {
-        throw new BadRequestException(
-          REPORT_ERROR_MESSAGES.OFFICER_INVALID_STATUS_TRANSITION(
-            report.status,
-            updateDto.status,
-            roleName,
-          ),
-        );
-      }
+    if (
+      !allowedNext ||
+      !allowedNext.includes(updateDto.status as ReportStatus)
+    ) {
+      throw new BadRequestException(
+        REPORT_ERROR_MESSAGES.OFFICER_INVALID_STATUS_TRANSITION(
+          report.status,
+          updateDto.status,
+          roleName,
+        ),
+      );
     }
   }
 
