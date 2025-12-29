@@ -101,7 +101,6 @@ describe('ReportsController (Integration)', () => {
       label: 'Technical Office',
     });
     await dataSource.getRepository(Office).save(office);
-    officeId = office.id;
 
     // Create category
     const category = dataSource.getRepository(Category).create({
@@ -121,11 +120,11 @@ describe('ReportsController (Integration)', () => {
         coordinates: [
           [
             [
-              [7.5, 45.0],
-              [7.9, 45.0],
+              [7.5, 45],
+              [7.9, 45],
               [7.9, 45.2],
               [7.5, 45.2],
-              [7.5, 45.0],
+              [7.5, 45],
             ],
           ],
         ],
@@ -407,6 +406,117 @@ describe('ReportsController (Integration)', () => {
     });
   });
 
+  describe('GET /reports/public', () => {
+    let pendingReportId: string;
+    let inProgressReportId: string;
+
+    beforeEach(async () => {
+      const fakeImage = Buffer.from('fake image content');
+
+      // Create pending report
+      const pendingResponse = await request(app.getHttpServer())
+        .post('/reports')
+        .set('Cookie', `session_token=${userToken}`)
+        .field('title', 'Pending Report')
+        .field('description', 'This should not be visible to guests')
+        .field('categoryId', categoryId)
+        .field('longitude', '7.6869')
+        .field('latitude', '45.0703')
+        .attach('images', fakeImage, {
+          filename: 'test.jpg',
+          contentType: 'image/jpeg',
+        })
+        .expect(201);
+
+      pendingReportId = pendingResponse.body.data.id;
+
+      // Create another report and move it to in_progress
+      const inProgressResponse = await request(app.getHttpServer())
+        .post('/reports')
+        .set('Cookie', `session_token=${userToken}`)
+        .field('title', 'In Progress Report')
+        .field('description', 'This should be visible to guests')
+        .field('categoryId', categoryId)
+        .field('longitude', '7.6869')
+        .field('latitude', '45.0703')
+        .attach('images', fakeImage, {
+          filename: 'test.jpg',
+          contentType: 'image/jpeg',
+        })
+        .expect(201);
+
+      inProgressReportId = inProgressResponse.body.data.id;
+
+      // Move to in_progress
+      await request(app.getHttpServer())
+        .patch(`/reports/${inProgressReportId}`)
+        .set('Cookie', `session_token=${prOfficerToken}`)
+        .send({ status: 'in_progress' })
+        .expect(200);
+    });
+
+    it('should not include pending reports in public endpoint', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/reports/public')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.data)).toBe(true);
+
+      // Check that pending report is not in the list
+      const pendingReport = response.body.data.find(
+        (r: any) => r.id === pendingReportId,
+      );
+      expect(pendingReport).toBeUndefined();
+    });
+
+    it('should include in_progress reports in public endpoint', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/reports/public')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+
+      // Check that in_progress report is in the list
+      const inProgressReport = response.body.data.find(
+        (r: any) => r.id === inProgressReportId,
+      );
+      expect(inProgressReport).toBeDefined();
+      expect(inProgressReport.status).toBe('in_progress');
+    });
+
+    it('should include suspended reports in public endpoint', async () => {
+      // Move report to suspended
+      await request(app.getHttpServer())
+        .patch(`/reports/${inProgressReportId}`)
+        .set('Cookie', `session_token=${techOfficerToken}`)
+        .send({ status: 'suspended' })
+        .expect(200);
+
+      const response = await request(app.getHttpServer())
+        .get('/reports/public')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+
+      // Check that suspended report is in the list
+      const suspendedReport = response.body.data.find(
+        (r: any) => r.id === inProgressReportId,
+      );
+      expect(suspendedReport).toBeDefined();
+      expect(suspendedReport.status).toBe('suspended');
+    });
+
+    it('should work without authentication (public access)', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/reports/public')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.data)).toBe(true);
+    });
+  });
+
   describe('GET /reports/stats', () => {
     it('should retrieve dashboard statistics', async () => {
       const response = await request(app.getHttpServer())
@@ -589,6 +699,121 @@ describe('ReportsController (Integration)', () => {
         .set('Cookie', `session_token=${userToken}`)
         .send({ status: 'in_progress' })
         .expect(403);
+    });
+  });
+
+  describe('PATCH /reports/:id - Suspended Status Transitions', () => {
+    let reportId: string;
+
+    beforeEach(async () => {
+      const fakeImage = Buffer.from('fake image content');
+
+      // Create a report and move it to in_progress status
+      const response = await request(app.getHttpServer())
+        .post('/reports')
+        .set('Cookie', `session_token=${userToken}`)
+        .field('title', 'Report for Suspension Test')
+        .field('description', 'Test suspended status transitions')
+        .field('categoryId', categoryId)
+        .field('longitude', '7.6869')
+        .field('latitude', '45.0703')
+        .attach('images', fakeImage, {
+          filename: 'test.jpg',
+          contentType: 'image/jpeg',
+        })
+        .expect(201);
+
+      reportId = response.body.data.id;
+
+      // Move report to in_progress
+      await request(app.getHttpServer())
+        .patch(`/reports/${reportId}`)
+        .set('Cookie', `session_token=${prOfficerToken}`)
+        .send({ status: 'in_progress' })
+        .expect(200);
+    });
+
+    it('should allow tech officer to transition report from in_progress to suspended', async () => {
+      const response = await request(app.getHttpServer())
+        .patch(`/reports/${reportId}`)
+        .set('Cookie', `session_token=${techOfficerToken}`)
+        .send({ status: 'suspended' })
+        .expect(200);
+
+      expect(response.body).toEqual({
+        success: true,
+        data: expect.objectContaining({
+          id: reportId,
+          status: 'suspended',
+        }),
+      });
+    });
+
+    it('should allow tech officer to transition report from suspended back to in_progress', async () => {
+      // First suspend the report
+      await request(app.getHttpServer())
+        .patch(`/reports/${reportId}`)
+        .set('Cookie', `session_token=${techOfficerToken}`)
+        .send({ status: 'suspended' })
+        .expect(200);
+
+      // Then resume it
+      const response = await request(app.getHttpServer())
+        .patch(`/reports/${reportId}`)
+        .set('Cookie', `session_token=${techOfficerToken}`)
+        .send({ status: 'in_progress' })
+        .expect(200);
+
+      expect(response.body).toEqual({
+        success: true,
+        data: expect.objectContaining({
+          id: reportId,
+          status: 'in_progress',
+        }),
+      });
+    });
+
+    it('should filter suspended reports in public endpoint', async () => {
+      // Suspend the report
+      await request(app.getHttpServer())
+        .patch(`/reports/${reportId}`)
+        .set('Cookie', `session_token=${techOfficerToken}`)
+        .send({ status: 'suspended' })
+        .expect(200);
+
+      // Query public reports - suspended should be visible
+      const response = await request(app.getHttpServer())
+        .get('/reports/public')
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      const suspendedReport = response.body.data.find(
+        (r: any) => r.id === reportId,
+      );
+      expect(suspendedReport).toBeDefined();
+      expect(suspendedReport.status).toBe('suspended');
+    });
+
+    it('should include suspended status in authenticated user reports', async () => {
+      // Suspend the report
+      await request(app.getHttpServer())
+        .patch(`/reports/${reportId}`)
+        .set('Cookie', `session_token=${techOfficerToken}`)
+        .send({ status: 'suspended' })
+        .expect(400);
+
+      // Query reports as authenticated user
+      const response = await request(app.getHttpServer())
+        .get('/reports')
+        .set('Cookie', `session_token=${userToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      const suspendedReport = response.body.data.find(
+        (r: any) => r.id === reportId,
+      );
+      expect(suspendedReport).toBeDefined();
+      expect(suspendedReport.status).toBe('suspended');
     });
   });
 
