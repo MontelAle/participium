@@ -2308,7 +2308,6 @@ describe('AppController (e2e)', () => {
   });
 
   it('GET /reports/:id/comments as external maintainer on non-assigned report returns 404', async () => {
-    // External maintainer trying to access report_1 which is not assigned to them
     await request(app.getHttpServer())
       .get('/reports/report_1/comments')
       .set('Cookie', 'session_token=sess_ext_1.secret')
@@ -2316,7 +2315,6 @@ describe('AppController (e2e)', () => {
   });
 
   it('GET /reports/:id/comments as regular user returns 404', async () => {
-    // Regular users cannot access comments - blocked by RolesGuard
     await request(app.getHttpServer())
       .get('/reports/report_1/comments')
       .set('Cookie', 'session_token=sess_2.secret')
@@ -2412,28 +2410,6 @@ describe('AppController (e2e)', () => {
     expect(res.body.data).toHaveProperty('userId', 'ext_maint_1');
     expect(res.body.data).toHaveProperty('reportId', 'report_2');
   });
-
-  //NOTE: non sappiamo ancora cosa fare dell'external mainteiner,
-  //da valutare il livello di visibilità che vogliamo dargli
-  /*
-  it('POST /reports/:id/comments as external maintainer on non-assigned report returns 404', async () => {
-    await request(app.getHttpServer())
-      .post('/reports/report_1/comments')
-      .set('Cookie', 'session_token=sess_ext_1.secret')
-      .send({ content: 'Should not be allowed' })
-      .expect(404);
-  });*/
-
-  //apparently I can't make it work
-  /*
-  it('POST /reports/:id/comments as regular user returns 403', async () => {
-    // Regular users cannot create comments - blocked by RolesGuard
-    await request(app.getHttpServer())
-      .post('/reports/report_1/comments')
-      .set('Cookie', 'session_token=sess_2.secret')
-      .send({ content: 'Citizen trying to comment' })
-      .expect(403);
-  });*/
 
   it('POST /reports/:id/comments without authentication returns 403', async () => {
     await request(app.getHttpServer())
