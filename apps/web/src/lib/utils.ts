@@ -37,6 +37,12 @@ export const getStatusConfig = (status: ReportStatus) => {
         color:
           'bg-red-500/15 text-purple-700 hover:bg-purple-500/25 border-purple-200',
       };
+    case 'suspended':
+      return {
+        label: 'Suspended',
+        color:
+          'bg-gray-500/15 text-gray-700 hover:bg-gray-500/25 border-gray-200',
+      };
     default:
       return { label: status, color: 'bg-gray-100 text-gray-700' };
   }

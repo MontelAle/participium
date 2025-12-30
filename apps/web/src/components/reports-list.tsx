@@ -9,6 +9,7 @@ import type { ReportsListProps } from '@/types/report';
 import { CalendarDays, Ghost, MapPin, Tag, User } from 'lucide-react';
 import { type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export function ReportsList({
   setIsMobileExpanded = () => undefined,
@@ -32,6 +33,12 @@ export function ReportsList({
   };
 
   const handleShowDetails = (reportId: string) => {
+    if (isGuestUser) {
+      toast.info('Login required', {
+        description: 'Login to show all details',
+      });
+      return;
+    }
     navigate(`/reports/view/${reportId}`);
   };
 
@@ -79,8 +86,7 @@ export function ReportsList({
             <div className="mb-3">
               <button
                 type="button"
-                onClick={() => !isGuestUser && handleShowDetails(report.id)}
-                disabled={isGuestUser}
+                onClick={() => handleShowDetails(report.id)}
                 className={cn(
                   'text-left w-full font-bold text-xl leading-tight mb-1 transition-colors outline-none focus-visible:underline',
                   isGuestUser

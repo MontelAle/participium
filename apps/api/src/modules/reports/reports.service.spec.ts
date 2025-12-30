@@ -850,6 +850,113 @@ describe('ReportsService', () => {
     });
   });
 
+  describe('findAllPublic', () => {
+    it('should filter out pending and rejected reports for public view', async () => {
+      const mockReports = [
+        { ...mockReport, status: ReportStatus.ASSIGNED },
+        { ...mockReport, id: 'report-2', status: ReportStatus.IN_PROGRESS },
+        { ...mockReport, id: 'report-3', status: ReportStatus.SUSPENDED },
+      ];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      const result = await service.findAllPublic();
+
+      expect(reportRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'report',
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        `report.status IN ('assigned', 'in_progress', 'suspended', 'resolved')`,
+      );
+      expect(result).toEqual(mockReports);
+    });
+
+    it('should include suspended status in public view', async () => {
+      const mockReports = [
+        { ...mockReport, status: ReportStatus.SUSPENDED },
+      ];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      const result = await service.findAllPublic();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].status).toBe(ReportStatus.SUSPENDED);
+    });
+
+    it('should sanitize anonymous reports in public view', async () => {
+      const mockReports = [
+        {
+          ...mockReport,
+          isAnonymous: true,
+          user: mockCitizenUser,
+          status: ReportStatus.IN_PROGRESS,
+        },
+      ];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      const result = await service.findAllPublic();
+
+      expect(result[0].user).toBeNull();
+    });
+
+    it('should apply status filter in public view within allowed statuses', async () => {
+      const filters: FilterReportsDto = { status: ReportStatus.SUSPENDED };
+      const mockReports = [
+        { ...mockReport, status: ReportStatus.SUSPENDED },
+      ];
+
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockReports),
+      };
+
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
+
+      await service.findAllPublic(filters);
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        `report.status IN ('assigned', 'in_progress', 'suspended', 'resolved')`,
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.status = :status',
+        { status: ReportStatus.SUSPENDED },
+      );
+    });
+  });
+
   describe('findOne', () => {
     it('should return a standard report by id', async () => {
       const standardReport = { ...mockReport, isAnonymous: false };
@@ -1663,6 +1770,92 @@ describe('ReportsService', () => {
           REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_STATUS_TRANSITION(
             ReportStatus.IN_PROGRESS,
             ReportStatus.ASSIGNED,
+          ),
+        ),
+      );
+    });
+
+    it('should allow external maintainer to transition from in_progress to suspended', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportInProgress = {
+        ...mockReport,
+        status: ReportStatus.IN_PROGRESS,
+        assignedExternalMaintainerId: 'ext-maint-1',
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.SUSPENDED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportInProgress);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto, externalMaintainer);
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.SUSPENDED,
+        }),
+      );
+    });
+
+    it('should allow external maintainer to transition from suspended to in_progress', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportSuspended = {
+        ...mockReport,
+        status: ReportStatus.SUSPENDED,
+        assignedExternalMaintainerId: 'ext-maint-1',
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.IN_PROGRESS,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportSuspended);
+      reportRepository.save.mockImplementation(async (r) => r as Report);
+
+      await service.update('mocked-id', updateDto, externalMaintainer);
+
+      expect(reportRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: ReportStatus.IN_PROGRESS,
+        }),
+      );
+    });
+
+    it('should throw BadRequestException when external maintainer tries to transition from suspended to resolved', async () => {
+      const externalMaintainer = {
+        id: 'ext-maint-1',
+        role: { name: 'external_maintainer' },
+      } as User;
+
+      const reportSuspended = {
+        ...mockReport,
+        status: ReportStatus.SUSPENDED,
+        assignedExternalMaintainerId: 'ext-maint-1',
+      } as Report;
+
+      const updateDto: UpdateReportDto = {
+        status: ReportStatus.RESOLVED,
+      };
+
+      reportRepository.findOne.mockResolvedValue(reportSuspended);
+
+      await expect(
+        service.update('mocked-id', updateDto, externalMaintainer),
+      ).rejects.toThrow(
+        new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_STATUS_TRANSITION(
+            ReportStatus.SUSPENDED,
+            ReportStatus.RESOLVED,
           ),
         ),
       );
