@@ -20,7 +20,9 @@ import {
   MunicipalityUserIdResponseDto,
   MunicipalityUserResponseDto,
   MunicipalityUsersResponseDto,
+  OfficeRoleAssignmentDto,
   UpdateMunicipalityUserDto,
+  UserOfficeRolesResponseDto,
 } from './dto/municipality-users.dto';
 import { UsersService } from './users.service';
 
@@ -134,5 +136,61 @@ export class UsersController {
     const maintainers =
       await this.usersService.findExternalMaintainers(categoryId);
     return { success: true, data: maintainers };
+  }
+
+  /**
+   * Get all office role assignments for a user. (Admin only)
+   *
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Insufficient permissions (admin role required)
+   */
+  @Get('municipality/user/:id/office-roles')
+  @Roles('admin')
+  async getUserOfficeRoles(
+    @Param('id') userId: string,
+  ): Promise<UserOfficeRolesResponseDto> {
+    const assignments = await this.usersService.getUserOfficeRoles(userId);
+    return { success: true, data: assignments };
+  }
+
+  /**
+   * Assign a user to an office with a specific role. (Admin only)
+   *
+   * @throws {400} Bad Request - Invalid assignment (wrong office type, role mixing, etc.)
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Insufficient permissions (admin role required)
+   * @throws {404} Not Found - User, role, or office not found
+   * @throws {409} Conflict - Assignment already exists
+   */
+  @Post('municipality/user/:id/office-roles')
+  @Roles('admin')
+  async assignUserToOffice(
+    @Param('id') userId: string,
+    @Body() dto: OfficeRoleAssignmentDto,
+  ): Promise<UserOfficeRolesResponseDto> {
+    const assignment = await this.usersService.assignUserToOffice(
+      userId,
+      dto.officeId,
+      dto.roleId,
+    );
+    return { success: true, data: [assignment] };
+  }
+
+  /**
+   * Remove a user's assignment from an office. (Admin only)
+   *
+   * @throws {400} Bad Request - Cannot remove last role
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {403} Forbidden - Insufficient permissions (admin role required)
+   * @throws {404} Not Found - Assignment not found
+   */
+  @Delete('municipality/user/:id/office-roles/:officeId')
+  @Roles('admin')
+  async removeUserFromOffice(
+    @Param('id') userId: string,
+    @Param('officeId') officeId: string,
+  ): Promise<MunicipalityUserIdResponseDto> {
+    await this.usersService.removeUserFromOffice(userId, officeId);
+    return { success: true, data: { id: userId } };
   }
 }

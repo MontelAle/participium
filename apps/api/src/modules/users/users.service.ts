@@ -11,7 +11,10 @@ import { nanoid } from 'nanoid';
 import { Repository } from 'typeorm';
 import { MinioProvider } from '../../providers/minio/minio.provider';
 import { USER_ERROR_MESSAGES } from './constants/error-messages';
-import { CreateMunicipalityUserDto } from './dto/municipality-users.dto';
+import {
+  CreateMunicipalityUserDto,
+  OfficeRoleAssignmentDto,
+} from './dto/municipality-users.dto';
 
 @Injectable()
 export class UsersService {
@@ -106,27 +109,12 @@ export class UsersService {
   }
 
   async createMunicipalityUser(dto: CreateMunicipalityUserDto): Promise<User> {
-    const { email, username, firstName, lastName, password, roleId } = dto;
+    const { email, username, firstName, lastName, password } = dto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return this.userRepository.manager.transaction(async (manager) => {
-      const roleRepo = manager.getRepository(Role);
-      const dbRole = await roleRepo.findOne({
-        where: { id: roleId },
-      });
-
-      if (!dbRole) {
-        throw new NotFoundException(USER_ERROR_MESSAGES.ROLE_NOT_FOUND);
-      }
-
-      const officeRepo = manager.getRepository(Office);
-      const dbOffice = await officeRepo.findOne({
-        where: { id: dto.officeId },
-      });
-
-      this.validateOfficeRoleMatch(dbRole, dbOffice);
-
+      // Check for existing username/email
       const existingUser = await manager.getRepository(User).findOne({
         where: { username },
       });
@@ -143,18 +131,95 @@ export class UsersService {
         throw new ConflictException(USER_ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
       }
 
+      // Determine which API to use: new (officeRoleAssignments) or legacy (roleId/officeId)
+      let assignments: OfficeRoleAssignmentDto[] = [];
+
+      if (dto.officeRoleAssignments && dto.officeRoleAssignments.length > 0) {
+        // New API: use officeRoleAssignments
+        assignments = dto.officeRoleAssignments;
+      } else if (dto.roleId) {
+        // Legacy API: convert roleId/officeId to single assignment
+        assignments = [
+          {
+            roleId: dto.roleId,
+            officeId: dto.officeId || null,
+          },
+        ];
+      } else {
+        throw new BadRequestException(
+          USER_ERROR_MESSAGES.MISSING_ROLE_ASSIGNMENT_DATA,
+        );
+      }
+
+      // Validate all assignments
+      const roleRepo = manager.getRepository(Role);
+      const officeRepo = manager.getRepository(Office);
+
+      for (const assignment of assignments) {
+        const role = await roleRepo.findOne({
+          where: { id: assignment.roleId },
+        });
+        if (!role) {
+          throw new NotFoundException(USER_ERROR_MESSAGES.ROLE_NOT_FOUND);
+        }
+
+        const office = assignment.officeId
+          ? await officeRepo.findOne({ where: { id: assignment.officeId } })
+          : null;
+
+        if (assignment.officeId && !office) {
+          throw new NotFoundException(USER_ERROR_MESSAGES.OFFICE_NOT_FOUND);
+        }
+
+        this.validateOfficeRoleMatch(role, office);
+      }
+
+      // Use first assignment for deprecated user.role and user.office fields
+      const firstAssignment = assignments[0];
+      const firstRole = await roleRepo.findOne({
+        where: { id: firstAssignment.roleId },
+      });
+      const firstOffice = firstAssignment.officeId
+        ? await officeRepo.findOne({ where: { id: firstAssignment.officeId } })
+        : null;
+
+      // Create user with deprecated fields
       const newUser = manager.getRepository(User).create({
         id: nanoid(),
         email,
         username,
         firstName,
         lastName,
-        role: dbRole,
-        office: dbOffice || null,
+        role: firstRole,
+        office: firstOffice,
       });
 
       const user = await manager.getRepository(User).save(newUser);
 
+      // Create UserOfficeRole assignments
+      const userOfficeRoleRepo = manager.getRepository(UserOfficeRole);
+      for (const assignment of assignments) {
+        const role = await roleRepo.findOne({
+          where: { id: assignment.roleId },
+        });
+        const office = assignment.officeId
+          ? await officeRepo.findOne({ where: { id: assignment.officeId } })
+          : null;
+
+        const userOfficeRole = userOfficeRoleRepo.create({
+          id: nanoid(),
+          userId: user.id,
+          officeId: assignment.officeId,
+          roleId: assignment.roleId,
+          user,
+          office,
+          role,
+        });
+
+        await userOfficeRoleRepo.save(userOfficeRole);
+      }
+
+      // Create account
       const newAccount = manager.getRepository(Account).create({
         id: nanoid(),
         accountId: username,
@@ -166,6 +231,7 @@ export class UsersService {
 
       await manager.getRepository(Account).save(newAccount);
 
+      // Create profile
       const newProfile = manager.getRepository(Profile).create({
         id: nanoid(),
         userId: user.id,
@@ -197,6 +263,8 @@ export class UsersService {
     }
 
     await this.userRepository.manager.transaction(async (manager) => {
+      // Delete UserOfficeRole assignments (cascade will handle this, but explicit for clarity)
+      await manager.getRepository(UserOfficeRole).delete({ userId: id });
       await manager.getRepository(Account).delete({ userId: id });
       await manager.getRepository(Profile).delete({ userId: id });
       await manager.getRepository(User).delete({ id });

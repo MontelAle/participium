@@ -36,6 +36,8 @@ export const USER_ERROR_MESSAGES = {
     'User must have at least one role assignment',
   CANNOT_MIX_TECH_OFFICER_AND_EXTERNAL_MAINTAINER:
     'A user cannot be both technical officer and external maintainer',
+  MISSING_ROLE_ASSIGNMENT_DATA:
+    'Either officeRoleAssignments or roleId must be provided',
 } as const;
 
 export const ALLOWED_PROFILE_PICTURE_MIMETYPES = [
