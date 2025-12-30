@@ -176,24 +176,46 @@ participium/
 
 **Endpoint**: `/users`
 
-| Method | Route                    | Description                                            |
-| ------ | ------------------------ | ------------------------------------------------------ |
-| GET    | `/municipality`          | List municipal users (Admin, PR Officer only)          |
-| GET    | `/municipality/user/:id` | User details                                           |
-| POST   | `/municipality`          | Create municipal user                                  |
-| POST   | `/municipality/user/:id` | Update user                                            |
-| DELETE | `/municipality/user/:id` | Delete user                                            |
-| GET    | `/external-maintainers`  | List external maintainers (optional categoryId filter) |
-| PATCH  | `/profile/me`            | Update regular user profile                            |
+| Method | Route                                          | Description                                            |
+| ------ | ---------------------------------------------- | ------------------------------------------------------ |
+| GET    | `/municipality`                                | List municipal users (Admin, PR Officer only)          |
+| GET    | `/municipality/user/:id`                       | User details                                           |
+| POST   | `/municipality`                                | Create municipal user                                  |
+| POST   | `/municipality/user/:id`                       | Update user                                            |
+| DELETE | `/municipality/user/:id`                       | Delete user                                            |
+| GET    | `/municipality/user/:id/office-roles`          | Get user's office-role assignments (multi-role)        |
+| POST   | `/municipality/user/:id/office-roles`          | Assign user to office with role (multi-role)           |
+| DELETE | `/municipality/user/:id/office-roles/:officeId`| Remove user's office assignment (multi-role)           |
+| GET    | `/external-maintainers`                        | List external maintainers (optional categoryId filter) |
+| PATCH  | `/profile/me`                                  | Update regular user profile                            |
 
 **Functionality**:
 
 - Complete municipal user management
+- **Multi-Role Office Assignments**: Technical officers can be assigned to multiple offices with different roles
 - Regular user profile editing (for non-municipal users only)
 - Validation with class-validator
 - Relations with roles, accounts, and offices
 - File upload handling with Multer
 - MinIO integration for profile picture storage
+
+**Multi-Role Management**:
+
+- **GET `/municipality/user/:id/office-roles`**: Retrieve all office-role assignments for a specific user
+  - Returns array of assignments with office and role details
+  - Admin-only access
+  
+- **POST `/municipality/user/:id/office-roles`**: Assign user to an additional office
+  - Request body: `{ officeId: string, roleId: string }`
+  - Only `tech_officer` role can have multiple office assignments
+  - Validates office-role compatibility (e.g., external offices only for external_maintainer)
+  - Returns 409 Conflict if assignment already exists
+  - Returns 400 Bad Request if user cannot have multiple roles
+  
+- **DELETE `/municipality/user/:id/office-roles/:officeId`**: Remove office assignment
+  - Requires user to have at least one remaining assignment
+  - Returns 404 if assignment not found
+  - Returns 400 Bad Request if trying to remove last assignment
 
 **Profile Management** (`PATCH /profile/me`):
 
@@ -444,6 +466,30 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 | office    | Office | Office entity relation | Yes      | Many-to-one, optional        |
 | createdAt | Date   | Creation timestamp     | No       | timestamptz, auto-generated  |
 | updatedAt | Date   | Last update timestamp  | No       | timestamptz, auto-generated  |
+
+**Note**: `roleId` and `officeId` are deprecated fields maintained for backward compatibility. New implementations should use the `UserOfficeRole` junction table for multi-role support.
+
+#### UserOfficeRole
+
+| Field     | Type   | Description              | Nullable | Notes                                       |
+| --------- | ------ | ------------------------ | -------- | ------------------------------------------- |
+| id        | string | Primary key              | No       | varchar, nanoid generated                   |
+| userId    | string | Linked user ID           | No       | Foreign key to User entity                  |
+| user      | User   | User entity relation     | No       | Many-to-one, cascade delete                 |
+| officeId  | string | Linked office ID         | No       | Foreign key to Office entity                |
+| office    | Office | Office entity relation   | No       | Many-to-one, cascade delete                 |
+| roleId    | string | Linked role ID           | No       | Foreign key to Role entity                  |
+| role      | Role   | Role entity relation     | No       | Many-to-one, cascade delete                 |
+| createdAt | Date   | Creation timestamp       | No       | timestamptz, auto-generated                 |
+| updatedAt | Date   | Last update timestamp    | No       | timestamptz, auto-generated                 |
+
+**Purpose**: Enables multi-role assignments for technical officers. A user can be assigned to multiple offices with potentially different roles. This table is the recommended approach for managing user-office-role relationships.
+
+**Business Rules**:
+- Only users with `tech_officer` role can have multiple assignments
+- External maintainers can only be assigned to external offices (`isExternal: true`)
+- Regular municipal roles cannot be assigned to external offices
+- Users must maintain at least one office-role assignment (cannot delete the last one)
 
 #### Profile
 
