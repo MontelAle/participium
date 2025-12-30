@@ -75,10 +75,8 @@ export function ViewAssignedReport({
 
     const updateData: UpdateReportDto = {
       assignedExternalMaintainerId: selectedExternalMaintainer?.id || '',
+      status: data.status,
     };
-    if (data.status) {
-      updateData.status = data.status as any;
-    }
 
     try {
       await updateReportMutation({

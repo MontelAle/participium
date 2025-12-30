@@ -1,3 +1,4 @@
+import { Notification } from '@entities';
 import {
   Controller,
   Get,
@@ -23,7 +24,7 @@ export class NotificationsController {
   async list(
     @Request() req: RequestWithUserSession,
     @Query('unread') unread?: string,
-  ): Promise<{ success: boolean; data: any[] }> {
+  ): Promise<{ success: boolean; data: Notification[] }> {
     const onlyUnread = unread === '1' || unread === 'true';
     const items = await this.notificationsService.findForUser(
       req.user,
@@ -37,7 +38,7 @@ export class NotificationsController {
   async markRead(
     @Param('id') id: string,
     @Request() req: RequestWithUserSession,
-  ): Promise<{ success: boolean; data: any }> {
+  ): Promise<{ success: boolean; data: Notification }> {
     const item = await this.notificationsService.markAsRead(id, req.user);
     return { success: true, data: item };
   }
