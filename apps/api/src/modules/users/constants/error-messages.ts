@@ -34,6 +34,8 @@ export const USER_ERROR_MESSAGES = {
     'Only technical officers can have multiple office assignments',
   MUST_KEEP_AT_LEAST_ONE_ROLE:
     'User must have at least one role assignment',
+  CANNOT_MIX_TECH_OFFICER_AND_EXTERNAL_MAINTAINER:
+    'A user cannot be both technical officer and external maintainer',
 } as const;
 
 export const ALLOWED_PROFILE_PICTURE_MIMETYPES = [

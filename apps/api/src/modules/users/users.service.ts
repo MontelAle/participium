@@ -1,4 +1,4 @@
-import { Account, Category, Office, Profile, Role, User } from '@entities';
+import { Account, Category, Office, Profile, Role, User, UserOfficeRole } from '@entities';
 import {
   BadRequestException,
   ConflictException,
@@ -30,6 +30,9 @@ export class UsersService {
 
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+
+    @InjectRepository(UserOfficeRole)
+    private readonly userOfficeRoleRepository: Repository<UserOfficeRole>,
 
     private readonly minioProvider: MinioProvider,
   ) {}
@@ -358,5 +361,226 @@ export class UsersService {
       relations: ['role', 'office'],
       order: { firstName: 'ASC', lastName: 'ASC' },
     });
+  }
+
+  // ============================================================================
+  // UserOfficeRole Management Methods
+  // ============================================================================
+
+  /**
+   * Get all office role assignments for a user
+   */
+  async getUserOfficeRoles(userId: string): Promise<UserOfficeRole[]> {
+    return this.userOfficeRoleRepository.find({
+      where: { userId },
+      relations: ['office', 'role'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  /**
+   * Get all offices where a user has assignments
+   */
+  async getUserOffices(userId: string): Promise<Office[]> {
+    const assignments = await this.userOfficeRoleRepository.find({
+      where: { userId },
+      relations: ['office'],
+    });
+    return assignments.map((a) => a.office);
+  }
+
+  /**
+   * Get all roles a user has across all offices
+   * Falls back to deprecated single role if no assignments exist
+   */
+  async getUserRoles(userId: string): Promise<Role[]> {
+    const assignments = await this.userOfficeRoleRepository.find({
+      where: { userId },
+      relations: ['role'],
+    });
+
+    if (assignments.length > 0) {
+      // Remove duplicates by role ID
+      const uniqueRoles = new Map<string, Role>();
+      for (const assignment of assignments) {
+        uniqueRoles.set(assignment.role.id, assignment.role);
+      }
+      return Array.from(uniqueRoles.values());
+    }
+
+    // Fallback to deprecated single role for backward compatibility
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['role'],
+    });
+    return user?.role ? [user.role] : [];
+  }
+
+  /**
+   * Assign a user to an office with a specific role
+   * Only tech_officer can have multiple office assignments
+   */
+  async assignUserToOffice(
+    userId: string,
+    officeId: string,
+    roleId: string,
+  ): Promise<UserOfficeRole> {
+    // Verify user exists
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['role'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND(userId));
+    }
+
+    // Verify role exists
+    const role = await this.roleRepository.findOne({
+      where: { id: roleId },
+    });
+
+    if (!role) {
+      throw new NotFoundException(USER_ERROR_MESSAGES.ROLE_NOT_FOUND);
+    }
+
+    // Verify office exists
+    const office = await this.officeRepository.findOne({
+      where: { id: officeId },
+    });
+
+    if (!office) {
+      throw new NotFoundException(USER_ERROR_MESSAGES.OFFICE_NOT_FOUND);
+    }
+
+    // Prevent mixing tech_officer and external_maintainer roles
+    const existingRoles = await this.userOfficeRoleRepository.find({
+      where: { userId },
+      relations: ['role'],
+    });
+
+    const hasExternalMaintainer = existingRoles.some(
+      (assignment) => assignment.role.name === 'external_maintainer',
+    );
+    const hasTechOfficer = existingRoles.some(
+      (assignment) => assignment.role.name === 'tech_officer',
+    );
+
+    if (
+      (role.name === 'tech_officer' && hasExternalMaintainer) ||
+      (role.name === 'external_maintainer' && hasTechOfficer)
+    ) {
+      throw new BadRequestException(
+        USER_ERROR_MESSAGES.CANNOT_MIX_TECH_OFFICER_AND_EXTERNAL_MAINTAINER,
+      );
+    }
+
+    // Only tech_officer can have multiple office assignments
+    if (role.name !== 'tech_officer') {
+      const existingAssignments = await this.userOfficeRoleRepository.count({
+        where: { userId },
+      });
+
+      if (existingAssignments > 0) {
+        throw new BadRequestException(
+          USER_ERROR_MESSAGES.CANNOT_ASSIGN_MULTIPLE_ROLES_TO_NON_TECH_OFFICER,
+        );
+      }
+    }
+
+    // Check if assignment already exists
+    const existingAssignment = await this.userOfficeRoleRepository.findOne({
+      where: { userId, officeId },
+    });
+
+    if (existingAssignment) {
+      throw new ConflictException(
+        USER_ERROR_MESSAGES.USER_OFFICE_ROLE_ALREADY_EXISTS,
+      );
+    }
+
+    // Validate office-role match (external maintainer logic)
+    this.validateOfficeRoleMatch(role, office);
+
+    // Create new assignment
+    const assignment = this.userOfficeRoleRepository.create({
+      id: nanoid(),
+      userId,
+      officeId,
+      roleId,
+      user,
+      office,
+      role,
+    });
+
+    return this.userOfficeRoleRepository.save(assignment);
+  }
+
+  /**
+   * Remove a user's assignment from an office
+   */
+  async removeUserFromOffice(
+    userId: string,
+    officeId: string,
+  ): Promise<void> {
+    const assignment = await this.userOfficeRoleRepository.findOne({
+      where: { userId, officeId },
+    });
+
+    if (!assignment) {
+      throw new NotFoundException(
+        USER_ERROR_MESSAGES.USER_OFFICE_ROLE_NOT_FOUND,
+      );
+    }
+
+    // Check if this is the last role assignment
+    const totalAssignments = await this.userOfficeRoleRepository.count({
+      where: { userId },
+    });
+
+    if (totalAssignments <= 1) {
+      throw new BadRequestException(
+        USER_ERROR_MESSAGES.MUST_KEEP_AT_LEAST_ONE_ROLE,
+      );
+    }
+
+    await this.userOfficeRoleRepository.remove(assignment);
+  }
+
+  /**
+   * Check if a user has access to a specific office
+   */
+  async userHasOfficeAccess(
+    userId: string,
+    officeId: string,
+  ): Promise<boolean> {
+    const count = await this.userOfficeRoleRepository.count({
+      where: { userId, officeId },
+    });
+    return count > 0;
+  }
+
+  /**
+   * Check if a user has a specific role
+   * Checks both new assignments and deprecated single role
+   */
+  async userHasRole(userId: string, roleName: string): Promise<boolean> {
+    // Check new assignments
+    const assignment = await this.userOfficeRoleRepository.findOne({
+      where: { userId, role: { name: roleName } },
+      relations: ['role'],
+    });
+
+    if (assignment) {
+      return true;
+    }
+
+    // Fallback to deprecated single role
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['role'],
+    });
+
+    return user?.role?.name === roleName;
   }
 }

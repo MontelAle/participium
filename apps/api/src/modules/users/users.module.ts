@@ -6,6 +6,7 @@ import {
   Role,
   Session,
   User,
+  UserOfficeRole,
 } from '@entities';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -23,6 +24,7 @@ import { UsersService } from './users.service';
       Session,
       Office,
       Category,
+      UserOfficeRole,
     ]),
   ],
   controllers: [UsersController],
