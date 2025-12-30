@@ -635,18 +635,32 @@ export class ReportsService {
         ReportStatus.ASSIGNED,
         ReportStatus.REJECTED,
       ],
-      assigned: [ReportStatus.IN_PROGRESS, ReportStatus.REJECTED],
-      in_progress: [ReportStatus.RESOLVED, ReportStatus.REJECTED],
+      assigned: [
+        ReportStatus.IN_PROGRESS,
+        ReportStatus.REJECTED,
+        ReportStatus.SUSPENDED,
+      ],
+      in_progress: [
+        ReportStatus.RESOLVED,
+        ReportStatus.REJECTED,
+        ReportStatus.SUSPENDED,
+      ],
       resolved: [],
       rejected: [],
+      suspended: [ReportStatus.IN_PROGRESS],
     };
 
     const techOfficerTransitions: Record<ReportStatus, ReportStatus[]> = {
       pending: [ReportStatus.ASSIGNED],
-      assigned: [ReportStatus.IN_PROGRESS, ReportStatus.REJECTED],
-      in_progress: [ReportStatus.RESOLVED],
+      assigned: [
+        ReportStatus.IN_PROGRESS,
+        ReportStatus.REJECTED,
+        ReportStatus.SUSPENDED,
+      ],
+      in_progress: [ReportStatus.RESOLVED, ReportStatus.SUSPENDED],
       resolved: [],
       rejected: [],
+      suspended: [ReportStatus.IN_PROGRESS],
     };
 
     const roleName = actor.role?.name;
