@@ -240,6 +240,28 @@ describe('UsersService', () => {
       );
     });
 
+    it('should throw BadRequestException when using roleId without officeId', async () => {
+      const dtoWithoutOfficeId: CreateMunicipalityUserDto = {
+        ...createDto,
+        roleId: 'role-1',
+        officeId: undefined,
+      };
+      delete dtoWithoutOfficeId.officeRoleAssignments;
+
+      // Mock role as a regular role (not external_maintainer)
+      roleRepository.findOne.mockResolvedValue({
+        id: 'role-1',
+        name: 'tech_officer',
+      } as Role);
+
+      await expect(
+        service.createMunicipalityUser(dtoWithoutOfficeId),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.createMunicipalityUser(dtoWithoutOfficeId),
+      ).rejects.toThrow('officeId is required when using roleId');
+    });
+
     it('should throw BadRequestException when external_maintainer has no office', async () => {
       const externalMaintainerDto: CreateMunicipalityUserDto = {
         ...createDto,

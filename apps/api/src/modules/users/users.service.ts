@@ -139,15 +139,10 @@ export class UsersService {
         assignments = dto.officeRoleAssignments;
       } else if (dto.roleId) {
         // Legacy API: convert roleId/officeId to single assignment
-        if (!dto.officeId) {
-          throw new BadRequestException(
-            'officeId is required when using roleId',
-          );
-        }
         assignments = [
           {
             roleId: dto.roleId,
-            officeId: dto.officeId,
+            officeId: dto.officeId || null,
           },
         ];
       } else {
@@ -186,6 +181,14 @@ export class UsersService {
 
         if (assignment.officeId && !office) {
           throw new NotFoundException(USER_ERROR_MESSAGES.OFFICE_NOT_FOUND);
+        }
+
+        // Validate that officeId is provided
+        // (validateOfficeRoleMatch will provide more specific errors for external_maintainer)
+        if (!assignment.officeId && role.name !== 'external_maintainer') {
+          throw new BadRequestException(
+            'officeId is required when using roleId',
+          );
         }
 
         this.validateOfficeRoleMatch(role, office);
