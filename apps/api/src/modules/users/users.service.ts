@@ -155,6 +155,18 @@ export class UsersService {
       const roleRepo = manager.getRepository(Role);
       const officeRepo = manager.getRepository(Office);
 
+      // Check if multiple assignments for non-tech_officer
+      if (assignments.length > 1) {
+        const firstRole = await roleRepo.findOne({
+          where: { id: assignments[0].roleId },
+        });
+        if (firstRole && firstRole.name !== 'tech_officer') {
+          throw new BadRequestException(
+            USER_ERROR_MESSAGES.CANNOT_ASSIGN_MULTIPLE_ROLES_TO_NON_TECH_OFFICER,
+          );
+        }
+      }
+
       for (const assignment of assignments) {
         const role = await roleRepo.findOne({
           where: { id: assignment.roleId },
@@ -612,7 +624,7 @@ export class UsersService {
       );
     }
 
-    await this.userOfficeRoleRepository.remove(assignment);
+    await this.userOfficeRoleRepository.delete({ id: assignment.id });
   }
 
   /**
@@ -634,12 +646,16 @@ export class UsersService {
    */
   async userHasRole(userId: string, roleName: string): Promise<boolean> {
     // Check new assignments
-    const assignment = await this.userOfficeRoleRepository.findOne({
-      where: { userId, role: { name: roleName } },
+    const assignments = await this.userOfficeRoleRepository.find({
+      where: { userId },
       relations: ['role'],
     });
 
-    if (assignment) {
+    const hasRole = assignments.some(
+      (assignment) => assignment.role?.name === roleName,
+    );
+
+    if (hasRole) {
       return true;
     }
 
