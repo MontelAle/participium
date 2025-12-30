@@ -6,6 +6,7 @@ export type ReportData = {
   address?: string;
   categoryId: string;
   photos: File[];
+  isAnonymous: boolean;
 };
 
 export type ReportsListProps = {
@@ -24,6 +25,7 @@ export const createReportFormData: CreateReportFormData = (reportData) => {
   formData.append('latitude', String(reportData.latitude));
   if (reportData.address) formData.append('address', reportData.address);
   formData.append('categoryId', reportData.categoryId);
+  formData.append('isAnonymous', String(reportData.isAnonymous===true ? "true" : ""));
 
   reportData.photos.forEach((photo) => {
     formData.append('images', photo);

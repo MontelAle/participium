@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useFilterStore } from '@/store/filterStore';
 import { CitizenSidebarProps } from '@/types/ui';
 import { GripHorizontal, Lock, Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 function GuestState() {
   return (
@@ -29,22 +29,20 @@ function GuestState() {
   );
 }
 
-export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
+export function CitizenSidebar({
+  width = '400px',
+}: Readonly<CitizenSidebarProps>) {
   const { isCitizenUser, isGuestUser } = useAuth();
 
   const { data: reports = [] } = useReports(undefined, {
-    enabled: !isGuestUser,
+    enabled: true,
+    isGuest: isGuestUser,
   });
+
   const { searchTerm, setSearchTerm, showOnlyMyReports, setShowOnlyMyReports } =
     useFilterStore();
 
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
-
-  useMemo(() => {
-    if (!reports) return [];
-    const cats = new Set(reports.map((r) => r.category.name));
-    return Array.from(cats);
-  }, [reports]);
 
   return (
     <>
@@ -130,11 +128,7 @@ export function CitizenSidebar({ width = '400px' }: CitizenSidebarProps) {
               'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto hidden md:block',
           )}
         >
-          {isGuestUser ? (
-            <GuestState />
-          ) : (
-            <ReportsList setIsMobileExpanded={setIsMobileExpanded} />
-          )}
+          <ReportsList setIsMobileExpanded={setIsMobileExpanded} />
 
           <div className="h-24 md:h-20" />
         </div>

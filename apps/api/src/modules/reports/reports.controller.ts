@@ -49,7 +49,7 @@ export class ReportsController {
    */
   @Get(':id/comments')
   @UseGuards(SessionGuard, RolesGuard)
-  @Roles('municipal_pr_officer', 'technical_officer', 'external_maintainer')
+  @Roles('pr_officer', 'tech_officer', 'external_maintainer')
   async getComments(
     @Param('id') id: string,
     @Request() req: RequestWithUserSession,
@@ -66,7 +66,7 @@ export class ReportsController {
    */
   @Post(':id/comments')
   @UseGuards(SessionGuard, RolesGuard)
-  @Roles('municipal_pr_officer', 'technical_officer', 'external_maintainer')
+  @Roles('pr_officer', 'tech_officer', 'external_maintainer')
   async addComment(
     @Param('id') id: string,
     @Body() createCommentDto: CreateCommentDto,
@@ -118,6 +118,18 @@ export class ReportsController {
       images,
     );
     return { success: true, data: report };
+  }
+
+  /**
+   * Retrieves all reports with optional filters (public endpoint for guest users).
+   *
+   */
+  @Get('public')
+  async findAllPublic(
+    @Query() filters: FilterReportsDto,
+  ): Promise<ReportsResponseDto> {
+    const reports = await this.reportsService.findAllPublic(filters);
+    return { success: true, data: reports };
   }
 
   /**

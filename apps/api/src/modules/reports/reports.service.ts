@@ -122,7 +122,7 @@ export class ReportsService {
         const timestamp = Date.now();
         const sanitizedFilename = path
           .basename(image.originalname)
-          .replace(/[^a-zA-Z0-9.-]/g, '_');
+          .replaceAll(/[^a-zA-Z0-9.-]/g, '_');
         const fileName = `reports/${reportId}/${timestamp}-${sanitizedFilename}`;
 
         const imageUrl = await this.minioProvider.uploadFile(
@@ -237,6 +237,87 @@ export class ReportsService {
     const reports = await query.getMany();
 
     return reports.map((report) => this.sanitizeReport(report, viewer));
+  }
+
+  async findAllPublic(filters?: FilterReportsDto): Promise<Report[]> {
+    const query = this.reportRepository
+      .createQueryBuilder('report')
+      .leftJoinAndSelect('report.user', 'user')
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('report.category', 'category')
+      .leftJoinAndSelect('report.assignedOfficer', 'assignedOfficer')
+      .leftJoinAndSelect(
+        'report.assignedExternalMaintainer',
+        'assignedExternalMaintainer',
+      );
+
+    // For public users, only show reports that are assigned, in_progress, suspended, or resolved
+    query.andWhere(
+      `report.status IN ('assigned', 'in_progress', 'suspended', 'resolved')`,
+    );
+
+    if (filters?.status) {
+      query.andWhere('report.status = :status', { status: filters.status });
+    }
+
+    if (filters?.categoryId) {
+      query.andWhere('report.categoryId = :categoryId', {
+        categoryId: filters.categoryId,
+      });
+    }
+
+    if (
+      filters?.minLongitude !== undefined &&
+      filters?.maxLongitude !== undefined &&
+      filters?.minLatitude !== undefined &&
+      filters?.maxLatitude !== undefined
+    ) {
+      query.andWhere(
+        `ST_Contains(
+          ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326),
+          report.location
+        )`,
+        {
+          minLng: filters.minLongitude,
+          minLat: filters.minLatitude,
+          maxLng: filters.maxLongitude,
+          maxLat: filters.maxLatitude,
+        },
+      );
+    }
+
+    if (
+      filters?.searchLongitude !== undefined &&
+      filters?.searchLatitude !== undefined &&
+      filters?.radiusMeters !== undefined
+    ) {
+      query.andWhere(
+        `ST_DWithin(
+          report.location::geography,
+          ST_SetSRID(ST_MakePoint(:searchLng, :searchLat), 4326)::geography,
+          :radius
+        )`,
+        {
+          searchLng: filters.searchLongitude,
+          searchLat: filters.searchLatitude,
+          radius: filters.radiusMeters,
+        },
+      );
+    }
+
+    query.orderBy('report.createdAt', 'DESC');
+
+    const reports = await query.getMany();
+
+    // For public view, always sanitize anonymous reports (no viewer to compare against)
+    return reports.map((report) => {
+      if (!report.isAnonymous) {
+        return report;
+      }
+      const sanitized = { ...report };
+      sanitized.user = null;
+      return sanitized as Report;
+    });
   }
 
   async findOne(id: string, viewer: User): Promise<Report> {
@@ -481,9 +562,10 @@ export class ReportsService {
     const allowedTransitions: Record<ReportStatus, string[]> = {
       pending: [],
       assigned: ['in_progress'],
-      in_progress: ['resolved'],
+      in_progress: ['resolved', 'suspended'],
       resolved: [],
       rejected: [],
+      suspended: ['in_progress'],
     };
 
     const allowedNextStatuses = allowedTransitions[report.status];

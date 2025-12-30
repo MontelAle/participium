@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useCategories } from '@/hooks/use-categories';
 import {
   useCreateMunicipalityUser,
   useUpdateMunicipalityUser,
@@ -57,6 +58,7 @@ export function MunicipalityUserForm({
   const { mutateAsync: updateMunicipalityUser } = useUpdateMunicipalityUser();
   const { data: roles = [] } = useRoles();
   const { data: offices = [] } = useOffices();
+  const { data: categories = [] } = useCategories();
 
   const initialForm: FormData =
     mode === 'edit'
@@ -290,6 +292,41 @@ export function MunicipalityUserForm({
                 </InputGroupAddon>
               </InputGroup>
             </Field>
+
+            {selectedRoleName === 'external_maintainer' && form.officeId && (
+              <Field className="md:col-span-2">
+                <FieldLabel>Categories for this Office</FieldLabel>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {(() => {
+                      const selectedOffice = offices.find(
+                        (o) => o.id === form.officeId,
+                      );
+                      if (!selectedOffice) return null;
+                      const officeCategories = selectedOffice.isExternal? categories.filter((c) => c.externalOffice?.id === selectedOffice.id,)
+                        : selectedOffice.categories ?? [];
+                      if (officeCategories.length === 0) {
+                        return (
+                        <span className="text-sm text-muted-foreground italic">
+                          No categories assigned
+                        </span>
+                        );
+                      }
+                      return officeCategories.map((category) => (
+                        <span
+                          key={category.id}
+                          className="inline-flex items-center px-3 py-1.5 rounded-md
+                            bg-gray-100 border border-gray-200
+                            text-gray-700 text-sm font-medium"
+                        >
+                          {category.name}
+                        </span>
+                      ));
+                    })()}
+                  </div>
+              </Field>
+            )}
+
+
           </div>
           {mode === 'create' && (
             <Field>

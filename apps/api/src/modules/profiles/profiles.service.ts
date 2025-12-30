@@ -32,113 +32,22 @@ export class ProfilesService {
     dto: UpdateProfileDto,
     file?: Express.Multer.File,
   ): Promise<Profile> {
-    const profile = await this.profileRepository.findOne({
-      where: { userId: userId },
-      relations: ['user'],
-    });
+    const { profile, user, account } = await this.getProfileContext(userId);
 
-    if (!profile) {
-      throw new NotFoundException(USER_ERROR_MESSAGES.PROFILE_NOT_FOUND);
-    }
+    this.updateSimpleFields(profile, user, account, dto);
 
-    if (dto.telegramUsername !== undefined) {
-      profile.telegramUsername = dto.telegramUsername || null;
-    }
-
-    if (dto.emailNotificationsEnabled !== undefined) {
-      profile.emailNotificationsEnabled =
-        dto.emailNotificationsEnabled === 'true';
-    }
+    await this.handleUsernameUpdate(dto, user, account, profile);
+    await this.handleEmailUpdate(dto, user, account, profile);
 
     if (file) {
-      const sanitizedFilename = path
-        .basename(file.originalname)
-        .replaceAll(/[^a-zA-Z0-9.-]/g, '_');
-      const fileName = `profile-pictures/${userId}/${nanoid()}-${sanitizedFilename}`;
-      const fileUrl = await this.minioProvider.uploadFile(
-        fileName,
-        file.buffer,
-        file.mimetype,
+      profile.profilePictureUrl = await this.handleProfilePictureUpload(
+        userId,
+        file,
+        profile.profilePictureUrl,
       );
-
-      if (profile.profilePictureUrl) {
-        try {
-          const oldFileName = this.minioProvider.extractFileNameFromUrl(
-            profile.profilePictureUrl,
-          );
-          await this.minioProvider.deleteFile(oldFileName);
-        } catch {
-          // Ignore errors if old file doesn't exist
-        }
-      }
-
-      profile.profilePictureUrl = fileUrl;
-    }
-
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND);
-    }
-
-    const account = await this.accountRepository.findOne({
-      where: { userId: userId, providerId: 'local' },
-      relations: ['user'],
-    });
-    if (!account) {
-      throw new NotFoundException('Account not found');
-    }
-
-    if (dto.username && dto.username !== user.username) {
-      const existingUsername = await this.userRepository.findOne({
-        where: { username: dto.username },
-      });
-
-      if (existingUsername) {
-        throw new ConflictException('Username already in use');
-      }
-
-      user.username = dto.username;
-      profile.user.username = dto.username;
-      account.user.username = dto.username;
-
-      const existingAccountId = await this.accountRepository.findOne({
-        where: { accountId: dto.username },
-      });
-
-      if (existingAccountId && existingAccountId.id !== account.id) {
-        throw new ConflictException('AccountId already in use');
-      }
-
-      account.accountId = dto.username;
-    }
-
-    if (dto.email && dto.email !== user.email) {
-      const existingEmail = await this.userRepository.findOne({
-        where: { email: dto.email },
-      });
-
-      if (existingEmail) {
-        throw new ConflictException('Email already in use');
-      }
-
-      user.email = dto.email;
-      profile.user.email = dto.email;
-      account.user.email = dto.email;
-    }
-
-    if (dto.firstName && dto.firstName !== user.firstName) {
-      user.firstName = dto.firstName;
-      profile.user.firstName = dto.firstName;
-      account.user.firstName = dto.firstName;
-    }
-    if (dto.lastName && dto.lastName !== user.lastName) {
-      user.lastName = dto.lastName;
-      profile.user.lastName = dto.lastName;
-      account.user.lastName = dto.lastName;
     }
 
     await this.accountRepository.save(account);
-
     await this.userRepository.save(user);
 
     return this.profileRepository.save(profile);
@@ -154,5 +63,139 @@ export class ProfilesService {
       throw new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND);
     }
     return profile;
+  }
+
+  private async getProfileContext(userId: string) {
+    const profile = await this.profileRepository.findOne({
+      where: { userId: userId },
+      relations: ['user'],
+    });
+
+    if (!profile) {
+      throw new NotFoundException(USER_ERROR_MESSAGES.PROFILE_NOT_FOUND);
+    }
+
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+
+    const account = await this.accountRepository.findOne({
+      where: { userId: userId, providerId: 'local' },
+      relations: ['user'],
+    });
+
+    if (!account) {
+      throw new NotFoundException('Account not found');
+    }
+
+    return { profile, user, account };
+  }
+
+  private updateSimpleFields(
+    profile: Profile,
+    user: User,
+    account: Account,
+    dto: UpdateProfileDto,
+  ) {
+    if (dto.telegramUsername !== undefined) {
+      profile.telegramUsername = dto.telegramUsername || null;
+    }
+
+    if (dto.emailNotificationsEnabled !== undefined) {
+      profile.emailNotificationsEnabled =
+        dto.emailNotificationsEnabled === 'true';
+    }
+
+    if (dto.firstName && dto.firstName !== user.firstName) {
+      user.firstName = dto.firstName;
+      profile.user.firstName = dto.firstName;
+      account.user.firstName = dto.firstName;
+    }
+
+    if (dto.lastName && dto.lastName !== user.lastName) {
+      user.lastName = dto.lastName;
+      profile.user.lastName = dto.lastName;
+      account.user.lastName = dto.lastName;
+    }
+  }
+
+  private async handleUsernameUpdate(
+    dto: UpdateProfileDto,
+    user: User,
+    account: Account,
+    profile: Profile,
+  ) {
+    if (!dto.username || dto.username === user.username) return;
+
+    const existingUsername = await this.userRepository.findOne({
+      where: { username: dto.username },
+    });
+
+    if (existingUsername) {
+      throw new ConflictException('Username already in use');
+    }
+
+    user.username = dto.username;
+    profile.user.username = dto.username;
+    account.user.username = dto.username;
+
+    const existingAccountId = await this.accountRepository.findOne({
+      where: { accountId: dto.username },
+    });
+
+    if (existingAccountId && existingAccountId.id !== account.id) {
+      throw new ConflictException('AccountId already in use');
+    }
+
+    account.accountId = dto.username;
+  }
+
+  private async handleEmailUpdate(
+    dto: UpdateProfileDto,
+    user: User,
+    account: Account,
+    profile: Profile,
+  ) {
+    if (!dto.email || dto.email === user.email) return;
+
+    const existingEmail = await this.userRepository.findOne({
+      where: { email: dto.email },
+    });
+
+    if (existingEmail) {
+      throw new ConflictException('Email already in use');
+    }
+
+    user.email = dto.email;
+    profile.user.email = dto.email;
+    account.user.email = dto.email;
+  }
+
+  private async handleProfilePictureUpload(
+    userId: string,
+    file: Express.Multer.File,
+    currentPictureUrl: string | null,
+  ): Promise<string> {
+    const sanitizedFilename = path
+      .basename(file.originalname)
+      .replaceAll(/[^a-zA-Z0-9.-]/g, '_');
+    const fileName = `profile-pictures/${userId}/${nanoid()}-${sanitizedFilename}`;
+
+    const fileUrl = await this.minioProvider.uploadFile(
+      fileName,
+      file.buffer,
+      file.mimetype,
+    );
+
+    if (currentPictureUrl) {
+      try {
+        const oldFileName =
+          this.minioProvider.extractFileNameFromUrl(currentPictureUrl);
+        await this.minioProvider.deleteFile(oldFileName);
+      } catch {}
+    }
+
+    return fileUrl;
   }
 }

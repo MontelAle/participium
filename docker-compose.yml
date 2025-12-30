@@ -50,7 +50,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: ${POSTGRES_DB:-participium}
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - participium_pg_data:/var/lib/postgresql
     networks:
       - participium-net
 
@@ -62,7 +62,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
-      - minio_data:/data
+      - participium_minio_data:/data
     command: server /data --console-address ":9001"
     networks:
       - participium-net
@@ -71,8 +71,10 @@ services:
       - '9000:9000'
 
 volumes:
-  postgres_data:
-  minio_data:
+  participium_pg_data:
+    name: participium_release_pg_data
+  participium_minio_data:
+    name: participium_release_minio_data
 
 networks:
   participium-net:

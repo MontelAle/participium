@@ -533,7 +533,7 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 | id                           | string   | Primary key                     | No       | varchar                                                                                                    |
 | title                        | string   | Report title                    | Yes      | varchar, optional                                                                                          |
 | description                  | string   | Report description              | Yes      | text type, optional                                                                                        |
-| status                       | enum     | Report status                   | No       | Values: pending, in_progress, resolved, rejected, assigned. Default: pending. Visibility rules apply.      |
+| status                       | enum     | Report status                   | No       | Values: pending, in_progress, resolved, rejected, assigned, suspended. Default: pending. Visibility rules apply.      |
 | location                     | Point    | Geographic coordinates          | No       | PostGIS geometry(Point, 4326). Must be within municipal boundaries.                                        |
 | address                      | string   | Physical address                | Yes      | varchar, optional                                                                                          |
 | images                       | string[] | Array of image paths/URLs       | No       | varchar array                                                                                              |
@@ -935,6 +935,28 @@ To run the seed manually:
 cd apps/api
 pnpm run seed:participium
 ```
+
+#### Test User Credentials
+
+After seeding the database, you can use the following credentials for testing purposes:
+
+**Default Password for All Users**: `password`
+
+| Role                    | Username                                   | Name                     | Email                                        | Office                                  |
+| ----------------------- | ------------------------------------------ | ------------------------ | -------------------------------------------- | --------------------------------------- |
+| **System Admin**        | `system_admin`                             | System Admin             | admin@participium.com                        | Organization Office                     |
+| **PR Officers**         | `pr_officer_1` to `pr_officer_4`           | PR Officer 1, 2, 3, 4    | pr.officer.1@participium.com (etc.)          | Organization Office                     |
+| **Tech Officers**       | `tech_maintenance_1`, `tech_maintenance_2` | Random (Faker-generated) | tech_maintenance_1@participium.com (etc.)    | Maintenance and Technical Services      |
+|                         | `tech_infrastructure_1`, etc.              | Random (Faker-generated) | tech_infrastructure_1@participium.com (etc.) | Infrastructure                          |
+|                         | `tech_public_services_1`, etc.             | Random (Faker-generated) | tech_public_services_1@participium.com       | Local Public Services                   |
+|                         | `tech_environment_1`, etc.                 | Random (Faker-generated) | tech_environment_1@participium.com           | Environment Quality                     |
+|                         | `tech_green_parks_1`, etc.                 | Random (Faker-generated) | tech_green_parks_1@participium.com           | Green Areas and Parks                   |
+|                         | `tech_civic_services_1`, etc.              | Random (Faker-generated) | tech_civic_services_1@participium.com        | Decentralization and Civic Services     |
+| **External Maintainer** | `external_company_1_1`, etc.               | Random (Faker-generated) | external_company_1_1@participium.com         | External Company 1, 2, or 3             |
+| **Citizens**            | `mario_rossi`                              | Mario Rossi              | mario.rossi@gmail.com                        | -                                       |
+|                         | `luigi_verdi`                              | Luigi Verdi              | luigi.verdi@gmail.com                        | -                                       |
+
+**Note**: Each office has 2 tech officers (`_1` and `_2`), and each external company has 2 maintainers. Tech officer and external maintainer names are randomly generated using Faker library at seed time.
 
 #### Individual applications
 

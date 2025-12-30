@@ -1,7 +1,6 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useFilteredReports } from '@/hooks/use-filtered-reports';
 import { useActiveReportStore } from '@/store/activeReportStore';
-import type { Report, ReportStatus } from '@/types';
 import L from 'leaflet';
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -11,7 +10,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import type { NominatimSearchResult, StatusMarker } from '@/types';
+import type {
+  NominatimSearchResult,
+  Report,
+  ReportStatus,
+  StatusMarker,
+} from '@/types';
 import { MapControls } from './map-controls';
 import { SearchBox } from './map-searchbox';
 import {
@@ -39,7 +43,7 @@ export default function ReportsMap() {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
 
-  const { isCitizenUser } = useAuth();
+  const { isCitizenUser, isGuestUser } = useAuth();
   const setLocation = useActiveReportStore((state) => state.setLocation);
   const location = useActiveReportStore((state) => state.locationData);
   const clearLocation = useActiveReportStore((s) => s.clearLocation);
@@ -260,15 +264,21 @@ export default function ReportsMap() {
         ${userHtml} 
       `;
 
-      const detailsBtn = document.createElement('button');
-      detailsBtn.className = 'popup-btn-action mt-3';
-      detailsBtn.textContent = 'SHOW DETAILS';
-      detailsBtn.onclick = (e) => {
-        e.stopPropagation();
-        navigate(`/reports/view/${report.id}`);
-      };
-
-      popupDiv.appendChild(detailsBtn);
+      if (isGuestUser) {
+        const loginMsg = document.createElement('div');
+        loginMsg.className = 'text-xs text-center text-slate-400 mt-3 italic';
+        loginMsg.textContent = 'Login to show all details';
+        popupDiv.appendChild(loginMsg);
+      } else {
+        const detailsBtn = document.createElement('button');
+        detailsBtn.className = 'popup-btn-action mt-3';
+        detailsBtn.textContent = 'SHOW DETAILS';
+        detailsBtn.onclick = (e) => {
+          e.stopPropagation();
+          navigate(`/reports/view/${report.id}`);
+        };
+        popupDiv.appendChild(detailsBtn);
+      }
 
       const m = L.marker([lat, lng], {
         icon: smallDivIcon({ status: report.status }),
@@ -289,7 +299,7 @@ export default function ReportsMap() {
       markersMapRef.current.set(report.id, m);
       clusterGroup.addLayer(m);
     });
-  }, [mapReports, navigate]);
+  }, [mapReports, navigate, isGuestUser]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;

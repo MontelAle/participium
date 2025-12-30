@@ -53,7 +53,9 @@ export function ViewAssignedExternalReport({
       case 'assigned':
         return ['assigned', 'in_progress'];
       case 'in_progress':
-        return ['in_progress', 'resolved'];
+        return ['in_progress', 'resolved', 'suspended'];
+      case 'suspended':
+        return ['suspended', 'in_progress'];
       case 'resolved':
         return ['resolved'];
       default:
