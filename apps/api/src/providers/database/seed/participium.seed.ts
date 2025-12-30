@@ -8,6 +8,7 @@ import {
   ReportStatus,
   Role,
   User,
+  UserOfficeRole,
 } from '@entities';
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
@@ -874,6 +875,77 @@ async function seedExternalMaintainers(
   }
 }
 
+/**
+ * Seeds a single tech_officer with multiple office assignments
+ * to demonstrate multi-role functionality
+ */
+async function seedMultiRoleTechOfficer(
+  dataSource: DataSource,
+  context: UserCreationContext,
+): Promise<void> {
+  const { userRepo, accountRepo, profileRepo, commonPassword, rolesMap, officesMap } = context;
+  
+  const username = 'tech_multi_role';
+  const existingUser = await userRepo.findOne({ where: { username } });
+  
+  if (existingUser) {
+    console.log(`Multi-role tech officer already exists: ${username}`);
+    return;
+  }
+
+  // Create user with deprecated fields (first office as primary)
+  const techRole = rolesMap.get('tech_officer');
+  const maintenanceOffice = officesMap.get('maintenance');
+  
+  const user = userRepo.create({
+    id: nanoid(),
+    firstName: 'Multi',
+    lastName: 'Role Tech',
+    username,
+    email: 'tech.multi@participium.com',
+    role: techRole,
+    office: maintenanceOffice,
+  });
+  await userRepo.save(user);
+
+  // Create account and profile
+  await accountRepo.save({
+    id: nanoid(),
+    user,
+    providerId: 'local',
+    accountId: username,
+    password: commonPassword,
+  });
+
+  await profileRepo.save(
+    profileRepo.create({
+      id: nanoid(),
+      userId: user.id,
+      user: user,
+    }),
+  );
+
+  // Create UserOfficeRole assignments for multiple offices
+  const userOfficeRoleRepo = dataSource.getRepository(UserOfficeRole);
+  const officesToAssign = ['maintenance', 'infrastructure', 'public_services'];
+  
+  for (const officeName of officesToAssign) {
+    const office = officesMap.get(officeName);
+    if (office) {
+      const assignment = userOfficeRoleRepo.create({
+        id: nanoid(),
+        userId: user.id,
+        officeId: office.id,
+        roleId: techRole.id,
+      });
+      await userOfficeRoleRepo.save(assignment);
+      console.log(`✓ Assigned ${username} to office: ${office.label}`);
+    }
+  }
+
+  console.log(`Created multi-role tech officer: ${username} with ${officesToAssign.length} office assignments`);
+}
+
 async function seedCitizenUsers(context: UserCreationContext): Promise<User[]> {
   const citizenUsers: User[] = [];
 
@@ -1104,6 +1176,7 @@ export async function seedDatabase(
   };
 
   await seedMunicipalUsers(userContext);
+  await seedMultiRoleTechOfficer(dataSource, userContext);
   await seedExternalMaintainers(userContext);
   const citizenUsers = await seedCitizenUsers(userContext);
 
