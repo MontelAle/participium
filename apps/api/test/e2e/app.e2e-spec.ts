@@ -145,12 +145,28 @@ const createMockRepository = (data: any[] = []) => {
         select: jest.fn().mockReturnThis(),
         groupBy: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
-        setParameters: jest.fn().mockReturnThis(),
+        setParameters: jest.fn((params) => {
+          qb.whereConditions.push({ condition: 'parameters', params });
+          return qb;
+        }),
         getOne: jest.fn().mockResolvedValue(data[0] || null),
         getMany: jest.fn(() => {
           let results = [...data];
-          // Apply filtering based on where conditions
+
           for (const { condition, params } of qb.whereConditions) {
+            if (
+              typeof condition === 'string' &&
+              condition.includes(
+                "report.status IN ('assigned', 'in_progress', 'suspended', 'resolved')",
+              )
+            ) {
+              results = results.filter((r: any) =>
+                ['assigned', 'in_progress', 'suspended', 'resolved'].includes(
+                  r.status,
+                ),
+              );
+            }
+
             if (
               typeof condition === 'string' &&
               condition.includes('assignedExternalMaintainerId')
@@ -159,7 +175,35 @@ const createMockRepository = (data: any[] = []) => {
                 (r: any) => r.assignedExternalMaintainerId === params?.viewerId,
               );
             }
+
+            if (typeof condition === 'string' && params) {
+              if (
+                condition.includes('report.status = :status') &&
+                params.status
+              ) {
+                results = results.filter(
+                  (r: any) => r.status === params.status,
+                );
+              }
+              if (
+                condition.includes('report.categoryId = :categoryId') &&
+                params.categoryId
+              ) {
+                results = results.filter(
+                  (r: any) => r.categoryId === params.categoryId,
+                );
+              }
+              if (
+                condition.includes('report.userId = :userId') &&
+                params.userId
+              ) {
+                results = results.filter(
+                  (r: any) => r.userId === params.userId,
+                );
+              }
+            }
           }
+
           return Promise.resolve(results);
         }),
         getRawMany: jest.fn().mockResolvedValue([]),
@@ -2114,5 +2158,96 @@ describe('AppController (e2e)', () => {
         status: 'rejected',
       })
       .expect(400);
+  });
+
+  // ============================================================================
+  // GUEST / PUBLIC ACCESS & SECURITY
+  // ============================================================================
+
+  it('GET /reports/public returns 200 and correctly filters allowed statuses (Security Check)', async () => {
+    mockReports.push(
+      {
+        id: 'pub_resolved',
+        title: 'Public Resolved',
+        status: 'resolved',
+        description: 'Visible',
+        location: { type: 'Point', coordinates: [10, 10] },
+        userId: 'user_1',
+        categoryId: 'cat_1',
+        isAnonymous: false,
+        user: mockUsers[0],
+        category: mockCategories[0],
+      },
+      {
+        id: 'pub_pending',
+        title: 'Public Pending',
+        status: 'pending',
+        description: 'Hidden',
+        location: { type: 'Point', coordinates: [10, 10] },
+        userId: 'user_1',
+        categoryId: 'cat_1',
+        isAnonymous: false,
+        user: mockUsers[0],
+        category: mockCategories[0],
+      },
+    );
+
+    const res = await request(app.getHttpServer())
+      .get('/reports/public')
+      .expect(200);
+
+    const reports = res.body.data;
+    const ids = reports.map((r: any) => r.id);
+
+    expect(ids).toContain('pub_resolved');
+
+    expect(ids).not.toContain('pub_pending');
+    expect(ids).not.toContain('report_1');
+  });
+
+  it('GET /reports/public sanitizes anonymous reports (Privacy Check)', async () => {
+    mockReports.push({
+      id: 'pub_anon',
+      title: 'Public Anonymous',
+      status: 'resolved',
+      description: 'Anon',
+      location: { type: 'Point', coordinates: [10, 10] },
+      userId: 'user_1',
+      categoryId: 'cat_1',
+      isAnonymous: true,
+      user: mockUsers[0],
+      category: mockCategories[0],
+    });
+
+    const res = await request(app.getHttpServer())
+      .get('/reports/public')
+      .expect(200);
+
+    const anonReport = res.body.data.find((r: any) => r.id === 'pub_anon');
+    expect(anonReport).toBeDefined();
+    expect(anonReport.user).toBeNull();
+  });
+
+  it('GET /reports/public shows user info for non-anonymous reports', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports/public')
+      .expect(200);
+
+    const publicReport = res.body.data.find(
+      (r: any) => r.id === 'pub_resolved',
+    );
+    expect(publicReport).toBeDefined();
+    expect(publicReport.user).toBeDefined();
+    expect(publicReport.user.username).toBe('john');
+  });
+
+  it('GET /reports/:id returns 403 Forbidden for guest users (ID Enumeration Protection)', async () => {
+    await request(app.getHttpServer()).get('/reports/pub_resolved').expect(403);
+  });
+
+  it('GET /reports/nearby returns 403 Forbidden for guest users', async () => {
+    await request(app.getHttpServer())
+      .get('/reports/nearby?longitude=10&latitude=10')
+      .expect(403);
   });
 });
