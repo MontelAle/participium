@@ -139,10 +139,15 @@ export class UsersService {
         assignments = dto.officeRoleAssignments;
       } else if (dto.roleId) {
         // Legacy API: convert roleId/officeId to single assignment
+        if (!dto.officeId) {
+          throw new BadRequestException(
+            'officeId is required when using roleId',
+          );
+        }
         assignments = [
           {
             roleId: dto.roleId,
-            officeId: dto.officeId || null,
+            officeId: dto.officeId,
           },
         ];
       } else {
