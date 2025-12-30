@@ -8,3 +8,4 @@ export { Report, ReportStatus } from './report.entity';
 export { Role } from './role.entity';
 export { Session } from './session.entity';
 export { User } from './user.entity';
+export { UserOfficeRole } from './user-office-role.entity';

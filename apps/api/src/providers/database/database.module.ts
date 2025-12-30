@@ -9,6 +9,7 @@ import {
   Role,
   Session,
   User,
+  UserOfficeRole,
 } from '@entities';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -37,6 +38,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
           Office,
           Profile,
           Boundary,
+          UserOfficeRole,
         ],
         synchronize: configService.get<string>('app.env') !== 'production',
         logging: false,
