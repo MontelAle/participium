@@ -1,4 +1,4 @@
-import { Account, Category, Office, Profile, Role, User, UserOfficeRole } from '@entities';
+import { Account, Category, Office, Profile, Report, Role, User, UserOfficeRole } from '@entities';
 import {
   BadRequestException,
   ConflictException,
@@ -10,6 +10,7 @@ import bcrypt from 'bcrypt';
 import { nanoid } from 'nanoid';
 import { Repository } from 'typeorm';
 import { MinioProvider } from '../../providers/minio/minio.provider';
+import { ReportsService } from '../reports/reports.service';
 import { USER_ERROR_MESSAGES } from './constants/error-messages';
 import {
   CreateMunicipalityUserDto,
@@ -37,7 +38,12 @@ export class UsersService {
     @InjectRepository(UserOfficeRole)
     private readonly userOfficeRoleRepository: Repository<UserOfficeRole>,
 
+    @InjectRepository(Report)
+    private readonly reportRepository: Repository<Report>,
+
     private readonly minioProvider: MinioProvider,
+
+    private readonly reportsService: ReportsService,
   ) {}
 
   async findMunicipalityUsers(categoryId?: string): Promise<User[]> {
@@ -632,6 +638,32 @@ export class UsersService {
       );
     }
 
+    // Find orphan reports: reports assigned to this user for categories of this office
+    // Only reassign reports in intermediate states (assigned, in_progress)
+    const orphanReports = await this.reportRepository
+      .createQueryBuilder('report')
+      .innerJoin('report.category', 'category')
+      .where('report.assignedOfficerId = :userId', { userId })
+      .andWhere('category.officeId = :officeId', { officeId })
+      .andWhere('report.status IN (:...statuses)', {
+        statuses: ['assigned', 'in_progress'],
+      })
+      .getMany();
+
+    // Reassign each orphan report to another available officer
+    if (orphanReports.length > 0) {
+      for (const report of orphanReports) {
+        // Find another officer with the fewest reports in this office
+        const newOfficer =
+          await this.reportsService.findOfficerWithFewestReports(officeId);
+
+        // If an officer is found, assign the report; otherwise set to null (unassigned)
+        report.assignedOfficerId = newOfficer?.id || null;
+        await this.reportRepository.save(report);
+      }
+    }
+
+    // Finally, remove the user's assignment from the office
     await this.userOfficeRoleRepository.delete({ id: assignment.id });
   }
 
