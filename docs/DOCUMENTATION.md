@@ -208,6 +208,18 @@ participium/
 - **POST `/municipality/user/:id/office-roles`**: Assign user to an additional office
   - Request body: `{ officeId: string, roleId: string }`
   - Only `tech_officer` role can have multiple office assignments
+  - Other roles (admin, pr_officer, external_maintainer) can only have one office assignment
+  - System validates role-office compatibility (e.g., external_maintainer must be assigned to external offices)
+
+- **DELETE `/municipality/user/:id/office-roles/:officeId`**: Remove user from an office
+  - Removes the user's assignment to a specific office
+  - User must maintain at least one office-role assignment (cannot remove the last one)
+  - **Automatic Report Reassignment**: When a technical officer is removed from an office, all reports assigned to them for that office's categories are automatically reassigned:
+    - Reports in states `assigned`, `in_progress`, or `suspended` are reassigned
+    - The system selects a replacement officer **only from technical officers assigned to the same office** (maintains office-category consistency)
+    - To choose among these candidates, workload is calculated counting both `assigned` and `in_progress` reports across all their offices (fair distribution for multi-office officers)
+    - If no other officers are available in that office, reports are set to unassigned (`assignedOfficerId = null`)
+    - This ensures no reports become orphaned or assigned to incorrect offices when officers are removed
   - Validates office-role compatibility (e.g., external offices only for external_maintainer)
   - Returns 409 Conflict if assignment already exists
   - Returns 400 Bad Request if user cannot have multiple roles
@@ -579,7 +591,7 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 | id                           | string   | Primary key                     | No       | varchar                                                                                                    |
 | title                        | string   | Report title                    | Yes      | varchar, optional                                                                                          |
 | description                  | string   | Report description              | Yes      | text type, optional                                                                                        |
-| status                       | enum     | Report status                   | No       | Values: pending, in_progress, resolved, rejected, assigned, suspended. Default: pending. Visibility rules apply.      |
+| status                       | enum     | Report status                   | No       | Values: pending, in_progress, resolved, rejected, assigned, suspended. Default: pending. Visibility rules apply. When a technical officer is removed from an office, reports in states assigned/in_progress/suspended are automatically reassigned.      |
 | location                     | Point    | Geographic coordinates          | No       | PostGIS geometry(Point, 4326). Must be within municipal boundaries.                                        |
 | address                      | string   | Physical address                | Yes      | varchar, optional                                                                                          |
 | images                       | string[] | Array of image paths/URLs       | No       | varchar array                                                                                              |
@@ -823,7 +835,12 @@ The system follows a workflow where the **Organization Office** (PR Officers) ac
       - Upon acceptance, the system determines the competent technical office based on the report's category
       - The PR Officer can choose between two assignment options:
         - **Manual Assignment**: Select a specific technical officer from the competent office
-        - **Automatic Assignment**: Let the system assign the report to the officer with the lowest workload (fewest assigned reports)
+        - **Automatic Assignment**: Let the system assign the report to the officer with the lowest workload
+          - Only technical officers assigned to the report's category office are considered as candidates
+          - Among these candidates, workload is calculated by counting reports in states `assigned` and `in_progress`
+          - Workload calculation includes all reports across all offices where each officer works (ensures fair distribution for multi-office officers)
+          - The report is always assigned to an officer who works in the category's office
+          - This ensures fair distribution even when officers work in multiple offices
     - **Outcome**: The report status changes to **Assigned** and is routed to the designated technical officer in the competent office (e.g., a "Public Lighting" issue is sent to the _Infrastructure Office_).
 
 3.  **Technical View (Technical Officer)**:
