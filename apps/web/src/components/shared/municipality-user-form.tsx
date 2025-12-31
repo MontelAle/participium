@@ -31,7 +31,9 @@ import {
   Building2,
   LockIcon,
   MailIcon,
+  Plus,
   UserIcon,
+  X,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -47,7 +49,14 @@ type MunicipalityUserFormProps =
       user: User;
     };
 
-type FormData = CreateMunicipalityUserDto;
+type CreateFormData = CreateMunicipalityUserDto;
+type EditFormData = Omit<CreateMunicipalityUserDto, 'officeId'> & { officeIds: string[] };
+type FormData = CreateFormData | EditFormData;
+
+// Type guard to check if form is in edit mode
+function isEditFormData(form: FormData): form is EditFormData {
+  return 'officeIds' in form;
+}
 
 export function MunicipalityUserForm({
   mode,
@@ -68,7 +77,7 @@ export function MunicipalityUserForm({
           firstName: user.firstName ?? '',
           lastName: user.lastName ?? '',
           roleId: user.role?.id ?? '',
-          officeId: user.office?.id ?? '',
+          officeIds: user.office?.id ? [user.office.id] : [],
           password: '',
         }
       : {
@@ -83,17 +92,42 @@ export function MunicipalityUserForm({
 
   const [form, setForm] = useState<FormData>(initialForm);
   const [isLoading, setIsLoading] = useState(false);
+  const [additionalOffices, setAdditionalOffices] = useState<string[]>([]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleRoleChange = (value: string) => {
-    setForm({ ...form, roleId: value, officeId: '' });
+    if (mode === 'edit') {
+      setForm({ ...form, roleId: value, officeIds: [] } as EditFormData);
+      setAdditionalOffices([]);
+    } else {
+      setForm({ ...form, roleId: value, officeId: '' } as CreateFormData);
+    }
   };
 
   const handleOfficeChange = (value: string) => {
-    setForm({ ...form, officeId: value });
+    if (mode === 'edit' && isEditFormData(form)) {
+      const officeIds = form.officeIds || [];
+      setForm({ ...form, officeIds: [value, ...officeIds.slice(1)] });
+    } else if (mode === 'create' && !isEditFormData(form)) {
+      setForm({ ...form, officeId: value });
+    }
+  };
+
+  const handleAdditionalOfficeChange = (index: number, value: string) => {
+    const newAdditional = [...additionalOffices];
+    newAdditional[index] = value;
+    setAdditionalOffices(newAdditional);
+  };
+
+  const addOffice = () => {
+    setAdditionalOffices([...additionalOffices, '']);
+  };
+
+  const removeOffice = (index: number) => {
+    setAdditionalOffices(additionalOffices.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -102,17 +136,23 @@ export function MunicipalityUserForm({
     setIsLoading(true);
 
     try {
-      if (mode === 'create') {
+      if (mode === 'create' && !isEditFormData(form)) {
         await createMunicipalityUser(form);
         toast.success('Municipality user created successfully!');
-      } else {
+      } else if (mode === 'edit' && isEditFormData(form)) {
+        const primaryOfficeId = form.officeIds[0] || '';
+        const allOfficeIds = [
+          primaryOfficeId,
+          ...additionalOffices.filter((id) => id !== ''),
+        ].filter((id) => id !== '');
+
         const updateData: UpdateMunicipalityUserDto = {
           username: form.username,
           email: form.email,
           firstName: form.firstName,
           lastName: form.lastName,
           roleId: form.roleId,
-          officeId: form.officeId,
+          officeIds: allOfficeIds,
         };
         await updateMunicipalityUser({ userId: user.id, data: updateData });
         toast.success('User updated successfully!');
@@ -139,22 +179,37 @@ export function MunicipalityUserForm({
 
   const selectedRoleName = roles.find((r) => r.id === form.roleId)?.name;
 
-  function getAvailableOffices() {
+  // Helper to get the primary office ID based on mode
+  const getPrimaryOfficeId = (): string | undefined => {
+    if (isEditFormData(form)) {
+      return form.officeIds[0];
+    }
+    return form.officeId;
+  };
+
+  function getAvailableOffices(excludeOfficeIds: string[] = []) {
+    let filtered: typeof offices = [];
     switch (selectedRoleName) {
       case 'external_maintainer':
-        return offices.filter((office) => office.isExternal);
+        filtered = offices.filter((office) => office.isExternal);
+        break;
       case 'pr_officer':
-        return offices.filter(
+        filtered = offices.filter(
           (office) => office.name === 'organization_office',
         );
+        break;
       case 'tech_officer':
-        return offices.filter(
+        filtered = offices.filter(
           (office) =>
             !office.isExternal && office.name !== 'organization_office',
         );
+        break;
       default:
-        return [];
+        filtered = [];
     }
+    
+    // Filter out already selected offices to prevent duplicates
+    return filtered.filter((office) => !excludeOfficeIds.includes(office.id));
   }
 
   return (
@@ -266,7 +321,7 @@ export function MunicipalityUserForm({
               <FieldLabel>Office</FieldLabel>
               <InputGroup className="h-12">
                 <Select
-                  value={form.officeId}
+                  value={getPrimaryOfficeId()}
                   onValueChange={handleOfficeChange}
                 >
                   <SelectTrigger
@@ -276,7 +331,9 @@ export function MunicipalityUserForm({
                     <SelectValue placeholder="Select Office" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getAvailableOffices().map((office) => (
+                    {getAvailableOffices(
+                      mode === 'edit' ? additionalOffices : []
+                    ).map((office) => (
                       <SelectItem
                         key={office.id}
                         value={office.id}
@@ -293,13 +350,77 @@ export function MunicipalityUserForm({
               </InputGroup>
             </Field>
 
-            {selectedRoleName === 'external_maintainer' && form.officeId && (
+            {mode === 'edit' && additionalOffices.map((officeId, index) => (
+              <Field key={index}>
+                <FieldLabel>Additional Office</FieldLabel>
+                <div className="flex gap-2">
+                  <InputGroup className="h-12 flex-1">
+                    <Select
+                      value={officeId}
+                      onValueChange={(value) => handleAdditionalOfficeChange(index, value)}
+                    >
+                      <SelectTrigger
+                        disabled={!form.roleId}
+                        className="h-full w-full border-0 bg-transparent shadow-none focus:ring-0 text-base px-3"
+                      >
+                        <SelectValue placeholder="Select Office" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableOffices([
+                          (form as any).officeIds?.[0],
+                          ...additionalOffices.filter((_, i) => i !== index),
+                        ].filter(Boolean)).map((office) => (
+                          <SelectItem
+                            key={office.id}
+                            value={office.id}
+                            className="text-base"
+                          >
+                            {office.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <InputGroupAddon>
+                      <Building2 className="size-5" />
+                    </InputGroupAddon>
+                  </InputGroup>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeOffice(index)}
+                    className="h-12 w-12 shrink-0"
+                  >
+                    <X className="size-5" />
+                  </Button>
+                </div>
+              </Field>
+            ))}
+
+            {mode === 'edit' && (
+              <div className="flex justify-start">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addOffice}
+                  disabled={!form.roleId}
+                  className="h-10 px-4 gap-2"
+                >
+                  <Plus className="size-4" />
+                  Add Office
+                </Button>
+              </div>
+            )}
+
+            {selectedRoleName === 'external_maintainer' && getPrimaryOfficeId() && (
               <Field className="md:col-span-2">
                 <FieldLabel>Categories for this Office</FieldLabel>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {(() => {
+                      const officeId = getPrimaryOfficeId();
                       const selectedOffice = offices.find(
-                        (o) => o.id === form.officeId,
+                        (o) => o.id === officeId,
                       );
                       if (!selectedOffice) return null;
                       const officeCategories = selectedOffice.isExternal? categories.filter((c) => c.externalOffice?.id === selectedOffice.id,)
@@ -363,7 +484,7 @@ export function MunicipalityUserForm({
             disabled={
               isLoading ||
               !form.roleId ||
-              !form.officeId ||
+              !getPrimaryOfficeId() ||
               (mode === 'create' && !form.password)
             }
           >

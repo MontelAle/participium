@@ -45,7 +45,7 @@ export type UpdateMunicipalityUserDto = {
   firstName?: string;
   lastName?: string;
   roleId?: string;
-  officeId?: string;
+  officeIds?: string[];
 };
 
 export type CreateMunicipalityUserDto = {
