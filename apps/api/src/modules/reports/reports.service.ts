@@ -646,7 +646,7 @@ export class ReportsService {
     });
 
     const technicalOfficers = userOfficeRoles
-      .filter((uor) => uor.role?.name === 'tech_officer')
+      .filter((uor) => uor.role?.name === 'tech_officer' && uor.user)
       .map((uor) => uor.user);
 
     if (technicalOfficers.length === 0) {
