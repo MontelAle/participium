@@ -639,14 +639,14 @@ export class UsersService {
     }
 
     // Find orphan reports: reports assigned to this user for categories of this office
-    // Only reassign reports in intermediate states (assigned, in_progress)
+    // Only reassign reports in intermediate states (assigned, in_progress, suspended)
     const orphanReports = await this.reportRepository
       .createQueryBuilder('report')
       .innerJoin('report.category', 'category')
       .where('report.assignedOfficerId = :userId', { userId })
       .andWhere('category.officeId = :officeId', { officeId })
       .andWhere('report.status IN (:...statuses)', {
-        statuses: ['assigned', 'in_progress'],
+        statuses: ['assigned', 'in_progress', 'suspended'],
       })
       .getMany();
 

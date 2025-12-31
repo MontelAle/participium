@@ -631,7 +631,12 @@ export class ReportsService {
     }
   }
 
-  private async findOfficerWithFewestReports(
+  /**
+   * Find the technical officer with the fewest assigned reports for a given office
+   * Used for automatic workload balancing
+   * Counts total workload (assigned + in_progress) across all offices
+   */
+  async findOfficerWithFewestReports(
     officeId: string,
   ): Promise<User | null> {
     // Query UserOfficeRole to find tech_officers assigned to this office
@@ -649,12 +654,15 @@ export class ReportsService {
     }
 
     const officerIds = technicalOfficers.map((o) => o.id);
+    // Count total workload: assigned + in_progress across all offices
     const rawCounts = await this.reportRepository
       .createQueryBuilder('report')
       .select('report.assignedOfficerId', 'id')
       .addSelect('COUNT(report.id)', 'count')
       .where('report.assignedOfficerId IN (:...ids)', { ids: officerIds })
-      .andWhere('report.status = :status', { status: 'assigned' })
+      .andWhere('report.status IN (:...statuses)', {
+        statuses: ['assigned', 'in_progress'],
+      })
       .groupBy('report.assignedOfficerId')
       .getRawMany();
 

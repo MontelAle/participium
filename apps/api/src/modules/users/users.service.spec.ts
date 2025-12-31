@@ -1,4 +1,4 @@
-import { Account, Category, Office, Profile, Role, User, UserOfficeRole } from '@entities';
+import { Account, Category, Office, Profile, Report, Role, User, UserOfficeRole } from '@entities';
 import {
   BadRequestException,
   ConflictException,
@@ -8,6 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MinioProvider } from '../../providers/minio/minio.provider';
+import { ReportsService } from '../reports/reports.service';
 import { USER_ERROR_MESSAGES } from './constants/error-messages';
 import { CreateMunicipalityUserDto } from './dto/municipality-users.dto';
 import { UsersService } from './users.service';
@@ -27,6 +28,8 @@ describe('UsersService', () => {
   let officeRepository: jest.Mocked<Repository<Office>>;
   let profileRepository: jest.Mocked<Repository<Profile>>;
   let userOfficeRoleRepository: jest.Mocked<Repository<UserOfficeRole>>;
+  let reportRepository: jest.Mocked<Repository<Report>>;
+  let reportsService: jest.Mocked<ReportsService>;
   const mockManager = {
     getRepository: jest.fn(),
   };
@@ -110,6 +113,24 @@ describe('UsersService', () => {
             remove: jest.fn(),
           },
         },
+        {
+          provide: getRepositoryToken(Report),
+          useValue: {
+            createQueryBuilder: jest.fn().mockReturnValue({
+              innerJoin: jest.fn().mockReturnThis(),
+              where: jest.fn().mockReturnThis(),
+              andWhere: jest.fn().mockReturnThis(),
+              getMany: jest.fn().mockResolvedValue([]),
+            }),
+            save: jest.fn(),
+          },
+        },
+        {
+          provide: ReportsService,
+          useValue: {
+            findOfficerWithFewestReports: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -120,6 +141,8 @@ describe('UsersService', () => {
     officeRepository = module.get(getRepositoryToken(Office));
     profileRepository = module.get(getRepositoryToken(Profile)); // <-- Add this line
     userOfficeRoleRepository = module.get(getRepositoryToken(UserOfficeRole));
+    reportRepository = module.get(getRepositoryToken(Report));
+    reportsService = module.get(ReportsService);
 
     mockManager.getRepository.mockImplementation((entity) => {
       if (entity === User) return userRepository;
@@ -1193,6 +1216,103 @@ describe('UsersService', () => {
         service.removeUserFromOffice('user-1', 'office-1'),
       ).rejects.toThrow(
         new BadRequestException(USER_ERROR_MESSAGES.MUST_KEEP_AT_LEAST_ONE_ROLE),
+      );
+    });
+
+    it('should reassign orphan reports to another officer when removing user from office', async () => {
+      const mockAssignment = {
+        id: 'uor-1',
+        userId: 'user-1',
+        officeId: 'office-1',
+      } as UserOfficeRole;
+
+      const mockOrphanReports = [
+        { id: 'report-1', assignedOfficerId: 'user-1', status: 'assigned' } as Report,
+        { id: 'report-2', assignedOfficerId: 'user-1', status: 'in_progress' } as Report,
+      ];
+
+      const mockNewOfficer = { id: 'user-2', username: 'officer2' } as User;
+
+      userOfficeRoleRepository.findOne.mockResolvedValue(mockAssignment);
+      userOfficeRoleRepository.count.mockResolvedValue(2);
+
+      // Mock QueryBuilder for orphan reports
+      const mockQueryBuilder = {
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockOrphanReports),
+      };
+      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+
+      reportsService.findOfficerWithFewestReports.mockResolvedValue(mockNewOfficer);
+      reportRepository.save.mockResolvedValue(mockOrphanReports[0]);
+
+      await service.removeUserFromOffice('user-1', 'office-1');
+
+      // Verify reports were reassigned
+      expect(mockOrphanReports[0].assignedOfficerId).toBe('user-2');
+      expect(mockOrphanReports[1].assignedOfficerId).toBe('user-2');
+      expect(reportRepository.save).toHaveBeenCalledTimes(2);
+      expect(reportsService.findOfficerWithFewestReports).toHaveBeenCalledWith('office-1');
+    });
+
+    it('should set assignedOfficerId to null when no officers available', async () => {
+      const mockAssignment = {
+        id: 'uor-1',
+        userId: 'user-1',
+        officeId: 'office-1',
+      } as UserOfficeRole;
+
+      const mockOrphanReports = [
+        { id: 'report-1', assignedOfficerId: 'user-1', status: 'assigned' } as Report,
+      ];
+
+      userOfficeRoleRepository.findOne.mockResolvedValue(mockAssignment);
+      userOfficeRoleRepository.count.mockResolvedValue(2);
+
+      const mockQueryBuilder = {
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(mockOrphanReports),
+      };
+      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+
+      // No available officer
+      reportsService.findOfficerWithFewestReports.mockResolvedValue(null);
+
+      await service.removeUserFromOffice('user-1', 'office-1');
+
+      // Verify report was set to null (unassigned)
+      expect(mockOrphanReports[0].assignedOfficerId).toBe(null);
+      expect(reportRepository.save).toHaveBeenCalledWith(mockOrphanReports[0]);
+    });
+
+    it('should only reassign reports in assigned/in_progress/suspended states', async () => {
+      const mockAssignment = {
+        id: 'uor-1',
+        userId: 'user-1',
+        officeId: 'office-1',
+      } as UserOfficeRole;
+
+      userOfficeRoleRepository.findOne.mockResolvedValue(mockAssignment);
+      userOfficeRoleRepository.count.mockResolvedValue(2);
+
+      const mockQueryBuilder = {
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([]),
+      };
+      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+
+      await service.removeUserFromOffice('user-1', 'office-1');
+
+      // Verify query was called with correct statuses
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'report.status IN (:...statuses)',
+        { statuses: ['assigned', 'in_progress', 'suspended'] },
       );
     });
   });
