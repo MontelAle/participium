@@ -20,6 +20,7 @@ import AssignedReportsPage from './pages/app/assigned-reports/page';
 import AssignedReportsViewPage from './pages/app/assigned-reports/view/page';
 import ExternalPage from './pages/app/external/page';
 import AssignReportsStatusViewPage from './pages/app/external/view/page';
+import CodePage from './pages/auth/code/page';
 
 const App = () => {
   return (
@@ -151,6 +152,7 @@ const App = () => {
           </Route>
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/auth/register" element={<RegistrationPage />} />
+          <Route path="/auth/code" element={<CodePage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
