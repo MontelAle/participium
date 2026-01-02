@@ -734,9 +734,7 @@ export class ReportsService {
     }
   }
 
-  private async findOfficerWithFewestReports(
-    officeId: string,
-  ): Promise<User | null> {
+  async findOfficerWithFewestReports(officeId: string): Promise<User | null> {
     // Query UserOfficeRole to find tech_officers assigned to this office
     const userOfficeRoles = await this.userOfficeRoleRepository.find({
       where: { officeId },
