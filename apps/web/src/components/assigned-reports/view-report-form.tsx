@@ -97,38 +97,40 @@ export function ViewAssignedReport({
       <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">
         External Company
       </h4>
-      <div className="relative">
-        <Select
-          value={watch('externalOfficeId') ?? ''}
-          onValueChange={(v) => setValue('externalOfficeId', v)}
-          disabled={report.status !== 'assigned'}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select an external company" />
-          </SelectTrigger>
-
-          <SelectContent>
-            {externalOfficesWithCategory?.map((office) => (
-              <SelectItem key={office.id} value={office.id}>
-                {office.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {watch('externalOfficeId') && report.status === 'assigned' && (
-          <button
-            type="button"
-            className="absolute right-12 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setValue('externalOfficeId', '');
-            }}
+      <div>
+        <div className="flex flex-row gap-4">
+          <Select
+            value={watch('externalOfficeId') ?? ''}
+            onValueChange={(v) => setValue('externalOfficeId', v)}
+            disabled={report.status !== 'assigned'}
           >
-            ✕
-          </button>
-        )}
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select an external company" />
+            </SelectTrigger>
+
+            <SelectContent>
+              {externalOfficesWithCategory?.map((office) => (
+                <SelectItem key={office.id} value={office.id}>
+                  {office.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {watch('externalOfficeId') && report.status === 'assigned' && (
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground z-10"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setValue('externalOfficeId', '');
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
         {/* Status change control for assigned technical officer */}
         {!(
           report.status === 'pending' ||

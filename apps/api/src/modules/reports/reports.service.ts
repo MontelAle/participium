@@ -639,6 +639,7 @@ export class ReportsService {
         ReportStatus.IN_PROGRESS,
         ReportStatus.REJECTED,
         ReportStatus.SUSPENDED,
+        ReportStatus.ASSIGNED,
       ],
       in_progress: [
         ReportStatus.RESOLVED,
@@ -656,6 +657,7 @@ export class ReportsService {
         ReportStatus.IN_PROGRESS,
         ReportStatus.REJECTED,
         ReportStatus.SUSPENDED,
+        ReportStatus.ASSIGNED,
       ],
       in_progress: [ReportStatus.RESOLVED, ReportStatus.SUSPENDED],
       resolved: [],
