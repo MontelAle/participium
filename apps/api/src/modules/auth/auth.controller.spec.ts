@@ -5,7 +5,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { LoginDto, RegisterDto, VerifyEmailDto } from './dto/auth.dto';
 import { SessionGuard } from './guards/session-auth.guard';
 
 jest.mock('nanoid', () => ({
@@ -45,6 +45,7 @@ describe('AuthController', () => {
             refreshSession: jest
               .fn()
               .mockResolvedValue({ session: mockSession }),
+            verifyEmail: jest.fn(),
           },
         },
         {
@@ -157,10 +158,50 @@ describe('AuthController', () => {
       const result = await controller.create(registerDto);
 
       expect(authService.register).toHaveBeenCalledWith(registerDto);
-
       expect(authService.login).not.toHaveBeenCalled();
-
       expect(result).toEqual(expectedResponse);
+    });
+  });
+
+  describe('verifyEmail', () => {
+    it('should verify email, login user, set cookie and return data', async () => {
+      const verifyDto: VerifyEmailDto = {
+        email: 'test@test.com',
+        code: '123456',
+      };
+      const req: any = {
+        ip: '127.0.0.1',
+        headers: { 'user-agent': 'jest' },
+      };
+      const res: any = { cookie: jest.fn() };
+
+      (authService.verifyEmail as jest.Mock).mockResolvedValueOnce({
+        user: mockUser,
+      });
+
+      (authService.login as jest.Mock).mockResolvedValueOnce(mockLoginResult);
+
+      const result = await controller.verifyEmail(verifyDto, req, res);
+
+      expect(authService.verifyEmail).toHaveBeenCalledWith(
+        verifyDto.email,
+        verifyDto.code,
+      );
+      expect(authService.login).toHaveBeenCalledWith(
+        mockUser,
+        req.ip,
+        req.headers['user-agent'],
+      );
+      expect(authService.getCookieOptions).toHaveBeenCalled();
+      expect(res.cookie).toHaveBeenCalledWith(
+        'session_token',
+        mockToken,
+        mockCookie,
+      );
+      expect(result).toEqual({
+        success: true,
+        data: { user: mockUser, session: mockSession },
+      });
     });
   });
 
@@ -200,12 +241,6 @@ describe('AuthController', () => {
         expiresAt: new Date(),
       };
       const mockUser = { id: 1, username: 'testuser' };
-      const mockCookie = {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 1000,
-      };
       const req: any = {
         user: mockUser,
         session: mockSession,

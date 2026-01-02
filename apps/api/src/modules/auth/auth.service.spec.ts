@@ -233,6 +233,15 @@ describe('AuthService', () => {
       );
     });
 
+    it('should throw ConflictException if verification code is missing on user entity', async () => {
+      mockUser.emailVerificationCode = null;
+      userRepository.findOne.mockResolvedValue(mockUser);
+
+      await expect(service.verifyEmail(email, code)).rejects.toThrow(
+        'No verification code found',
+      );
+    });
+
     it('should throw ConflictException if code expired', async () => {
       otpService.isCodeExpired.mockReturnValue(true);
       userRepository.findOne.mockResolvedValue(mockUser);
