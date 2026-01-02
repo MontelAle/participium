@@ -64,6 +64,15 @@ export class User {
   })
   officeRoles: UserOfficeRole[];
 
+  @Column({ nullable: true })
+  emailVerificationCode: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  emailVerificationCodeExpiry: Date | null;
+
+  @Column({ default: false })
+  isEmailVerified: boolean;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 

@@ -116,6 +116,40 @@ describe('SessionGuard', () => {
     );
   });
 
+  it('should throw UnauthorizedException if email is not verified', async () => {
+    const unverifiedUser = {
+      id: 'user1',
+      role: { name: 'user' },
+      isEmailVerified: false,
+    } as User;
+
+    const crypto = require('node:crypto');
+    const correctHash = crypto
+      .createHash('sha256')
+      .update('secret123')
+      .digest('hex');
+
+    const validSession: Partial<Session> = {
+      id: 'sessionId',
+      hashedSecret: correctHash,
+      expiresAt: new Date(Date.now() + 10000),
+      updatedAt: new Date(),
+      user: unverifiedUser,
+    };
+
+    sessionRepository.findOne.mockResolvedValue(validSession);
+
+    const context = mockExecutionContext({
+      session_token: 'sessionId.secret123',
+    });
+
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      new UnauthorizedException(
+        'Email not verified. Please verify your email to access the system.',
+      ),
+    );
+  });
+
   it('should allow access and attach user and session if session is valid', async () => {
     const crypto = require('node:crypto');
     const correctHash = crypto
@@ -123,7 +157,12 @@ describe('SessionGuard', () => {
       .update('secret123')
       .digest('hex');
 
-    const expectedUser = { id: 'user1', role: { name: 'admin' } } as User;
+    const expectedUser = {
+      id: 'user1',
+      role: { name: 'admin' },
+      isEmailVerified: true,
+    } as User;
+
     const validSession: Partial<Session> = {
       id: 'sessionId',
       hashedSecret: correctHash,
