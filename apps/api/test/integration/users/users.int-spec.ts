@@ -215,13 +215,13 @@ describe('UsersController (Integration)', () => {
   afterEach(async () => {
     // Clean up municipality users created during tests
     await dataSource.query(
-      `DELETE FROM "account" WHERE "providerId" = 'local' AND "accountId" NOT IN ('adminuser', 'techuser', 'regularuser')`,
+      `DELETE FROM "account" WHERE "providerId" = 'local' AND "accountId" NOT IN ('adminuser', 'techuser', 'regularuser', 'multi_role_officer')`,
     );
     await dataSource.query(
-      `DELETE FROM "profile" WHERE "userId" NOT IN (SELECT id FROM "user" WHERE username IN ('adminuser', 'techuser', 'regularuser'))`,
+      `DELETE FROM "profile" WHERE "userId" NOT IN (SELECT id FROM "user" WHERE username IN ('adminuser', 'techuser', 'regularuser', 'multi_role_officer'))`,
     );
     await dataSource.query(
-      `DELETE FROM "user" WHERE username NOT IN ('adminuser', 'techuser', 'regularuser')`,
+      `DELETE FROM "user" WHERE username NOT IN ('adminuser', 'techuser', 'regularuser', 'multi_role_officer')`,
     );
   });
 
@@ -269,6 +269,7 @@ describe('UsersController (Integration)', () => {
         lastName: 'User',
         password: 'Password123!',
         roleId: techOfficerRoleId,
+        officeId: officeId,
       };
 
       await request(app.getHttpServer())
@@ -294,6 +295,7 @@ describe('UsersController (Integration)', () => {
         lastName: 'User',
         password: 'Password123!',
         roleId: 'non-existent-role-id',
+        officeId: officeId,
       };
 
       await request(app.getHttpServer())
@@ -311,6 +313,7 @@ describe('UsersController (Integration)', () => {
         lastName: 'User',
         password: 'Password123!',
         roleId: techOfficerRoleId,
+        officeId: officeId,
       };
 
       await request(app.getHttpServer())
@@ -327,6 +330,7 @@ describe('UsersController (Integration)', () => {
         lastName: 'User',
         password: 'Password123!',
         roleId: techOfficerRoleId,
+        officeId: officeId,
       };
 
       await request(app.getHttpServer())
@@ -411,6 +415,7 @@ describe('UsersController (Integration)', () => {
           lastName: 'User',
           password: 'Password123!',
           roleId: techOfficerRoleId,
+          officeId: officeId,
         });
 
       testUserId = response.body.data.id;
@@ -466,6 +471,7 @@ describe('UsersController (Integration)', () => {
           lastName: 'User',
           password: 'Password123!',
           roleId: techOfficerRoleId,
+          officeId: officeId,
         });
 
       testUserId = response.body.data.id;
@@ -517,6 +523,7 @@ describe('UsersController (Integration)', () => {
           lastName: 'User',
           password: 'Password123!',
           roleId: techOfficerRoleId,
+          officeId: officeId,
         });
 
       // Try to update with existing username
@@ -557,6 +564,7 @@ describe('UsersController (Integration)', () => {
           lastName: 'User',
           password: 'Password123!',
           roleId: techOfficerRoleId,
+          officeId: officeId,
         });
 
       testUserId = response.body.data.id;
@@ -598,6 +606,183 @@ describe('UsersController (Integration)', () => {
         .delete(`/users/municipality/user/${testUserId}`)
         .set('Cookie', `session_token=${userToken}`)
         .expect(403);
+    });
+  });
+
+  describe('Multi-Role Office Assignments', () => {
+    let techOfficerUserId: string;
+
+    beforeAll(async () => {
+      // Create a tech officer for multi-role tests
+      const createResponse = await request(app.getHttpServer())
+        .post('/users/municipality')
+        .set('Cookie', `session_token=${adminToken}`)
+        .send({
+          email: 'multi.role@test.com',
+          username: 'multi_role_officer',
+          firstName: 'Multi',
+          lastName: 'Role',
+          password: 'password123',
+          roleId: techOfficerRoleId,
+          officeId: officeId,
+        })
+        .expect(201);
+
+      techOfficerUserId = createResponse.body.data.id;
+    });
+
+    describe('GET /users/municipality/user/:id/office-roles', () => {
+      it('should retrieve office-role assignments for a user', async () => {
+        const response = await request(app.getHttpServer())
+          .get(`/users/municipality/user/${techOfficerUserId}/office-roles`)
+          .set('Cookie', `session_token=${adminToken}`)
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data.length).toBeGreaterThanOrEqual(1);
+      });
+
+      it('should reject request without authentication (401)', async () => {
+        await request(app.getHttpServer())
+          .get(`/users/municipality/user/${techOfficerUserId}/office-roles`)
+          .expect(401);
+      });
+
+      it('should reject request for non-admin user (403)', async () => {
+        await request(app.getHttpServer())
+          .get(`/users/municipality/user/${techOfficerUserId}/office-roles`)
+          .set('Cookie', `session_token=${userToken}`)
+          .expect(403);
+      });
+    });
+
+    describe('POST /users/municipality/user/:id/office-roles', () => {
+      let secondOfficeId: string;
+
+      beforeAll(async () => {
+        // Create a second office for assignment
+        const offices = await dataSource.getRepository(Office).find();
+        const secondOffice = offices.find((o) => o.id !== officeId);
+        if (secondOffice) {
+          secondOfficeId = secondOffice.id;
+        }
+      });
+
+      it('should assign user to additional office with role', async () => {
+        if (!secondOfficeId) {
+          console.log('Skipping test: second office not found');
+          return;
+        }
+
+        const response = await request(app.getHttpServer())
+          .post(`/users/municipality/user/${techOfficerUserId}/office-roles`)
+          .set('Cookie', `session_token=${adminToken}`)
+          .send({
+            officeId: secondOfficeId,
+            roleId: techOfficerRoleId,
+          })
+          .expect(201);
+
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.officeId).toBe(secondOfficeId);
+        expect(response.body.data.roleId).toBe(techOfficerRoleId);
+      });
+
+      it('should reject duplicate assignment with 409 Conflict', async () => {
+        // First, verify the user exists and has the initial assignment
+        const assignmentsResponse = await request(app.getHttpServer())
+          .get(`/users/municipality/user/${techOfficerUserId}/office-roles`)
+          .set('Cookie', `session_token=${adminToken}`)
+          .expect(200);
+
+        expect(assignmentsResponse.body.data.length).toBeGreaterThanOrEqual(1);
+
+        // Try to assign the same office-role combination again
+        await request(app.getHttpServer())
+          .post(`/users/municipality/user/${techOfficerUserId}/office-roles`)
+          .set('Cookie', `session_token=${adminToken}`)
+          .send({
+            officeId: officeId,
+            roleId: techOfficerRoleId,
+          })
+          .expect(409);
+      });
+
+      it('should reject assignment for non-existent user (404)', async () => {
+        await request(app.getHttpServer())
+          .post(`/users/municipality/user/nonexistent-id/office-roles`)
+          .set('Cookie', `session_token=${adminToken}`)
+          .send({
+            officeId: officeId,
+            roleId: techOfficerRoleId,
+          })
+          .expect(404);
+      });
+
+      it('should reject request without authentication (401)', async () => {
+        await request(app.getHttpServer())
+          .post(`/users/municipality/user/${techOfficerUserId}/office-roles`)
+          .send({
+            officeId: officeId,
+            roleId: techOfficerRoleId,
+          })
+          .expect(401);
+      });
+    });
+
+    describe('DELETE /users/municipality/user/:id/office-roles/:officeId', () => {
+      it('should remove office assignment from user', async () => {
+        // First, get current assignments
+        const beforeResponse = await request(app.getHttpServer())
+          .get(`/users/municipality/user/${techOfficerUserId}/office-roles`)
+          .set('Cookie', `session_token=${adminToken}`)
+          .expect(200);
+
+        const assignmentCount = beforeResponse.body.data.length;
+
+        if (assignmentCount <= 1) {
+          console.log('Skipping delete test: user must have at least 2 assignments');
+          return;
+        }
+
+        // Find an office to remove (not the primary one)
+        const officeToRemove = beforeResponse.body.data.find(
+          (a: any) => a.officeId !== officeId,
+        );
+
+        if (!officeToRemove) {
+          console.log('Skipping delete test: no secondary assignment found');
+          return;
+        }
+
+        const response = await request(app.getHttpServer())
+          .delete(
+            `/users/municipality/user/${techOfficerUserId}/office-roles/${officeToRemove.officeId}`,
+          )
+          .set('Cookie', `session_token=${adminToken}`)
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.id).toBe(techOfficerUserId);
+      });
+
+      it('should reject removal of non-existent assignment (404)', async () => {
+        await request(app.getHttpServer())
+          .delete(
+            `/users/municipality/user/${techOfficerUserId}/office-roles/nonexistent-office`,
+          )
+          .set('Cookie', `session_token=${adminToken}`)
+          .expect(404);
+      });
+
+      it('should reject request without authentication (401)', async () => {
+        await request(app.getHttpServer())
+          .delete(
+            `/users/municipality/user/${techOfficerUserId}/office-roles/${officeId}`,
+          )
+          .expect(401);
+      });
     });
   });
 

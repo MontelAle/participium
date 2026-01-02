@@ -1,12 +1,25 @@
-import type { User } from '@entities';
+import type { User, UserOfficeRole } from '@entities';
 import {
+  IsArray,
   IsEmail,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class OfficeRoleAssignmentDto {
+  @IsString()
+  @IsNotEmpty()
+  officeId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  roleId: string;
+}
 
 export class UpdateMunicipalityUserDto {
   @IsEmail()
@@ -27,13 +40,27 @@ export class UpdateMunicipalityUserDto {
   @IsOptional()
   lastName?: string;
 
+  /**
+   * @deprecated Use officeRoleAssignments instead
+   * Kept for backward compatibility
+   */
   @IsString()
   @IsOptional()
   roleId?: string;
 
+  /**
+   * @deprecated Use officeRoleAssignments instead
+   * Kept for backward compatibility
+   */
   @IsString()
   @IsOptional()
   officeId?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OfficeRoleAssignmentDto)
+  @IsOptional()
+  officeRoleAssignments?: OfficeRoleAssignmentDto[];
 }
 
 export class CreateMunicipalityUserDto {
@@ -61,13 +88,32 @@ export class CreateMunicipalityUserDto {
   @IsNotEmpty()
   lastName: string;
 
+  /**
+   * @deprecated Use officeRoleAssignments instead
+   * Kept for backward compatibility - if provided, creates single assignment
+   */
   @IsString()
-  @IsNotEmpty()
-  roleId: string;
+  @IsOptional()
+  roleId?: string;
 
+  /**
+   * @deprecated Use officeRoleAssignments instead
+   * Kept for backward compatibility
+   */
   @IsString()
   @IsOptional()
   officeId?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OfficeRoleAssignmentDto)
+  @IsOptional()
+  officeRoleAssignments?: OfficeRoleAssignmentDto[];
+}
+
+export class UserOfficeRolesResponseDto {
+  data: UserOfficeRole[];
+  success: boolean;
 }
 
 export class MunicipalityUserResponseDto {

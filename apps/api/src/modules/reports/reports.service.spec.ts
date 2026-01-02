@@ -7,6 +7,7 @@ import {
   Report,
   ReportStatus,
   User,
+  UserOfficeRole,
 } from '@entities';
 import {
   BadRequestException,
@@ -63,6 +64,7 @@ describe('ReportsService', () => {
   let minioProvider: jest.Mocked<MinioProvider>;
   let commentRepository: jest.Mocked<Repository<Comment>>;
   let messageRepository: jest.Mocked<Repository<Message>>;
+  let userOfficeRoleRepository: jest.Mocked<Repository<UserOfficeRole>>;
 
   const mockCitizenUser = { id: 'user-123', role: { name: 'user' } } as User;
   const mockOtherCitizenUser = {
@@ -162,6 +164,13 @@ describe('ReportsService', () => {
           },
         },
         {
+          provide: getRepositoryToken(UserOfficeRole),
+          useValue: {
+            find: jest.fn(),
+            findOne: jest.fn(),
+          },
+        },
+        {
           provide: MinioProvider,
           useValue: {
             uploadFile: jest.fn(),
@@ -181,6 +190,83 @@ describe('ReportsService', () => {
     userRepository = module.get(getRepositoryToken(User));
     commentRepository = module.get(getRepositoryToken(Comment));
     messageRepository = module.get(getRepositoryToken(Message));
+    userOfficeRoleRepository = module.get(getRepositoryToken(UserOfficeRole));
+
+    // Default mocks for UserOfficeRole
+    // Mock find to return appropriate office assignments based on test context
+    userOfficeRoleRepository.find.mockImplementation(async (options: any) => {
+      const userId = options?.where?.userId;
+      const officeId = options?.where?.officeId;
+
+      // Default: return empty for non-tech officers, single office for tech officers
+      if (
+        userId === 'officer-999' ||
+        userId === 'officer-1' ||
+        userId === 'officer-2' ||
+        userId === 'tech-1'
+      ) {
+        return [
+          {
+            id: 'uor-1',
+            userId,
+            officeId: officeId || 'office-1',
+            roleId: 'role-tech',
+            role: { id: 'role-tech', name: 'tech_officer' },
+            user: { id: userId },
+          } as UserOfficeRole,
+        ];
+      }
+
+      if (userId && userId.startsWith('ext-')) {
+        return [
+          {
+            id: 'uor-ext',
+            userId,
+            officeId: officeId || 'ext-office-1',
+            roleId: 'role-ext',
+            role: { id: 'role-ext', name: 'external_maintainer' },
+            user: { id: userId },
+          } as UserOfficeRole,
+        ];
+      }
+
+      return [];
+    });
+
+    // Mock findOne to validate office access
+    userOfficeRoleRepository.findOne.mockImplementation(
+      async (options: any) => {
+        const userId = options?.where?.userId;
+        const officeId = options?.where?.officeId;
+
+        // Allow access for tech officers to their assigned offices
+        if (
+          (userId === 'officer-1' ||
+            userId === 'officer-999' ||
+            userId === 'tech-1') &&
+          (officeId === 'office-1' || officeId === 'tech-office-1')
+        ) {
+          return {
+            id: 'uor-1',
+            userId,
+            officeId,
+            roleId: 'role-tech',
+          } as UserOfficeRole;
+        }
+
+        // Allow access for external maintainers
+        if (userId?.startsWith('ext-') && officeId?.startsWith('ext-')) {
+          return {
+            id: 'uor-ext',
+            userId,
+            officeId,
+            roleId: 'role-ext',
+          } as UserOfficeRole;
+        }
+
+        return null;
+      },
+    );
   });
 
   it('should be defined', () => {
@@ -754,6 +840,10 @@ describe('ReportsService', () => {
         id: 'officer-999',
         role: { name: 'tech_officer' },
       } as User;
+
+      userOfficeRoleRepository.find.mockResolvedValue([
+        { officeId: 'office-1' } as UserOfficeRole,
+      ]);
 
       const filters: FilterReportsDto = {};
       const mockReports = [
@@ -1344,7 +1434,6 @@ describe('ReportsService', () => {
 
       expect(userRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'officer-1' },
-        relations: ['office'],
       });
       expect(reportRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -1377,9 +1466,23 @@ describe('ReportsService', () => {
       const updateDto: UpdateReportDto = { status: ReportStatus.ASSIGNED };
 
       reportRepository.findOne.mockResolvedValue(reportWithCategory);
-      (userRepository.find as jest.Mock).mockResolvedValue([
-        mockOfficer1,
-        mockOfficer2,
+
+      // Mock UserOfficeRole to return 2 tech officers for this office
+      userOfficeRoleRepository.find.mockResolvedValueOnce([
+        {
+          id: 'uor-1',
+          userId: 'officer-1',
+          officeId: 'office-1',
+          user: mockOfficer1,
+          role: { name: 'tech_officer' },
+        } as UserOfficeRole,
+        {
+          id: 'uor-2',
+          userId: 'officer-2',
+          officeId: 'office-1',
+          user: mockOfficer2,
+          role: { name: 'tech_officer' },
+        } as UserOfficeRole,
       ]);
 
       const mockQueryBuilder = createMockQueryBuilder();
@@ -1400,9 +1503,9 @@ describe('ReportsService', () => {
 
       await service.update('mocked-id', updateDto);
 
-      expect(userRepository.find).toHaveBeenCalledWith({
+      expect(userOfficeRoleRepository.find).toHaveBeenCalledWith({
         where: { officeId: 'office-1' },
-        relations: ['role'],
+        relations: ['user', 'role'],
       });
       expect(mockQueryBuilder.groupBy).toHaveBeenCalledWith(
         'report.assignedOfficerId',
@@ -1449,7 +1552,9 @@ describe('ReportsService', () => {
 
       expect(categoryRepository.findOne).toHaveBeenCalled();
       expect(reportRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({ assignedOfficer: mockOfficer }),
+        expect.objectContaining({
+          assignedOfficerId: 'officer-1',
+        }),
       );
     });
 
@@ -1485,9 +1590,9 @@ describe('ReportsService', () => {
 
       await service.update('mocked-id', updateDto);
 
-      expect(userRepository.find).toHaveBeenCalledWith({
+      expect(userOfficeRoleRepository.find).toHaveBeenCalledWith({
         where: { officeId: 'office-1' },
-        relations: ['role'],
+        relations: ['user', 'role'],
       });
 
       expect(reportRepository.save).toHaveBeenCalledWith(
@@ -1532,7 +1637,7 @@ describe('ReportsService', () => {
       await service.update('mocked-id', { status: ReportStatus.ASSIGNED });
 
       expect(reportRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({ assignedOfficer: mockTechOfficer }),
+        expect.objectContaining({ assignedOfficerId: 'officer-1' }),
       );
     });
 
@@ -1567,7 +1672,7 @@ describe('ReportsService', () => {
       });
 
       expect(reportRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({ assignedOfficer: mockOfficer }),
+        expect.objectContaining({ assignedOfficerId: 'officer-1' }),
       );
     });
 
@@ -1658,7 +1763,6 @@ describe('ReportsService', () => {
 
       expect(userRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'ext-maint-1' },
-        relations: ['role', 'office'],
       });
       expect(reportRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -2046,6 +2150,9 @@ describe('ReportsService', () => {
 
       reportRepository.findOne.mockResolvedValue(reportWithCategory);
       userRepository.findOne.mockResolvedValue(mockOfficer);
+
+      // Mock UserOfficeRole to return null (officer not assigned to office-1)
+      userOfficeRoleRepository.findOne.mockResolvedValueOnce(null);
 
       await expect(service.update('mocked-id', updateDto)).rejects.toThrow(
         new BadRequestException(

@@ -7,6 +7,7 @@ import {
   Report,
   ReportStatus,
   User,
+  UserOfficeRole,
 } from '@entities';
 import {
   BadRequestException,
@@ -48,6 +49,8 @@ export class ReportsService {
     private readonly messageRepository: Repository<Message>,
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
+    @InjectRepository(UserOfficeRole)
+    private readonly userOfficeRoleRepository: Repository<UserOfficeRole>,
   ) {}
 
   private createPointGeometry(longitude: number, latitude: number): Point {
@@ -180,6 +183,24 @@ export class ReportsService {
       query.andWhere('report.assignedExternalMaintainerId = :viewerId', {
         viewerId: viewer.id,
       });
+    }
+
+    if (viewer.role?.name === 'tech_officer') {
+      // Filter reports where category.officeId matches one of tech_officer's assigned offices
+      const userOfficeRoles = await this.userOfficeRoleRepository.find({
+        where: { userId: viewer.id },
+        select: ['officeId'],
+      });
+      const assignedOfficeIds = userOfficeRoles.map((uor) => uor.officeId);
+
+      if (assignedOfficeIds.length > 0) {
+        query.andWhere('category.officeId IN (:...assignedOfficeIds)', {
+          assignedOfficeIds,
+        });
+      } else {
+        // Tech officer with no office assignments sees nothing
+        query.andWhere('1 = 0');
+      }
     }
 
     if (viewer.role?.name === 'pr_officer') {
@@ -492,7 +513,6 @@ export class ReportsService {
   ): Promise<void> {
     const officer = await this.userRepository.findOne({
       where: { id: officerId },
-      relations: ['office'],
     });
 
     if (!officer) {
@@ -509,13 +529,23 @@ export class ReportsService {
         relations: ['office'],
       }));
 
-    if (category?.office && officer.officeId !== category.office.id) {
-      throw new BadRequestException(
-        REPORT_ERROR_MESSAGES.OFFICER_NOT_FOR_CATEGORY(
-          officerId,
-          report.categoryId,
-        ),
-      );
+    if (category?.office) {
+      // Check if officer is assigned to this office via UserOfficeRole
+      const userOfficeRole = await this.userOfficeRoleRepository.findOne({
+        where: {
+          userId: officerId,
+          officeId: category.office.id,
+        },
+      });
+
+      if (!userOfficeRole) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.OFFICER_NOT_FOR_CATEGORY(
+            officerId,
+            report.categoryId,
+          ),
+        );
+      }
     }
 
     report.assignedOfficer = officer;
@@ -549,13 +579,25 @@ export class ReportsService {
     if (assignedExternalMaintainerId) {
       const externalMaintainer = await this.userRepository.findOne({
         where: { id: assignedExternalMaintainerId },
-        relations: ['role', 'office'],
       });
 
-      if (
-        !externalMaintainer ||
-        externalMaintainer.role?.name !== 'external_maintainer'
-      ) {
+      if (!externalMaintainer) {
+        throw new BadRequestException(
+          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_USER,
+        );
+      }
+
+      // Validate that user has external_maintainer role via UserOfficeRole
+      const userOfficeRoles = await this.userOfficeRoleRepository.find({
+        where: { userId: assignedExternalMaintainerId },
+        relations: ['role'],
+      });
+
+      const hasExternalMaintainerRole = userOfficeRoles.some(
+        (uor) => uor.role?.name === 'external_maintainer',
+      );
+
+      if (!hasExternalMaintainerRole) {
         throw new BadRequestException(
           REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_USER,
         );
@@ -569,16 +611,22 @@ export class ReportsService {
           relations: ['externalOffice'],
         }));
 
-      if (
-        category?.externalOffice &&
-        externalMaintainer.officeId !== category.externalOffice.id
-      ) {
-        throw new BadRequestException(
-          REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NOT_FOR_CATEGORY(
-            assignedExternalMaintainerId,
-            report.categoryId,
-          ),
-        );
+      if (category?.externalOffice) {
+        const userOfficeRole = await this.userOfficeRoleRepository.findOne({
+          where: {
+            userId: assignedExternalMaintainerId,
+            officeId: category.externalOffice.id,
+          },
+        });
+
+        if (!userOfficeRole) {
+          throw new BadRequestException(
+            REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NOT_FOR_CATEGORY(
+              assignedExternalMaintainerId,
+              report.categoryId,
+            ),
+          );
+        }
       }
 
       report.assignedExternalMaintainer = externalMaintainer;
@@ -688,29 +736,31 @@ export class ReportsService {
     }
   }
 
-  private async findOfficerWithFewestReports(
-    officeId: string,
-  ): Promise<User | null> {
-    const officers = await this.userRepository.find({
+  async findOfficerWithFewestReports(officeId: string): Promise<User | null> {
+    // Query UserOfficeRole to find tech_officers assigned to this office
+    const userOfficeRoles = await this.userOfficeRoleRepository.find({
       where: { officeId },
-      relations: ['role'],
+      relations: ['user', 'role'],
     });
 
-    const technicalOfficers = officers.filter(
-      (officer) => officer.role?.name === 'tech_officer',
-    );
+    const technicalOfficers = userOfficeRoles
+      .filter((uor) => uor.role?.name === 'tech_officer' && uor.user)
+      .map((uor) => uor.user);
 
     if (technicalOfficers.length === 0) {
       return null;
     }
 
     const officerIds = technicalOfficers.map((o) => o.id);
+    // Count total workload: assigned + in_progress across all offices
     const rawCounts = await this.reportRepository
       .createQueryBuilder('report')
       .select('report.assignedOfficerId', 'id')
       .addSelect('COUNT(report.id)', 'count')
       .where('report.assignedOfficerId IN (:...ids)', { ids: officerIds })
-      .andWhere('report.status = :status', { status: 'assigned' })
+      .andWhere('report.status IN (:...statuses)', {
+        statuses: ['assigned', 'in_progress'],
+      })
       .groupBy('report.assignedOfficerId')
       .getRawMany();
 

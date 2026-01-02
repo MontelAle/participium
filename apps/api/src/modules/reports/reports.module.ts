@@ -7,6 +7,7 @@ import {
   Report,
   Session,
   User,
+  UserOfficeRole,
 } from '@entities';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -25,6 +26,7 @@ import { ReportsService } from './reports.service';
       Comment,
       Message,
       Notification,
+      UserOfficeRole,
     ]),
   ],
   controllers: [ReportsController],

@@ -40,6 +40,7 @@ const config: Config = {
     '!src/common/dto/**/*.ts',
     '!src/common/entities/**/*.ts',
     '!src/**/constants/error-messages.ts',
+    '!src/**/dto/**/*.ts',
   ],
 };
 

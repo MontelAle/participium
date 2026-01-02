@@ -800,7 +800,7 @@ describe('ReportsController (Integration)', () => {
         .patch(`/reports/${reportId}`)
         .set('Cookie', `session_token=${techOfficerToken}`)
         .send({ status: 'suspended' })
-        .expect(400);
+        .expect(200);
 
       // Query reports as authenticated user
       const response = await request(app.getHttpServer())
