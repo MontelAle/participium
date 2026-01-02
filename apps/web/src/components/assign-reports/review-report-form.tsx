@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 
 type FormData = {
   categoryId: string;
-  action: 'accept' | 'reject' | '';
+  action: 'accept' | 'reject' | 'start' | '';
   explanation?: string;
   technicalOfficerId?: string;
 };
@@ -80,13 +80,19 @@ export function ReviewReportForm({
   const canConfirm =
     isPending &&
     ((watchedAction === 'reject' && explanation.trim() !== '') ||
-      watchedAction === 'accept');
+      watchedAction === 'accept' ||
+      watchedAction === 'start');
 
   const handleConfirm = async (data: FormData) => {
     if (!canConfirm) return;
 
     const updateData: UpdateReportDto = {
-      status: data.action === 'reject' ? 'rejected' : 'assigned',
+      status:
+        data.action === 'reject'
+          ? 'rejected'
+          : data.action === 'start'
+          ? 'in_progress'
+          : 'assigned',
       categoryId: data.categoryId,
       ...(data.action === 'reject' && { explanation: explanation }),
       ...(data.action === 'accept' && {
