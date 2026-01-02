@@ -65,7 +65,11 @@ describe('NotificationsService', () => {
   });
 
   it('markAsRead should throw NotFoundException when notification belongs to another user', async () => {
-    mockFindOne.mockResolvedValueOnce({ id: 'n3', userId: 'other', read: false });
+    mockFindOne.mockResolvedValueOnce({
+      id: 'n3',
+      userId: 'other',
+      read: false,
+    });
     const user: any = { id: 'u2' };
     await expect(service.markAsRead('n3', user)).rejects.toBeInstanceOf(
       NotFoundException,
@@ -82,6 +86,33 @@ describe('NotificationsService', () => {
 
     expect(mockFindOne).toHaveBeenCalledWith({ where: { id: 'n4' } });
     expect(mockSave).toHaveBeenCalled();
+    expect(result.read).toBe(true);
+  });
+
+  it('findForUser should call where with correct userId parameter and order by createdAt DESC', async () => {
+    const expected = [{ id: 'n5' }];
+    mockGetMany.mockResolvedValueOnce(expected);
+
+    const user: any = { id: 'user-5' };
+    const result = await service.findForUser(user, false);
+
+    expect(mockWhere).toHaveBeenCalledWith('notification.userId = :userId', {
+      userId: 'user-5',
+    });
+    expect(mockOrderBy).toHaveBeenCalledWith('notification.createdAt', 'DESC');
+    expect(result).toBe(expected);
+  });
+
+  it('markAsRead should save and return notification even if already read', async () => {
+    const notif = { id: 'n6', userId: 'u6', read: true } as any;
+    mockFindOne.mockResolvedValueOnce(notif);
+    mockSave.mockResolvedValueOnce({ ...notif });
+
+    const user: any = { id: 'u6' };
+    const result = await service.markAsRead('n6', user);
+
+    expect(mockFindOne).toHaveBeenCalledWith({ where: { id: 'n6' } });
+    expect(mockSave).toHaveBeenCalledWith(notif);
     expect(result.read).toBe(true);
   });
 });
