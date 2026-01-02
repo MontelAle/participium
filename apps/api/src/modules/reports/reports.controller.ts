@@ -1,4 +1,4 @@
-import { Comment } from '@entities';
+import { Comment, Message } from '@entities';
 import {
   BadRequestException,
   Body,
@@ -29,6 +29,7 @@ import {
   REPORT_ERROR_MESSAGES,
 } from './constants/error-messages';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { CreateMessageDto } from './dto/create-message.dto';
 import {
   CreateReportDto,
   DashboardStatsResponseDto,
@@ -62,6 +63,22 @@ export class ReportsController {
   }
 
   /**
+   * Retrieves all messages (chat) for a report by its ID.
+   */
+  @Get(':id/messages')
+  @UseGuards(SessionGuard)
+  async getMessages(
+    @Param('id') id: string,
+    @Request() req: RequestWithUserSession,
+  ): Promise<{ success: boolean; data: Message[] }> {
+    const messages = await this.reportsService.getMessagesForReport(
+      id,
+      req.user,
+    );
+    return { success: true, data: messages };
+  }
+
+  /**
    * Creates a new comment for a report by its ID.
    */
   @Post(':id/comments')
@@ -78,6 +95,24 @@ export class ReportsController {
       createCommentDto,
     );
     return { success: true, data: comment };
+  }
+
+  /**
+   * Creates a new message (chat) for a report by its ID.
+   */
+  @Post(':id/messages')
+  @UseGuards(SessionGuard)
+  async addMessage(
+    @Param('id') id: string,
+    @Body() createMessageDto: CreateMessageDto,
+    @Request() req: RequestWithUserSession,
+  ): Promise<{ success: boolean; data: Message }> {
+    const message = await this.reportsService.addMessageToReport(
+      id,
+      req.user.id,
+      createMessageDto,
+    );
+    return { success: true, data: message };
   }
 
   /**

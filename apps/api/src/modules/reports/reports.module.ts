@@ -1,4 +1,14 @@
-import { Boundary, Category, Comment, Report, Session, User } from '@entities';
+import {
+  Boundary,
+  Category,
+  Comment,
+  Message,
+  Notification,
+  Report,
+  Session,
+  User,
+  UserOfficeRole,
+} from '@entities';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -14,6 +24,9 @@ import { ReportsService } from './reports.service';
       User,
       Boundary,
       Comment,
+      Message,
+      Notification,
+      UserOfficeRole,
     ]),
   ],
   controllers: [ReportsController],
