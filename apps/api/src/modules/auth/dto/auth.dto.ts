@@ -58,3 +58,15 @@ export class LoginResponseDto {
 export class LogoutResponseDto {
   success: boolean;
 }
+
+export class VerifyEmailDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
+  @MaxLength(6)
+  code: string;
+}
