@@ -881,9 +881,7 @@ describe('ReportsService', () => {
     });
 
     it('should include suspended status in public view', async () => {
-      const mockReports = [
-        { ...mockReport, status: ReportStatus.SUSPENDED },
-      ];
+      const mockReports = [{ ...mockReport, status: ReportStatus.SUSPENDED }];
 
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
@@ -930,9 +928,7 @@ describe('ReportsService', () => {
 
     it('should apply status filter in public view within allowed statuses', async () => {
       const filters: FilterReportsDto = { status: ReportStatus.SUSPENDED };
-      const mockReports = [
-        { ...mockReport, status: ReportStatus.SUSPENDED },
-      ];
+      const mockReports = [{ ...mockReport, status: ReportStatus.SUSPENDED }];
 
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
@@ -2278,6 +2274,67 @@ describe('ReportsService', () => {
         order: { createdAt: 'ASC' },
       });
       expect(result).toBe(mockComments);
+    });
+  });
+
+  describe('getMessagesForReport', () => {
+    it('should fetch messages for a report with correct relations and order', async () => {
+      const mockViewer = { id: 'user-123', role: { name: 'user' } } as User;
+      const mockMessages = [
+        {
+          id: 'm1',
+          content: 'Hello',
+          reportId: 'r1',
+          user: mockViewer,
+          createdAt: new Date('2023-01-01'),
+        },
+        {
+          id: 'm2',
+          content: 'Reply',
+          reportId: 'r1',
+          user: mockViewer,
+          createdAt: new Date('2023-01-02'),
+        },
+      ] as unknown as Message[];
+
+      jest.spyOn(service, 'findOne').mockResolvedValue({ id: 'r1' } as Report);
+      messageRepository.find.mockResolvedValue(mockMessages);
+
+      const result = await service.getMessagesForReport('r1', mockViewer);
+
+      expect(service.findOne).toHaveBeenCalledWith('r1', mockViewer);
+      expect(messageRepository.find).toHaveBeenCalledWith({
+        where: { reportId: 'r1' },
+        relations: ['user'],
+        order: { createdAt: 'ASC' },
+      });
+      expect(result).toBe(mockMessages);
+    });
+  });
+
+  describe('addMessageToReport', () => {
+    it('should create and save a message for a report', async () => {
+      const dto = { content: 'New chat message' } as any;
+      const created = {
+        id: 'm3',
+        content: dto.content,
+        reportId: 'r2',
+        userId: 'u1',
+      } as any;
+      const saved = { ...created, createdAt: new Date() } as any;
+
+      messageRepository.create.mockReturnValue(created);
+      messageRepository.save.mockResolvedValue(saved);
+
+      const result = await service.addMessageToReport('r2', 'u1', dto);
+
+      expect(messageRepository.create).toHaveBeenCalledWith({
+        content: dto.content,
+        reportId: 'r2',
+        userId: 'u1',
+      });
+      expect(messageRepository.save).toHaveBeenCalledWith(created);
+      expect(result).toEqual(saved);
     });
   });
 });
