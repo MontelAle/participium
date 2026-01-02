@@ -137,7 +137,7 @@ describe('AuthController', () => {
   });
 
   describe('create (register)', () => {
-    it('should call authService.register, login, getCookieOptions, then set cookie', async () => {
+    it('should call authService.register and return success message', async () => {
       const registerDto: RegisterDto = {
         email: 'alice@example.com',
         username: 'alice',
@@ -145,32 +145,22 @@ describe('AuthController', () => {
         lastName: 'smith',
         password: 'password',
       };
-      const req: any = {
-        ip: '127.0.0.1',
-        headers: { 'user-agent': 'jest' },
+
+      const expectedResponse = {
+        message:
+          'Registration successful. Please check your email for the verification code.',
       };
-      const res: any = { cookie: jest.fn() };
+      (authService.register as jest.Mock).mockResolvedValueOnce(
+        expectedResponse,
+      );
 
-      (authService.login as jest.Mock).mockResolvedValueOnce(mockLoginResult);
-
-      const result = await controller.create(registerDto, req, res);
+      const result = await controller.create(registerDto);
 
       expect(authService.register).toHaveBeenCalledWith(registerDto);
-      expect(authService.login).toHaveBeenCalledWith(
-        mockUser,
-        req.ip,
-        req.headers['user-agent'],
-      );
-      expect(authService.getCookieOptions).toHaveBeenCalled();
-      expect(res.cookie).toHaveBeenCalledWith(
-        'session_token',
-        mockToken,
-        mockCookie,
-      );
-      expect(result).toEqual({
-        success: true,
-        data: { user: mockUser, session: mockSession },
-      });
+
+      expect(authService.login).not.toHaveBeenCalled();
+
+      expect(result).toEqual(expectedResponse);
     });
   });
 
