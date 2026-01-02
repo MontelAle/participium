@@ -3,6 +3,8 @@ import {
   Boundary,
   Category,
   Comment,
+  Message,
+  Notification,
   Office,
   Profile,
   Report,
@@ -255,6 +257,8 @@ describe('AppController (e2e)', () => {
   let mockSession: any;
   let mockProfile: any[];
   let mockComments: any[];
+  let mockMessages: any[];
+  let mockNotifications: any[];
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
@@ -492,6 +496,9 @@ describe('AppController (e2e)', () => {
 
     const reportsRepositoryMock = createMockRepository(mockReports);
 
+    const mockMessageRepository = createMockRepository([]);
+    const mockNotificationRepository = createMockRepository([]);
+
     reportsRepositoryMock.save = jest.fn((entity) => {
       if (entity.id) {
         const existing = mockReports.find((e) => e.id === entity.id);
@@ -645,6 +652,10 @@ describe('AppController (e2e)', () => {
       .useValue(createMockRepository(mockCategories))
       .overrideProvider(getRepositoryToken(Report))
       .useValue(reportsRepositoryMock)
+      .overrideProvider(getRepositoryToken(Message))
+      .useValue(mockMessageRepository)
+      .overrideProvider(getRepositoryToken(Notification))
+      .useValue(mockNotificationRepository)
       .overrideProvider(getRepositoryToken(Office))
       .useValue(mockOfficeRepository)
       .overrideProvider(getRepositoryToken(Profile))

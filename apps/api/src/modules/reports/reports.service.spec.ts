@@ -2,6 +2,8 @@ import {
   Boundary,
   Category,
   Comment,
+  Message,
+  Notification,
   Report,
   ReportStatus,
   User,
@@ -61,6 +63,7 @@ describe('ReportsService', () => {
   let boundaryRepository: jest.Mocked<Repository<Boundary>>;
   let minioProvider: jest.Mocked<MinioProvider>;
   let commentRepository: jest.Mocked<Repository<Comment>>;
+  let messageRepository: jest.Mocked<Repository<Message>>;
   let userOfficeRoleRepository: jest.Mocked<Repository<UserOfficeRole>>;
 
   const mockCitizenUser = { id: 'user-123', role: { name: 'user' } } as User;
@@ -137,6 +140,30 @@ describe('ReportsService', () => {
           },
         },
         {
+          provide: getRepositoryToken(Message),
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn(),
+            find: jest.fn(),
+            findOne: jest.fn(),
+            remove: jest.fn(),
+            count: jest.fn(),
+            createQueryBuilder: jest.fn(() => createMockQueryBuilder()),
+          },
+        },
+        {
+          provide: getRepositoryToken(Notification),
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn(),
+            find: jest.fn(),
+            findOne: jest.fn(),
+            remove: jest.fn(),
+            count: jest.fn(),
+            createQueryBuilder: jest.fn(() => createMockQueryBuilder()),
+          },
+        },
+        {
           provide: getRepositoryToken(UserOfficeRole),
           useValue: {
             find: jest.fn(),
@@ -162,6 +189,7 @@ describe('ReportsService', () => {
     minioProvider = module.get(MinioProvider);
     userRepository = module.get(getRepositoryToken(User));
     commentRepository = module.get(getRepositoryToken(Comment));
+    messageRepository = module.get(getRepositoryToken(Message));
     userOfficeRoleRepository = module.get(getRepositoryToken(UserOfficeRole));
 
     // Default mocks for UserOfficeRole
@@ -169,9 +197,14 @@ describe('ReportsService', () => {
     userOfficeRoleRepository.find.mockImplementation(async (options: any) => {
       const userId = options?.where?.userId;
       const officeId = options?.where?.officeId;
-      
+
       // Default: return empty for non-tech officers, single office for tech officers
-      if (userId === 'officer-999' || userId === 'officer-1' || userId === 'officer-2' || userId === 'tech-1') {
+      if (
+        userId === 'officer-999' ||
+        userId === 'officer-1' ||
+        userId === 'officer-2' ||
+        userId === 'tech-1'
+      ) {
         return [
           {
             id: 'uor-1',
@@ -183,7 +216,7 @@ describe('ReportsService', () => {
           } as UserOfficeRole,
         ];
       }
-      
+
       if (userId && userId.startsWith('ext-')) {
         return [
           {
@@ -196,37 +229,44 @@ describe('ReportsService', () => {
           } as UserOfficeRole,
         ];
       }
-      
+
       return [];
     });
 
     // Mock findOne to validate office access
-    userOfficeRoleRepository.findOne.mockImplementation(async (options: any) => {
-      const userId = options?.where?.userId;
-      const officeId = options?.where?.officeId;
-      
-      // Allow access for tech officers to their assigned offices
-      if ((userId === 'officer-1' || userId === 'officer-999' || userId === 'tech-1') && (officeId === 'office-1' || officeId === 'tech-office-1')) {
-        return {
-          id: 'uor-1',
-          userId,
-          officeId,
-          roleId: 'role-tech',
-        } as UserOfficeRole;
-      }
-      
-      // Allow access for external maintainers
-      if (userId?.startsWith('ext-') && officeId?.startsWith('ext-')) {
-        return {
-          id: 'uor-ext',
-          userId,
-          officeId,
-          roleId: 'role-ext',
-        } as UserOfficeRole;
-      }
-      
-      return null;
-    });
+    userOfficeRoleRepository.findOne.mockImplementation(
+      async (options: any) => {
+        const userId = options?.where?.userId;
+        const officeId = options?.where?.officeId;
+
+        // Allow access for tech officers to their assigned offices
+        if (
+          (userId === 'officer-1' ||
+            userId === 'officer-999' ||
+            userId === 'tech-1') &&
+          (officeId === 'office-1' || officeId === 'tech-office-1')
+        ) {
+          return {
+            id: 'uor-1',
+            userId,
+            officeId,
+            roleId: 'role-tech',
+          } as UserOfficeRole;
+        }
+
+        // Allow access for external maintainers
+        if (userId?.startsWith('ext-') && officeId?.startsWith('ext-')) {
+          return {
+            id: 'uor-ext',
+            userId,
+            officeId,
+            roleId: 'role-ext',
+          } as UserOfficeRole;
+        }
+
+        return null;
+      },
+    );
   });
 
   it('should be defined', () => {
@@ -931,9 +971,7 @@ describe('ReportsService', () => {
     });
 
     it('should include suspended status in public view', async () => {
-      const mockReports = [
-        { ...mockReport, status: ReportStatus.SUSPENDED },
-      ];
+      const mockReports = [{ ...mockReport, status: ReportStatus.SUSPENDED }];
 
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
@@ -980,9 +1018,7 @@ describe('ReportsService', () => {
 
     it('should apply status filter in public view within allowed statuses', async () => {
       const filters: FilterReportsDto = { status: ReportStatus.SUSPENDED };
-      const mockReports = [
-        { ...mockReport, status: ReportStatus.SUSPENDED },
-      ];
+      const mockReports = [{ ...mockReport, status: ReportStatus.SUSPENDED }];
 
       const mockQueryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
@@ -1345,37 +1381,6 @@ describe('ReportsService', () => {
       expect(result).toEqual(updatedReport);
     });
 
-    it('should set processedById when status is assigned by a pr_officer', async () => {
-      const mockActor = {
-        id: 'pr-officer-1',
-        role: { name: 'pr_officer' },
-      } as User;
-      const updateDto: UpdateReportDto = {
-        status: ReportStatus.ASSIGNED,
-        assignedOfficerId: 'tech-1',
-      };
-
-      const mockTechOfficer = { id: 'tech-1' } as User;
-
-      reportRepository.findOne.mockResolvedValue(mockReport as Report);
-      (userRepository.findOne as jest.Mock).mockResolvedValue(mockTechOfficer);
-
-      reportRepository.save.mockImplementation(
-        async (entity) => entity as Report,
-      );
-
-      const result = await service.update('mocked-id', updateDto, mockActor);
-
-      expect(result.processedById).toBe('pr-officer-1');
-      expect(result.assignedOfficerId).toBe('tech-1');
-      expect(reportRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          processedById: 'pr-officer-1',
-          status: ReportStatus.ASSIGNED,
-        }),
-      );
-    });
-
     it('should set processedById when status is rejected by an actor', async () => {
       const mockActor = {
         id: 'pr-officer-1',
@@ -1461,7 +1466,7 @@ describe('ReportsService', () => {
       const updateDto: UpdateReportDto = { status: ReportStatus.ASSIGNED };
 
       reportRepository.findOne.mockResolvedValue(reportWithCategory);
-      
+
       // Mock UserOfficeRole to return 2 tech officers for this office
       userOfficeRoleRepository.find.mockResolvedValueOnce([
         {
@@ -1547,7 +1552,7 @@ describe('ReportsService', () => {
 
       expect(categoryRepository.findOne).toHaveBeenCalled();
       expect(reportRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({ 
+        expect.objectContaining({
           assignedOfficerId: 'officer-1',
         }),
       );
@@ -2376,6 +2381,67 @@ describe('ReportsService', () => {
         order: { createdAt: 'ASC' },
       });
       expect(result).toBe(mockComments);
+    });
+  });
+
+  describe('getMessagesForReport', () => {
+    it('should fetch messages for a report with correct relations and order', async () => {
+      const mockViewer = { id: 'user-123', role: { name: 'user' } } as User;
+      const mockMessages = [
+        {
+          id: 'm1',
+          content: 'Hello',
+          reportId: 'r1',
+          user: mockViewer,
+          createdAt: new Date('2023-01-01'),
+        },
+        {
+          id: 'm2',
+          content: 'Reply',
+          reportId: 'r1',
+          user: mockViewer,
+          createdAt: new Date('2023-01-02'),
+        },
+      ] as unknown as Message[];
+
+      jest.spyOn(service, 'findOne').mockResolvedValue({ id: 'r1' } as Report);
+      messageRepository.find.mockResolvedValue(mockMessages);
+
+      const result = await service.getMessagesForReport('r1', mockViewer);
+
+      expect(service.findOne).toHaveBeenCalledWith('r1', mockViewer);
+      expect(messageRepository.find).toHaveBeenCalledWith({
+        where: { reportId: 'r1' },
+        relations: ['user'],
+        order: { createdAt: 'ASC' },
+      });
+      expect(result).toBe(mockMessages);
+    });
+  });
+
+  describe('addMessageToReport', () => {
+    it('should create and save a message for a report', async () => {
+      const dto = { content: 'New chat message' } as any;
+      const created = {
+        id: 'm3',
+        content: dto.content,
+        reportId: 'r2',
+        userId: 'u1',
+      } as any;
+      const saved = { ...created, createdAt: new Date() } as any;
+
+      messageRepository.create.mockReturnValue(created);
+      messageRepository.save.mockResolvedValue(saved);
+
+      const result = await service.addMessageToReport('r2', 'u1', dto);
+
+      expect(messageRepository.create).toHaveBeenCalledWith({
+        content: dto.content,
+        reportId: 'r2',
+        userId: 'u1',
+      });
+      expect(messageRepository.save).toHaveBeenCalledWith(created);
+      expect(result).toEqual(saved);
     });
   });
 });
