@@ -167,7 +167,7 @@ describe('UsersService', () => {
       const result = await service.findMunicipalityUsers();
 
       expect(userRepository.find).toHaveBeenCalledWith({
-        relations: ['role', 'office'],
+        relations: ['role', 'office', 'officeRoles', 'officeRoles.office', 'officeRoles.role'],
         where: { role: { isMunicipal: true } },
         order: { firstName: 'ASC', lastName: 'ASC' },
       });

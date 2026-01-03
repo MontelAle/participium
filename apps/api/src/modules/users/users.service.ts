@@ -15,6 +15,7 @@ import { USER_ERROR_MESSAGES } from './constants/error-messages';
 import {
   CreateMunicipalityUserDto,
   OfficeRoleAssignmentDto,
+  UpdateMunicipalityUserDto,
 } from './dto/municipality-users.dto';
 
 @Injectable()
@@ -84,7 +85,7 @@ export class UsersService {
     }
 
     return this.userRepository.find({
-      relations: ['role', 'office'],
+      relations: ['role', 'office', 'officeRoles', 'officeRoles.office', 'officeRoles.role'],
       where: {
         role: {
           isMunicipal: true,
@@ -96,7 +97,7 @@ export class UsersService {
 
   async findMunicipalityUserById(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
-      relations: ['role', 'office'],
+      relations: ['role', 'office', 'officeRoles', 'officeRoles.office', 'officeRoles.role'],
       where: {
         id,
         role: {
@@ -300,7 +301,7 @@ export class UsersService {
 
   async updateMunicipalityUserById(
     id: string,
-    dto: Partial<CreateMunicipalityUserDto>,
+    dto: UpdateMunicipalityUserDto,
   ): Promise<void> {
     const user = await this.userRepository.findOne({
       where: { id },
@@ -340,36 +341,115 @@ export class UsersService {
       if (dto.firstName) user.firstName = dto.firstName;
       if (dto.lastName) user.lastName = dto.lastName;
 
-      let updatedRole = user.role;
-      let updatedOffice = user.office;
+      // Handle new officeRoleAssignments array
+      if (dto.officeRoleAssignments && dto.officeRoleAssignments.length > 0) {
+        // Get existing assignments
+        const existingAssignments = await manager
+          .getRepository(UserOfficeRole)
+          .find({ where: { userId: id } });
 
-      if (dto.roleId) {
-        const role = await this.roleRepository.findOne({
-          where: { id: dto.roleId },
-        });
+        const userOfficeRoleRepo = manager.getRepository(UserOfficeRole);
 
-        if (!role) {
-          throw new NotFoundException(USER_ERROR_MESSAGES.ROLE_NOT_FOUND);
+        // Create a map of existing assignments for quick lookup
+        const existingMap = new Map(
+          existingAssignments.map((a) => [`${a.officeId}-${a.roleId}`, a]),
+        );
+
+        // Create a set of new assignments
+        const newAssignmentsSet = new Set(
+          dto.officeRoleAssignments.map(
+            (a) => `${a.officeId}-${a.roleId}`,
+          ),
+        );
+
+        // Delete assignments that are no longer needed
+        for (const existing of existingAssignments) {
+          const key = `${existing.officeId}-${existing.roleId}`;
+          if (!newAssignmentsSet.has(key)) {
+            await userOfficeRoleRepo.delete(existing.id);
+          }
         }
 
-        user.roleId = role.id;
-        updatedRole = role;
-      }
+        // Create new assignments (skip ones that already exist)
+        for (const assignment of dto.officeRoleAssignments) {
+          const key = `${assignment.officeId}-${assignment.roleId}`;
+          
+          // Skip if this assignment already exists
+          if (existingMap.has(key)) {
+            continue;
+          }
 
-      if (dto.officeId) {
-        const office = await this.officeRepository.findOne({
-          where: { id: dto.officeId },
-        });
+          // Verify role exists
+          const role = await this.roleRepository.findOne({
+            where: { id: assignment.roleId },
+          });
 
-        if (!office) {
-          throw new NotFoundException(USER_ERROR_MESSAGES.OFFICE_NOT_FOUND);
+          if (!role) {
+            throw new NotFoundException(USER_ERROR_MESSAGES.ROLE_NOT_FOUND);
+          }
+
+          // Verify office exists
+          const office = await this.officeRepository.findOne({
+            where: { id: assignment.officeId },
+          });
+
+          if (!office) {
+            throw new NotFoundException(USER_ERROR_MESSAGES.OFFICE_NOT_FOUND);
+          }
+
+          // Validate office-role match
+          this.validateOfficeRoleMatch(role, office);
+
+          // Create the new assignment
+          const userOfficeRole = userOfficeRoleRepo.create({
+            id: nanoid(),
+            userId: id,
+            officeId: assignment.officeId,
+            roleId: assignment.roleId,
+          });
+
+          await userOfficeRoleRepo.save(userOfficeRole);
         }
 
-        user.officeId = office.id;
-        updatedOffice = office;
-      }
+        // Update user's primary role and office from first assignment
+        user.roleId = dto.officeRoleAssignments[0].roleId;
+        user.officeId = dto.officeRoleAssignments[0].officeId;
+      } 
+      // Fallback to legacy single roleId/officeId for backward compatibility
+      else {
+        let updatedRole = user.role;
+        let updatedOffice = user.office;
 
-      this.validateOfficeRoleMatch(updatedRole, updatedOffice);
+        if (dto.roleId) {
+          const role = await this.roleRepository.findOne({
+            where: { id: dto.roleId },
+          });
+
+          if (!role) {
+            throw new NotFoundException(USER_ERROR_MESSAGES.ROLE_NOT_FOUND);
+          }
+
+          user.roleId = role.id;
+          updatedRole = role;
+        }
+
+        if (dto.officeId) {
+          const office = await this.officeRepository.findOne({
+            where: { id: dto.officeId },
+          });
+
+          if (!office) {
+            throw new NotFoundException(USER_ERROR_MESSAGES.OFFICE_NOT_FOUND);
+          }
+
+          user.officeId = office.id;
+          updatedOffice = office;
+        }
+
+        if (dto.roleId || dto.officeId) {
+          this.validateOfficeRoleMatch(updatedRole, updatedOffice);
+        }
+      }
 
       await manager.getRepository(User).save(user);
 
