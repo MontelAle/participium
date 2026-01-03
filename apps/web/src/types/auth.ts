@@ -1,4 +1,4 @@
-import type { LoginDto, RegisterDto, User } from '@/types';
+import type { LoginDto, RegisterDto, User, VerifyEmailDto } from '@/types';
 
 export type AuthContextType = {
   user: User | null;
@@ -8,9 +8,15 @@ export type AuthContextType = {
   login: (
     loginCredentials: LoginDto,
   ) => Promise<{ success: boolean; data?: User; error?: string }>;
+
   register: (
     data: RegisterDto,
+  ) => Promise<{ success: boolean; message?: string; error?: string }>;
+
+  verifyEmail: (
+    data: VerifyEmailDto,
   ) => Promise<{ success: boolean; data?: User; error?: string }>;
+
   logout: () => Promise<void>;
   isMunicipalityUser: boolean;
   isAdminUser: boolean;

@@ -3,12 +3,21 @@ import { useRef } from "react";
 import React from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
+import { useAuth } from "@/contexts/auth-context";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 type FormValues = {
   code: string[];
 };
 
-export default function CodeVerification() {
+interface CodeVerificationProps {
+  email: string;
+}
+
+export default function CodeVerification({ email }: CodeVerificationProps) {
+  const { verifyEmail, isLoading } = useAuth();
+  const navigate = useNavigate();
   const { register, handleSubmit, setValue, watch } = useForm<FormValues>({
     defaultValues: { code: Array(6).fill("") },
   });
@@ -16,9 +25,22 @@ export default function CodeVerification() {
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
   const codeValues = watch("code");
 
-  const onSubmit: SubmitHandler<FormValues> = (data) => {
+  const onSubmit: SubmitHandler<FormValues> = async (data) => {
     const finalCode = data.code.join("");
-    console.log("Codice inserito:", finalCode);
+    
+    const result = await verifyEmail({
+      email,
+      code: finalCode,
+    });
+
+    if (result.success) {
+      toast.success('Email verified successfully! Welcome!');
+      if (result.data?.role.name === 'user') {
+        navigate('/reports/map');
+      } 
+    } else {
+      toast.error(result.error || 'Invalid verification code. Please try again.');
+    }
   };
 
   const handleChange = (
@@ -53,7 +75,7 @@ export default function CodeVerification() {
                 Enter your verification code
             </h2>
             <p className="text-muted-foreground text-lg text-center mb-4">
-                We’ve sent a 6-digit verification code to your email address.
+                We&apos;ve sent a 6-digit verification code to <strong>{email}</strong>.
                 Please enter it below to complete your registration.
             </p>
 
@@ -82,8 +104,8 @@ export default function CodeVerification() {
                 })}
               </div>
 
-              <Button type="submit" className="h-12 text-lg w-full">
-                Verify
+              <Button type="submit" className="h-12 text-lg w-full" disabled={isLoading}>
+                {isLoading ? 'Verifying...' : 'Verify'}
               </Button>
 
               {/*
