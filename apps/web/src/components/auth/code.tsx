@@ -86,6 +86,7 @@ export default function CodeVerification() {
                 Verify
               </Button>
 
+              {/*
               <div className="mt-4 text-center">
                 <p className="text-muted-foreground text-base">
                   Didn't receive the email or code expired?{' '}
@@ -98,6 +99,7 @@ export default function CodeVerification() {
                   </button>
                 </p>
               </div>
+              */}
             </form>
           </div>
 

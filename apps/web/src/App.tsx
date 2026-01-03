@@ -152,7 +152,7 @@ const App = () => {
           </Route>
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/auth/register" element={<RegistrationPage />} />
-          <Route path="/auth/code" element={<CodePage />} />
+          <Route path="/auth/verify" element={<CodePage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
