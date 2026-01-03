@@ -45,7 +45,8 @@ export type UpdateMunicipalityUserDto = {
   firstName?: string;
   lastName?: string;
   roleId?: string;
-  officeIds?: string[];
+  officeId?: string;
+  officeRoleAssignments?: Array<{ officeId: string; roleId: string }>;
 };
 
 export type CreateMunicipalityUserDto = {
@@ -56,6 +57,7 @@ export type CreateMunicipalityUserDto = {
   password: string;
   roleId: string;
   officeId?: string;
+  officeRoleAssignments?: Array<{ officeId: string; roleId: string }>;
 };
 
 export type MunicipalityUserResponseDto = ResponseDto & {

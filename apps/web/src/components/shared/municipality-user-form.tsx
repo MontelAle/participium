@@ -49,7 +49,7 @@ type MunicipalityUserFormProps =
       user: User;
     };
 
-type CreateFormData = CreateMunicipalityUserDto;
+type CreateFormData = Omit<CreateMunicipalityUserDto, 'officeId'> & { officeIds: string[] };
 type EditFormData = Omit<CreateMunicipalityUserDto, 'officeId'> & { officeIds: string[] };
 type FormData = CreateFormData | EditFormData;
 
@@ -77,7 +77,9 @@ export function MunicipalityUserForm({
           firstName: user.firstName ?? '',
           lastName: user.lastName ?? '',
           roleId: user.role?.id ?? '',
-          officeIds: user.office?.id ? [user.office.id] : [],
+          officeIds: user.officeRoles && user.officeRoles.length > 0
+            ? user.officeRoles.map(or => or.officeId)
+            : (user.office?.id ? [user.office.id] : []),
           password: '',
         }
       : {
@@ -86,34 +88,30 @@ export function MunicipalityUserForm({
           firstName: '',
           lastName: '',
           roleId: '',
-          officeId: '',
+          officeIds: [],
           password: '',
         };
 
   const [form, setForm] = useState<FormData>(initialForm);
   const [isLoading, setIsLoading] = useState(false);
-  const [additionalOffices, setAdditionalOffices] = useState<string[]>([]);
+  const [additionalOffices, setAdditionalOffices] = useState<string[]>(
+    mode === 'edit' && user.officeRoles && user.officeRoles.length > 1
+      ? user.officeRoles.slice(1).map(or => or.officeId)
+      : []
+  );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleRoleChange = (value: string) => {
-    if (mode === 'edit') {
-      setForm({ ...form, roleId: value, officeIds: [] } as EditFormData);
-      setAdditionalOffices([]);
-    } else {
-      setForm({ ...form, roleId: value, officeId: '' } as CreateFormData);
-    }
+    setForm({ ...form, roleId: value, officeIds: [] } as FormData);
+    setAdditionalOffices([]);
   };
 
   const handleOfficeChange = (value: string) => {
-    if (mode === 'edit' && isEditFormData(form)) {
-      const officeIds = form.officeIds || [];
-      setForm({ ...form, officeIds: [value, ...officeIds.slice(1)] });
-    } else if (mode === 'create' && !isEditFormData(form)) {
-      setForm({ ...form, officeId: value });
-    }
+    const officeIds = form.officeIds || [];
+    setForm({ ...form, officeIds: [value, ...officeIds.slice(1)] });
   };
 
   const handleAdditionalOfficeChange = (index: number, value: string) => {
@@ -136,23 +134,37 @@ export function MunicipalityUserForm({
     setIsLoading(true);
 
     try {
-      if (mode === 'create' && !isEditFormData(form)) {
-        await createMunicipalityUser(form);
-        toast.success('Municipality user created successfully!');
-      } else if (mode === 'edit' && isEditFormData(form)) {
-        const primaryOfficeId = form.officeIds[0] || '';
-        const allOfficeIds = [
-          primaryOfficeId,
-          ...additionalOffices.filter((id) => id !== ''),
-        ].filter((id) => id !== '');
+      const primaryOfficeId = form.officeIds[0] || '';
+      const allOfficeIds = [
+        primaryOfficeId,
+        ...additionalOffices.filter((id) => id !== ''),
+      ].filter((id) => id !== '');
 
+      // Convert officeIds to officeRoleAssignments format
+      const officeRoleAssignments = allOfficeIds.map(officeId => ({
+        officeId,
+        roleId: form.roleId,
+      }));
+
+      if (mode === 'create') {
+        const createData: CreateMunicipalityUserDto = {
+          username: form.username,
+          email: form.email,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          password: form.password,
+          roleId: form.roleId,
+          officeRoleAssignments,
+        };
+        await createMunicipalityUser(createData);
+        toast.success('Municipality user created successfully!');
+      } else if (mode === 'edit') {
         const updateData: UpdateMunicipalityUserDto = {
           username: form.username,
           email: form.email,
           firstName: form.firstName,
           lastName: form.lastName,
-          roleId: form.roleId,
-          officeIds: allOfficeIds,
+          officeRoleAssignments,
         };
         await updateMunicipalityUser({ userId: user.id, data: updateData });
         toast.success('User updated successfully!');
@@ -179,12 +191,9 @@ export function MunicipalityUserForm({
 
   const selectedRoleName = roles.find((r) => r.id === form.roleId)?.name;
 
-  // Helper to get the primary office ID based on mode
+  // Helper to get the primary office ID
   const getPrimaryOfficeId = (): string | undefined => {
-    if (isEditFormData(form)) {
-      return form.officeIds[0];
-    }
-    return form.officeId;
+    return form.officeIds?.[0];
   };
 
   function getAvailableOffices(excludeOfficeIds: string[] = []) {
@@ -317,88 +326,89 @@ export function MunicipalityUserForm({
                 </InputGroupAddon>
               </InputGroup>
             </Field>
-            <Field>
-              <FieldLabel>Office</FieldLabel>
-              <InputGroup className="h-12">
-                <Select
-                  value={getPrimaryOfficeId()}
-                  onValueChange={handleOfficeChange}
-                >
-                  <SelectTrigger
-                    disabled={!form.roleId}
-                    className="h-full w-full border-0 bg-transparent shadow-none focus:ring-0 text-base px-3"
+            
+            <div className="flex flex-col gap-4">
+              <Field>
+                <FieldLabel>Office</FieldLabel>
+                <InputGroup className="h-12">
+                  <Select
+                    value={getPrimaryOfficeId()}
+                    onValueChange={handleOfficeChange}
                   >
-                    <SelectValue placeholder="Select Office" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getAvailableOffices(
-                      mode === 'edit' ? additionalOffices : []
-                    ).map((office) => (
-                      <SelectItem
-                        key={office.id}
-                        value={office.id}
-                        className="text-base"
-                      >
-                        {office.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <InputGroupAddon>
-                  <Building2 className="size-5" />
-                </InputGroupAddon>
-              </InputGroup>
-            </Field>
-
-            {mode === 'edit' && additionalOffices.map((officeId, index) => (
-              <Field key={index}>
-                <FieldLabel>Additional Office</FieldLabel>
-                <div className="flex gap-2">
-                  <InputGroup className="h-12 flex-1">
-                    <Select
-                      value={officeId}
-                      onValueChange={(value) => handleAdditionalOfficeChange(index, value)}
+                    <SelectTrigger
+                      disabled={!form.roleId}
+                      className="h-full w-full border-0 bg-transparent shadow-none focus:ring-0 text-base px-3"
                     >
-                      <SelectTrigger
-                        disabled={!form.roleId}
-                        className="h-full w-full border-0 bg-transparent shadow-none focus:ring-0 text-base px-3"
-                      >
-                        <SelectValue placeholder="Select Office" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getAvailableOffices([
-                          (form as any).officeIds?.[0],
-                          ...additionalOffices.filter((_, i) => i !== index),
-                        ].filter(Boolean)).map((office) => (
-                          <SelectItem
-                            key={office.id}
-                            value={office.id}
-                            className="text-base"
-                          >
-                            {office.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <InputGroupAddon>
-                      <Building2 className="size-5" />
-                    </InputGroupAddon>
-                  </InputGroup>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeOffice(index)}
-                    className="h-12 w-12 shrink-0"
-                  >
-                    <X className="size-5" />
-                  </Button>
-                </div>
+                      <SelectValue placeholder="Select Office" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAvailableOffices(
+                        mode === 'edit' ? additionalOffices : []
+                      ).map((office) => (
+                        <SelectItem
+                          key={office.id}
+                          value={office.id}
+                          className="text-base"
+                        >
+                          {office.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <InputGroupAddon>
+                    <Building2 className="size-5" />
+                  </InputGroupAddon>
+                </InputGroup>
               </Field>
-            ))}
 
-            {mode === 'edit' && (
-              <div className="flex justify-start">
+              {additionalOffices.map((officeId, index) => (
+                <Field key={index}>
+                  <FieldLabel>Additional Office</FieldLabel>
+                  <div className="flex gap-2">
+                    <InputGroup className="h-12 flex-1">
+                      <Select
+                        value={officeId}
+                        onValueChange={(value) => handleAdditionalOfficeChange(index, value)}
+                      >
+                        <SelectTrigger
+                          disabled={!form.roleId}
+                          className="h-full w-full border-0 bg-transparent shadow-none focus:ring-0 text-base px-3"
+                        >
+                          <SelectValue placeholder="Select Office" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getAvailableOffices([
+                            form.officeIds?.[0],
+                            ...additionalOffices.filter((_, i) => i !== index),
+                          ].filter((id): id is string => id !== undefined)).map((office) => (
+                            <SelectItem
+                              key={office.id}
+                              value={office.id}
+                              className="text-base"
+                            >
+                              {office.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <InputGroupAddon>
+                        <Building2 className="size-5" />
+                      </InputGroupAddon>
+                    </InputGroup>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeOffice(index)}
+                      className="h-12 w-12 shrink-0"
+                    >
+                      <X className="size-5" />
+                    </Button>
+                  </div>
+                </Field>
+              ))}
+
+              <div className="flex justify-end">
                 <Button
                   type="button"
                   variant="outline"
@@ -411,11 +421,12 @@ export function MunicipalityUserForm({
                   Add Office
                 </Button>
               </div>
-            )}
+            </div>
+          </div>
 
-            {selectedRoleName === 'external_maintainer' && getPrimaryOfficeId() && (
-              <Field className="md:col-span-2">
-                <FieldLabel>Categories for this Office</FieldLabel>
+          {selectedRoleName === 'external_maintainer' && getPrimaryOfficeId() && (
+            <Field>
+              <FieldLabel>Categories for this Office</FieldLabel>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {(() => {
                       const officeId = getPrimaryOfficeId();
@@ -447,8 +458,6 @@ export function MunicipalityUserForm({
               </Field>
             )}
 
-
-          </div>
           {mode === 'create' && (
             <Field>
               <FieldLabel>Password</FieldLabel>
