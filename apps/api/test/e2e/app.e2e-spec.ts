@@ -296,6 +296,7 @@ describe('AppController (e2e)', () => {
         firstName: 'John',
         lastName: 'Doe',
         roleId: 'role_1',
+        isEmailVerified: true,
         role: {
           id: 'role_1',
           name: 'admin',
@@ -310,6 +311,7 @@ describe('AppController (e2e)', () => {
         firstName: 'Jane',
         lastName: 'Smith',
         roleId: 'role_2',
+        isEmailVerified: true,
         role: { id: 'role_2', name: 'user', label: 'User', isMunicipal: false },
       },
       {
@@ -319,6 +321,7 @@ describe('AppController (e2e)', () => {
         firstName: 'Paul',
         lastName: 'Rogers',
         roleId: 'role_3',
+        isEmailVerified: true,
         role: {
           id: 'role_3',
           name: 'municipal_pr_officer',
@@ -333,6 +336,7 @@ describe('AppController (e2e)', () => {
         firstName: 'tech_officer',
         lastName: 'One',
         roleId: 'role_5',
+        isEmailVerified: true,
         officeId: 'office_1',
         role: {
           id: 'role_5',
@@ -348,6 +352,7 @@ describe('AppController (e2e)', () => {
         firstName: 'tech_officer',
         lastName: 'Two',
         roleId: 'role_5',
+        isEmailVerified: true,
         officeId: 'office_1',
         role: {
           id: 'role_5',
@@ -363,6 +368,7 @@ describe('AppController (e2e)', () => {
         firstName: 'External',
         lastName: 'Maintainer',
         roleId: 'role_6',
+        isEmailVerified: true,
         officeId: 'office_2',
         role: {
           id: 'role_6',
@@ -370,6 +376,16 @@ describe('AppController (e2e)', () => {
           label: 'External Maintainer',
           isMunicipal: false,
         },
+      },
+      {
+        id: 'user_unverified',
+        email: 'unverified@example.com',
+        username: 'unverified_user',
+        firstName: 'Not',
+        lastName: 'Verified',
+        roleId: 'role_2',
+        isEmailVerified: false,
+        role: { id: 'role_2', name: 'user', label: 'User', isMunicipal: false },
       },
     ];
 
@@ -391,6 +407,14 @@ describe('AppController (e2e)', () => {
         accountId: 'jane',
         hashedPassword: 'hashed_password_2',
         user: mockUsers[1],
+      },
+      {
+        id: 'account_unverified',
+        userId: 'user_unverified',
+        providerId: 'local',
+        accountId: 'unverified',
+        hashedPassword: 'hashed_password_uv',
+        user: mockUsers[6],
       },
     ];
 
@@ -713,6 +737,15 @@ describe('AppController (e2e)', () => {
     testingModuleBuilder.overrideGuard(LocalAuthGuard).useValue({
       canActivate: (context: any) => {
         const req = context.switchToHttp().getRequest();
+        if (req.body && req.body.username) {
+          const foundUser = mockUsers.find(
+            (u) => u.username === req.body.username,
+          );
+          if (foundUser) {
+            req.user = foundUser;
+            return true;
+          }
+        }
         req.user = mockUser;
         return true;
       },
@@ -852,6 +885,7 @@ describe('AppController (e2e)', () => {
             username: 'john01',
             firstName: 'John',
             lastName: 'Doe',
+            isEmailVerified: true,
             id: expect.any(String),
             role: expect.objectContaining({
               id: expect.any(String),
@@ -875,6 +909,21 @@ describe('AppController (e2e)', () => {
       : String(setCookie2 || '');
     sessionCookie = cookies;
     expect(cookies).toMatch(/session_token=[^;]+/);
+  });
+
+  it('POST /auth/login with unverified user returns 401 and specific error message', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ username: 'unverified_user', password: 'AnyPassword' })
+      .expect(401);
+
+    expect(res.body).toEqual(
+      expect.objectContaining({
+        statusCode: 401,
+        message: 'Email not verified. Please verify your email to continue.',
+        email: 'unverified@example.com',
+      }),
+    );
   });
 
   it('POST /auth/logout with valid session returns 200', async () => {
@@ -1081,7 +1130,7 @@ describe('AppController (e2e)', () => {
     expect(res.body.data.roleId).toBe('role_5');
   });
 
-  // TODO: Fix mock repository issue - test passes with real database but fails with mocked repositories  
+  // TODO: Fix mock repository issue - test passes with real database but fails with mocked repositories
   it.skip('POST /users/municipality/user/:id/office-roles with duplicate assignment returns 409', async () => {
     await request(app.getHttpServer())
       .post('/users/municipality/user/officer_1/office-roles')
@@ -1116,7 +1165,9 @@ describe('AppController (e2e)', () => {
 
   it('DELETE /users/municipality/user/:id/office-roles/:officeId with non-existent assignment returns 404', async () => {
     await request(app.getHttpServer())
-      .delete('/users/municipality/user/officer_1/office-roles/nonexistent_office')
+      .delete(
+        '/users/municipality/user/officer_1/office-roles/nonexistent_office',
+      )
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(404);
   });
