@@ -1,5 +1,5 @@
-import { useLogin, useLogout, useRegister } from '@/hooks/use-auth';
-import type { LoginDto, RegisterDto, User } from '@/types';
+import { useLogin, useLogout, useRegister, useVerifyEmail } from '@/hooks/use-auth';
+import type { LoginDto, RegisterDto, VerifyEmailDto, User } from '@/types';
 import { AuthContextType } from '@/types/auth';
 import {
   createContext,
@@ -21,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useLogin();
   const registerMutation = useRegister();
   const logoutMutation = useLogout();
+  const verifyEmailMutation = useVerifyEmail();
 
   const flags = useMemo(() => {
     const isAuthenticated = user !== null;
@@ -39,10 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isLoading =
     loginMutation.isPending ||
     registerMutation.isPending ||
-    logoutMutation.isPending;
+    logoutMutation.isPending ||
+    verifyEmailMutation.isPending;
 
   const error =
-    loginMutation.error?.message || registerMutation.error?.message || null;
+    loginMutation.error?.message ||
+    registerMutation.error?.message ||
+    verifyEmailMutation.error?.message ||
+    null;
 
   const login = useCallback(
     async (credentials: LoginDto) => {
@@ -54,7 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : 'Login failed';
-        return { success: false, error: errorMessage };
+        const errorResponse = err instanceof Error ? (err as any).response : null;
+        return {
+          success: false,
+          error: errorMessage,
+          email: errorResponse?.email,
+        };
       }
     },
     [loginMutation],
@@ -64,9 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (data: RegisterDto) => {
       try {
         const response = await registerMutation.mutateAsync(data);
-        const userData = response.data.user;
-        setUser(userData);
-        return { success: true, data: userData };
+        return { success: true, message: response.message };
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : 'Registration failed';
@@ -74,6 +82,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     [registerMutation],
+  );
+
+  const verifyEmail = useCallback(
+    async (data: VerifyEmailDto) => {
+      try {
+        const response = await verifyEmailMutation.mutateAsync(data);
+        const userData = response.data.user;
+        setUser(userData);
+        return { success: true, data: userData };
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Email verification failed';
+        return { success: false, error: errorMessage };
+      }
+    },
+    [verifyEmailMutation],
   );
 
   const logout = useCallback(async () => {
@@ -101,10 +125,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...flags,
       login,
       register,
+      verifyEmail,
       logout,
       hasRole,
     }),
-    [user, isLoading, error, flags, login, register, logout, hasRole],
+    [user, isLoading, error, flags, login, register, verifyEmail, logout, hasRole],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
