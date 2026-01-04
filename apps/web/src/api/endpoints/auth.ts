@@ -16,14 +16,6 @@ export async function login(credentials: LoginDto): Promise<LoginResponseDto> {
   });
 }
 
-/*
-export async function register(data: RegisterDto): Promise<LoginResponseDto> {
-  return apiFetch<LoginResponseDto>('/auth/register', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-}
-*/
 export async function register(
   data: RegisterDto,
 ): Promise<RegisterResponseDto> {
@@ -39,7 +31,6 @@ export async function logout(): Promise<LogoutResponseDto> {
   });
 }
 
-////verfication code
 export async function verifyEmail(
   data: VerifyEmailDto,
 ): Promise<VerifyEmailResponseDto> {

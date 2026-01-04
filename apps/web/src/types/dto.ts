@@ -158,7 +158,6 @@ export type CreateCommentDto = {
   content: string;
 };
 
-///////
 export type RegisterResponseDto = ResponseDto & {
   message: string;
 };

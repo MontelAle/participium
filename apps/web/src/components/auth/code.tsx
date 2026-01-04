@@ -69,7 +69,6 @@ export default function CodeVerification({ email }: CodeVerificationProps) {
       <Card className="overflow-hidden p-0 h-auto md:h-[800px] w-full">
         <CardContent className="grid md:grid-cols-2 p-0 h-full">
           
-          {/* Colonna sinistra: inputs */}
           <div className="p-8 md:p-14 flex flex-col justify-center items-center mb-16">
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold whitespace-nowrap mb-4">
                 Enter your verification code
@@ -108,24 +107,9 @@ export default function CodeVerification({ email }: CodeVerificationProps) {
                 {isLoading ? 'Verifying...' : 'Verify'}
               </Button>
 
-              {/*
-              <div className="mt-4 text-center">
-                <p className="text-muted-foreground text-base">
-                  Didn't receive the email or code expired?{' '}
-                  <button
-                    type="button"
-                    className="underline font-medium hover:text-black"
-                    onClick={() => console.log("Request a new code")}
-                  >
-                    Request a new code
-                  </button>
-                </p>
-              </div>
-              */}
             </form>
           </div>
 
-          {/* Colonna destra: immagine decorativa */}
           <div className="bg-muted relative hidden md:flex items-center justify-center overflow-hidden h-full">
             <img
               src="/login_register.png"

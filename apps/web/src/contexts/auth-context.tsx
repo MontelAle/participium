@@ -69,7 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (data: RegisterDto) => {
       try {
         const response = await registerMutation.mutateAsync(data);
-        // Registration successful, but user needs to verify email before login
         return { success: true, message: response.message };
       } catch (err) {
         const errorMessage =

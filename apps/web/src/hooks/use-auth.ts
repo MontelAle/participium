@@ -15,37 +15,16 @@ export function useLogin() {
   });
 }
 
-/*
-export function useRegister() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: RegisterDto) => authApi.register(data),
-    onSuccess: (response) => {
-      const userData = response.data.user;
-      localStorage.setItem('user', JSON.stringify(userData));
-      queryClient.setQueryData(['auth', 'user'], userData);
-    },
-  });
-}
-*/
-
-//////
-
 export function useRegister() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: RegisterDto) => authApi.register(data),
     onSuccess: (response: RegisterResponseDto) => {
-      // Invalida una query fittizia o salva il messaggio nella cache se vuoi leggerlo dalla UI
       queryClient.setQueryData(['auth', 'registerMessage'], response.message);
     },
   });
 }
-
-
-/////
 
 export function useLogout() {
   const queryClient = useQueryClient();
@@ -60,14 +39,12 @@ export function useLogout() {
   });
 }
 
-/////
 export function useVerifyEmail() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: VerifyEmailDto) => authApi.verifyEmail(data),
     onSuccess: (response: LoginResponseDto) => {
-      // Salva l'utente e la sessione in localStorage
       const userData = response.data.user;
       localStorage.setItem('user', JSON.stringify(userData));
       queryClient.setQueryData(['auth', 'user'], userData);

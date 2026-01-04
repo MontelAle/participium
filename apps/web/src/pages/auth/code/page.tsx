@@ -5,7 +5,6 @@ const CodePage = () => {
   const location = useLocation();
   const email = location.state?.email;
 
-  // Se non c'è email, reindirizza al login
   if (!email) {
     return <Navigate to="/auth/login" replace />;
   }
