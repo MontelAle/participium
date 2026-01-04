@@ -1535,6 +1535,78 @@ describe('AppController (e2e)', () => {
   });
 
   // ============================================================================
+  // ANONYMOUS REPORTING PRIVACY & SANITIZATION
+  // ============================================================================
+
+  let anonymousReportId: string;
+
+  it('POST /reports creates an anonymous report and returns isAnonymous: true', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Anonymous Noise Complaint')
+      .field('description', 'Loud noise at night')
+      .field('longitude', '7.6869')
+      .field('latitude', '45.0703')
+      .field('categoryId', 'cat_1')
+      .field('isAnonymous', 'true')
+      .attach('images', Buffer.from('fake-image'), 'anon.jpg')
+      .expect(201);
+
+    expect(res.body.data.isAnonymous).toBe(true);
+    expect(res.body.data.id).toBeDefined();
+    anonymousReportId = res.body.data.id;
+  });
+
+  it('GET /reports/:id as AUTHOR (user_1) returns user details (Author Bypass)', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/reports/${anonymousReportId}`)
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.data.id).toBe(anonymousReportId);
+    expect(res.body.data.isAnonymous).toBe(true);
+    expect(res.body.data.user).toBeDefined();
+    expect(res.body.data.user.id).toBe('user_1');
+    expect(res.body.data.user.username).toBeDefined();
+  });
+
+  it('GET /reports/:id as OTHER USER (user_2) sanitizes user details', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/reports/${anonymousReportId}`)
+      .set('Cookie', 'session_token=sess_2.secret')
+      .expect(200);
+
+    expect(res.body.data.isAnonymous).toBe(true);
+    expect(res.body.data.user).toBeNull();
+  });
+
+  it('GET /reports/:id as TECH OFFICER (Privileged) returns user details', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/reports/${anonymousReportId}`)
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .expect(200);
+
+    expect(res.body.data.isAnonymous).toBe(true);
+    expect(res.body.data.user).toBeDefined();
+    expect(res.body.data.user.id).toBe('user_1');
+  });
+
+  it('GET /reports list view sanitizes anonymous reports for standard users', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports')
+      .set('Cookie', 'session_token=sess_2.secret')
+      .expect(200);
+
+    const targetReport = res.body.data.find(
+      (r: any) => r.id === anonymousReportId,
+    );
+    expect(targetReport).toBeDefined();
+    expect(targetReport.isAnonymous).toBe(true);
+    expect(targetReport.user).toBeNull();
+  });
+
+  // ============================================================================
   // Reports Filtering & Search
   // ============================================================================
 
