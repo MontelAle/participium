@@ -41,19 +41,32 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
           navigate('/app/dashboard');
         }
       } else {
-        toast.error(result.error || 'Invalid credentials. Please try again.');
+        const errorMessage =
+          result.error || 'Invalid credentials. Please try again.';
+
+        if (errorMessage.includes('Email not verified')) {
+          toast.error('Please verify your email before logging in.');
+          if (result.email) {
+            navigate('/auth/verify', { state: { email: result.email } });
+          }
+        } else {
+          toast.error(errorMessage);
+        }
       }
     } else {
+      const email = formData.get('email') as string;
       const result = await register({
         username: formData.get('username') as string,
-        email: formData.get('email') as string,
+        email,
         firstName: formData.get('firstname') as string,
         lastName: formData.get('lastname') as string,
         password: formData.get('password') as string,
       });
       if (result.success) {
-        toast.success('Registration successful! Welcome!');
-        navigate('/reports/map');
+        toast.success(
+          'Registration successful! Please check your email for verification code.',
+        );
+        navigate('/auth/verify', { state: { email } });
       } else {
         toast.error(result.error || 'Registration failed. Please try again.');
       }

@@ -50,6 +50,14 @@ describe('appConfig', () => {
           secretKey: 'minioadmin',
           useSSL: false,
         },
+        email: {
+          host: 'localhost',
+          port: 587,
+          secure: false,
+          user: '',
+          password: '',
+          from: 'noreply@participium.local',
+        },
       });
     });
   });

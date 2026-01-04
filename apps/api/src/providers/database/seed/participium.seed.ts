@@ -797,6 +797,7 @@ async function createUserWithAccountAndProfile(
     email,
     role: rolesMap.get(roleName),
     office: officeName ? officesMap.get(officeName) : null,
+    isEmailVerified: true,
   });
   await userRepo.save(user);
 

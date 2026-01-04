@@ -4,8 +4,10 @@ import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import bcrypt from 'bcrypt';
+import { EmailService } from '../email/email.service';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/auth.dto';
+import { OtpService } from './otp.service';
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
@@ -22,6 +24,8 @@ describe('AuthService', () => {
   let accountRepository: any;
   let sessionRepository: any;
 
+  let emailService: any;
+  let otpService: any;
   let mockEntityManager: any;
 
   beforeEach(async () => {
@@ -66,6 +70,13 @@ describe('AuthService', () => {
       }),
     };
 
+    emailService = { sendVerificationEmail: jest.fn() };
+    otpService = {
+      generateVerificationCode: jest.fn().mockReturnValue('123456'),
+      generateCodeExpiry: jest.fn().mockReturnValue(new Date()),
+      isCodeExpired: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -75,6 +86,8 @@ describe('AuthService', () => {
         { provide: getRepositoryToken(Role), useValue: roleRepository },
         { provide: getRepositoryToken(Profile), useValue: profileRepository },
         { provide: ConfigService, useValue: configService },
+        { provide: EmailService, useValue: emailService },
+        { provide: OtpService, useValue: otpService },
       ],
     }).compile();
 
@@ -135,45 +148,128 @@ describe('AuthService', () => {
       expect(userRepository.manager.transaction).toHaveBeenCalled();
     });
 
-    it('should successfully register a new user', async () => {
+    it('should successfully register a new user, send email, and return message', async () => {
       userRepository.findOne.mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_pwd');
 
       const mockRole = { id: 'role-id', name: 'user' };
-      const createdUser = { ...dto, id: 'mocked-id', role: mockRole };
+
+      const createdUser = {
+        ...dto,
+        id: 'mocked-id',
+        role: mockRole,
+        isEmailVerified: false,
+        emailVerificationCode: '123456',
+      };
+
       const createdProfile = { id: 'mocked-id', userId: 'mocked-id' };
       const createdAccount = { id: 'mocked-id', providerId: 'local' };
 
       mockEntityManager.getRepository.mockImplementation((entity: any) => {
-        if (entity === Role) {
+        if (entity === Role)
           return { findOne: jest.fn().mockResolvedValue(mockRole) };
-        }
-        if (entity === User) {
+        if (entity === User)
           return {
             create: jest.fn().mockReturnValue(createdUser),
             save: jest.fn().mockResolvedValue(createdUser),
           };
-        }
-        if (entity === Profile) {
+        if (entity === Profile)
           return {
             create: jest.fn().mockReturnValue(createdProfile),
             save: jest.fn().mockResolvedValue(createdProfile),
           };
-        }
-        if (entity === Account) {
+        if (entity === Account)
           return {
             create: jest.fn().mockReturnValue(createdAccount),
             save: jest.fn().mockResolvedValue(createdAccount),
           };
-        }
         throw new Error(`Unexpected entity repository request: ${entity.name}`);
       });
 
       const result = await service.register(dto);
 
-      expect(result).toEqual({ user: createdUser });
+      expect(result).toEqual({
+        message:
+          'Registration successful. Please check your email for the verification code.',
+      });
+
       expect(userRepository.manager.transaction).toHaveBeenCalled();
-      expect(bcrypt.hash).toHaveBeenCalledWith('password123', 10);
+
+      expect(emailService.sendVerificationEmail).toHaveBeenCalledWith(
+        dto.email,
+        '123456',
+      );
+    });
+  });
+
+  describe('verifyEmail', () => {
+    const email = 'test@test.com';
+    const code = '123456';
+    let mockUser: any;
+
+    beforeEach(() => {
+      mockUser = {
+        id: 'u1',
+        email,
+        isEmailVerified: false,
+        emailVerificationCode: '123456',
+        emailVerificationCodeExpiry: new Date(Date.now() + 10000),
+        save: jest.fn(),
+      };
+    });
+
+    it('should throw ConflictException if user not found', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+      await expect(service.verifyEmail(email, code)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('should throw ConflictException if already verified', async () => {
+      mockUser.isEmailVerified = true;
+      userRepository.findOne.mockResolvedValue(mockUser);
+      await expect(service.verifyEmail(email, code)).rejects.toThrow(
+        'Email already verified',
+      );
+    });
+
+    it('should throw ConflictException if verification code is missing on user entity', async () => {
+      mockUser.emailVerificationCode = null;
+      userRepository.findOne.mockResolvedValue(mockUser);
+
+      await expect(service.verifyEmail(email, code)).rejects.toThrow(
+        'No verification code found',
+      );
+    });
+
+    it('should throw ConflictException if code expired', async () => {
+      otpService.isCodeExpired.mockReturnValue(true);
+      userRepository.findOne.mockResolvedValue(mockUser);
+      await expect(service.verifyEmail(email, code)).rejects.toThrow(
+        'Verification code has expired',
+      );
+    });
+
+    it('should throw ConflictException if code matches but is wrong', async () => {
+      otpService.isCodeExpired.mockReturnValue(false);
+      mockUser.emailVerificationCode = '999999';
+      userRepository.findOne.mockResolvedValue(mockUser);
+      await expect(service.verifyEmail(email, code)).rejects.toThrow(
+        'Invalid verification code',
+      );
+    });
+
+    it('should verify user and clear codes on success', async () => {
+      otpService.isCodeExpired.mockReturnValue(false);
+      userRepository.findOne.mockResolvedValue(mockUser);
+
+      const result = await service.verifyEmail(email, code);
+
+      expect(mockUser.isEmailVerified).toBe(true);
+      expect(mockUser.emailVerificationCode).toBeNull();
+      expect(mockUser.emailVerificationCodeExpiry).toBeNull();
+      expect(userRepository.save).toHaveBeenCalledWith(mockUser);
+      expect(result).toEqual({ user: mockUser });
     });
   });
 

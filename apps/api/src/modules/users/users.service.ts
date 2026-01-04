@@ -219,6 +219,7 @@ export class UsersService {
         lastName,
         role: firstRole,
         office: firstOffice,
+        isEmailVerified: true,
       });
 
       const user = await manager.getRepository(User).save(newUser);

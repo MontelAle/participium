@@ -159,3 +159,21 @@ export type ProfileResponseDto = ResponseDto & {
 export type CreateCommentDto = {
   content: string;
 };
+
+export type RegisterResponseDto = ResponseDto & {
+  message: string;
+};
+
+export type VerifyEmailDto = {
+  email: string;
+  code: string;
+};
+
+export type VerifyEmailResponseDto = {
+  success: boolean;
+  data: {
+    user: User;
+    session: Partial<Session>;
+  };
+};
+
