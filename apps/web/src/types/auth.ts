@@ -7,7 +7,7 @@ export type AuthContextType = {
   isAuthenticated: boolean;
   login: (
     loginCredentials: LoginDto,
-  ) => Promise<{ success: boolean; data?: User; error?: string }>;
+  ) => Promise<{ success: boolean; data?: User; error?: string; email?: string }>;
 
   register: (
     data: RegisterDto,

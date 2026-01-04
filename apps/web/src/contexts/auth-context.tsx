@@ -59,7 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : 'Login failed';
-        return { success: false, error: errorMessage };
+        const errorResponse = err instanceof Error ? (err as any).response : null;
+        return {
+          success: false,
+          error: errorMessage,
+          email: errorResponse?.email,
+        };
       }
     },
     [loginMutation],
