@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+import { cn, prettifyStatus } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -183,7 +183,7 @@ export function FilterDialog({
                     }))
                   }
                 >
-                  {status.replaceAll('_', ' ').toLowerCase()}
+                  {prettifyStatus(status)}
                 </Button>
               ))}
             </div>

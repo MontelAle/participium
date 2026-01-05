@@ -9,6 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/shadcn-io/table';
 import type { Report } from '@/types';
+import { prettifyStatus } from '@/lib/utils';
 import {
   type CellContext,
   type ColumnDef,
@@ -45,7 +46,7 @@ const StatusCell = ({ getValue }: CellContext<Report, Report['status']>) => {
     <span
       className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium ${bgColor} border whitespace-nowrap`}
     >
-      {status.replaceAll('_', ' ')}
+      {prettifyStatus(status)}
     </span>
   );
 };
