@@ -13,6 +13,7 @@ import { useExternalMaintainers } from '@/hooks/use-external-maintainers';
 import { useOffices } from '@/hooks/use-offices';
 import { useUpdateReport } from '@/hooks/use-reports';
 import type { Report, ReportStatus, UpdateReportDto } from '@/types';
+import { prettifyStatus } from '@/lib/utils';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -157,7 +158,7 @@ export function ViewAssignedReport({
                     <SelectContent>
                       {allowedNextStatuses.map((s) => (
                         <SelectItem key={s} value={s}>
-                          {s.replaceAll('_', ' ')}
+                          {prettifyStatus(s)}
                         </SelectItem>
                       ))}
                     </SelectContent>

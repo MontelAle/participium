@@ -54,3 +54,10 @@ export const prettifyRole = (name: string) =>
     .split(' ')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(' ');
+
+export const prettifyStatus = (status: string) =>
+  status
+    .replaceAll('_', ' ')
+    .split(' ')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
