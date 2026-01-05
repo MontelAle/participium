@@ -408,19 +408,21 @@ export function MunicipalityUserForm({
                 </Field>
               ))}
 
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addOffice}
-                  disabled={!form.roleId}
-                  className="h-10 px-4 gap-2"
-                >
-                  <Plus className="size-4" />
-                  Add Office
-                </Button>
-              </div>
+              {selectedRoleName === 'tech_officer' && (
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addOffice}
+                    disabled={!form.roleId}
+                    className="h-10 px-4 gap-2"
+                  >
+                    <Plus className="size-4" />
+                    Add Office
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
