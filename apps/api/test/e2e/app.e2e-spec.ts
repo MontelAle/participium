@@ -2754,4 +2754,55 @@ describe('AppController (e2e)', () => {
 
     expect(res.body.data.length).toBeGreaterThanOrEqual(2);
   });
+
+  // ============================================================================
+  // Notifications Endpoints (Focused E2E Tests)
+  // These tests are written to avoid relying on pre-seeded notification data.
+  // They verify auth, shape and error handling of the notifications endpoints.
+  // ============================================================================
+
+  it('GET /notifications without authentication returns 403', async () => {
+    await request(app.getHttpServer()).get('/notifications').expect(403);
+  });
+
+  it('GET /notifications with authentication returns 200 and array data', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/notifications')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body).toHaveProperty('success', true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('GET /notifications?unread=1 returns only unread items when present', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/notifications?unread=1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body).toHaveProperty('success', true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+
+    // If there are items, they should be unread
+    if (res.body.data.length > 0) {
+      for (const n of res.body.data) {
+        expect(n).toHaveProperty('read');
+        expect(n.read).toBe(false);
+      }
+    }
+  });
+
+  it('PATCH /notifications/:id/read without authentication returns 403', async () => {
+    await request(app.getHttpServer())
+      .patch('/notifications/non-existent-id/read')
+      .expect(403);
+  });
+
+  it('PATCH /notifications/:id/read with auth for non-existent id returns 404', async () => {
+    await request(app.getHttpServer())
+      .patch('/notifications/non-existent-id/read')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(404);
+  });
 });
