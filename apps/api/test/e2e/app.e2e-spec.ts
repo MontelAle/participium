@@ -15,13 +15,20 @@ import {
   UserOfficeRole,
 } from '@entities';
 import { INestApplication, Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { LocalAuthGuard } from '../../src/modules/auth/guards/local-auth.guard';
 import { RolesGuard } from '../../src/modules/auth/guards/roles.guard';
 import { SessionGuard } from '../../src/modules/auth/guards/session-auth.guard';
+import {
+  BUTTONS,
+  MESSAGES,
+} from '../../src/modules/telegram/constants/telegram-ui.constants';
 import { TelegramAuthService } from '../../src/modules/telegram/telegram-auth.service';
+import { TelegramBotUpdate } from '../../src/modules/telegram/telegram-bot.update';
 import { TelegramService } from '../../src/modules/telegram/telegram.service';
+import { TelegramFormatterUtil } from '../../src/modules/telegram/utils/telegram-formatter.util';
 import request = require('supertest');
 
 jest.mock('nanoid', () => ({
@@ -295,8 +302,17 @@ const mockTelegramService = {
   providers: [
     { provide: TelegramAuthService, useValue: mockTelegramAuthService },
     { provide: TelegramService, useValue: mockTelegramService },
+    TelegramBotUpdate, // <--- Inietta la vera classe Update
+    TelegramFormatterUtil, // <--- Inietta il vero Formatter
+    {
+      provide: ConfigService,
+      useValue: {
+        get: (key: string) =>
+          key === 'app.frontendUrl' ? 'http://localhost:5173' : 'mock-value',
+      },
+    },
   ],
-  exports: [TelegramAuthService, TelegramService],
+  exports: [TelegramAuthService, TelegramService, TelegramBotUpdate],
 })
 class MockTelegramModule {}
 
@@ -2702,5 +2718,123 @@ describe('AppController (e2e)', () => {
       .expect(200);
 
     expect(res.body.data.length).toBeGreaterThanOrEqual(2);
+  });
+
+  // ============================================================================
+  // Telegram Bot Logic & Integration
+  // ============================================================================
+
+  describe('Telegram Bot Integration', () => {
+    let botUpdate: TelegramBotUpdate;
+    let authService: typeof mockTelegramAuthService;
+
+    const createMockContext = (telegramId: string) => ({
+      from: { id: telegramId, username: 'test_tg_user' },
+      reply: jest.fn(),
+      scene: { enter: jest.fn() },
+      answerCbQuery: jest.fn(),
+    });
+
+    beforeAll(() => {
+      botUpdate = app.get<TelegramBotUpdate>(TelegramBotUpdate);
+      authService = app.get(TelegramAuthService) as any;
+    });
+
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('POST /profiles/telegram/link links account successfully via API', async () => {
+      authService.linkAccount.mockResolvedValueOnce(undefined);
+
+      const res = await request(app.getHttpServer())
+        .post('/profiles/telegram/link')
+        .set('Cookie', 'session_token=sess_1.secret')
+        .send({ code: '123456' })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+      expect(authService.linkAccount).toHaveBeenCalledWith('123456', 'user_1');
+    });
+
+    it('Bot /start command for GUEST user shows Link Account button', async () => {
+      const ctx = createMockContext('999999');
+      authService.isLinked.mockResolvedValueOnce(false);
+
+      await botUpdate.onStart(ctx as any);
+
+      expect(authService.isLinked).toHaveBeenCalledWith('999999');
+
+      expect(ctx.reply).toHaveBeenCalledWith(
+        expect.stringContaining('Welcome to Participium'),
+        expect.objectContaining({
+          reply_markup: expect.objectContaining({
+            inline_keyboard: expect.arrayContaining([
+              expect.arrayContaining([
+                expect.objectContaining({ text: BUTTONS.LINK_ACCOUNT }),
+              ]),
+            ]),
+          }),
+        }),
+      );
+    });
+
+    it('Bot /start command for LINKED user shows New Report button', async () => {
+      const ctx = createMockContext('123456');
+      authService.isLinked.mockResolvedValueOnce(true);
+
+      await botUpdate.onStart(ctx as any);
+
+      expect(ctx.reply).toHaveBeenCalledWith(
+        expect.stringContaining('Welcome back'),
+        expect.objectContaining({
+          reply_markup: expect.objectContaining({
+            inline_keyboard: expect.arrayContaining([
+              expect.arrayContaining([
+                expect.objectContaining({ text: BUTTONS.NEW_REPORT }),
+              ]),
+            ]),
+          }),
+        }),
+      );
+    });
+
+    it('Bot /help shows different commands for Linked vs Guest users', async () => {
+      const ctxGuest = createMockContext('999');
+      const ctxUser = createMockContext('111');
+
+      authService.isLinked.mockResolvedValueOnce(false);
+      await botUpdate.onHelp(ctxGuest as any);
+      expect(ctxGuest.reply).toHaveBeenCalledWith(
+        expect.stringContaining('/link'),
+        expect.anything(),
+      );
+
+      authService.isLinked.mockResolvedValueOnce(true);
+      await botUpdate.onHelp(ctxUser as any);
+      expect(ctxUser.reply).toHaveBeenCalledWith(
+        expect.stringContaining('/newreport'),
+        expect.anything(),
+      );
+    });
+
+    it('Bot /newreport blocks execution if user is NOT linked', async () => {
+      const ctx = createMockContext('888');
+      authService.isLinked.mockResolvedValueOnce(false);
+
+      await botUpdate.onNewReport(ctx as any);
+
+      expect(ctx.reply).toHaveBeenCalledWith(MESSAGES.ERR_NOT_LINKED);
+      expect(ctx.scene.enter).not.toHaveBeenCalled();
+    });
+
+    it('Bot /newreport enters scene if user IS linked', async () => {
+      const ctx = createMockContext('777');
+      authService.isLinked.mockResolvedValueOnce(true);
+
+      await botUpdate.onNewReport(ctx as any);
+
+      expect(ctx.scene.enter).toHaveBeenCalledWith('newreport');
+    });
   });
 });
