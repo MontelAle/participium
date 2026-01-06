@@ -618,6 +618,42 @@ const REAL_REPORTS = [
     categoryName: 'Roads and Urban Furnishings',
     images: ['PedestrianCrosswalksHardToSee.jpg'],
   },
+  {
+    title: 'Pedestrian crosswalks not clearly visible',
+    description:
+      'The pedestrian crosswalks are very faded and hard to distinguish, especially at night or in poorly lit areas.',
+    address: 'Via Monfalcone, 125a, Torino',
+    lat: 45.052009,
+    lng: 7.636515,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['PedestrianCrosswalksNotClearlyVisible.jpg'],
+  },
+  {
+    title: 'Damaged road',
+    description:
+      'The road has several potholes and damaged sections that create difficulties for vehicles.',
+    address: 'Via Bernardo De Canal, 27, Torino',
+    lat: 45.034103,
+    lng: 7.641367,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'DamagedRoad1.jpg',
+      'DamagedRoad2.jpg',
+    ],
+  },
+  {
+    title: 'Damaged bike rack',
+    description:
+      'One of the bike racks along the street is damaged and has become tilted. The structure is no longer properly aligned, making it difficult for cyclists to use. Additionally, its instability could cause damage to parked bicycles.',
+    address: 'Via Bernardo De Canal, 23e, Torino',
+    lat: 45.033980,
+    lng: 7.641721,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'DamagedBikeRack1.jpg',
+      'DamagedBikeRack2.jpg',
+    ],
+  },
 ];
 
 // ============================================================================
