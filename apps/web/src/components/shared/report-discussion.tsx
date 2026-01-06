@@ -34,12 +34,14 @@ export function ReportDiscussion({
   const [panel, setPanel] = useState<'comments' | 'messages'>(initialPanel);
   const [text, setText] = useState('');
 
-  const { data: comments, isLoading: commentsLoading } =
-    useReportComments(reportId);
-  const postComment = usePostReportComment(reportId);
-  const { data: messages, isLoading: messagesLoading } =
-    useReportMessages(reportId);
-  const postMessage = usePostReportMessage(reportId);
+  const { data: comments, isLoading: commentsLoading } = useReportComments(
+    showComments ? reportId : '',
+  );
+  const postComment = usePostReportComment(showComments ? reportId : '');
+  const { data: messages, isLoading: messagesLoading } = useReportMessages(
+    showMessages ? reportId : '',
+  );
+  const postMessage = usePostReportMessage(showMessages ? reportId : '');
 
   const isPosting =
     panel === 'comments' ? postComment.isPending : postMessage.isPending;
@@ -178,7 +180,7 @@ export function ReportDiscussion({
                 placeholder={
                   panel === 'comments'
                     ? 'Add internal note...'
-                    : 'Message the reporter...'
+                    : 'Add message...'
                 }
                 value={text}
                 onChange={(e) => setText(e.target.value)}
