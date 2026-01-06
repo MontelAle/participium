@@ -12,8 +12,8 @@ import { useCategories } from '@/hooks/use-categories';
 import { useExternalMaintainers } from '@/hooks/use-external-maintainers';
 import { useOffices } from '@/hooks/use-offices';
 import { useUpdateReport } from '@/hooks/use-reports';
+import { cn, prettifyStatus } from '@/lib/utils';
 import type { Report, ReportStatus, UpdateReportDto } from '@/types';
-import { prettifyStatus } from '@/lib/utils';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -22,12 +22,14 @@ export type ViewAssignedReportProps = {
   report: Report;
   showAnonymous?: boolean;
   onClose?: () => void;
+  className?: string;
 };
 
 export function ViewAssignedReport({
   report,
   showAnonymous = true,
   onClose,
+  className,
 }: Readonly<ViewAssignedReportProps>) {
   const { data: offices } = useOffices();
   const { data: externalMaintainers } = useExternalMaintainers();
@@ -55,7 +57,7 @@ export function ViewAssignedReport({
         case 'assigned':
           return ['assigned', 'in_progress'];
         case 'in_progress':
-          return ['in_progress', 'resolved','suspended'];
+          return ['in_progress', 'resolved', 'suspended'];
         case 'suspended':
           return ['suspended', 'in_progress'];
         case 'resolved':
@@ -193,7 +195,7 @@ export function ViewAssignedReport({
   );
 
   return (
-    <form className="contents" onSubmit={handleSubmit(handleConfirm)}>
+    <form className={cn('', className)} onSubmit={handleSubmit(handleConfirm)}>
       <ReportContentLayout
         report={report}
         showAnonymous={showAnonymous}
