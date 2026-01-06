@@ -58,6 +58,12 @@ describe('appConfig', () => {
           password: '',
           from: 'noreply@participium.local',
         },
+        telegram: {
+          botToken: '',
+          webhookUrl: '',
+          useWebhook: false,
+          maxReportsPerHour: 5,
+        },
       });
     });
   });

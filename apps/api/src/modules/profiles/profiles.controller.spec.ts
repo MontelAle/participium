@@ -1,10 +1,14 @@
 import { Profile } from '@entities';
 import { ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { TelegramAuthService } from '../telegram/telegram-auth.service';
 import { ProfilesController } from './profiles.controller';
 import { ProfilesService } from './profiles.service';
 
-jest.mock('nanoid', () => ({ nanoid: () => 'mocked-id' }));
+jest.mock('nanoid', () => ({
+  nanoid: () => 'mocked-id',
+  customAlphabet: () => () => '123456',
+}));
 
 const mockSessionGuard = { canActivate: jest.fn(() => true) };
 const mockRolesGuard = { canActivate: jest.fn(() => true) };
@@ -12,16 +16,24 @@ const mockRolesGuard = { canActivate: jest.fn(() => true) };
 describe('ProfilesController', () => {
   let controller: ProfilesController;
   let profilesService: jest.Mocked<ProfilesService>;
+  let telegramAuthService: jest.Mocked<TelegramAuthService>;
 
   beforeEach(async () => {
-    const mockProfilesServce: Partial<jest.Mocked<ProfilesService>> = {
+    const mockProfilesService: Partial<jest.Mocked<ProfilesService>> = {
       updateProfile: jest.fn(),
       findProfileById: jest.fn(),
     };
 
+    const mockTelegramAuthService: Partial<jest.Mocked<TelegramAuthService>> = {
+      linkAccount: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProfilesController],
-      providers: [{ provide: ProfilesService, useValue: mockProfilesServce }],
+      providers: [
+        { provide: ProfilesService, useValue: mockProfilesService },
+        { provide: TelegramAuthService, useValue: mockTelegramAuthService },
+      ],
     })
       .overrideGuard(require('../auth/guards/session-auth.guard').SessionGuard)
       .useValue(mockSessionGuard)
@@ -31,6 +43,7 @@ describe('ProfilesController', () => {
 
     controller = module.get<ProfilesController>(ProfilesController);
     profilesService = module.get(ProfilesService);
+    telegramAuthService = module.get(TelegramAuthService);
   });
 
   it('should be defined', () => {
@@ -147,6 +160,26 @@ describe('ProfilesController', () => {
 
       expect(profilesService.findProfileById).toHaveBeenCalledWith('user-1');
       expect(result).toEqual({ success: true, data: mockUser });
+    });
+  });
+
+  describe('linkTelegramAccount', () => {
+    it('should link telegram account successfully', async () => {
+      const req = { user: { id: 'user-1' } } as any;
+      const dto = { code: '123456' };
+
+      telegramAuthService.linkAccount.mockResolvedValue(undefined);
+
+      const result = await controller.linkTelegramAccount(req, dto);
+
+      expect(telegramAuthService.linkAccount).toHaveBeenCalledWith(
+        '123456',
+        'user-1',
+      );
+      expect(result).toEqual({
+        success: true,
+        message: 'Telegram account linked successfully',
+      });
     });
   });
 });
