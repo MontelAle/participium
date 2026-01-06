@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCategories } from '@/hooks/use-categories';
 import { useMunicipalityUsers } from '@/hooks/use-municipality-users';
 import { useUpdateReport } from '@/hooks/use-reports';
+import { cn } from '@/lib/utils';
 import type { UpdateReportDto, User } from '@/types';
 import { ReviewReportFormProps } from '@/types/ui';
 import { Tag, UserIcon } from 'lucide-react';
@@ -28,6 +29,7 @@ type FormData = {
 export function ReviewReportForm({
   report,
   onClose,
+  className,
 }: Readonly<ReviewReportFormProps>) {
   const { data: categories = [] } = useCategories();
   const { data: municipalityUsers = [] } = useMunicipalityUsers();
@@ -91,8 +93,8 @@ export function ReviewReportForm({
         data.action === 'reject'
           ? 'rejected'
           : data.action === 'start'
-          ? 'in_progress'
-          : 'assigned',
+            ? 'in_progress'
+            : 'assigned',
       categoryId: data.categoryId,
       ...(data.action === 'reject' && { explanation: explanation }),
       ...(data.action === 'accept' && {
@@ -260,7 +262,7 @@ export function ReviewReportForm({
   ) : null;
 
   return (
-    <form className="contents" onSubmit={handleSubmit(handleConfirm)}>
+    <form className={cn('', className)} onSubmit={handleSubmit(handleConfirm)}>
       <input type="hidden" {...register('categoryId')} />
 
       <ReportContentLayout

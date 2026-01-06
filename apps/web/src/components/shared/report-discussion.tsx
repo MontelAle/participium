@@ -19,10 +19,19 @@ import React, { useState } from 'react';
 
 interface ReportDiscussionProps {
   reportId: string;
+  showComments?: boolean;
+  showMessages?: boolean;
 }
 
-export function ReportDiscussion({ reportId }: ReportDiscussionProps) {
-  const [panel, setPanel] = useState<'comments' | 'messages'>('comments');
+export function ReportDiscussion({
+  reportId,
+  showComments = true,
+  showMessages = true,
+}: ReportDiscussionProps) {
+  const initialPanel: 'comments' | 'messages' = showComments
+    ? 'comments'
+    : 'messages';
+  const [panel, setPanel] = useState<'comments' | 'messages'>(initialPanel);
   const [text, setText] = useState('');
 
   const { data: comments, isLoading: commentsLoading } =
@@ -35,6 +44,9 @@ export function ReportDiscussion({ reportId }: ReportDiscussionProps) {
   const isPosting =
     panel === 'comments' ? postComment.isPending : postMessage.isPending;
   const loading = panel === 'comments' ? commentsLoading : messagesLoading;
+
+  // If neither section is enabled, render nothing
+  if (!showComments && !showMessages) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,14 +134,22 @@ export function ReportDiscussion({ reportId }: ReportDiscussionProps) {
         className="flex flex-col h-full"
       >
         <div className="px-4 pt-4 pb-2 bg-white border-b">
-          <TabsList className="grid w-full grid-cols-2 p-1">
-            <TabsTrigger value="comments" className="text-xs">
-              Internal Comments
-            </TabsTrigger>
-            <TabsTrigger value="messages" className="text-xs">
-              Citizen Messages
-            </TabsTrigger>
-          </TabsList>
+          {showComments && showMessages ? (
+            <TabsList className="grid w-full grid-cols-2 p-1">
+              <TabsTrigger value="comments" className="text-xs">
+                Internal Comments
+              </TabsTrigger>
+              <TabsTrigger value="messages" className="text-xs">
+                Citizen Messages
+              </TabsTrigger>
+            </TabsList>
+          ) : (
+            <div className="p-1">
+              <span className="text-sm font-medium">
+                {showComments ? 'Internal Comments' : 'Citizen Messages'}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-hidden">

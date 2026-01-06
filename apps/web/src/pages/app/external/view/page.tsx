@@ -1,5 +1,5 @@
 import { ViewAssignedExternalReport } from '@/components/external/view-report-form';
-import { ReportComments } from '@/components/shared/report-comments';
+import ReportDiscussion from '@/components/shared/report-discussion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useReport } from '@/hooks/use-reports';
@@ -76,15 +76,15 @@ function AssignReportsStatusViewPage() {
         </div>
 
         {/* Form */}
-        <div className="flex-1 pb-2">
+        <div className="grid md:grid-cols-4 gap-4">
           <ViewAssignedExternalReport
             report={report}
             showAnonymous={false}
             onClose={() => navigate(-1)}
+            className="md:col-span-3"
           />
+          <ReportDiscussion reportId={report.id} showMessages={false} />
         </div>
-
-        <ReportComments reportId={id!} />
       </div>
     </div>
   );
