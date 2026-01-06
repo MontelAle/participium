@@ -584,6 +584,40 @@ const REAL_REPORTS = [
     categoryName: 'Roads and Urban Furnishings',
     images: ['CrackedRoadSidewalk.jpg'],
   },
+  {
+    title: 'Vegetation and branches obstruct parking',
+    description:
+      'Along the parking area, near the wall, there is a lot of vegetation growing, partially invading the parking spaces. Several plants and branches make it difficult to park correctly, with the risk of cars being parked outside the white lines. Additionally, the overhanging branches further obstruct parking and could scratch the cars if care is not taken.',
+    address: 'Corso Orbassano, 400, Torino',
+    lat: 45.033112,
+    lng: 7.618795,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'VegetationObstructParking1.jpg', 
+      'VegetationObstructParking2.jpg',
+      'VegetationObstructParking3.jpg',
+    ],
+  },
+  {
+    title: 'Damaged pedestrian barrier on the ground',
+    description:
+      'A pedestrian barrier has been damaged and is now lying on the ground, it is destroyed.',
+    address: 'Largo Orbassano, Torino',
+    lat: 45.053186,
+    lng: 7.656118,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['DamagedPedestrianBarrier.jpg'],
+  },
+  {
+    title: 'Pedestrian crosswalks hard to see',
+    description:
+      'The pedestrian crosswalks are faded and difficult to see, especially at night or in low light conditions.',
+    address: 'Via Matera, 18 bis, Torino',
+    lat: 45.052926,
+    lng: 7.636216,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['PedestrianCrosswalksHardToSee.jpg'],
+  },
 ];
 
 // ============================================================================
