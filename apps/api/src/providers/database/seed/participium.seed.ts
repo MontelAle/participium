@@ -654,6 +654,88 @@ const REAL_REPORTS = [
       'DamagedBikeRack2.jpg',
     ],
   },
+  {
+    title: 'Tilted Traffic Sign',
+    description:
+      'The traffic sign, which should be horizontal, is tilted and now appears at an angle. This incorrect positioning could reduce the visibility of the sign.',
+    address: 'Via Cercenasco, 2e, Torino',
+    lat: 45.024680,
+    lng: 7.637716,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['TiltedTrafficSign.jpg'],
+  },
+  {
+    title: 'Sidewalk with dangerous cracks',
+    description:
+      'The sidewalk has several cracks and damaged areas that pose a danger to pedestrians. The uneven surfaces could cause trips or falls.',
+    address: 'Corso Unione Sovietica, 399, Torino',
+    lat: 45.024403,
+    lng: 7.637539,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'SidewalkWithDangerousCracks1.jpg',
+      'SidewalkWithDangerousCracks2.jpg',
+      'SidewalkWithDangerousCracks3.jpg',
+    ],
+  },
+  {
+    title: 'Missing section of speed bump',
+    description:
+      'A section of the speed bump is missing, creating a discontinuity in the pavement. This could lead to vehicles not slowing down adequately.',
+    address: 'Via Cercenasco, 4c, Torino',
+    lat: 45.024381,
+    lng: 7.638497,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'MissingSectionOfSpeedBump1.jpg',
+      'MissingSectionOfSpeedBump2.jpg',
+    ],
+  },
+  {
+    title: 'Cracked sidewalk',
+    description:
+      'The sidewalk is severely cracked and uneven in several areas, creating hazards for pedestrians.',
+    address: 'Via Monfalcone, 98, Torino',
+    lat: 45.051374,
+    lng: 7.638701,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'CrackedSidewalk.jpg',
+    ],
+  },
+  {
+    title: 'Broken benches',
+    description:
+      'The benches have missing planks and an unstable structure, making it difficult to sit safely. The current condition could cause falls or minor accidents for those using it. The benches require repairs to ensure safe use by citizens.',
+    address: 'Corso Francesco Ferrucci, 128a, Torino',
+    lat: 45.060094,
+    lng: 7.656462,
+    categoryName: 'Other',
+    images: [
+      'BrokenBench1.jpg',
+      'BrokenBench2.jpg',
+    ],
+  },
+  {
+    title: '',
+    description:
+      '',
+    address: ', Torino',
+    lat: 45.050587,
+    lng: 7.635093,
+    categoryName: '',
+    images: ['.jpg'],
+  },
+  {
+    title: '',
+    description:
+      '',
+    address: ', Torino',
+    lat: 45.050587,
+    lng: 7.635093,
+    categoryName: '',
+    images: ['.jpg'],
+  },
 ];
 
 // ============================================================================
