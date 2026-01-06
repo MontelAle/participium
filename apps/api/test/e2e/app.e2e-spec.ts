@@ -10,20 +10,55 @@ import {
   Report,
   Role,
   Session,
+  TelegramLinkCode,
   User,
   UserOfficeRole,
 } from '@entities';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Module } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { LocalAuthGuard } from '../../src/modules/auth/guards/local-auth.guard';
 import { RolesGuard } from '../../src/modules/auth/guards/roles.guard';
 import { SessionGuard } from '../../src/modules/auth/guards/session-auth.guard';
+import { TelegramAuthService } from '../../src/modules/telegram/telegram-auth.service';
+import { TelegramService } from '../../src/modules/telegram/telegram.service';
 import request = require('supertest');
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
+  customAlphabet: () => () => '123456',
 }));
+
+jest.mock('nestjs-telegraf', () => {
+  const mockDecorator = () => (target: any, key: string, descriptor: any) =>
+    descriptor;
+  const mockParamDecorator =
+    () => (target: any, key: string, index: number) => {};
+
+  return {
+    TelegrafModule: {
+      forRootAsync: jest
+        .fn()
+        .mockReturnValue({ module: class FakeTelegraf {} }),
+    },
+    InjectBot: () => jest.fn(),
+    Ctx: mockParamDecorator,
+    Message: mockParamDecorator,
+    Sender: mockParamDecorator,
+
+    Update: () => jest.fn(),
+    Scene: () => jest.fn(),
+
+    SceneEnter: mockDecorator,
+    SceneLeave: mockDecorator,
+    Start: mockDecorator,
+    Help: mockDecorator,
+    Command: mockDecorator,
+    Action: mockDecorator,
+    On: mockDecorator,
+    Hears: mockDecorator,
+  };
+});
 
 const createMockRepository = (data: any[] = []) => {
   const repo: any = {
@@ -243,6 +278,28 @@ const createMockRepository = (data: any[] = []) => {
   return repo;
 };
 
+const mockTelegramAuthService = {
+  linkAccount: jest.fn().mockResolvedValue(undefined),
+  generateLinkCode: jest.fn().mockResolvedValue('123456'),
+  getLinkedUser: jest.fn(),
+  isLinked: jest.fn().mockResolvedValue(false),
+  getUserId: jest.fn(),
+};
+
+const mockTelegramService = {
+  createReport: jest.fn(),
+  getCategories: jest.fn(),
+};
+
+@Module({
+  providers: [
+    { provide: TelegramAuthService, useValue: mockTelegramAuthService },
+    { provide: TelegramService, useValue: mockTelegramService },
+  ],
+  exports: [TelegramAuthService, TelegramService],
+})
+class MockTelegramModule {}
+
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let AppModule: any;
@@ -262,6 +319,8 @@ describe('AppController (e2e)', () => {
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
+    process.env.TELEGRAM_BOT_TOKEN = 'mock_bot_token_for_e2e';
+
     const importedModule = await import('./../../src/app.module');
     AppModule = importedModule.AppModule;
 
@@ -276,7 +335,7 @@ describe('AppController (e2e)', () => {
       },
       {
         id: 'role_5',
-        name: 'tech_officer', // Fixed: was 'technical_officer', corrected to match actual entity name
+        name: 'tech_officer',
         label: 'Technical Officer',
         isMunicipal: true,
       },
@@ -408,7 +467,7 @@ describe('AppController (e2e)', () => {
         isExternal: true,
       },
       {
-        id: 'office_3', // Added for multi-role assignment tests
+        id: 'office_3',
         name: 'urban_planning',
         label: 'Urban Planning',
         isExternal: false,
@@ -563,6 +622,9 @@ describe('AppController (e2e)', () => {
     const { MinioProvider } = await import(
       './../../src/providers/minio/minio.provider'
     );
+    const { TelegramModule } = await import(
+      './../../src/modules/telegram/telegram.module'
+    );
 
     const mockMinioProvider = {
       uploadFile: jest
@@ -637,7 +699,10 @@ describe('AppController (e2e)', () => {
 
     testingModuleBuilder
       .overrideModule(DatabaseModule)
-      .useModule(class MockDatabaseModule {});
+      .useModule(class MockDatabaseModule {})
+      // Override del modulo reale con quello finto
+      .overrideModule(TelegramModule)
+      .useModule(MockTelegramModule);
 
     testingModuleBuilder
       .overrideProvider(getRepositoryToken(Session))
@@ -670,16 +735,16 @@ describe('AppController (e2e)', () => {
             userId: 'officer_1',
             officeId: 'office_1',
             roleId: 'role_5',
-            role: mockRoles[3], // tech_officer role (index 3, not 4!)
-            office: mockOffices[0], // Maintenance office
+            role: mockRoles[3],
+            office: mockOffices[0],
           },
           {
             id: 'uor_2',
             userId: 'officer_1',
             officeId: 'office_2',
             roleId: 'role_5',
-            role: mockRoles[3], // tech_officer role (index 3, not 4!)
-            office: mockOffices[1], // External Contractors office
+            role: mockRoles[3],
+            office: mockOffices[1],
           },
         ]),
       )
@@ -708,7 +773,10 @@ describe('AppController (e2e)', () => {
         ]),
       )
       .overrideProvider(MinioProvider)
-      .useValue(mockMinioProvider);
+      .useValue(mockMinioProvider)
+      // MOCK del repository TelegramLinkCode necessario per Auth/Profiles anche se il modulo Telegram è finto
+      .overrideProvider(getRepositoryToken(TelegramLinkCode))
+      .useValue(createMockRepository([]));
 
     testingModuleBuilder.overrideGuard(LocalAuthGuard).useValue({
       canActivate: (context: any) => {
@@ -795,7 +863,9 @@ describe('AppController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   // ============================================================================
@@ -1081,7 +1151,7 @@ describe('AppController (e2e)', () => {
     expect(res.body.data.roleId).toBe('role_5');
   });
 
-  // TODO: Fix mock repository issue - test passes with real database but fails with mocked repositories  
+  // TODO: Fix mock repository issue - test passes with real database but fails with mocked repositories
   it.skip('POST /users/municipality/user/:id/office-roles with duplicate assignment returns 409', async () => {
     await request(app.getHttpServer())
       .post('/users/municipality/user/officer_1/office-roles')
@@ -1116,7 +1186,9 @@ describe('AppController (e2e)', () => {
 
   it('DELETE /users/municipality/user/:id/office-roles/:officeId with non-existent assignment returns 404', async () => {
     await request(app.getHttpServer())
-      .delete('/users/municipality/user/officer_1/office-roles/nonexistent_office')
+      .delete(
+        '/users/municipality/user/officer_1/office-roles/nonexistent_office',
+      )
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(404);
   });
