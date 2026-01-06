@@ -44,6 +44,8 @@ export type Point = {
 export type Profile = {
   id: string;
   telegramUsername?: string | null;
+  telegramId?: string | null;
+  telegramLinkedAt?: Date | null;
   emailNotificationsEnabled: boolean;
   profilePictureUrl?: string | null;
   userId: string;

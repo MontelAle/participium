@@ -16,14 +16,17 @@ import { cn } from '@/lib/utils';
 import { AuthFormProps } from '@/types/ui';
 import { Eye, EyeOff, MailIcon, UserIcon } from 'lucide-react';
 import { FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export function AuthForm({ mode, className, ...props }: AuthFormProps) {
   const { login, register, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isLogin = mode === 'login';
   const [showPassword, setShowPassword] = useState(false);
+
+  const returnTo = searchParams.get('returnTo');
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,7 +38,9 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
       });
       if (result.success) {
         toast.success('Login successful! Welcome back!');
-        if (result.data?.role.name === 'user') {
+        if (returnTo) {
+          navigate(decodeURIComponent(returnTo));
+        } else if (result.data?.role.name === 'user') {
           navigate('/reports/map');
         } else {
           navigate('/app/dashboard');
