@@ -42,4 +42,13 @@ export default () => ({
     password: process.env.EMAIL_PASSWORD || '',
     from: process.env.EMAIL_FROM || 'noreply@participium.local',
   },
+  telegram: {
+    botToken: process.env.TELEGRAM_BOT_TOKEN || '',
+    webhookUrl: process.env.TELEGRAM_WEBHOOK_URL || '',
+    useWebhook: process.env.TELEGRAM_USE_WEBHOOK === 'true',
+    maxReportsPerHour: Number.parseInt(
+      process.env.TELEGRAM_MAX_REPORTS_PER_HOUR || '5',
+      10,
+    ),
+  },
 });
