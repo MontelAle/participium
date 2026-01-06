@@ -82,7 +82,7 @@ export function Navbar() {
                       onClick={() => markRead.mutate(n.id)}
                       className={`flex flex-col items-start gap-1 ${n.read ? 'opacity-60' : ''}`}
                     >
-                      <div className="text-sm font-medium truncate">
+                      <div className="text-sm font-medium whitespace-normal break-all">
                         {n.message}
                       </div>
                       <div className="text-xs text-muted-foreground">
