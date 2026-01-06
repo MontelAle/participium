@@ -48,7 +48,7 @@ export function MapControls({
                 Report Status
               </p>
               {Object.values(STATUS_COLORS)
-                .filter((s) => s.label !== 'Pending')
+                .filter((s) => !['Pending', 'Rejected'].includes(s.label))
                 .map((s) => (
                   <div key={s.label} className="flex items-center gap-2">
                     <span
