@@ -15,7 +15,7 @@ import {
   useUnreadNotifications,
 } from '@/hooks/use-notifications';
 import { useProfile } from '@/hooks/use-profile';
-import { Bell, ChevronsUpDown, LogOut } from 'lucide-react';
+import { Bell, ChevronsUpDown, LinkIcon, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export function Navbar() {
@@ -88,6 +88,14 @@ export function Navbar() {
                       <div className="text-xs text-muted-foreground">
                         {new Date(n.createdAt).toLocaleString()}
                       </div>
+                      <Link
+                        to={n.reportId ? `/reports/view/${n.reportId}` : '#'}
+                        className="mt-1"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <LinkIcon className="size-4 text-muted-foreground mt-1" />
+                      </Link>
                     </DropdownMenuItem>
                   ))
                 ) : (
