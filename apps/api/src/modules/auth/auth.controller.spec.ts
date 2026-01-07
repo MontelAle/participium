@@ -1,11 +1,15 @@
 import { Profile, Session } from '@entities';
-import { UnauthorizedException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { LoginDto, RegisterDto, VerifyEmailDto } from './dto/auth.dto';
 import { SessionGuard } from './guards/session-auth.guard';
 
 jest.mock('nanoid', () => ({
@@ -16,7 +20,12 @@ describe('AuthController', () => {
   let controller: AuthController;
   let authService: AuthService;
 
-  const mockUser = { id: 1, username: 'testuser' };
+  const mockUser = {
+    id: 1,
+    username: 'testuser',
+    email: 'test@test.com',
+    isEmailVerified: true,
+  };
   const mockSession = { id: 123, userId: 1 };
   const mockToken = 'session-token';
   const mockCookie = {
@@ -45,6 +54,7 @@ describe('AuthController', () => {
             refreshSession: jest
               .fn()
               .mockResolvedValue({ session: mockSession }),
+            verifyEmail: jest.fn(),
           },
         },
         {
@@ -134,10 +144,46 @@ describe('AuthController', () => {
       expect(authService.login).not.toHaveBeenCalled();
       expect(res.cookie).not.toHaveBeenCalled();
     });
+
+    it('should throw HttpException when email is not verified', async () => {
+      const loginDto: LoginDto = {
+        username: 'testuser',
+        password: 'password',
+      };
+
+      const unverifiedUser = { ...mockUser, isEmailVerified: false };
+
+      const req: any = {
+        user: unverifiedUser,
+        ip: '127.0.0.1',
+        headers: { 'user-agent': 'jest' },
+      };
+      const res: any = { cookie: jest.fn() };
+
+      await expect(controller.login(loginDto, req, res)).rejects.toThrow(
+        HttpException,
+      );
+
+      try {
+        await controller.login(loginDto, req, res);
+        fail('Should have thrown an HttpException');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+
+        const httpError = error as HttpException;
+
+        expect(httpError.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+        expect(httpError.getResponse()).toEqual({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Email not verified. Please verify your email to continue.',
+          email: unverifiedUser.email,
+        });
+      }
+    });
   });
 
   describe('create (register)', () => {
-    it('should call authService.register, login, getCookieOptions, then set cookie', async () => {
+    it('should call authService.register and return success message', async () => {
       const registerDto: RegisterDto = {
         email: 'alice@example.com',
         username: 'alice',
@@ -145,17 +191,47 @@ describe('AuthController', () => {
         lastName: 'smith',
         password: 'password',
       };
+
+      const expectedResponse = {
+        message:
+          'Registration successful. Please check your email for the verification code.',
+      };
+      (authService.register as jest.Mock).mockResolvedValueOnce(
+        expectedResponse,
+      );
+
+      const result = await controller.create(registerDto);
+
+      expect(authService.register).toHaveBeenCalledWith(registerDto);
+      expect(authService.login).not.toHaveBeenCalled();
+      expect(result).toEqual(expectedResponse);
+    });
+  });
+
+  describe('verifyEmail', () => {
+    it('should verify email, login user, set cookie and return data', async () => {
+      const verifyDto: VerifyEmailDto = {
+        email: 'test@test.com',
+        code: '123456',
+      };
       const req: any = {
         ip: '127.0.0.1',
         headers: { 'user-agent': 'jest' },
       };
       const res: any = { cookie: jest.fn() };
 
+      (authService.verifyEmail as jest.Mock).mockResolvedValueOnce({
+        user: mockUser,
+      });
+
       (authService.login as jest.Mock).mockResolvedValueOnce(mockLoginResult);
 
-      const result = await controller.create(registerDto, req, res);
+      const result = await controller.verifyEmail(verifyDto, req, res);
 
-      expect(authService.register).toHaveBeenCalledWith(registerDto);
+      expect(authService.verifyEmail).toHaveBeenCalledWith(
+        verifyDto.email,
+        verifyDto.code,
+      );
       expect(authService.login).toHaveBeenCalledWith(
         mockUser,
         req.ip,
@@ -210,12 +286,6 @@ describe('AuthController', () => {
         expiresAt: new Date(),
       };
       const mockUser = { id: 1, username: 'testuser' };
-      const mockCookie = {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 1000,
-      };
       const req: any = {
         user: mockUser,
         session: mockSession,

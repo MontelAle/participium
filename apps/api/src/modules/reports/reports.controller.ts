@@ -1,3 +1,4 @@
+import { Comment, Message } from '@entities';
 import {
   BadRequestException,
   Body,
@@ -16,7 +17,7 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
-import { RequestWithUserSession } from 'src/common/types/request-with-user-session.type';
+import { RequestWithUserSession } from '../../common/types/request-with-user-session.type';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { SessionGuard } from '../auth/guards/session-auth.guard';
@@ -27,6 +28,8 @@ import {
   MIN_IMAGES,
   REPORT_ERROR_MESSAGES,
 } from './constants/error-messages';
+import { CreateCommentDto } from './dto/create-comment.dto';
+import { CreateMessageDto } from './dto/create-message.dto';
 import {
   CreateReportDto,
   DashboardStatsResponseDto,
@@ -42,6 +45,75 @@ import { ReportsService } from './reports.service';
 @ApiCookieAuth('session_token')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
+  /**
+   * Retrieves all comments for a report by its ID.
+   */
+  @Get(':id/comments')
+  @UseGuards(SessionGuard, RolesGuard)
+  @Roles('pr_officer', 'tech_officer', 'external_maintainer')
+  async getComments(
+    @Param('id') id: string,
+    @Request() req: RequestWithUserSession,
+  ): Promise<{ success: boolean; data: Comment[] }> {
+    const comments = await this.reportsService.getCommentsForReport(
+      id,
+      req.user,
+    );
+    return { success: true, data: comments };
+  }
+
+  /**
+   * Retrieves all messages (chat) for a report by its ID.
+   */
+  @Get(':id/messages')
+  @UseGuards(SessionGuard)
+  async getMessages(
+    @Param('id') id: string,
+    @Request() req: RequestWithUserSession,
+  ): Promise<{ success: boolean; data: Message[] }> {
+    const messages = await this.reportsService.getMessagesForReport(
+      id,
+      req.user,
+    );
+    return { success: true, data: messages };
+  }
+
+  /**
+   * Creates a new comment for a report by its ID.
+   */
+  @Post(':id/comments')
+  @UseGuards(SessionGuard, RolesGuard)
+  @Roles('pr_officer', 'tech_officer', 'external_maintainer')
+  async addComment(
+    @Param('id') id: string,
+    @Body() createCommentDto: CreateCommentDto,
+    @Request() req: RequestWithUserSession,
+  ): Promise<{ success: boolean; data: Comment }> {
+    const comment = await this.reportsService.addCommentToReport(
+      id,
+      req.user.id,
+      createCommentDto,
+    );
+    return { success: true, data: comment };
+  }
+
+  /**
+   * Creates a new message (chat) for a report by its ID.
+   */
+  @Post(':id/messages')
+  @UseGuards(SessionGuard)
+  async addMessage(
+    @Param('id') id: string,
+    @Body() createMessageDto: CreateMessageDto,
+    @Request() req: RequestWithUserSession,
+  ): Promise<{ success: boolean; data: Message }> {
+    const message = await this.reportsService.addMessageToReport(
+      id,
+      req.user.id,
+      createMessageDto,
+    );
+    return { success: true, data: message };
+  }
 
   /**
    * Creates a new report.

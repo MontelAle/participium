@@ -57,7 +57,6 @@ export type NominatimSearchResult = {
 export type StatusMarker = Marker & { status?: string };
 
 export type ProfileFormValues = {
-  telegramUsername?: string;
   emailNotificationsEnabled: boolean;
   profilePicture?: File | null;
   firstName: string;

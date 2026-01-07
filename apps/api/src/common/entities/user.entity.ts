@@ -4,11 +4,13 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Office } from './office.entity';
 import { Role } from './role.entity';
+import { UserOfficeRole } from './user-office-role.entity';
 
 @Entity('user')
 export class User {
@@ -27,19 +29,49 @@ export class User {
   @Column({ nullable: false })
   lastName: string;
 
+  /**
+   * @deprecated Use officeRoles relation instead for multi-role support
+   * Kept for backward compatibility during transition period
+   */
   @Column({ nullable: false })
   roleId: string;
 
+  /**
+   * @deprecated Use officeRoles relation instead for multi-role support
+   * Kept for backward compatibility during transition period
+   */
   @ManyToOne(() => Role, { nullable: false })
   @JoinColumn({ name: 'roleId' })
   role: Role;
 
+  /**
+   * @deprecated Use officeRoles relation instead for multi-role support
+   * Kept for backward compatibility during transition period
+   */
   @Column({ nullable: true })
   officeId: string;
 
+  /**
+   * @deprecated Use officeRoles relation instead for multi-role support
+   * Kept for backward compatibility during transition period
+   */
   @ManyToOne(() => Office, { nullable: true })
   @JoinColumn({ name: 'officeId' })
   office: Office;
+
+  @OneToMany(() => UserOfficeRole, (userOfficeRole) => userOfficeRole.user, {
+    cascade: true,
+  })
+  officeRoles: UserOfficeRole[];
+
+  @Column({ nullable: true })
+  emailVerificationCode: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  emailVerificationCodeExpiry: Date | null;
+
+  @Column({ default: false })
+  isEmailVerified: boolean;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;

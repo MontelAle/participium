@@ -3,6 +3,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   CreateMunicipalityUserDto,
+  OfficeRoleAssignmentDto,
   UpdateMunicipalityUserDto,
 } from './dto/municipality-users.dto';
 import { UsersController } from './users.controller';
@@ -25,6 +26,9 @@ describe('UsersController', () => {
       deleteMunicipalityUserById: jest.fn(),
       updateMunicipalityUserById: jest.fn(),
       findExternalMaintainers: jest.fn(),
+      getUserOfficeRoles: jest.fn(),
+      assignUserToOffice: jest.fn(),
+      removeUserFromOffice: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -68,7 +72,7 @@ describe('UsersController', () => {
           label: 'Municipal PR Officer',
           isMunicipal: true,
         },
-      };
+      } as any;
 
       usersService.findMunicipalityUserById.mockResolvedValue(mockUser as User);
 
@@ -237,6 +241,76 @@ describe('UsersController', () => {
         'category-1',
       );
       expect(result).toEqual({ success: true, data: mockMaintainers });
+    });
+  });
+
+  describe('getUserOfficeRoles', () => {
+    it('should return office roles assignments for a user', async () => {
+      const mockAssignments = [
+        {
+          id: 'assign-1',
+          role: { name: 'role1' },
+          office: { name: 'office1' },
+        },
+      ];
+
+      usersService.getUserOfficeRoles.mockResolvedValue(mockAssignments as any);
+
+      const result = await controller.getUserOfficeRoles('u1');
+
+      expect(usersService.getUserOfficeRoles).toHaveBeenCalledWith('u1');
+      expect(result).toEqual({ success: true, data: mockAssignments });
+    });
+  });
+
+  describe('assignUserToOffice', () => {
+    it('should assign user to office and return the assignment wrapped in array', async () => {
+      const dto: OfficeRoleAssignmentDto = {
+        officeId: 'off-1',
+        roleId: 'role-1',
+      };
+
+      const mockAssignment = {
+        id: 'assign-1',
+        userId: 'u1',
+        officeId: 'off-1',
+        roleId: 'role-1',
+      };
+
+      usersService.assignUserToOffice.mockResolvedValue(mockAssignment as any);
+
+      const result = await controller.assignUserToOffice('u1', dto);
+
+      expect(usersService.assignUserToOffice).toHaveBeenCalledWith(
+        'u1',
+        dto.officeId,
+        dto.roleId,
+      );
+      expect(result).toEqual({ success: true, data: [mockAssignment] });
+    });
+  });
+
+  describe('removeUserFromOffice', () => {
+    it('should remove user from office and return user id', async () => {
+      usersService.removeUserFromOffice.mockResolvedValue(undefined);
+
+      const result = await controller.removeUserFromOffice('u1', 'off-1');
+
+      expect(usersService.removeUserFromOffice).toHaveBeenCalledWith(
+        'u1',
+        'off-1',
+      );
+      expect(result).toEqual({ success: true, data: { id: 'u1' } });
+    });
+
+    it('should throw if service throws NotFoundException', async () => {
+      usersService.removeUserFromOffice.mockRejectedValue(
+        new NotFoundException('Assignment not found'),
+      );
+
+      await expect(
+        controller.removeUserFromOffice('u1', 'off-invalid'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

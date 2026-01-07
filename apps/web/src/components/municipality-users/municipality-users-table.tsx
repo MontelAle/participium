@@ -3,14 +3,14 @@ import { Button } from '@/components/ui/button';
 import {
   TableBody,
   TableCell,
-  TableColumnHeader,
+  TableHead,
   TableHeader,
   TableHeaderGroup,
   TableProvider,
   TableRow,
 } from '@/components/ui/shadcn-io/table';
 import { cn, prettifyRole } from '@/lib/utils';
-import type { Office, Role, User } from '@/types';
+import type { Office, Role, User, UserOfficeRole } from '@/types';
 import { MunicipalityUsersTableProps } from '@/types/ui';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Pencil, Search } from 'lucide-react';
@@ -62,12 +62,37 @@ const RoleCell = ({ role }: Readonly<{ role: Role | undefined }>) => {
   );
 };
 
-const OfficeCell = ({ office }: Readonly<{ office: Office | undefined }>) => {
-  const label = office?.label || '-';
+const OfficeCell = ({
+  officeRoles,
+  office,
+}: Readonly<{
+  officeRoles: UserOfficeRole[] | undefined;
+  office: Office | undefined;
+}>) => {
+  const hasOfficeRoles = officeRoles && officeRoles.length > 0;
+  const hasSingleOffice = !hasOfficeRoles && office;
+
+  if (!hasOfficeRoles && !hasSingleOffice) {
+    return <span className="text-sm text-muted-foreground">-</span>;
+  }
+
   return (
-    <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
-      {label}
-    </span>
+    <div className="flex flex-wrap gap-1.5">
+      {hasOfficeRoles
+        ? officeRoles.map((officeRole) => (
+            <span
+              key={officeRole.id}
+              className="inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap"
+            >
+              {officeRole.office.label}
+            </span>
+          ))
+        : hasSingleOffice && (
+            <span className="inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">
+              {office.label}
+            </span>
+          )}
+    </div>
   );
 };
 
@@ -116,9 +141,14 @@ export function MunicipalityUsersTable({
         cell: ({ row }) => <RoleCell role={row.original.role} />,
       },
       {
-        accessorKey: 'office',
-        header: 'Office',
-        cell: ({ row }) => <OfficeCell office={row.original.office} />,
+        accessorKey: 'officeRoles',
+        header: 'Offices',
+        cell: ({ row }) => (
+          <OfficeCell
+            officeRoles={row.original.officeRoles}
+            office={row.original.office}
+          />
+        ),
       },
       {
         id: 'operations',
@@ -154,13 +184,8 @@ export function MunicipalityUsersTable({
                 className="bg-muted/40 hover:bg-muted/40 border-b"
               >
                 {({ header }) => (
-                  <TableColumnHeader
-                    column={header.column}
-                    title={
-                      typeof header.column.columnDef.header === 'function'
-                        ? header.column.columnDef.header(header.getContext())
-                        : header.column.columnDef.header
-                    }
+                  <TableHead
+                    header={header}
                     className="h-12 text-sm font-semibold text-muted-foreground px-4 first:pl-6"
                   />
                 )}

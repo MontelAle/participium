@@ -14,12 +14,14 @@ import ProfilePage from '@/pages/profile/page';
 import CreateReportPage from '@/pages/reports/create/page';
 import MapPage from '@/pages/reports/map/page';
 import ReportDetailsPage from '@/pages/reports/view/page';
+import TelegramSettingsPage from '@/pages/settings/telegram/page';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import AssignedReportsPage from './pages/app/assigned-reports/page';
 import AssignedReportsViewPage from './pages/app/assigned-reports/view/page';
 import ExternalPage from './pages/app/external/page';
 import AssignReportsStatusViewPage from './pages/app/external/view/page';
+import CodePage from './pages/auth/code/page';
 
 const App = () => {
   return (
@@ -64,6 +66,15 @@ const App = () => {
               element={
                 <CitizenGuard>
                   <ProfilePage />
+                </CitizenGuard>
+              }
+            />
+
+            <Route
+              path="/settings/telegram"
+              element={
+                <CitizenGuard>
+                  <TelegramSettingsPage />
                 </CitizenGuard>
               }
             />
@@ -151,6 +162,7 @@ const App = () => {
           </Route>
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/auth/register" element={<RegistrationPage />} />
+          <Route path="/auth/verify" element={<CodePage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

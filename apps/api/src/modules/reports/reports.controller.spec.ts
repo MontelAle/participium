@@ -57,11 +57,16 @@ describe('ReportsController', () => {
     const mockReportsService: Partial<jest.Mocked<ReportsService>> = {
       create: jest.fn(),
       findAll: jest.fn(),
+      findAllPublic: jest.fn(),
       findOne: jest.fn(),
       findNearby: jest.fn(),
       update: jest.fn(),
       findByUserId: jest.fn(),
       getDashboardStats: jest.fn(),
+      getCommentsForReport: jest.fn(),
+      getMessagesForReport: jest.fn(),
+      addCommentToReport: jest.fn(),
+      addMessageToReport: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -351,6 +356,30 @@ describe('ReportsController', () => {
     });
   });
 
+  describe('findAllPublic', () => {
+    it('should return public reports without filters', async () => {
+      const mockReports = [mockReport];
+      reportsService.findAllPublic.mockResolvedValue(mockReports as Report[]);
+
+      const result = await controller.findAllPublic({});
+
+      expect(reportsService.findAllPublic).toHaveBeenCalledWith({});
+      expect(result).toEqual({ success: true, data: mockReports });
+    });
+
+    it('should return public reports with filters', async () => {
+      const filters: FilterReportsDto = { categoryId: 'cat-123' };
+      const mockReports = [mockReport];
+
+      reportsService.findAllPublic.mockResolvedValue(mockReports as Report[]);
+
+      const result = await controller.findAllPublic(filters);
+
+      expect(reportsService.findAllPublic).toHaveBeenCalledWith(filters);
+      expect(result).toEqual({ success: true, data: mockReports });
+    });
+  });
+
   describe('findNearby', () => {
     it('should return nearby reports with default radius', async () => {
       const mockNearbyReports = [
@@ -528,6 +557,122 @@ describe('ReportsController', () => {
 
       expect(reportsService.getDashboardStats).toHaveBeenCalledWith(mockUser);
       expect(result).toEqual({ success: true, data: mockStats });
+    });
+  });
+
+  describe('getCommentsForReport', () => {
+    it('should return comments for a report', async () => {
+      const mockComments = [
+        {
+          id: 'c1',
+          content: 'First',
+          reportId: 'report-123',
+          user: mockUser,
+          createdAt: new Date('2023-01-01'),
+        },
+        {
+          id: 'c2',
+          content: 'Second',
+          reportId: 'report-123',
+          user: mockUser,
+          createdAt: new Date('2023-01-02'),
+        },
+      ];
+      reportsService.getCommentsForReport.mockResolvedValue(
+        mockComments as any,
+      );
+
+      const result = await controller.getComments('report-123', mockReq);
+
+      expect(reportsService.getCommentsForReport).toHaveBeenCalledWith(
+        'report-123',
+        mockUser,
+      );
+      expect(result).toEqual({ success: true, data: mockComments });
+    });
+  });
+
+  describe('getMessagesForReport', () => {
+    it('should return messages for a report', async () => {
+      const mockMessages = [
+        {
+          id: 'm1',
+          content: 'Hello',
+          reportId: 'report-123',
+          user: mockUser,
+          createdAt: new Date('2023-01-01'),
+        },
+        {
+          id: 'm2',
+          content: 'Reply',
+          reportId: 'report-123',
+          user: mockUser,
+          createdAt: new Date('2023-01-02'),
+        },
+      ];
+      reportsService.getMessagesForReport.mockResolvedValue(
+        mockMessages as any,
+      );
+
+      const result = await controller.getMessages('report-123', mockReq);
+
+      expect(reportsService.getMessagesForReport).toHaveBeenCalledWith(
+        'report-123',
+        mockUser,
+      );
+      expect(result).toEqual({ success: true, data: mockMessages });
+    });
+  });
+
+  describe('addMessageToReport', () => {
+    it('should add a message to a report', async () => {
+      const createMessageDto = { content: 'A new message' } as any;
+      const mockMessage = {
+        id: 'm3',
+        ...createMessageDto,
+        reportId: 'report-123',
+        userId: 'user-123',
+      } as any;
+      reportsService.addMessageToReport.mockResolvedValue(mockMessage as any);
+
+      const result = await controller.addMessage(
+        'report-123',
+        createMessageDto,
+        mockReq,
+      );
+
+      expect(reportsService.addMessageToReport).toHaveBeenCalledWith(
+        'report-123',
+        'user-123',
+        createMessageDto,
+      );
+      expect(result).toEqual({ success: true, data: mockMessage });
+    });
+  });
+
+  describe('addCommentToReport', () => {
+    it('should add a comment to a report', async () => {
+      const createCommentDto = { content: 'A new comment' };
+      const mockComment = {
+        id: 'c1',
+        ...createCommentDto,
+        reportId: 'report-123',
+        userId: 'user-123',
+      };
+      reportsService.addCommentToReport.mockResolvedValue(mockComment as any);
+
+      const result = await controller.addComment(
+        'report-123',
+        createCommentDto,
+        mockReq,
+      );
+
+      expect(reportsService.addCommentToReport).toHaveBeenCalledWith(
+        'report-123',
+        'user-123',
+        createCommentDto,
+      );
+      expect(result).toEqual({ success: true, data: mockComment });
     });
   });
 });

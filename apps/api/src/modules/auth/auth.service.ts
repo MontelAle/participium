@@ -7,7 +7,9 @@ import { instanceToPlain } from 'class-transformer';
 import { nanoid } from 'nanoid';
 import { createHash } from 'node:crypto';
 import { Repository } from 'typeorm';
+import { EmailService } from '../email/email.service';
 import { RegisterDto } from './dto/auth.dto';
+import { OtpService } from './otp.service';
 
 @Injectable()
 export class AuthService {
@@ -28,13 +30,21 @@ export class AuthService {
     private readonly profileRepository: Repository<Profile>,
 
     private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
+    private readonly otpService: OtpService,
   ) {}
 
   async validateUser(username: string, password: string) {
-    const account = await this.accountRepository.findOne({
-      where: { providerId: 'local', accountId: username },
-      relations: ['user', 'user.role', 'user.office'],
-    });
+    const account = await this.accountRepository
+      .createQueryBuilder('account')
+      .leftJoinAndSelect('account.user', 'user')
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('user.office', 'office')
+      .where('account.providerId = :providerId', { providerId: 'local' })
+      .andWhere('(account.accountId = :identifier OR user.email = :identifier)', {
+        identifier: username,
+      })
+      .getOne();
 
     if (!account) return null;
 
@@ -59,50 +69,99 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const verificationCode = this.otpService.generateVerificationCode();
+    const codeExpiry = this.otpService.generateCodeExpiry();
 
-    return this.userRepository.manager.transaction(async (manager) => {
-      const userRole = await manager
-        .getRepository(Role)
-        .findOne({ where: { name: 'user' } });
+    const result = await this.userRepository.manager.transaction(
+      async (manager) => {
+        const userRole = await manager
+          .getRepository(Role)
+          .findOne({ where: { name: 'user' } });
 
-      if (!userRole) {
-        throw new ConflictException(
-          'Default role "user" not found. Contact support.',
-        );
-      }
+        if (!userRole) {
+          throw new ConflictException(
+            'Default role "user" not found. Contact support.',
+          );
+        }
 
-      const newUser = manager.getRepository(User).create({
-        id: nanoid(),
-        email,
-        username,
-        firstName,
-        lastName,
-        role: userRole,
-      });
+        const newUser = manager.getRepository(User).create({
+          id: nanoid(),
+          email,
+          username,
+          firstName,
+          lastName,
+          role: userRole,
+          emailVerificationCode: verificationCode,
+          emailVerificationCodeExpiry: codeExpiry,
+          isEmailVerified: false,
+        });
 
-      const savedUser = await manager.getRepository(User).save(newUser);
+        const savedUser = await manager.getRepository(User).save(newUser);
 
-      const profile = manager.getRepository(Profile).create({
-        id: nanoid(),
-        userId: savedUser.id,
-        user: savedUser,
-      });
+        const profile = manager.getRepository(Profile).create({
+          id: nanoid(),
+          userId: savedUser.id,
+          user: savedUser,
+        });
 
-      await manager.getRepository(Profile).save(profile);
+        await manager.getRepository(Profile).save(profile);
 
-      const newAccount = manager.getRepository(Account).create({
-        id: nanoid(),
-        accountId: username,
-        providerId: 'local',
-        userId: savedUser.id,
-        password: hashedPassword,
-        user: savedUser,
-      });
+        const newAccount = manager.getRepository(Account).create({
+          id: nanoid(),
+          accountId: username,
+          providerId: 'local',
+          userId: savedUser.id,
+          password: hashedPassword,
+          user: savedUser,
+        });
 
-      await manager.getRepository(Account).save(newAccount);
+        await manager.getRepository(Account).save(newAccount);
 
-      return { user: savedUser };
+        return { user: savedUser };
+      },
+    );
+
+    await this.emailService.sendVerificationEmail(email, verificationCode);
+
+    return {
+      message:
+        'Registration successful. Please check your email for the verification code.',
+    };
+  }
+
+  async verifyEmail(email: string, code: string) {
+    const user = await this.userRepository.findOne({
+      where: { email },
+      relations: ['role', 'office'],
     });
+
+    if (!user) {
+      throw new ConflictException('User not found');
+    }
+
+    if (user.isEmailVerified) {
+      throw new ConflictException('Email already verified');
+    }
+
+    if (!user.emailVerificationCode || !user.emailVerificationCodeExpiry) {
+      throw new ConflictException('No verification code found');
+    }
+
+    if (this.otpService.isCodeExpired(user.emailVerificationCodeExpiry)) {
+      throw new ConflictException('Verification code has expired');
+    }
+
+    if (user.emailVerificationCode !== code) {
+      throw new ConflictException('Invalid verification code');
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationCode = null;
+    user.emailVerificationCodeExpiry = null;
+
+    await this.userRepository.save(user);
+
+    return { user };
   }
 
   getCookieOptions() {

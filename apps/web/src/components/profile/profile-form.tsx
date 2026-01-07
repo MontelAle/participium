@@ -7,9 +7,16 @@ import {
   InputGroupInput,
 } from '@/components/ui/input-group';
 import type { ProfileFormProps, ProfileFormValues } from '@/types';
-import { Image as ImageIcon, MailIcon, Send, UserIcon } from 'lucide-react';
+import {
+  ExternalLink,
+  Image as ImageIcon,
+  MailIcon,
+  Send,
+  UserIcon,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export function ProfileForm({
@@ -17,10 +24,10 @@ export function ProfileForm({
   user,
   updateProfile,
 }: ProfileFormProps) {
+  const navigate = useNavigate();
   const { control, handleSubmit, watch, reset } = useForm<ProfileFormValues>({
     defaultValues: {
       emailNotificationsEnabled: true,
-      telegramUsername: '',
       profilePicture: null,
       firstName: '',
       lastName: '',
@@ -34,7 +41,6 @@ export function ProfileForm({
   useEffect(() => {
     if (profile) {
       reset({
-        telegramUsername: profile.telegramUsername ?? '',
         emailNotificationsEnabled: !!profile.emailNotificationsEnabled,
         profilePicture: null,
         firstName: profile.user.firstName ?? '',
@@ -84,7 +90,6 @@ export function ProfileForm({
         return;
       }
       const formData = new FormData();
-      formData.append('telegramUsername', data.telegramUsername ?? '');
       formData.append(
         'emailNotificationsEnabled',
         String(data.emailNotificationsEnabled),
@@ -237,23 +242,52 @@ export function ProfileForm({
         </Field>
 
         <Field>
-          <FieldLabel className="mb-2">Telegram username</FieldLabel>
-          <InputGroup>
-            <Controller
-              control={control}
-              name="telegramUsername"
-              render={({ field }) => (
-                <InputGroupInput
-                  {...field}
-                  placeholder="@telegram"
-                  className="h-10"
-                />
-              )}
-            />
-            <InputGroupAddon>
-              <Send className="size-5 text-muted-foreground" />
-            </InputGroupAddon>
-          </InputGroup>
+          <FieldLabel className="mb-2">Telegram Account</FieldLabel>
+          <Card className="p-4 bg-gray-50/50 border-gray-200">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Send className="size-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">
+                    {profile?.telegramId
+                      ? 'Telegram Linked'
+                      : 'Not Linked'}
+                  </span>
+                </div>
+                {profile?.telegramId ? (
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">
+                      Username:{' '}
+                      <span className="font-mono">
+                        {profile.telegramUsername || 'N/A'}
+                      </span>
+                    </p>
+                    {profile.telegramLinkedAt && (
+                      <p className="text-xs text-muted-foreground">
+                        Linked on{' '}
+                        {new Date(profile.telegramLinkedAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Link your Telegram account to receive notifications and create
+                    reports via bot
+                  </p>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/settings/telegram')}
+                className="flex items-center gap-2 shrink-0"
+              >
+                {profile?.telegramId ? 'Manage' : 'Link Account'}
+                <ExternalLink className="size-3.5" />
+              </Button>
+            </div>
+          </Card>
         </Field>
 
         <Field>

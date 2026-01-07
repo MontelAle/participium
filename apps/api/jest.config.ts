@@ -28,6 +28,7 @@ const config: Config = {
   moduleNameMapper: {
     '^@entities$': '<rootDir>/src/common/entities/index.ts',
     '^@entities/(.*)$': '<rootDir>/src/common/entities/$1',
+    '^nanoid$': '<rootDir>/src/modules/telegram/__test-utils__/nanoid-mock.ts',
   },
   coverageReporters: ['lcov', 'text-summary'],
   collectCoverageFrom: [
@@ -37,9 +38,12 @@ const config: Config = {
     '!src/main.ts',
     '!src/**/seed/**/*.ts',
     '!src/**/*.type.ts',
+    '!src/**/*.interface.ts',
     '!src/common/dto/**/*.ts',
     '!src/common/entities/**/*.ts',
     '!src/**/constants/error-messages.ts',
+    '!src/**/dto/**/*.ts',
+    '!src/**/__test-utils__/**',
   ],
 };
 

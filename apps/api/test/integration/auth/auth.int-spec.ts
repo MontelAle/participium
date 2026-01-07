@@ -250,6 +250,39 @@ describe('AuthController (Integration)', () => {
       expect(sessions).toHaveLength(2); // One from registration, one from login
     });
 
+    it('should login successfully with email instead of username', async () => {
+      const loginDto = {
+        username: 'login@example.com',
+        password: 'LoginPassword123!',
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send(loginDto)
+        .expect(200);
+
+      expect(response.body).toEqual({
+        success: true,
+        data: {
+          user: expect.objectContaining({
+            username: 'loginuser',
+            email: 'login@example.com',
+          }),
+          session: expect.objectContaining({
+            id: expect.any(String),
+            expiresAt: expect.any(String),
+          }),
+        },
+      });
+
+      // Verify session cookie is set
+      const cookies = response.headers['set-cookie'];
+      expect(cookies).toBeDefined();
+      expect(
+        cookies.some((cookie: string) => cookie.startsWith('session_token=')),
+      ).toBe(true);
+    });
+
     it('should reject login with invalid username', async () => {
       const loginDto = {
         username: 'nonexistent',

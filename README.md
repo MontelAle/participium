@@ -170,3 +170,35 @@ You can customize the deployment by setting these variables in your docker-compo
 | `MINIO_ROOT_USER`     | MinIO access key    | minioadmin            |
 | `MINIO_ROOT_PASSWORD` | MinIO secret key    | minioadmin            |
 | `FRONTEND_URL`        | CORS Allowed Origin | http://localhost:5173 |
+
+## Testing
+
+This repository includes unit and integration tests for the backend API.
+
+- Unit tests: use Jest and are located alongside source files. Example:
+  - `apps/api/src/modules/notifications/notifications.service.spec.ts`
+  - `apps/api/src/modules/notifications/notifications.controller.spec.ts`
+
+- Integration tests: use Testcontainers to spin up a temporary PostgreSQL (PostGIS) container and exercise the real NestJS application. Example:
+  - `apps/api/test/integration/notifications/notifications.int-spec.ts`
+
+Running tests
+
+- Run unit and integration tests for the API from the `apps/api` folder. Integration tests require Docker to be running on your machine because they start a PostgreSQL container via Testcontainers.
+
+```bash
+cd apps/api
+pnpm test
+# or using npm
+npm run test
+```
+
+Notes
+
+- Ensure Docker is running when you run integration tests.
+- Integration tests may take longer because they start containers and initialize the database.
+- If you want to run only unit tests, use your Jest filtering flags, for example:
+
+```bash
+pnpm test -- -t notifications.service
+```

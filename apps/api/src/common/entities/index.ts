@@ -1,9 +1,14 @@
 export { Account } from './account.entity';
 export { Boundary } from './boundary.entity';
 export { Category } from './category.entity';
+export { Comment } from './comment.entity';
+export { Message } from './message.entity';
+export { Notification } from './notification.entity';
 export { Office } from './office.entity';
 export { Profile } from './profile.entity';
 export { Report, ReportStatus } from './report.entity';
 export { Role } from './role.entity';
 export { Session } from './session.entity';
+export { TelegramLinkCode } from './telegram-link-code.entity';
 export { User } from './user.entity';
+export { UserOfficeRole } from './user-office-role.entity';
