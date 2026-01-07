@@ -41,9 +41,12 @@ export class AuthService {
       .leftJoinAndSelect('user.role', 'role')
       .leftJoinAndSelect('user.office', 'office')
       .where('account.providerId = :providerId', { providerId: 'local' })
-      .andWhere('(account.accountId = :identifier OR user.email = :identifier)', {
-        identifier: username,
-      })
+      .andWhere(
+        '(account.accountId = :identifier OR user.email = :identifier)',
+        {
+          identifier: username,
+        },
+      )
       .getOne();
 
     if (!account) return null;
@@ -72,54 +75,52 @@ export class AuthService {
     const verificationCode = this.otpService.generateVerificationCode();
     const codeExpiry = this.otpService.generateCodeExpiry();
 
-    const result = await this.userRepository.manager.transaction(
-      async (manager) => {
-        const userRole = await manager
-          .getRepository(Role)
-          .findOne({ where: { name: 'user' } });
+    await this.userRepository.manager.transaction(async (manager) => {
+      const userRole = await manager
+        .getRepository(Role)
+        .findOne({ where: { name: 'user' } });
 
-        if (!userRole) {
-          throw new ConflictException(
-            'Default role "user" not found. Contact support.',
-          );
-        }
+      if (!userRole) {
+        throw new ConflictException(
+          'Default role "user" not found. Contact support.',
+        );
+      }
 
-        const newUser = manager.getRepository(User).create({
-          id: nanoid(),
-          email,
-          username,
-          firstName,
-          lastName,
-          role: userRole,
-          emailVerificationCode: verificationCode,
-          emailVerificationCodeExpiry: codeExpiry,
-          isEmailVerified: false,
-        });
+      const newUser = manager.getRepository(User).create({
+        id: nanoid(),
+        email,
+        username,
+        firstName,
+        lastName,
+        role: userRole,
+        emailVerificationCode: verificationCode,
+        emailVerificationCodeExpiry: codeExpiry,
+        isEmailVerified: false,
+      });
 
-        const savedUser = await manager.getRepository(User).save(newUser);
+      const savedUser = await manager.getRepository(User).save(newUser);
 
-        const profile = manager.getRepository(Profile).create({
-          id: nanoid(),
-          userId: savedUser.id,
-          user: savedUser,
-        });
+      const profile = manager.getRepository(Profile).create({
+        id: nanoid(),
+        userId: savedUser.id,
+        user: savedUser,
+      });
 
-        await manager.getRepository(Profile).save(profile);
+      await manager.getRepository(Profile).save(profile);
 
-        const newAccount = manager.getRepository(Account).create({
-          id: nanoid(),
-          accountId: username,
-          providerId: 'local',
-          userId: savedUser.id,
-          password: hashedPassword,
-          user: savedUser,
-        });
+      const newAccount = manager.getRepository(Account).create({
+        id: nanoid(),
+        accountId: username,
+        providerId: 'local',
+        userId: savedUser.id,
+        password: hashedPassword,
+        user: savedUser,
+      });
 
-        await manager.getRepository(Account).save(newAccount);
+      await manager.getRepository(Account).save(newAccount);
 
-        return { user: savedUser };
-      },
-    );
+      return { user: savedUser };
+    });
 
     await this.emailService.sendVerificationEmail(email, verificationCode);
 

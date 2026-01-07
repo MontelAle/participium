@@ -4,11 +4,11 @@ import { createTransport, Transporter } from 'nodemailer';
 
 @Injectable()
 export class EmailService {
-  private transporter: Transporter;
+  private readonly transporter: Transporter;
   private readonly logger = new Logger(EmailService.name);
   private readonly from: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(private readonly configService: ConfigService) {
     const emailConfig = {
       host: this.configService.get<string>('email.host'),
       port: this.configService.get<number>('email.port'),
