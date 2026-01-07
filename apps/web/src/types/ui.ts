@@ -87,6 +87,7 @@ export type ReportContentLayoutProps = {
   afterCategoryContent?: ReactNode;
   afterDescriptionContent?: ReactNode;
   sidebarActions?: ReactNode;
+  className?: string;
 };
 
 export type ReportDetailLayoutProps = {
@@ -112,9 +113,11 @@ export type FilterPopoverProps = {
 export type ReviewReportFormProps = {
   report: Report;
   onClose?: () => void;
+  className?: string;
 };
 
 export type ReportViewProps = {
   report: Report;
   showAnonymous?: boolean;
+  className?: string;
 };

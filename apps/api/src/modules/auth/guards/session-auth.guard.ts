@@ -57,6 +57,12 @@ export class SessionGuard implements CanActivate {
       throw new UnauthorizedException('Invalid session secret');
     }
 
+    if (!session.user.isEmailVerified) {
+      throw new UnauthorizedException(
+        'Email not verified. Please verify your email to access the system.',
+      );
+    }
+
     req.user = session.user;
     session.user = undefined;
     req.session = session;

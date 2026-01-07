@@ -9,6 +9,7 @@ import 'leaflet/dist/leaflet.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import torinoBoundary from '../assets/torino_boundaries.json';
 
 import type {
   NominatimSearchResult,
@@ -43,7 +44,7 @@ export default function ReportsMap() {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
 
-  const { isCitizenUser } = useAuth();
+  const { isCitizenUser, isGuestUser } = useAuth();
   const setLocation = useActiveReportStore((state) => state.setLocation);
   const location = useActiveReportStore((state) => state.locationData);
   const clearLocation = useActiveReportStore((s) => s.clearLocation);
@@ -82,30 +83,28 @@ export default function ReportsMap() {
       },
     ).addTo(map);
 
-    const fetchTorinoBoundary = async () => {
-      try {
-        const response = await fetch(
-          'https://nominatim.openstreetmap.org/search.php?q=Torino+Italy&polygon_geojson=1&format=json&limit=1',
-        );
-        const data = await response.json();
-        if (data?.[0]?.geojson) {
-          boundaryGeoJsonRef.current = data[0].geojson;
-          L.geoJSON(data[0].geojson, {
-            style: {
-              color: '#3b82f6',
-              weight: 3,
-              opacity: 0.8,
-              fillColor: '#3b82f6',
-              fillOpacity: 0.05,
-            },
-            interactive: false,
-          }).addTo(map);
-        }
-      } catch (e) {
-        console.error('Boundary error', e);
-      }
+    const loadTorinoBoundary = () => {
+      if (boundaryGeoJsonRef.current) return;
+
+      boundaryGeoJsonRef.current = torinoBoundary;
+
+      const layer = L.geoJSON(torinoBoundary as any, {
+        style: {
+          color: '#3b82f6',
+          weight: 3,
+          opacity: 0.8,
+          fillColor: '#3b82f6',
+          fillOpacity: 0.05,
+        },
+        interactive: false,
+      });
+
+      layer.addTo(map);
+
+      map.fitBounds(layer.getBounds());
     };
-    fetchTorinoBoundary();
+
+    loadTorinoBoundary();
 
     map.on('click', (e: L.LeafletMouseEvent) =>
       handleLocationSelect(e.latlng.lat, e.latlng.lng),
@@ -264,15 +263,21 @@ export default function ReportsMap() {
         ${userHtml} 
       `;
 
-      const detailsBtn = document.createElement('button');
-      detailsBtn.className = 'popup-btn-action mt-3';
-      detailsBtn.textContent = 'SHOW DETAILS';
-      detailsBtn.onclick = (e) => {
-        e.stopPropagation();
-        navigate(`/reports/view/${report.id}`);
-      };
-
-      popupDiv.appendChild(detailsBtn);
+      if (isGuestUser) {
+        const loginMsg = document.createElement('div');
+        loginMsg.className = 'text-xs text-center text-slate-400 mt-3 italic';
+        loginMsg.textContent = 'Login to show all details';
+        popupDiv.appendChild(loginMsg);
+      } else {
+        const detailsBtn = document.createElement('button');
+        detailsBtn.className = 'popup-btn-action mt-3';
+        detailsBtn.textContent = 'SHOW DETAILS';
+        detailsBtn.onclick = (e) => {
+          e.stopPropagation();
+          navigate(`/reports/view/${report.id}`);
+        };
+        popupDiv.appendChild(detailsBtn);
+      }
 
       const m = L.marker([lat, lng], {
         icon: smallDivIcon({ status: report.status }),
@@ -293,7 +298,7 @@ export default function ReportsMap() {
       markersMapRef.current.set(report.id, m);
       clusterGroup.addLayer(m);
     });
-  }, [mapReports, navigate]);
+  }, [mapReports, navigate, isGuestUser]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;

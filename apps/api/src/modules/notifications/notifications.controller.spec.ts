@@ -45,4 +45,33 @@ describe('NotificationsController', () => {
     expect(mockService.markAsRead).toHaveBeenCalledWith('n1', req.user);
     expect(res).toEqual({ success: true, data: item });
   });
+
+  it('list should treat unread="true" as onlyUnread=true', async () => {
+    const req: any = { user: { id: 'u4' } };
+    const items = [{ id: 'c' }];
+    mockService.findForUser.mockResolvedValueOnce(items);
+
+    const res = await controller.list(req, 'true');
+
+    expect(mockService.findForUser).toHaveBeenCalledWith(req.user, true);
+    expect(res).toEqual({ success: true, data: items });
+  });
+
+  it('list should treat unread="0" as onlyUnread=false', async () => {
+    const req: any = { user: { id: 'u5' } };
+    const items = [{ id: 'd' }];
+    mockService.findForUser.mockResolvedValueOnce(items);
+
+    const res = await controller.list(req, '0');
+
+    expect(mockService.findForUser).toHaveBeenCalledWith(req.user, false);
+    expect(res).toEqual({ success: true, data: items });
+  });
+
+  it('markRead should propagate errors from service', async () => {
+    const req: any = { user: { id: 'u6' } };
+    mockService.markAsRead.mockRejectedValueOnce(new Error('boom'));
+
+    await expect(controller.markRead('bad', req)).rejects.toThrow('boom');
+  });
 });

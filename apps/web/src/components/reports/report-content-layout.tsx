@@ -2,6 +2,7 @@ import { MiniMap } from '@/components/mini-map';
 import { ReportLightbox } from '@/components/reports/report-lightbox';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 import { ReportContentLayoutProps } from '@/types/ui';
 import {
   CalendarClock,
@@ -21,6 +22,7 @@ export function ReportContentLayout({
   afterCategoryContent,
   afterDescriptionContent,
   sidebarActions,
+  className,
 }: Readonly<ReportContentLayoutProps>) {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null,
@@ -31,7 +33,7 @@ export function ReportContentLayout({
   const shouldShowUser = showAnonymous || report.user;
 
   return (
-    <>
+    <div className={cn('', className)}>
       <Card className="w-full h-full flex flex-col border-none overflow-hidden bg-white/90 backdrop-blur-sm ring-1 ring-gray-200">
         <div className="grid grid-cols-1 md:grid-cols-12 h-full">
           <div className="md:col-span-7 p-6 flex flex-col bg-white overflow-y-auto h-full border-b md:border-b-0 md:border-r border-gray-100 order-2 md:order-1 min-w-0">
@@ -230,6 +232,6 @@ export function ReportContentLayout({
         onClose={() => setSelectedImageIndex(null)}
         onIndexChange={setSelectedImageIndex}
       />
-    </>
+    </div>
   );
 }

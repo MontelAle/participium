@@ -203,24 +203,58 @@ Notes and requirements
 
 **Endpoint**: `/users`
 
-| Method | Route                    | Description                                            |
-| ------ | ------------------------ | ------------------------------------------------------ |
-| GET    | `/municipality`          | List municipal users (Admin, PR Officer only)          |
-| GET    | `/municipality/user/:id` | User details                                           |
-| POST   | `/municipality`          | Create municipal user                                  |
-| POST   | `/municipality/user/:id` | Update user                                            |
-| DELETE | `/municipality/user/:id` | Delete user                                            |
-| GET    | `/external-maintainers`  | List external maintainers (optional categoryId filter) |
-| PATCH  | `/profile/me`            | Update regular user profile                            |
+| Method | Route                                          | Description                                            |
+| ------ | ---------------------------------------------- | ------------------------------------------------------ |
+| GET    | `/municipality`                                | List municipal users (Admin, PR Officer only)          |
+| GET    | `/municipality/user/:id`                       | User details                                           |
+| POST   | `/municipality`                                | Create municipal user                                  |
+| POST   | `/municipality/user/:id`                       | Update user                                            |
+| DELETE | `/municipality/user/:id`                       | Delete user                                            |
+| GET    | `/municipality/user/:id/office-roles`          | Get user's office-role assignments (multi-role)        |
+| POST   | `/municipality/user/:id/office-roles`          | Assign user to office with role (multi-role)           |
+| DELETE | `/municipality/user/:id/office-roles/:officeId`| Remove user's office assignment (multi-role)           |
+| GET    | `/external-maintainers`                        | List external maintainers (optional categoryId filter) |
+| PATCH  | `/profile/me`                                  | Update regular user profile                            |
 
 **Functionality**:
 
 - Complete municipal user management
+- **Multi-Role Office Assignments**: Technical officers can be assigned to multiple offices with different roles
 - Regular user profile editing (for non-municipal users only)
 - Validation with class-validator
 - Relations with roles, accounts, and offices
 - File upload handling with Multer
 - MinIO integration for profile picture storage
+
+**Multi-Role Management**:
+
+- **GET `/municipality/user/:id/office-roles`**: Retrieve all office-role assignments for a specific user
+  - Returns array of assignments with office and role details
+  - Admin-only access
+  
+- **POST `/municipality/user/:id/office-roles`**: Assign user to an additional office
+  - Request body: `{ officeId: string, roleId: string }`
+  - Only `tech_officer` role can have multiple office assignments
+  - Other roles (admin, pr_officer, external_maintainer) can only have one office assignment
+  - System validates role-office compatibility (e.g., external_maintainer must be assigned to external offices)
+
+- **DELETE `/municipality/user/:id/office-roles/:officeId`**: Remove user from an office
+  - Removes the user's assignment to a specific office
+  - User must maintain at least one office-role assignment (cannot remove the last one)
+  - **Automatic Report Reassignment**: When a technical officer is removed from an office, all reports assigned to them for that office's categories are automatically reassigned:
+    - Reports in states `assigned`, `in_progress`, or `suspended` are reassigned
+    - The system selects a replacement officer **only from technical officers assigned to the same office** (maintains office-category consistency)
+    - To choose among these candidates, workload is calculated counting both `assigned` and `in_progress` reports across all their offices (fair distribution for multi-office officers)
+    - If no other officers are available in that office, reports are set to unassigned (`assignedOfficerId = null`)
+    - This ensures no reports become orphaned or assigned to incorrect offices when officers are removed
+  - Validates office-role compatibility (e.g., external offices only for external_maintainer)
+  - Returns 409 Conflict if assignment already exists
+  - Returns 400 Bad Request if user cannot have multiple roles
+  
+- **DELETE `/municipality/user/:id/office-roles/:officeId`**: Remove office assignment
+  - Requires user to have at least one remaining assignment
+  - Returns 404 if assignment not found
+  - Returns 400 Bad Request if trying to remove last assignment
 
 **Profile Management** (`PATCH /profile/me`):
 
@@ -472,6 +506,30 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 | createdAt | Date   | Creation timestamp     | No       | timestamptz, auto-generated  |
 | updatedAt | Date   | Last update timestamp  | No       | timestamptz, auto-generated  |
 
+**Note**: `roleId` and `officeId` are deprecated fields maintained for backward compatibility. New implementations should use the `UserOfficeRole` junction table for multi-role support.
+
+#### UserOfficeRole
+
+| Field     | Type   | Description              | Nullable | Notes                                       |
+| --------- | ------ | ------------------------ | -------- | ------------------------------------------- |
+| id        | string | Primary key              | No       | varchar, nanoid generated                   |
+| userId    | string | Linked user ID           | No       | Foreign key to User entity                  |
+| user      | User   | User entity relation     | No       | Many-to-one, cascade delete                 |
+| officeId  | string | Linked office ID         | No       | Foreign key to Office entity                |
+| office    | Office | Office entity relation   | No       | Many-to-one, cascade delete                 |
+| roleId    | string | Linked role ID           | No       | Foreign key to Role entity                  |
+| role      | Role   | Role entity relation     | No       | Many-to-one, cascade delete                 |
+| createdAt | Date   | Creation timestamp       | No       | timestamptz, auto-generated                 |
+| updatedAt | Date   | Last update timestamp    | No       | timestamptz, auto-generated                 |
+
+**Purpose**: Enables multi-role assignments for technical officers. A user can be assigned to multiple offices with potentially different roles. This table is the recommended approach for managing user-office-role relationships.
+
+**Business Rules**:
+- Only users with `tech_officer` role can have multiple assignments
+- External maintainers can only be assigned to external offices (`isExternal: true`)
+- Regular municipal roles cannot be assigned to external offices
+- Users must maintain at least one office-role assignment (cannot delete the last one)
+
 #### Profile
 
 | Field                     | Type    | Description              | Nullable | Notes             |
@@ -560,7 +618,7 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 | id                           | string   | Primary key                     | No       | varchar                                                                                                    |
 | title                        | string   | Report title                    | Yes      | varchar, optional                                                                                          |
 | description                  | string   | Report description              | Yes      | text type, optional                                                                                        |
-| status                       | enum     | Report status                   | No       | Values: pending, in_progress, resolved, rejected, assigned. Default: pending. Visibility rules apply.      |
+| status                       | enum     | Report status                   | No       | Values: pending, in_progress, resolved, rejected, assigned, suspended. Default: pending. Visibility rules apply. When a technical officer is removed from an office, reports in states assigned/in_progress/suspended are automatically reassigned.      |
 | location                     | Point    | Geographic coordinates          | No       | PostGIS geometry(Point, 4326). Must be within municipal boundaries.                                        |
 | address                      | string   | Physical address                | Yes      | varchar, optional                                                                                          |
 | images                       | string[] | Array of image paths/URLs       | No       | varchar array                                                                                              |
@@ -765,7 +823,12 @@ The system follows a workflow where the **Organization Office** (PR Officers) ac
       - Upon acceptance, the system determines the competent technical office based on the report's category
       - The PR Officer can choose between two assignment options:
         - **Manual Assignment**: Select a specific technical officer from the competent office
-        - **Automatic Assignment**: Let the system assign the report to the officer with the lowest workload (fewest assigned reports)
+        - **Automatic Assignment**: Let the system assign the report to the officer with the lowest workload
+          - Only technical officers assigned to the report's category office are considered as candidates
+          - Among these candidates, workload is calculated by counting reports in states `assigned` and `in_progress`
+          - Workload calculation includes all reports across all offices where each officer works (ensures fair distribution for multi-office officers)
+          - The report is always assigned to an officer who works in the category's office
+          - This ensures fair distribution even when officers work in multiple offices
     - **Outcome**: The report status changes to **Assigned** and is routed to the designated technical officer in the competent office (e.g., a "Public Lighting" issue is sent to the _Infrastructure Office_).
 
 3.  **Technical View (Technical Officer)**:
@@ -923,6 +986,28 @@ To run the seed manually:
 cd apps/api
 pnpm run seed:participium
 ```
+
+#### Test User Credentials
+
+After seeding the database, you can use the following credentials for testing purposes:
+
+**Default Password for All Users**: `password`
+
+| Role                    | Username                                   | Name                     | Email                                        | Office                                  |
+| ----------------------- | ------------------------------------------ | ------------------------ | -------------------------------------------- | --------------------------------------- |
+| **System Admin**        | `system_admin`                             | System Admin             | admin@participium.com                        | Organization Office                     |
+| **PR Officers**         | `pr_officer_1` to `pr_officer_4`           | PR Officer 1, 2, 3, 4    | pr.officer.1@participium.com (etc.)          | Organization Office                     |
+| **Tech Officers**       | `tech_maintenance_1`, `tech_maintenance_2` | Random (Faker-generated) | tech_maintenance_1@participium.com (etc.)    | Maintenance and Technical Services      |
+|                         | `tech_infrastructure_1`, etc.              | Random (Faker-generated) | tech_infrastructure_1@participium.com (etc.) | Infrastructure                          |
+|                         | `tech_public_services_1`, etc.             | Random (Faker-generated) | tech_public_services_1@participium.com       | Local Public Services                   |
+|                         | `tech_environment_1`, etc.                 | Random (Faker-generated) | tech_environment_1@participium.com           | Environment Quality                     |
+|                         | `tech_green_parks_1`, etc.                 | Random (Faker-generated) | tech_green_parks_1@participium.com           | Green Areas and Parks                   |
+|                         | `tech_civic_services_1`, etc.              | Random (Faker-generated) | tech_civic_services_1@participium.com        | Decentralization and Civic Services     |
+| **External Maintainer** | `external_company_1_1`, etc.               | Random (Faker-generated) | external_company_1_1@participium.com         | External Company 1, 2, or 3             |
+| **Citizens**            | `mario_rossi`                              | Mario Rossi              | mario.rossi@gmail.com                        | -                                       |
+|                         | `luigi_verdi`                              | Luigi Verdi              | luigi.verdi@gmail.com                        | -                                       |
+
+**Note**: Each office has 2 tech officers (`_1` and `_2`), and each external company has 2 maintainers. Tech officer and external maintainer names are randomly generated using Faker library at seed time.
 
 #### Individual applications
 

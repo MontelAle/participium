@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   HttpCode,
+  HttpException,
   HttpStatus,
   Post,
   Req,
@@ -19,6 +20,7 @@ import {
   LoginResponseDto,
   LogoutResponseDto,
   RegisterDto,
+  VerifyEmailDto,
 } from './dto/auth.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { SessionGuard } from './guards/session-auth.guard';
@@ -48,6 +50,17 @@ export class AuthController {
       throw new UnauthorizedException('Invalid username or password');
     }
 
+    if (!req.user.isEmailVerified) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Email not verified. Please verify your email to continue.',
+          email: req.user.email,
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
     const { user, session, token } = await this.authService.login(
       req.user,
       req.ip,
@@ -62,20 +75,38 @@ export class AuthController {
   }
 
   /**
-   * Creates a new user account and logs them in.
+   * Creates a new user account and sends a verification email.
    *
-   * @remarks  Creates a new user and account with user role. Automatically logs in the user after registration.
+   * @remarks  Creates a new user and account with user role. Sends a verification code to the user's email. User must verify email before logging in.
    *
    * @throws {409} Conflict
    * @throws {400} Validation error
    */
   @Post('register')
-  async create(
-    @Body() registerDto: RegisterDto,
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() registerDto: RegisterDto): Promise<{ message: string }> {
+    return await this.authService.register(registerDto);
+  }
+
+  /**
+   * Verifies user email with the provided code and logs them in.
+   *
+   * @remarks Verifies the user's email address and creates a session.
+   *
+   * @throws {409} Conflict - Invalid code, expired code, or email already verified
+   * @throws {400} Validation error
+   */
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  async verifyEmail(
+    @Body() verifyEmailDto: VerifyEmailDto,
     @Request() req: RequestWithUserSession,
     @Res({ passthrough: true }) res: Response,
   ): Promise<LoginResponseDto> {
-    const { user } = await this.authService.register(registerDto);
+    const { user } = await this.authService.verifyEmail(
+      verifyEmailDto.email,
+      verifyEmailDto.code,
+    );
 
     const { session, token } = await this.authService.login(
       user,

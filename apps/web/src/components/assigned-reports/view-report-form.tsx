@@ -12,6 +12,7 @@ import { useCategories } from '@/hooks/use-categories';
 import { useExternalMaintainers } from '@/hooks/use-external-maintainers';
 import { useOffices } from '@/hooks/use-offices';
 import { useUpdateReport } from '@/hooks/use-reports';
+import { cn, getNextStatusOptions, prettifyStatus } from '@/lib/utils';
 import type { Report, ReportStatus, UpdateReportDto } from '@/types';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -21,12 +22,14 @@ export type ViewAssignedReportProps = {
   report: Report;
   showAnonymous?: boolean;
   onClose?: () => void;
+  className?: string;
 };
 
 export function ViewAssignedReport({
   report,
   showAnonymous = true,
   onClose,
+  className,
 }: Readonly<ViewAssignedReportProps>) {
   const { data: offices } = useOffices();
   const { data: externalMaintainers } = useExternalMaintainers();
@@ -49,19 +52,6 @@ export function ViewAssignedReport({
   const { isTechnicalOfficer, user } = useAuth();
 
   const allowedNextStatuses = useMemo(() => {
-    const getNextStatusOptions = (currentStatus: ReportStatus) => {
-      switch (currentStatus) {
-        case 'assigned':
-          return ['assigned', 'in_progress'];
-        case 'in_progress':
-          return ['in_progress', 'resolved'];
-        case 'resolved':
-          return ['resolved'];
-        default:
-          return [];
-      }
-    };
-
     return getNextStatusOptions(report.status as ReportStatus);
   }, [report.status]);
 
@@ -75,10 +65,8 @@ export function ViewAssignedReport({
 
     const updateData: UpdateReportDto = {
       assignedExternalMaintainerId: selectedExternalMaintainer?.id || '',
+      status: data.status,
     };
-    if (data.status) {
-      updateData.status = data.status as any;
-    }
 
     try {
       await updateReportMutation({
@@ -99,38 +87,40 @@ export function ViewAssignedReport({
       <h4 className="text-sm font-medium text-muted-foreground mb-2 uppercase tracking-wider">
         External Company
       </h4>
-      <div className="relative">
-        <Select
-          value={watch('externalOfficeId') ?? ''}
-          onValueChange={(v) => setValue('externalOfficeId', v)}
-          disabled={report.status !== 'assigned'}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select an external company" />
-          </SelectTrigger>
-
-          <SelectContent>
-            {externalOfficesWithCategory?.map((office) => (
-              <SelectItem key={office.id} value={office.id}>
-                {office.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {watch('externalOfficeId') && report.status === 'assigned' && (
-          <button
-            type="button"
-            className="absolute right-12 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setValue('externalOfficeId', '');
-            }}
+      <div>
+        <div className="flex flex-row gap-4">
+          <Select
+            value={watch('externalOfficeId') ?? ''}
+            onValueChange={(v) => setValue('externalOfficeId', v)}
+            disabled={report.status !== 'assigned'}
           >
-            ✕
-          </button>
-        )}
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select an external company" />
+            </SelectTrigger>
+
+            <SelectContent>
+              {externalOfficesWithCategory?.map((office) => (
+                <SelectItem key={office.id} value={office.id}>
+                  {office.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {watch('externalOfficeId') && report.status === 'assigned' && (
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground z-10"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setValue('externalOfficeId', '');
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
         {/* Status change control for assigned technical officer */}
         {!(
           report.status === 'pending' ||
@@ -155,7 +145,7 @@ export function ViewAssignedReport({
                     <SelectContent>
                       {allowedNextStatuses.map((s) => (
                         <SelectItem key={s} value={s}>
-                          {s.replaceAll('_', ' ')}
+                          {prettifyStatus(s)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -190,7 +180,7 @@ export function ViewAssignedReport({
   );
 
   return (
-    <form className="contents" onSubmit={handleSubmit(handleConfirm)}>
+    <form className={cn('', className)} onSubmit={handleSubmit(handleConfirm)}>
       <ReportContentLayout
         report={report}
         showAnonymous={showAnonymous}

@@ -44,6 +44,8 @@ export type Point = {
 export type Profile = {
   id: string;
   telegramUsername?: string | null;
+  telegramId?: string | null;
+  telegramLinkedAt?: Date | null;
   emailNotificationsEnabled: boolean;
   profilePictureUrl?: string | null;
   userId: string;
@@ -57,7 +59,8 @@ export type ReportStatus =
   | 'in_progress'
   | 'resolved'
   | 'rejected'
-  | 'assigned';
+  | 'assigned'
+  | 'suspended';
 
 export type Report = {
   id: string;
@@ -101,6 +104,17 @@ export type Session = {
   impersonatedBy?: string;
 };
 
+export type UserOfficeRole = {
+  id: string;
+  userId: string;
+  officeId: string;
+  office: Office;
+  roleId: string;
+  role: Role;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export type User = {
   id: string;
   email: string;
@@ -113,6 +127,7 @@ export type User = {
   updatedAt: Date;
   officeId?: string;
   office?: Office;
+  officeRoles?: UserOfficeRole[];
 };
 
 export type Comment = {

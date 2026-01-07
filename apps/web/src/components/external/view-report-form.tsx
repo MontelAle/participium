@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useUpdateReport } from '@/hooks/use-reports';
-import { getStatusConfig } from '@/lib/utils';
+import { cn, getNextStatusOptions, getStatusConfig } from '@/lib/utils';
 import type { Report, ReportStatus, UpdateReportDto } from '@/types';
 import {
   CalendarClock,
@@ -29,12 +29,14 @@ export type ViewAssignedExternalReportProps = {
   report: Report;
   showAnonymous?: boolean;
   onClose?: () => void;
+  className?: string;
 };
 
 export function ViewAssignedExternalReport({
   report,
   showAnonymous = true,
   onClose,
+  className,
 }: ViewAssignedExternalReportProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
     null,
@@ -47,19 +49,6 @@ export function ViewAssignedExternalReport({
       status: report.status,
     },
   });
-
-  const getNextStatusOptions = (currentStatus: ReportStatus) => {
-    switch (currentStatus) {
-      case 'assigned':
-        return ['assigned', 'in_progress'];
-      case 'in_progress':
-        return ['in_progress', 'resolved'];
-      case 'resolved':
-        return ['resolved'];
-      default:
-        return [];
-    }
-  };
 
   const handleConfirm = async (data: { status: ReportStatus }) => {
     const updateData: UpdateReportDto = {
@@ -88,7 +77,7 @@ export function ViewAssignedExternalReport({
   const { mutateAsync: updateReportMutation, isPending } = useUpdateReport();
 
   return (
-    <>
+    <div className={cn('', className)}>
       <Card className="w-full h-full flex flex-col border-none overflow-hidden bg-white/90 backdrop-blur-sm ring-1 ring-gray-200">
         <form
           className="grid grid-cols-1 md:grid-cols-12 h-full"
@@ -138,11 +127,13 @@ export function ViewAssignedExternalReport({
                     <SelectValue placeholder="Change status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getNextStatusOptions(report.status).map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {getStatusConfig(s as ReportStatus).label}
-                      </SelectItem>
-                    ))}
+                    {getNextStatusOptions(report.status)
+                      .filter((s) => s !== 'suspended')
+                      .map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {getStatusConfig(s as ReportStatus).label}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -340,6 +331,6 @@ export function ViewAssignedExternalReport({
           />
         </button>
       )}
-    </>
+    </div>
   );
 }

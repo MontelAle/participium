@@ -1,13 +1,15 @@
 import { getReportComments, postReportComment } from '@/api/endpoints/comments';
+import { useAuth } from '@/contexts/auth-context';
 import type { Comment } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useReportComments(reportId: string) {
+  const { isAuthenticated } = useAuth();
   return useQuery<Comment[]>({
     queryKey: ['report-comments', reportId],
     queryFn: () => getReportComments(reportId),
-    enabled: !!reportId,
-    refetchInterval: 5000,
+    enabled: !!reportId && isAuthenticated,
+    refetchInterval: isAuthenticated ? 5000 : false,
   });
 }
 

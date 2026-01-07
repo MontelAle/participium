@@ -8,6 +8,7 @@ import {
   ReportStatus,
   Role,
   User,
+  UserOfficeRole,
 } from '@entities';
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
@@ -457,9 +458,7 @@ const REAL_REPORTS = [
     lat: 45.056609,
     lng: 7.635214,
     categoryName: 'Architectural Barriers',
-    images: [
-      'MissingPedestrianBarrier.jpg',
-    ],
+    images: ['MissingPedestrianBarrier.jpg'],
   },
   {
     title: 'Damaged Bench Seat',
@@ -469,10 +468,7 @@ const REAL_REPORTS = [
     lat: 45.058771,
     lng: 7.632521,
     categoryName: 'Public Green Areas and Playgrounds',
-    images: [
-      'DamagedBenchSeat1.jpg',
-      'DamagedBenchSeat2.jpg',
-    ],
+    images: ['DamagedBenchSeat1.jpg', 'DamagedBenchSeat2.jpg'],
   },
   {
     title: 'Bench Missing Backrest',
@@ -482,9 +478,7 @@ const REAL_REPORTS = [
     lat: 45.054345,
     lng: 7.635278,
     categoryName: 'Public Green Areas and Playgrounds',
-    images: [
-      'BenchMissingBackrest.jpg',
-    ],
+    images: ['BenchMissingBackrest.jpg'],
   },
   {
     title: 'Wall and Fence in Poor Condition',
@@ -502,16 +496,12 @@ const REAL_REPORTS = [
   },
   {
     title: 'Street Sign on the Ground',
-    description:
-      'A steet sign is lying on the ground.',
+    description: 'A steet sign is lying on the ground.',
     address: 'Via Boston, 139a, Torino',
     lat: 45.044602,
     lng: 7.629369,
     categoryName: 'Road Signs and Traffic Lights',
-    images: [
-      'StreetSignOnTheGround1.jpg',
-      'StreetSignOnTheGround2.jpg',
-    ],
+    images: ['StreetSignOnTheGround1.jpg', 'StreetSignOnTheGround2.jpg'],
   },
   {
     title: 'Broken Transparent Panel at Bus Stop',
@@ -535,22 +525,17 @@ const REAL_REPORTS = [
     lat: 45.054348,
     lng: 7.642136,
     categoryName: 'Public Lighting',
-    images: [
-      'StreetLightNotTurningOn1.jpg',
-      'StreetLightNotTurningOn2.jpg',
-    ],
+    images: ['StreetLightNotTurningOn1.jpg', 'StreetLightNotTurningOn2.jpg'],
   },
   {
     title: 'Missing Road Sign',
     description:
       'The road sign is missing, leaving only the metal pole and an empty circular frame where the sign should be. The structure is still standing, but without the sign it is unclear what type of instruction or warning was intended. The empty frame is noticeable and could be confusing for drivers.',
-    address: 'Via Gabriele D\'Annunzio, 2a, Torino',
+    address: "Via Gabriele D'Annunzio, 2a, Torino",
     lat: 45.060403,
     lng: 7.656218,
     categoryName: 'Road Signs and Traffic Lights',
-    images: [
-      'MissingRoadSign.jpg',
-    ],
+    images: ['MissingRoadSign.jpg'],
   },
   {
     title: 'Bike Stand Leaning Badly',
@@ -568,15 +553,12 @@ const REAL_REPORTS = [
   },
   {
     title: 'Leaning Post',
-    description:
-      'The post in front of the crosswalk is leaning to one side.',
+    description: 'The post in front of the crosswalk is leaning to one side.',
     address: 'Via Giuseppe Peano, 11i, Torino',
     lat: 45.060776,
     lng: 7.660105,
     categoryName: 'Architectural Barriers',
-    images: [
-      'LeaningPost.jpg',
-    ],
+    images: ['LeaningPost.jpg'],
   },
   {
     title: 'Leaning Road Sign and Barrier',
@@ -600,8 +582,243 @@ const REAL_REPORTS = [
     lat: 45.050587,
     lng: 7.635093,
     categoryName: 'Roads and Urban Furnishings',
+    images: ['CrackedRoadSidewalk.jpg'],
+  },
+  {
+    title: 'Vegetation and branches obstruct parking',
+    description:
+      'Along the parking area, near the wall, there is a lot of vegetation growing, partially invading the parking spaces. Several plants and branches make it difficult to park correctly, with the risk of cars being parked outside the white lines. Additionally, the overhanging branches further obstruct parking and could scratch the cars if care is not taken.',
+    address: 'Corso Orbassano, 400, Torino',
+    lat: 45.033112,
+    lng: 7.618795,
+    categoryName: 'Roads and Urban Furnishings',
     images: [
-      'CrackedRoadSidewalk.jpg',
+      'VegetationObstructParking1.jpg',
+      'VegetationObstructParking2.jpg',
+      'VegetationObstructParking3.jpg',
+    ],
+  },
+  {
+    title: 'Damaged pedestrian barrier on the ground',
+    description:
+      'A pedestrian barrier has been damaged and is now lying on the ground, it is destroyed.',
+    address: 'Largo Orbassano, Torino',
+    lat: 45.053186,
+    lng: 7.656118,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['DamagedPedestrianBarrier.jpg'],
+  },
+  {
+    title: 'Pedestrian crosswalks hard to see',
+    description:
+      'The pedestrian crosswalks are faded and difficult to see, especially at night or in low light conditions.',
+    address: 'Via Matera, 18 bis, Torino',
+    lat: 45.052926,
+    lng: 7.636216,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['PedestrianCrosswalksHardToSee.jpg'],
+  },
+  {
+    title: 'Pedestrian crosswalks not clearly visible',
+    description:
+      'The pedestrian crosswalks are very faded and hard to distinguish, especially at night or in poorly lit areas.',
+    address: 'Via Monfalcone, 125a, Torino',
+    lat: 45.052009,
+    lng: 7.636515,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['PedestrianCrosswalksNotClearlyVisible.jpg'],
+  },
+  {
+    title: 'Damaged road',
+    description:
+      'The road has several potholes and damaged sections that create difficulties for vehicles.',
+    address: 'Via Bernardo De Canal, 27, Torino',
+    lat: 45.034103,
+    lng: 7.641367,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['DamagedRoad1.jpg', 'DamagedRoad2.jpg'],
+  },
+  {
+    title: 'Damaged bike rack',
+    description:
+      'One of the bike racks along the street is damaged and has become tilted. The structure is no longer properly aligned, making it difficult for cyclists to use. Additionally, its instability could cause damage to parked bicycles.',
+    address: 'Via Bernardo De Canal, 23e, Torino',
+    lat: 45.03398,
+    lng: 7.641721,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['DamagedBikeRack1.jpg', 'DamagedBikeRack2.jpg'],
+  },
+  {
+    title: 'Tilted Traffic Sign',
+    description:
+      'The traffic sign, which should be horizontal, is tilted and now appears at an angle. This incorrect positioning could reduce the visibility of the sign.',
+    address: 'Via Cercenasco, 2e, Torino',
+    lat: 45.02468,
+    lng: 7.637716,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['TiltedTrafficSign.jpg'],
+  },
+  {
+    title: 'Sidewalk with dangerous cracks',
+    description:
+      'The sidewalk has several cracks and damaged areas that pose a danger to pedestrians. The uneven surfaces could cause trips or falls.',
+    address: 'Corso Unione Sovietica, 399, Torino',
+    lat: 45.024403,
+    lng: 7.637539,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'SidewalkWithDangerousCracks1.jpg',
+      'SidewalkWithDangerousCracks2.jpg',
+      'SidewalkWithDangerousCracks3.jpg',
+    ],
+  },
+  {
+    title: 'Missing section of speed bump',
+    description:
+      'A section of the speed bump is missing, creating a discontinuity in the pavement. This could lead to vehicles not slowing down adequately.',
+    address: 'Via Cercenasco, 4c, Torino',
+    lat: 45.024381,
+    lng: 7.638497,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'MissingSectionOfSpeedBump1.jpg',
+      'MissingSectionOfSpeedBump2.jpg',
+    ],
+  },
+  {
+    title: 'Cracked sidewalk',
+    description:
+      'The sidewalk is severely cracked and uneven in several areas, creating hazards for pedestrians.',
+    address: 'Via Monfalcone, 98, Torino',
+    lat: 45.051374,
+    lng: 7.638701,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['CrackedSidewalk.jpg'],
+  },
+  {
+    title: 'Broken benches',
+    description:
+      'The benches have missing planks and an unstable structure, making it difficult to sit safely. The current condition could cause falls or minor accidents for those using it. The benches require repairs to ensure safe use by citizens.',
+    address: 'Corso Francesco Ferrucci, 128a, Torino',
+    lat: 45.060094,
+    lng: 7.656462,
+    categoryName: 'Other',
+    images: ['BrokenBench1.jpg', 'BrokenBench2.jpg'],
+  },
+  {
+    title: 'Misaligned bike lane separator',
+    description:
+      'The physical yellow bike lane separator is misaligned and no longer properly positioned. Its current condition reduces its effectiveness in separating the bike lane from the roadway.',
+    address: 'Corso Racconigi, 233e, Torino',
+    lat: 45.053872,
+    lng: 7.649907,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['MisalignedBikeLaneSeparator.jpg'],
+  },
+  {
+    title: 'Wall with missing piece',
+    description: 'A section of the wall is missing.',
+    address: 'Corso Mediterraneo, Torino',
+    lat: 45.059709,
+    lng: 7.656556,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['WallWithMissingPiece.jpg'],
+  },
+  {
+    title: 'Poorly visible pedestrian crosswalks',
+    description:
+      'The pedestrian crosswalk markings are faded and difficult to see, especially in low light conditions. This reduces visibility for drivers.',
+    address: 'Via Nichelino, 2, Torino',
+    lat: 45.023935,
+    lng: 7.63689,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['PoorlyVisiblePedestrianCrosswalks.jpg'],
+  },
+  {
+    title: 'Damaged safety barrier',
+    description:
+      'The safety barrier is mostly intact, but the top section is bent downward. This damage reduces its effectiveness.',
+    address: 'Via San Paolo, 160a, Torino',
+    lat: 45.056724,
+    lng: 7.635498,
+    categoryName: 'Architectural Barriers',
+    images: ['DamagedSafetyBarrier.jpg'],
+  },
+  {
+    title: 'Damaged telecom cabinet',
+    description:
+      'The telecom cabinet shows visible damage, with a section of the exterior panel completely detached.',
+    address: 'Corso Peschiera, 93, Torino',
+    lat: 45.061014,
+    lng: 7.656677,
+    categoryName: 'Other',
+    images: ['DamagedTelecomCabinet1.jpg', 'DamagedTelecomCabinet2.jpg'],
+  },
+  {
+    title: 'Telecom cabinet with panel held by cable tie',
+    description:
+      'A section of the telecom cabinet’s exterior panel is not properly secured and is held in place only by a cable tie.',
+    address: 'Via Bassano, 23, Torino',
+    lat: 45.053204,
+    lng: 7.636378,
+    categoryName: 'Other',
+    images: [
+      'TelecomCabinetWithPanelHeldByCableTie1.jpg',
+      'TelecomCabinetWithPanelHeldByCableTie2.jpg',
+    ],
+  },
+  {
+    title: 'Side of sidewalk damaged',
+    description:
+      'A small section on one side of the sidewalk is damaged; although limited in size, it could still pose a tripping hazard for pedestrians.',
+    address: 'Corso Luigi Einaudi, 44, Torino',
+    lat: 45.061164,
+    lng: 7.659018,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['SideOfSidewalkDamaged1.jpg', 'SideOfSidewalkDamaged2.jpg'],
+  },
+  {
+    title: 'Tilted Traffic Sign Pole',
+    description:
+      'The pole of a traffic sign is tilted and no longer perfectly vertical, reducing its visibility for drivers.',
+    address: 'Corso Peschiera, 132, Torino',
+    lat: 45.062721,
+    lng: 7.654925,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: ['TiltedTrafficSignPole.jpg'],
+  },
+  {
+    title: 'Deteriorated Wall',
+    description:
+      'The wall is extensively damaged, with large sections missing and crumbling.',
+    address: 'Corso Francesco Ferrucci, 153a, Torino',
+    lat: 45.060796,
+    lng: 7.656478,
+    categoryName: 'Public Green Areas and Playgrounds',
+    images: ['DeterioratedWall1.jpg', 'DeterioratedWall2.jpg'],
+  },
+  {
+    title: 'Uneven Road Surface',
+    description:
+      'A portion of the road at the side is slightly higher than the central part of the street, and the area near the manholes is somewhat damaged. This unevenness could create difficulties for vehicles and pedestrians.',
+    address: 'Via Spalato, 14, Torino',
+    lat: 45.060859,
+    lng: 7.653455,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['UnevenRoad1.jpg', 'UnevenRoad2.jpg', 'UnevenRoad3.jpg'],
+  },
+  {
+    title: 'Traffic Lights with Missing or Damaged Hoods',
+    description:
+      'Some traffic lights are missing their hoods or have hoods that are damaged or broken. The absence or damage of the hood can reduce the visibility of the lights, creating potential safety risks.',
+    address: 'Corso Castelfidardo, Torino',
+    lat: 45.061643,
+    lng: 7.658074,
+    categoryName: 'Road Signs and Traffic Lights',
+    images: [
+      'TrafficLightsMissingHoods1.jpg',
+      'TrafficLightsMissingHoods2.jpg',
+      'TrafficLightsMissingHoods3.jpg',
     ],
   },
 ];
@@ -619,12 +836,14 @@ interface Repositories {
   officeRepo: Repository<Office>;
   profileRepo: Repository<Profile>;
   boundaryRepo: Repository<Boundary>;
+  userOfficeRoleRepo: Repository<UserOfficeRole>;
 }
 
 interface UserCreationContext {
   userRepo: Repository<User>;
   accountRepo: Repository<Account>;
   profileRepo: Repository<Profile>;
+  userOfficeRoleRepo: Repository<UserOfficeRole>;
   commonPassword: string;
   rolesMap: Map<string, Role>;
   officesMap: Map<string, Office>;
@@ -649,6 +868,7 @@ function getRepositories(dataSource: DataSource): Repositories {
     officeRepo: dataSource.getRepository(Office),
     profileRepo: dataSource.getRepository(Profile),
     boundaryRepo: dataSource.getRepository(Boundary),
+    userOfficeRoleRepo: dataSource.getRepository(UserOfficeRole),
   };
 }
 
@@ -776,6 +996,7 @@ async function createUserWithAccountAndProfile(
     userRepo,
     accountRepo,
     profileRepo,
+    userOfficeRoleRepo,
     commonPassword,
     rolesMap,
     officesMap,
@@ -788,16 +1009,32 @@ async function createUserWithAccountAndProfile(
     return existingUser;
   }
 
+  const role = rolesMap.get(roleName);
+  const office = officeName ? officesMap.get(officeName) : null;
+
   const user = userRepo.create({
     id: nanoid(),
     firstName,
     lastName,
     username,
     email,
-    role: rolesMap.get(roleName),
-    office: officeName ? officesMap.get(officeName) : null,
+    role: role,
+    office: office,
+    isEmailVerified: true,
   });
   await userRepo.save(user);
+
+  if (office && role) {
+    await userOfficeRoleRepo.save({
+      id: nanoid(),
+      userId: user.id,
+      officeId: office.id,
+      roleId: role.id,
+      user: user,
+      office: office,
+      role: role,
+    });
+  }
 
   await accountRepo.save({
     id: nanoid(),
@@ -872,6 +1109,80 @@ async function seedExternalMaintainers(
       });
     }
   }
+}
+
+async function seedMultiRoleTechOfficer(
+  dataSource: DataSource,
+  context: UserCreationContext,
+): Promise<void> {
+  const {
+    userRepo,
+    accountRepo,
+    profileRepo,
+    commonPassword,
+    rolesMap,
+    officesMap,
+  } = context;
+
+  const username = 'tech_multi_office';
+  const existingUser = await userRepo.findOne({ where: { username } });
+
+  if (existingUser) {
+    console.log(`Multi-office tech officer already exists: ${username}`);
+    return;
+  }
+
+  const techRole = rolesMap.get('tech_officer');
+  const maintenanceOffice = officesMap.get('maintenance');
+
+  const user = userRepo.create({
+    id: nanoid(),
+    firstName: 'Multi',
+    lastName: 'Role Tech',
+    username,
+    email: 'tech.multi@participium.com',
+    role: techRole,
+    office: maintenanceOffice,
+    isEmailVerified: true,
+  });
+  await userRepo.save(user);
+
+  await accountRepo.save({
+    id: nanoid(),
+    user,
+    providerId: 'local',
+    accountId: username,
+    password: commonPassword,
+  });
+
+  await profileRepo.save(
+    profileRepo.create({
+      id: nanoid(),
+      userId: user.id,
+      user: user,
+    }),
+  );
+
+  const userOfficeRoleRepo = dataSource.getRepository(UserOfficeRole);
+  const officesToAssign = ['maintenance', 'infrastructure', 'public_services'];
+
+  for (const officeName of officesToAssign) {
+    const office = officesMap.get(officeName);
+    if (office) {
+      const assignment = userOfficeRoleRepo.create({
+        id: nanoid(),
+        userId: user.id,
+        officeId: office.id,
+        roleId: techRole.id,
+      });
+      await userOfficeRoleRepo.save(assignment);
+      console.log(`✓ Assigned ${username} to office: ${office.label}`);
+    }
+  }
+
+  console.log(
+    `Created multi-role tech officer: ${username} with ${officesToAssign.length} office assignments`,
+  );
 }
 
 async function seedCitizenUsers(context: UserCreationContext): Promise<User[]> {
@@ -991,6 +1302,9 @@ async function createReport(
   isAnonymous: boolean,
   category: Category,
   imagesDir: string,
+  status: ReportStatus,
+  assignedOfficer: User | null,
+  processedBy: User | null,
 ): Promise<Report> {
   const reportId = nanoid();
 
@@ -1005,7 +1319,7 @@ async function createReport(
     id: reportId,
     title: realReport.title,
     description: realReport.description,
-    status: ReportStatus.RESOLVED,
+    status: status,
     address: realReport.address,
     location: {
       type: 'Point',
@@ -1016,6 +1330,10 @@ async function createReport(
     category,
     createdAt: faker.date.recent({ days: 30 }),
     isAnonymous,
+    assignedOfficer: assignedOfficer || undefined,
+    assignedOfficerId: assignedOfficer?.id,
+    processedBy: processedBy || undefined,
+    processedById: processedBy?.id,
   });
 
   return report;
@@ -1023,6 +1341,7 @@ async function createReport(
 
 async function seedReports(
   reportRepo: Repository<Report>,
+  userRepo: Repository<User>,
   minioProvider: MinioProvider,
   citizenUsers: User[],
   categoriesMap: Map<string, Category>,
@@ -1044,6 +1363,21 @@ async function seedReports(
   const luigiVerdi = citizenUsers.find((u) => u.username === 'luigi_verdi');
   const reportsToSave: Report[] = [];
 
+  const findOfficerForCategory = async (categoryName: string) => {
+    const category = categoriesMap.get(categoryName);
+    if (!category || !category.office) return null;
+
+    const officerUsername = `tech_${category.office.name}_1`;
+    const officer = await userRepo.findOne({
+      where: { username: officerUsername },
+    });
+    return officer;
+  };
+
+  const adminUser = await userRepo.findOne({
+    where: { username: 'system_admin' },
+  });
+
   for (let idx = 0; idx < REAL_REPORTS.length; idx++) {
     const realReport = REAL_REPORTS[idx];
     const { user, isAnonymous } = determineReportUser(
@@ -1058,6 +1392,42 @@ async function seedReports(
       continue;
     }
 
+    let status: ReportStatus;
+
+    if (idx === 0) status = ReportStatus.PENDING;
+    else if (idx === 1) status = ReportStatus.REJECTED;
+    else if (idx === 2) status = ReportStatus.ASSIGNED;
+    else if (idx === 3) status = ReportStatus.IN_PROGRESS;
+    else if (idx === 4) status = ReportStatus.SUSPENDED;
+    else {
+      const rand = Math.random();
+      if (rand < 0.75) status = ReportStatus.RESOLVED;
+      else if (rand < 0.85) status = ReportStatus.IN_PROGRESS;
+      else if (rand < 0.9) status = ReportStatus.ASSIGNED;
+      else if (rand < 0.95) status = ReportStatus.PENDING;
+      else status = ReportStatus.REJECTED;
+    }
+
+    let assignedOfficer: User | null = null;
+    let processedBy: User | null = null;
+
+    if (
+      [
+        ReportStatus.ASSIGNED,
+        ReportStatus.IN_PROGRESS,
+        ReportStatus.SUSPENDED,
+        ReportStatus.RESOLVED,
+      ].includes(status)
+    ) {
+      assignedOfficer = await findOfficerForCategory(realReport.categoryName);
+    }
+
+    if (status === ReportStatus.RESOLVED && assignedOfficer) {
+      processedBy = assignedOfficer;
+    } else if (status === ReportStatus.REJECTED) {
+      processedBy = adminUser || null;
+    }
+
     const report = await createReport(
       reportRepo,
       minioProvider,
@@ -1066,13 +1436,18 @@ async function seedReports(
       isAnonymous,
       category,
       imagesDir,
+      status,
+      assignedOfficer,
+      processedBy,
     );
 
     reportsToSave.push(report);
   }
 
   await reportRepo.save(reportsToSave);
-  console.log(`Created ${reportsToSave.length} real reports in Torino.`);
+  console.log(
+    `Created ${reportsToSave.length} real reports in Torino with varied statuses.`,
+  );
 }
 
 // ============================================================================
@@ -1098,17 +1473,20 @@ export async function seedDatabase(
     userRepo: repositories.userRepo,
     accountRepo: repositories.accountRepo,
     profileRepo: repositories.profileRepo,
+    userOfficeRoleRepo: repositories.userOfficeRoleRepo,
     commonPassword,
     rolesMap,
     officesMap,
   };
 
   await seedMunicipalUsers(userContext);
+  await seedMultiRoleTechOfficer(dataSource, userContext);
   await seedExternalMaintainers(userContext);
   const citizenUsers = await seedCitizenUsers(userContext);
 
   await seedReports(
     repositories.reportRepo,
+    repositories.userRepo,
     minioProvider,
     citizenUsers,
     categoriesMap,

@@ -105,7 +105,13 @@ describe('NotificationsController (Integration)', () => {
     await notifRepo.save([n1, n2]);
 
     // Other user's notification
-    const otherUser = dataSource.getRepository(User).create({ username: 'other', email: 'o@example.com' });
+    const otherUser = dataSource.getRepository(User).create({ 
+      username: 'other', 
+      email: 'o@example.com',
+      firstName: 'Other',
+      lastName: 'User',
+      roleId: 'user-role-id'
+    });
     otherUser.id = 'other-user-id';
     await dataSource.getRepository(User).save(otherUser);
     const otherNotif = notifRepo.create({ userId: otherUser.id, type: 'info', message: 'Other', read: false });

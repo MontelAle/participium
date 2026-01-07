@@ -22,6 +22,8 @@ export const REPORT_ERROR_MESSAGES = {
     role?: string,
   ) =>
     `${role ?? 'Officer'} cannot change status from ${currentStatus} to ${targetStatus}`,
+  INVALID_STATUS_TRANSITION: (currentStatus: string, targetStatus: string) =>
+    `Cannot change status from ${currentStatus} to ${targetStatus}`,
   OFFICER_NOT_FOR_CATEGORY: (officerId: string, categoryId: string) =>
     `Officer ${officerId} does not belong to the office responsible for category ${categoryId}`,
   OFFICER_NOT_FOUND: (officerId: string) =>

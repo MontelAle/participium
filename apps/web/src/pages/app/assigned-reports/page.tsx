@@ -1,17 +1,20 @@
 import { ReportsTable } from '@/components/assigned-reports/assignedReportTable';
+import { ReportsFilterToolbar } from '@/components/shared/reports-filter-toolbar';
 import { useAuth } from '@/contexts/auth-context';
+import { useReportFiltering } from '@/hooks/use-report-filtering';
 import { useReports } from '@/hooks/use-reports';
 import { useMemo } from 'react';
 
 const AssignedReportsPage = () => {
   const { data: reports = [] } = useReports();
-
   const { user } = useAuth();
 
-  const filteredData = useMemo(() => {
+  const myReports = useMemo(() => {
     if (!user) return [];
     return reports.filter((report) => report.assignedOfficerId === user.id);
   }, [reports, user]);
+
+  const filterLogic = useReportFiltering(myReports);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">
@@ -21,12 +24,20 @@ const AssignedReportsPage = () => {
             Assigned Reports
           </h1>
           <p className="text-lg text-muted-foreground">
-            Review assigned reports.
+            Review reports assigned to you.
           </p>
         </div>
       </div>
+
+      <div className="rounded-xl border bg-card p-4">
+        <ReportsFilterToolbar state={filterLogic} />
+      </div>
+
       <div className="overflow-hidden">
-        <ReportsTable data={filteredData} viewBasePath="/app/assigned-reports/view" />
+        <ReportsTable
+          data={filterLogic.filteredData}
+          viewBasePath="/app/assigned-reports/view"
+        />
       </div>
     </div>
   );

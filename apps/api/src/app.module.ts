@@ -7,6 +7,7 @@ import { OfficesModule } from './modules/offices/offices.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { TelegramModule } from './modules/telegram/telegram.module';
 import { UsersModule } from './modules/users/users.module';
 import { DatabaseModule } from './providers/database/database.module';
 import { MinioModule } from './providers/minio/minio.module';
@@ -18,6 +19,7 @@ import appConfig from './config/app.config';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig],
+      envFilePath: ['.env', '../../.env'],
     }),
     DatabaseModule,
     MinioModule,
@@ -29,6 +31,7 @@ import appConfig from './config/app.config';
     CategoriesModule,
     OfficesModule,
     ProfilesModule,
+    TelegramModule,
   ],
   controllers: [],
   providers: [],

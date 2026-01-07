@@ -10,7 +10,9 @@ import {
   Report,
   Role,
   Session,
+  TelegramLinkCode,
   User,
+  UserOfficeRole,
 } from '@entities';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -41,6 +43,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
           Office,
           Profile,
           Boundary,
+          UserOfficeRole,
+          TelegramLinkCode,
         ],
         synchronize: configService.get<string>('app.env') !== 'production',
         logging: false,

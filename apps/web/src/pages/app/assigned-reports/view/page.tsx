@@ -1,7 +1,6 @@
 import { ViewAssignedReport } from '@/components/assigned-reports/view-report-form';
 import { ReportDetailLayout } from '@/components/reports/report-detail-layout';
-import { ReportComments } from '@/components/shared/report-comments';
-import { ReportMessages } from '@/components/shared/report-messages';
+import ReportDiscussion from '@/components/shared/report-discussion';
 import { useReport } from '@/hooks/use-reports';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -18,16 +17,14 @@ function AssignedReportsViewPage() {
       fallbackRoute="/reports"
     >
       {report && (
-        <div className="flex flex-col gap-6">
+        <div className="grid gap-4 md:grid-cols-4 items-start">
           <ViewAssignedReport
             report={report}
             showAnonymous={false}
             onClose={() => navigate(-1)}
+            className="md:col-span-3"
           />
-          <div className="flex flex-col gap-4">
-            <ReportComments reportId={id!} />
-            <ReportMessages reportId={id!} />
-          </div>
+          <ReportDiscussion reportId={id!} />
         </div>
       )}
     </ReportDetailLayout>

@@ -34,4 +34,21 @@ export default () => ({
     secretKey: process.env.MINIO_ROOT_PASSWORD || 'minioadmin',
     bucketName: process.env.MINIO_BUCKET_NAME || 'participium-reports',
   },
+  email: {
+    host: process.env.EMAIL_HOST || 'localhost',
+    port: Number.parseInt(process.env.EMAIL_PORT || '587', 10),
+    secure: process.env.EMAIL_SECURE === 'true',
+    user: process.env.EMAIL_USER || '',
+    password: process.env.EMAIL_PASSWORD || '',
+    from: process.env.EMAIL_FROM || 'noreply@participium.local',
+  },
+  telegram: {
+    botToken: process.env.TELEGRAM_BOT_TOKEN || '',
+    webhookUrl: process.env.TELEGRAM_WEBHOOK_URL || '',
+    useWebhook: process.env.TELEGRAM_USE_WEBHOOK === 'true',
+    maxReportsPerHour: Number.parseInt(
+      process.env.TELEGRAM_MAX_REPORTS_PER_HOUR || '5',
+      10,
+    ),
+  },
 });
