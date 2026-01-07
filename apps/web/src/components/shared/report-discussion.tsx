@@ -65,6 +65,15 @@ export function ReportDiscussion({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (text.trim() && !isPosting) {
+        handleSubmit(e as unknown as React.FormEvent);
+      }
+    }
+  };
+
   const renderItems = (items: (Comment | Message)[]) => {
     if (items.length === 0)
       return (
@@ -231,6 +240,7 @@ export function ReportDiscussion({
                 }
                 value={text}
                 onChange={(e) => setText(e.target.value)}
+                onKeyDown={handleKeyDown}
                 disabled={isPosting}
                 className="min-h-20 pr-12 resize-none bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20 transition-all rounded-xl"
               />
