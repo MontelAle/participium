@@ -23,6 +23,7 @@ export function Navbar() {
     user,
     logout,
     isMunicipalityUser,
+    isCitizenUser,
     isMunicipalPrOfficer,
     isTechnicalOfficer,
     isExternal,
@@ -58,7 +59,10 @@ export function Navbar() {
     return `/reports/view/${reportId}`;
   };
 
-  const handleNotificationClick = (notificationId: string, reportId?: string) => {
+  const handleNotificationClick = (
+    notificationId: string,
+    reportId?: string,
+  ) => {
     markRead.mutate(notificationId);
     if (reportId) {
       navigate(getReportRoute(reportId));
@@ -86,44 +90,48 @@ export function Navbar() {
       <div className="flex items-center gap-4">
         {user ? (
           <div className="flex items-center gap-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative">
-                  <Bell className="size-5 text-muted-foreground" />
-                  {unread && unread.length > 0 && (
-                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs w-5 h-5">
-                      {unread.length}
-                    </span>
+            {isCitizenUser && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative">
+                    <Bell className="size-5 text-muted-foreground" />
+                    {unread && unread.length > 0 && (
+                      <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs w-5 h-5">
+                        {unread.length}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80 p-2">
+                  <DropdownMenuLabel className="text-sm">
+                    Notifications
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {notifications && notifications.length > 0 ? (
+                    notifications.slice(0, 10).map((n) => (
+                      <DropdownMenuItem
+                        key={n.id}
+                        onClick={() =>
+                          handleNotificationClick(n.id, n.reportId)
+                        }
+                        className={`flex flex-col items-start gap-1 cursor-pointer ${n.read ? 'opacity-60' : ''} ${n.reportId ? 'hover:bg-accent' : ''}`}
+                      >
+                        <div className="text-sm font-medium whitespace-normal break-all">
+                          {n.message}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(n.createdAt).toLocaleString()}
+                        </div>
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-sm text-muted-foreground">
+                      No notifications
+                    </div>
                   )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80 p-2">
-                <DropdownMenuLabel className="text-sm">
-                  Notifications
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {notifications && notifications.length > 0 ? (
-                  notifications.slice(0, 10).map((n) => (
-                    <DropdownMenuItem
-                      key={n.id}
-                      onClick={() => handleNotificationClick(n.id, n.reportId)}
-                      className={`flex flex-col items-start gap-1 cursor-pointer ${n.read ? 'opacity-60' : ''} ${n.reportId ? 'hover:bg-accent' : ''}`}
-                    >
-                      <div className="text-sm font-medium whitespace-normal break-all">
-                        {n.message}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(n.createdAt).toLocaleString()}
-                      </div>
-                    </DropdownMenuItem>
-                  ))
-                ) : (
-                  <div className="p-2 text-sm text-muted-foreground">
-                    No notifications
-                  </div>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
