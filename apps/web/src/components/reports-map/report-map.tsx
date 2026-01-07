@@ -9,6 +9,7 @@ import 'leaflet/dist/leaflet.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import torinoBoundary from '../assets/torino_boundaries.json';
 
 import type {
   NominatimSearchResult,
@@ -82,30 +83,28 @@ export default function ReportsMap() {
       },
     ).addTo(map);
 
-    const fetchTorinoBoundary = async () => {
-      try {
-        const response = await fetch(
-          'https://nominatim.openstreetmap.org/search.php?q=Torino+Italy&polygon_geojson=1&format=json&limit=1',
-        );
-        const data = await response.json();
-        if (data?.[0]?.geojson) {
-          boundaryGeoJsonRef.current = data[0].geojson;
-          L.geoJSON(data[0].geojson, {
-            style: {
-              color: '#3b82f6',
-              weight: 3,
-              opacity: 0.8,
-              fillColor: '#3b82f6',
-              fillOpacity: 0.05,
-            },
-            interactive: false,
-          }).addTo(map);
-        }
-      } catch (e) {
-        console.error('Boundary error', e);
-      }
+    const loadTorinoBoundary = () => {
+      if (boundaryGeoJsonRef.current) return;
+
+      boundaryGeoJsonRef.current = torinoBoundary;
+
+      const layer = L.geoJSON(torinoBoundary as any, {
+        style: {
+          color: '#3b82f6',
+          weight: 3,
+          opacity: 0.8,
+          fillColor: '#3b82f6',
+          fillOpacity: 0.05,
+        },
+        interactive: false,
+      });
+
+      layer.addTo(map);
+
+      map.fitBounds(layer.getBounds());
     };
-    fetchTorinoBoundary();
+
+    loadTorinoBoundary();
 
     map.on('click', (e: L.LeafletMouseEvent) =>
       handleLocationSelect(e.latlng.lat, e.latlng.lng),

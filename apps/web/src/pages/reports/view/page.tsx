@@ -1,5 +1,5 @@
 import { ReportDetailLayout } from '@/components/reports/report-detail-layout';
-import { ReportMessages } from '@/components/shared/report-messages';
+import ReportDiscussion from '@/components/shared/report-discussion';
 import { ReportView } from '@/components/shared/report-view';
 import { useReport } from '@/hooks/use-reports';
 import { useParams } from 'react-router-dom';
@@ -16,12 +16,10 @@ function ReportDetailsPage() {
       fallbackRoute="/"
     >
       {report && (
-        <>
-          <ReportView report={report} />
-          <div className="mt-6">
-            <ReportMessages reportId={id!} />
-          </div>
-        </>
+        <div className="grid md:grid-cols-4 gap-4">
+          <ReportView report={report} className="md:col-span-3" />
+          <ReportDiscussion reportId={report.id} showComments={false} />
+        </div>
       )}
     </ReportDetailLayout>
   );

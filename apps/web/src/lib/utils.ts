@@ -54,3 +54,23 @@ export const prettifyRole = (name: string) =>
     .split(' ')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(' ');
+
+export const prettifyStatus = (status: string) =>
+  status
+    .replaceAll('_', ' ')
+    .split(' ')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+
+export const allowedTransitions: Record<ReportStatus, ReportStatus[]> = {
+  pending: ['pending', 'assigned', 'rejected'],
+  assigned: ['assigned', 'suspended', 'in_progress'],
+  in_progress: ['in_progress', 'resolved', 'suspended'],
+  resolved: ['resolved'],
+  rejected: ['rejected'],
+  suspended: ['suspended', 'in_progress', 'assigned'],
+};
+
+export const getNextStatusOptions = (currentStatus: ReportStatus) => {
+  return allowedTransitions[currentStatus];
+};

@@ -105,8 +105,8 @@ export function AuthForm({ mode, className, ...props }: AuthFormProps) {
                     <InputGroupInput
                       id="username"
                       name="username"
-                      type="username"
-                      placeholder="Username"
+                      type="text"
+                      placeholder={isLogin ? "Email or Username" : "Username"}
                       className="h-12 text-lg"
                       required
                     />

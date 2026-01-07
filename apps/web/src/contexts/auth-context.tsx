@@ -1,6 +1,12 @@
-import { useLogin, useLogout, useRegister, useVerifyEmail } from '@/hooks/use-auth';
-import type { LoginDto, RegisterDto, VerifyEmailDto, User } from '@/types';
+import {
+  useLogin,
+  useLogout,
+  useRegister,
+  useVerifyEmail,
+} from '@/hooks/use-auth';
+import type { LoginDto, RegisterDto, User, VerifyEmailDto } from '@/types';
 import { AuthContextType } from '@/types/auth';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   createContext,
   ReactNode,
@@ -59,7 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : 'Login failed';
-        const errorResponse = err instanceof Error ? (err as any).response : null;
+        const errorResponse =
+          err instanceof Error ? (err as any).response : null;
         return {
           success: false,
           error: errorMessage,
@@ -100,15 +107,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [verifyEmailMutation],
   );
 
+  const queryClient = useQueryClient();
+
   const logout = useCallback(async () => {
+    // First attempt server-side logout to invalidate the session,
+    // then clear local client auth state to avoid race conditions
     try {
       await logoutMutation.mutateAsync();
     } catch (err) {
       console.error('Logout error:', err);
-    } finally {
-      setUser(null);
     }
-  }, [logoutMutation]);
+
+    // Clear client auth state to stop components from triggering queries
+    setUser(null);
+    try {
+      localStorage.removeItem('user');
+    } catch {}
+
+    try {
+      // Cancel any in-flight queries and remove cached queries so polling stops
+      await queryClient.cancelQueries();
+      queryClient.removeQueries();
+    } catch (e) {
+      console.error('Error clearing queries on logout', e);
+    }
+  }, [logoutMutation, queryClient]);
 
   const hasRole = useCallback(
     (roles: string[]) => {
@@ -129,7 +152,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       hasRole,
     }),
-    [user, isLoading, error, flags, login, register, verifyEmail, logout, hasRole],
+    [
+      user,
+      isLoading,
+      error,
+      flags,
+      login,
+      register,
+      verifyEmail,
+      logout,
+      hasRole,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

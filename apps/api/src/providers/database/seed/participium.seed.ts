@@ -593,7 +593,7 @@ const REAL_REPORTS = [
     lng: 7.618795,
     categoryName: 'Roads and Urban Furnishings',
     images: [
-      'VegetationObstructParking1.jpg', 
+      'VegetationObstructParking1.jpg',
       'VegetationObstructParking2.jpg',
       'VegetationObstructParking3.jpg',
     ],
@@ -636,30 +636,24 @@ const REAL_REPORTS = [
     lat: 45.034103,
     lng: 7.641367,
     categoryName: 'Roads and Urban Furnishings',
-    images: [
-      'DamagedRoad1.jpg',
-      'DamagedRoad2.jpg',
-    ],
+    images: ['DamagedRoad1.jpg', 'DamagedRoad2.jpg'],
   },
   {
     title: 'Damaged bike rack',
     description:
       'One of the bike racks along the street is damaged and has become tilted. The structure is no longer properly aligned, making it difficult for cyclists to use. Additionally, its instability could cause damage to parked bicycles.',
     address: 'Via Bernardo De Canal, 23e, Torino',
-    lat: 45.033980,
+    lat: 45.03398,
     lng: 7.641721,
     categoryName: 'Roads and Urban Furnishings',
-    images: [
-      'DamagedBikeRack1.jpg',
-      'DamagedBikeRack2.jpg',
-    ],
+    images: ['DamagedBikeRack1.jpg', 'DamagedBikeRack2.jpg'],
   },
   {
     title: 'Tilted Traffic Sign',
     description:
       'The traffic sign, which should be horizontal, is tilted and now appears at an angle. This incorrect positioning could reduce the visibility of the sign.',
     address: 'Via Cercenasco, 2e, Torino',
-    lat: 45.024680,
+    lat: 45.02468,
     lng: 7.637716,
     categoryName: 'Road Signs and Traffic Lights',
     images: ['TiltedTrafficSign.jpg'],
@@ -699,9 +693,7 @@ const REAL_REPORTS = [
     lat: 45.051374,
     lng: 7.638701,
     categoryName: 'Roads and Urban Furnishings',
-    images: [
-      'CrackedSidewalk.jpg',
-    ],
+    images: ['CrackedSidewalk.jpg'],
   },
   {
     title: 'Broken benches',
@@ -711,10 +703,7 @@ const REAL_REPORTS = [
     lat: 45.060094,
     lng: 7.656462,
     categoryName: 'Other',
-    images: [
-      'BrokenBench1.jpg',
-      'BrokenBench2.jpg',
-    ],
+    images: ['BrokenBench1.jpg', 'BrokenBench2.jpg'],
   },
   {
     title: 'Misaligned bike lane separator',
@@ -722,14 +711,13 @@ const REAL_REPORTS = [
       'The physical yellow bike lane separator is misaligned and no longer properly positioned. Its current condition reduces its effectiveness in separating the bike lane from the roadway.',
     address: 'Corso Racconigi, 233e, Torino',
     lat: 45.053872,
-    lng:  7.649907,
+    lng: 7.649907,
     categoryName: 'Roads and Urban Furnishings',
     images: ['MisalignedBikeLaneSeparator.jpg'],
   },
   {
     title: 'Wall with missing piece',
-    description:
-      'A section of the wall is missing.',
+    description: 'A section of the wall is missing.',
     address: 'Corso Mediterraneo, Torino',
     lat: 45.059709,
     lng: 7.656556,
@@ -742,7 +730,7 @@ const REAL_REPORTS = [
       'The pedestrian crosswalk markings are faded and difficult to see, especially in low light conditions. This reduces visibility for drivers.',
     address: 'Via Nichelino, 2, Torino',
     lat: 45.023935,
-    lng: 7.636890,
+    lng: 7.63689,
     categoryName: 'Roads and Urban Furnishings',
     images: ['PoorlyVisiblePedestrianCrosswalks.jpg'],
   },
@@ -764,10 +752,7 @@ const REAL_REPORTS = [
     lat: 45.061014,
     lng: 7.656677,
     categoryName: 'Other',
-    images: [
-      'DamagedTelecomCabinet1.jpg',
-      'DamagedTelecomCabinet2.jpg',
-    ],
+    images: ['DamagedTelecomCabinet1.jpg', 'DamagedTelecomCabinet2.jpg'],
   },
   {
     title: 'Telecom cabinet with panel held by cable tie',
@@ -790,10 +775,7 @@ const REAL_REPORTS = [
     lat: 45.061164,
     lng: 7.659018,
     categoryName: 'Roads and Urban Furnishings',
-    images: [
-      'SideOfSidewalkDamaged1.jpg',
-      'SideOfSidewalkDamaged2.jpg',
-    ],
+    images: ['SideOfSidewalkDamaged1.jpg', 'SideOfSidewalkDamaged2.jpg'],
   },
   {
     title: 'Tilted Traffic Sign Pole',
@@ -813,10 +795,7 @@ const REAL_REPORTS = [
     lat: 45.060796,
     lng: 7.656478,
     categoryName: 'Public Green Areas and Playgrounds',
-    images: [
-      'DeterioratedWall1.jpg',
-      'DeterioratedWall2.jpg',
-    ],
+    images: ['DeterioratedWall1.jpg', 'DeterioratedWall2.jpg'],
   },
   {
     title: 'Uneven Road Surface',
@@ -826,11 +805,7 @@ const REAL_REPORTS = [
     lat: 45.060859,
     lng: 7.653455,
     categoryName: 'Roads and Urban Furnishings',
-    images: [
-      'UnevenRoad1.jpg',
-      'UnevenRoad2.jpg',
-      'UnevenRoad3.jpg',
-    ],
+    images: ['UnevenRoad1.jpg', 'UnevenRoad2.jpg', 'UnevenRoad3.jpg'],
   },
   {
     title: 'Traffic Lights with Missing or Damaged Hoods',
@@ -1149,11 +1124,11 @@ async function seedMultiRoleTechOfficer(
     officesMap,
   } = context;
 
-  const username = 'tech_multi_role';
+  const username = 'tech_multi_office';
   const existingUser = await userRepo.findOne({ where: { username } });
 
   if (existingUser) {
-    console.log(`Multi-role tech officer already exists: ${username}`);
+    console.log(`Multi-office tech officer already exists: ${username}`);
     return;
   }
 
@@ -1168,6 +1143,7 @@ async function seedMultiRoleTechOfficer(
     email: 'tech.multi@participium.com',
     role: techRole,
     office: maintenanceOffice,
+    isEmailVerified: true,
   });
   await userRepo.save(user);
 

@@ -16,10 +16,19 @@ import {
 } from '@/hooks/use-notifications';
 import { useProfile } from '@/hooks/use-profile';
 import { Bell, ChevronsUpDown, LogOut } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export function Navbar() {
-  const { user, logout, isMunicipalityUser } = useAuth();
+  const {
+    user,
+    logout,
+    isMunicipalityUser,
+    isCitizenUser,
+    isMunicipalPrOfficer,
+    isTechnicalOfficer,
+    isExternal,
+  } = useAuth();
   const { data: notifications } = useNotifications();
   const { data: unread } = useUnreadNotifications();
   const markRead = useMarkNotificationRead();
@@ -36,6 +45,39 @@ export function Navbar() {
     const firstName = profile?.user.firstName.charAt(0) || '?';
     const lastName = profile?.user.lastName.charAt(0) || '?';
     return (firstName + lastName).toUpperCase();
+  };
+
+  const getReportRoute = (reportId: string): string => {
+    if (isMunicipalPrOfficer) {
+      return `/app/assign-reports/view/${reportId}`;
+    }
+    if (isTechnicalOfficer) {
+      return `/app/assigned-reports/view/${reportId}`;
+    }
+    if (isExternal) {
+      return `/app/external/assigned-reports/${reportId}`;
+    }
+    return `/reports/view/${reportId}`;
+  };
+
+  const handleNotificationClick = (
+    notificationId: string,
+    reportId?: string,
+  ) => {
+    markRead.mutate(notificationId);
+    if (reportId) {
+      navigate(getReportRoute(reportId));
+    }
+  };
+
+  const [notifOpen, setNotifOpen] = useState(false);
+  const handleNotifOpenChange = (open: boolean) => {
+    setNotifOpen(open);
+    if (!open) return;
+    if (!unread || unread.length === 0) return;
+    unread.forEach((n) => {
+      if (!n.read) markRead.mutate(n.id);
+    });
   };
 
   return (
@@ -59,44 +101,51 @@ export function Navbar() {
       <div className="flex items-center gap-4">
         {user ? (
           <div className="flex items-center gap-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative">
-                  <Bell className="size-5 text-muted-foreground" />
-                  {unread && unread.length > 0 && (
-                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs w-5 h-5">
-                      {unread.length}
-                    </span>
+            {isCitizenUser && (
+              <DropdownMenu
+                open={notifOpen}
+                onOpenChange={handleNotifOpenChange}
+              >
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative">
+                    <Bell className="size-5 text-muted-foreground" />
+                    {unread && unread.length > 0 && (
+                      <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-xs w-5 h-5">
+                        {unread.length}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80 p-2">
+                  <DropdownMenuLabel className="text-sm">
+                    Notifications
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {notifications && notifications.length > 0 ? (
+                    notifications.slice(0, 10).map((n) => (
+                      <DropdownMenuItem
+                        key={n.id}
+                        onClick={() =>
+                          handleNotificationClick(n.id, n.reportId)
+                        }
+                        className={`flex flex-col items-start gap-1 cursor-pointer ${n.read ? 'opacity-60' : ''} ${n.reportId ? 'hover:bg-accent' : ''}`}
+                      >
+                        <div className="text-sm font-medium whitespace-normal break-all">
+                          {n.message}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(n.createdAt).toLocaleString()}
+                        </div>
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-sm text-muted-foreground">
+                      No notifications
+                    </div>
                   )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80 p-2">
-                <DropdownMenuLabel className="text-sm">
-                  Notifications
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {notifications && notifications.length > 0 ? (
-                  notifications.slice(0, 10).map((n) => (
-                    <DropdownMenuItem
-                      key={n.id}
-                      onClick={() => markRead.mutate(n.id)}
-                      className={`flex flex-col items-start gap-1 ${n.read ? 'opacity-60' : ''}`}
-                    >
-                      <div className="text-sm font-medium truncate">
-                        {n.message}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(n.createdAt).toLocaleString()}
-                      </div>
-                    </DropdownMenuItem>
-                  ))
-                ) : (
-                  <div className="p-2 text-sm text-muted-foreground">
-                    No notifications
-                  </div>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

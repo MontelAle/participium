@@ -89,6 +89,7 @@ export function ReportsList({
                 onClick={() => handleShowDetails(report.id)}
                 className={cn(
                   'text-left w-full font-bold text-xl leading-tight mb-1 transition-colors outline-none focus-visible:underline',
+                  'break-all',
                   isGuestUser
                     ? 'text-foreground/60 cursor-not-allowed'
                     : 'text-foreground group-hover:text-primary cursor-pointer',

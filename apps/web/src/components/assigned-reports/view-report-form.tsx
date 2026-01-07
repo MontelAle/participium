@@ -12,6 +12,7 @@ import { useCategories } from '@/hooks/use-categories';
 import { useExternalMaintainers } from '@/hooks/use-external-maintainers';
 import { useOffices } from '@/hooks/use-offices';
 import { useUpdateReport } from '@/hooks/use-reports';
+import { cn, getNextStatusOptions, prettifyStatus } from '@/lib/utils';
 import type { Report, ReportStatus, UpdateReportDto } from '@/types';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -21,12 +22,14 @@ export type ViewAssignedReportProps = {
   report: Report;
   showAnonymous?: boolean;
   onClose?: () => void;
+  className?: string;
 };
 
 export function ViewAssignedReport({
   report,
   showAnonymous = true,
   onClose,
+  className,
 }: Readonly<ViewAssignedReportProps>) {
   const { data: offices } = useOffices();
   const { data: externalMaintainers } = useExternalMaintainers();
@@ -49,19 +52,6 @@ export function ViewAssignedReport({
   const { isTechnicalOfficer, user } = useAuth();
 
   const allowedNextStatuses = useMemo(() => {
-    const getNextStatusOptions = (currentStatus: ReportStatus) => {
-      switch (currentStatus) {
-        case 'assigned':
-          return ['assigned', 'in_progress'];
-        case 'in_progress':
-          return ['in_progress', 'resolved'];
-        case 'resolved':
-          return ['resolved'];
-        default:
-          return [];
-      }
-    };
-
     return getNextStatusOptions(report.status as ReportStatus);
   }, [report.status]);
 
@@ -155,7 +145,7 @@ export function ViewAssignedReport({
                     <SelectContent>
                       {allowedNextStatuses.map((s) => (
                         <SelectItem key={s} value={s}>
-                          {s.replaceAll('_', ' ')}
+                          {prettifyStatus(s)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -190,7 +180,7 @@ export function ViewAssignedReport({
   );
 
   return (
-    <form className="contents" onSubmit={handleSubmit(handleConfirm)}>
+    <form className={cn('', className)} onSubmit={handleSubmit(handleConfirm)}>
       <ReportContentLayout
         report={report}
         showAnonymous={showAnonymous}

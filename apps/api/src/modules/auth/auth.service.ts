@@ -35,10 +35,16 @@ export class AuthService {
   ) {}
 
   async validateUser(username: string, password: string) {
-    const account = await this.accountRepository.findOne({
-      where: { providerId: 'local', accountId: username },
-      relations: ['user', 'user.role', 'user.office'],
-    });
+    const account = await this.accountRepository
+      .createQueryBuilder('account')
+      .leftJoinAndSelect('account.user', 'user')
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('user.office', 'office')
+      .where('account.providerId = :providerId', { providerId: 'local' })
+      .andWhere('(account.accountId = :identifier OR user.email = :identifier)', {
+        identifier: username,
+      })
+      .getOne();
 
     if (!account) return null;
 

@@ -1,37 +1,4 @@
 import {
-  type Cell,
-  type Column,
-  type ColumnDef,
-  type Header,
-  type HeaderGroup,
-  type Row,
-  type SortingState,
-  type Table,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from 'lucide-react';
-import {
-  Fragment,
-  type HTMLAttributes,
-  type ReactNode,
-  createContext,
-  memo,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from 'react';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   TableBody as TableBodyRaw,
   TableCell as TableCellRaw,
   TableHead as TableHeadRaw,
@@ -39,6 +6,25 @@ import {
   Table as TableRaw,
   TableRow as TableRowRaw,
 } from '@/components/ui/table';
+import {
+  type Cell,
+  type ColumnDef,
+  type Header,
+  type HeaderGroup,
+  type Row,
+  type Table,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import {
+  Fragment,
+  type ReactNode,
+  createContext,
+  memo,
+  useContext,
+  useMemo,
+} from 'react';
 
 export type { ColumnDef } from '@tanstack/react-table';
 
@@ -67,21 +53,10 @@ export function TableProvider<TData, TValue>({
   children,
   className,
 }: TableProviderProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
-
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: (updater) => {
-      // @ts-expect-error updater is a function that returns a sorting object handled by TanStack
-      const newSorting = updater(sorting);
-      setSorting(newSorting);
-    },
-    state: {
-      sorting,
-    },
   });
 
   const contextValue = useMemo(
@@ -144,76 +119,11 @@ export const TableHeader = ({ className, children }: TableHeaderProps) => {
   return (
     <TableHeaderRaw className={className}>
       {table?.getHeaderGroups().map((headerGroup) => (
-        <Fragment key={headerGroup.id}>
-          {children({ headerGroup })}
-        </Fragment>
+        <Fragment key={headerGroup.id}>{children({ headerGroup })}</Fragment>
       ))}
     </TableHeaderRaw>
   );
 };
-
-interface SortIconProps {
-  sortState: false | 'asc' | 'desc';
-}
-
-const SortIcon = ({ sortState }: SortIconProps) => {
-  if (sortState === 'desc') return <ArrowDownIcon className="ml-2 h-4 w-4" />;
-  if (sortState === 'asc') return <ArrowUpIcon className="ml-2 h-4 w-4" />;
-  return <ChevronsUpDownIcon className="ml-2 h-4 w-4" />;
-};
-
-export interface TableColumnHeaderProps<TData, TValue>
-  extends Readonly<HTMLAttributes<HTMLDivElement>> {
-  column: Column<TData, TValue>;
-  title: string;
-}
-
-export function TableColumnHeader<TData, TValue>({
-  column,
-  title,
-  className,
-}: TableColumnHeaderProps<TData, TValue>) {
-  const handleSortAsc = useCallback(() => {
-    column.toggleSorting(false);
-  }, [column]);
-
-  const handleSortDesc = useCallback(() => {
-    column.toggleSorting(true);
-  }, [column]);
-
-  if (!column.getCanSort()) {
-    return <TableHeadRaw className={className}>{title}</TableHeadRaw>;
-  }
-
-  return (
-    <TableHeadRaw className={className}>
-      <div className="flex items-center space-x-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              className="-ml-3 h-8 data-[state=open]:bg-accent"
-              size="sm"
-              variant="ghost"
-            >
-              <span>{title}</span>
-              <SortIcon sortState={column.getIsSorted()} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={handleSortAsc}>
-              <ArrowUpIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-              Asc
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSortDesc}>
-              <ArrowDownIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-              Desc
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </TableHeadRaw>
-  );
-}
 
 export type TableCellProps = Readonly<{
   cell: Cell<unknown, unknown>;
@@ -255,9 +165,7 @@ export const TableBody = ({ children, className }: TableBodyProps) => {
   return (
     <TableBodyRaw className={className}>
       {rows?.length ? (
-        rows.map((row) => (
-          <Fragment key={row.id}>{children({ row })}</Fragment>
-        ))
+        rows.map((row) => <Fragment key={row.id}>{children({ row })}</Fragment>)
       ) : (
         <TableRowRaw>
           <TableCellRaw className="h-24 text-center" colSpan={columns.length}>

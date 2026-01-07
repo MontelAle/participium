@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import {
   TableBody,
   TableCell,
-  TableColumnHeader,
+  TableHead,
   TableHeader,
   TableHeaderGroup,
   TableProvider,
@@ -184,13 +184,8 @@ export function MunicipalityUsersTable({
                 className="bg-muted/40 hover:bg-muted/40 border-b"
               >
                 {({ header }) => (
-                  <TableColumnHeader
-                    column={header.column}
-                    title={
-                      typeof header.column.columnDef.header === 'function'
-                        ? header.column.columnDef.header(header.getContext())
-                        : header.column.columnDef.header
-                    }
+                  <TableHead
+                    header={header}
                     className="h-12 text-sm font-semibold text-muted-foreground px-4 first:pl-6"
                   />
                 )}
