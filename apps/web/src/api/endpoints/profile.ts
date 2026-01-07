@@ -17,3 +17,13 @@ export async function getProfile(): Promise<Profile> {
 
   return res.data;
 }
+
+export async function linkTelegramAccount(code: string): Promise<void> {
+  await apiFetch('/profiles/telegram/link', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+}
