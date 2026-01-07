@@ -46,6 +46,7 @@ describe('AuthService', () => {
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
+      createQueryBuilder: jest.fn(),
     };
 
     sessionRepository = {
@@ -95,24 +96,60 @@ describe('AuthService', () => {
   });
 
   describe('validateUser', () => {
-    it('should return null if account not found', async () => {
-      accountRepository.findOne.mockResolvedValue(null);
+    const mockQueryBuilder = () => ({
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getOne: jest.fn(),
+    });
+
+    it('should return null if account not found by username', async () => {
+      const qb = mockQueryBuilder();
+      qb.getOne.mockResolvedValue(null);
+      accountRepository.createQueryBuilder.mockReturnValue(qb);
+
       const result = await service.validateUser('user', 'pass');
+      expect(result).toBeNull();
+    });
+
+    it('should return null if account not found by email', async () => {
+      const qb = mockQueryBuilder();
+      qb.getOne.mockResolvedValue(null);
+      accountRepository.createQueryBuilder.mockReturnValue(qb);
+
+      const result = await service.validateUser('user@example.com', 'pass');
       expect(result).toBeNull();
     });
 
     it('should return null if password invalid', async () => {
-      accountRepository.findOne.mockResolvedValue({ password: 'hash' });
+      const qb = mockQueryBuilder();
+      qb.getOne.mockResolvedValue({ password: 'hash' });
+      accountRepository.createQueryBuilder.mockReturnValue(qb);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
       const result = await service.validateUser('user', 'wrong');
       expect(result).toBeNull();
     });
 
-    it('should return user if valid', async () => {
+    it('should return user if valid with username', async () => {
       const user = { id: 'u1' };
-      accountRepository.findOne.mockResolvedValue({ password: 'hash', user });
+      const qb = mockQueryBuilder();
+      qb.getOne.mockResolvedValue({ password: 'hash', user });
+      accountRepository.createQueryBuilder.mockReturnValue(qb);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
       const result = await service.validateUser('user', 'pass');
+      expect(result).toEqual({ user });
+    });
+
+    it('should return user if valid with email', async () => {
+      const user = { id: 'u1', email: 'user@example.com' };
+      const qb = mockQueryBuilder();
+      qb.getOne.mockResolvedValue({ password: 'hash', user });
+      accountRepository.createQueryBuilder.mockReturnValue(qb);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      const result = await service.validateUser('user@example.com', 'pass');
       expect(result).toEqual({ user });
     });
   });

@@ -10,9 +10,7 @@ import {
 export class LoginDto {
   @IsString()
   @IsNotEmpty()
-  @MinLength(6)
-  @MaxLength(30)
-  username: string;
+  username: string; // Can be username or email
 
   @IsString()
   @IsNotEmpty()
