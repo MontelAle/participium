@@ -57,6 +57,7 @@ describe('ReportsController', () => {
     const mockReportsService: Partial<jest.Mocked<ReportsService>> = {
       create: jest.fn(),
       findAll: jest.fn(),
+      findAllPublic: jest.fn(),
       findOne: jest.fn(),
       findNearby: jest.fn(),
       update: jest.fn(),
@@ -352,6 +353,30 @@ describe('ReportsController', () => {
 
       expect(reportsService.findAll).toHaveBeenCalledWith(mockUser, filters);
       expect(result).toEqual({ success: true, data: [] });
+    });
+  });
+
+  describe('findAllPublic', () => {
+    it('should return public reports without filters', async () => {
+      const mockReports = [mockReport];
+      reportsService.findAllPublic.mockResolvedValue(mockReports as Report[]);
+
+      const result = await controller.findAllPublic({});
+
+      expect(reportsService.findAllPublic).toHaveBeenCalledWith({});
+      expect(result).toEqual({ success: true, data: mockReports });
+    });
+
+    it('should return public reports with filters', async () => {
+      const filters: FilterReportsDto = { categoryId: 'cat-123' };
+      const mockReports = [mockReport];
+
+      reportsService.findAllPublic.mockResolvedValue(mockReports as Report[]);
+
+      const result = await controller.findAllPublic(filters);
+
+      expect(reportsService.findAllPublic).toHaveBeenCalledWith(filters);
+      expect(result).toEqual({ success: true, data: mockReports });
     });
   });
 
