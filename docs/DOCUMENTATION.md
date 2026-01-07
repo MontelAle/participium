@@ -22,10 +22,15 @@
 
 ### Main Features
 
-- Session (cookie) based authentication
-- Role and permission system(municipal vs regular users)
-- Municipal user management with office assignments
+- Session-based authentication with HTTP-only cookies
+- Email verification with one-time password (OTP) via Brevo SMTP
+- Role and permission system (municipal vs regular users)
+- Multi-role office assignments for technical officers
+- Municipal user management with automatic report reassignment
 - Regular user profile management (Telegram, notifications, avatar)
+- Geospatial report management with PostGIS
+- Internal communication system for staff (comments)
+- Public messaging system for citizen-staff dialogue (messages)
 - File storage with MinIO (S3-compatible)
 - Dashboard UI with reusable components
 - RESTful API with Swagger documentation
@@ -62,6 +67,8 @@ The project uses **Turborepo** to manage a monorepo workspace with:
 | PostGIS    | 3.6     | Geographic extension         |
 | MinIO      | ^8.0.1  | S3-compatible object storage |
 | Passport   | ^0.7.0  | Authentication               |
+| Nodemailer | ^6.9.0  | Email delivery (Brevo SMTP)  |
+| OTPAuth    | ^9.3.7  | TOTP code generation         |
 | Swagger    | ^11.2.1 | API documentation            |
 | Jest       | ^29.7.0 | Testing                      |
 
@@ -180,23 +187,37 @@ Notes and requirements
 
 **Endpoint**: `/auth`
 
-| Method | Route       | Description                           |
-| ------ | ----------- | ------------------------------------- |
-| POST   | `/login`    | User login with username and password |
-| POST   | `/register` | New user registration                 |
-| POST   | `/logout`   | Logout and session invalidation       |
-| POST   | `/refresh`  | Session refresh                       |
+| Method | Route           | Description                           |
+| ------ | --------------- | ------------------------------------- |
+| POST   | `/login`        | User login with username and password |
+| POST   | `/register`     | New user registration                 |
+| POST   | `/verify-email` | Email verification with OTP code      |
+| POST   | `/logout`       | Logout and session invalidation       |
+| POST   | `/refresh`      | Session refresh                       |
 
 **Features**:
 
 - Authentication with Passport Local Strategy
 - Session management with HTTP-only cookies
 - Guards: `LocalAuthGuard`, `SessionGuard`, `RolesGuard`
+- Email verification with one-time password (OTP) using Brevo SMTP service
+- OTP code generation using TOTP algorithm (6-digit code, 30-minute expiry)
+- Automatic account activation upon email verification
+
+**Email Verification Flow**:
+
+1. User registers via `POST /auth/register` with email, username, password, firstName, lastName
+2. System generates 6-digit OTP code and stores it in User entity with expiry timestamp
+3. Verification email sent via Brevo SMTP service (`smtp-relay.brevo.com`) with HTML template containing OTP code
+4. User submits OTP via `POST /auth/verify-email` with email and code
+5. System validates code and expiry, sets `isEmailVerified = true`, creates session, and logs user in automatically
+6. Users must verify email before they can log in
 
 **Input Validation**:
 
-- Username and password must be between 6-20 characters (`@MinLength(6)`, `@MaxLength(20)`)
+- Username and password must be between 6-30 characters (`@MinLength(6)`, `@MaxLength(30)`)
 - Email must be a valid email format (`@IsEmail()`)
+- OTP code must be exactly 6 characters (`@MinLength(6)`, `@MaxLength(6)`)
 - All required fields validated with `@IsNotEmpty()`
 
 #### Users Module
@@ -269,6 +290,40 @@ Notes and requirements
   - Old pictures automatically deleted on replacement
 - **Security**: Municipality users (admin, technical officers) cannot edit their profile via this endpoint
 
+#### Email Module
+
+**Service**: Internal module for email delivery (no direct endpoints)
+
+**Features**:
+
+- SMTP email delivery via Brevo (formerly Sendinblue)
+- HTML template support for verification emails
+- Nodemailer integration
+- Configurable sender address
+- Error logging and handling
+
+**Usage**:
+- Called internally by Auth module during registration
+- Sends 6-digit OTP codes in styled HTML templates
+- Code expiry notice included in email (30 minutes)
+
+#### OTP Module
+
+**Service**: Internal module for one-time password generation (no direct endpoints)
+
+**Features**:
+
+- TOTP-based code generation using `otpauth` library
+- 6-digit numeric codes
+- 30-minute expiration window
+- SHA1 algorithm (TOTP standard)
+- Code validation and expiry checking
+
+**Usage**:
+- Called internally by Auth module during registration and verification
+- Stores generated codes in User entity with expiry timestamp
+- Validates submitted codes against stored values and expiry
+
 #### Roles Module
 
 **Endpoint**: `/roles`
@@ -308,14 +363,18 @@ Notes and requirements
 
 **Endpoint**: `/reports`
 
-| Method | Route     | Description                             |
-| ------ | --------- | --------------------------------------- |
-| POST   | `/`       | Create a new report with geolocation    |
-| GET    | `/`       | Get all reports with optional filters   |
-| GET    | `/nearby` | Find nearby reports ordered by distance |
-| GET    | `/:id`    | Get a specific report by ID             |
-| PATCH  | `/:id`    | Update a report (Admin/Operator only)   |
-| DELETE | `/:id`    | Delete a report (Admin only)            |
+| Method | Route            | Description                             |
+| ------ | ---------------- | --------------------------------------- |
+| POST   | `/`              | Create a new report with geolocation    |
+| GET    | `/`              | Get all reports with optional filters   |
+| GET    | `/nearby`        | Find nearby reports ordered by distance |
+| GET    | `/:id`           | Get a specific report by ID             |
+| PATCH  | `/:id`           | Update a report (Admin/Operator only)   |
+| DELETE | `/:id`           | Delete a report (Admin only)            |
+| GET    | `/:id/comments`  | Get all internal comments for a report  |
+| POST   | `/:id/comments`  | Add internal comment to report          |
+| GET    | `/:id/messages`  | Get all public messages for a report    |
+| POST   | `/:id/messages`  | Add public message to report            |
 
 **Features**:
 
@@ -325,6 +384,26 @@ Notes and requirements
 - Support for OpenStreetMap coordinates (SRID 4326)
 - Municipal boundary validation for report coordinates
 - Role-based report visibility (see Access Control section below)
+- Internal communication system for municipal staff (comments)
+- Public messaging system for citizen-staff communication (messages)
+
+**Comments vs Messages**:
+
+- **Comments** (`GET/POST /:id/comments`):
+  - Internal communication channel for municipal staff only
+  - Restricted to roles: `pr_officer`, `tech_officer`, `external_maintainer`
+  - Used for staff coordination, technical notes, and internal discussion
+  - Not visible to report author (citizen)
+  - Ordered chronologically (ASC by createdAt)
+  - Includes sender user information with full name
+
+- **Messages** (`GET/POST /:id/messages`):
+  - Public communication channel between citizens and staff
+  - Accessible to all authenticated users
+  - Used for updates, clarifications, and citizen-staff dialogue
+  - Visible to report author and municipal staff
+  - Ordered chronologically (ASC by createdAt)
+  - Includes sender user information with full name
 
 **Query Parameters**:
 
@@ -425,14 +504,15 @@ File: `src/config/app.config.ts`
 /app/external/assigned-reports/:id→ AssignReportsStatusViewPage (MunicipalGuard)
 /auth/login                       → LoginPage
 /auth/register                    → RegistrationPage
+/auth/verify                      → EmailVerificationPage (OTP code entry)
 ```
 
 ### Component Structure
 
 #### Pages
 
-- **auth/**: Login and registration
-- **reports/**: Map, create, and view report pages
+- **auth/**: Login, registration, and email verification
+- **reports/**: Map, create, and view report pages (includes comments/messages in detail view)
 - **profile/**: User profile page
 - **app/dashboard/**: Municipal dashboard
 - **app/municipality-users/**: Municipal user management (list, create, view)
@@ -443,17 +523,21 @@ File: `src/config/app.config.ts`
 #### Components
 
 - **ui/**: Styled Radix UI components (button, dialog, form, table, etc.)
+- **shared/report-discussion.tsx**: Unified component for comments and messages with tabbed interface
+- **shared/report-comments.tsx**: Internal comments display (staff only)
+- **shared/report-messages.tsx**: Public messages display (all users)
+- **auth/code.tsx**: OTP code verification input component
 - **app-sidebar.tsx**: Navigation sidebar
 - **auth-form.tsx**: Authentication form
 - **reports-list.tsx**: Reports list
 
 #### Contexts
 
-- **AuthContext**: Global authentication state management
+- **AuthContext**: Global authentication state management with email verification support
 
 #### Custom Hooks
 
-- `useAuth`: Authentication hook
+- `useAuth`: Authentication hook with login, register, verifyEmail, logout
 - `useCategories`: Report categories
 - `useExternalMaintainers`: External maintainers
 - `useFilteredReports`: Filtered reports
@@ -462,6 +546,8 @@ File: `src/config/app.config.ts`
 - `useOffices`: Office management
 - `useProfile`: User profile
 - `useReports`: Reports data
+- `useReportComments`: Fetch and post internal comments
+- `useReportMessages`: Fetch and post public messages
 - `useRoles`: Role management
 
 #### API Client
@@ -470,6 +556,17 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 - Client configured for backend communication
 - Automatic error and authentication handling
+- Endpoints for auth (login, register, verifyEmail), reports, comments, messages, users, categories, offices, roles
+
+### Report Detail Views
+
+**Comments and Messages Integration**:
+- Report detail pages display a unified discussion component (`report-discussion.tsx`)
+- Tabbed interface switches between Comments (internal) and Messages (public)
+- Comments visible only to municipal staff (pr_officer, tech_officer, external_maintainer)
+- Messages visible to all authenticated users including report author
+- Real-time polling every 5 seconds to fetch new comments/messages
+- Input validation and optimistic updates via TanStack Query
 
 ### Styling
 
@@ -613,27 +710,29 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 
 #### Report
 
-| Field                        | Type     | Description                     | Nullable | Notes                                                                                                      |
-| ---------------------------- | -------- | ------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
-| id                           | string   | Primary key                     | No       | varchar                                                                                                    |
-| title                        | string   | Report title                    | Yes      | varchar, optional                                                                                          |
-| description                  | string   | Report description              | Yes      | text type, optional                                                                                        |
-| status                       | enum     | Report status                   | No       | Values: pending, in_progress, resolved, rejected, assigned, suspended. Default: pending. Visibility rules apply. When a technical officer is removed from an office, reports in states assigned/in_progress/suspended are automatically reassigned.      |
-| location                     | Point    | Geographic coordinates          | No       | PostGIS geometry(Point, 4326). Must be within municipal boundaries.                                        |
-| address                      | string   | Physical address                | Yes      | varchar, optional                                                                                          |
-| images                       | string[] | Array of image paths/URLs       | No       | varchar array                                                                                              |
-| userId                       | string   | Linked user ID                  | No       | Foreign key to User entity                                                                                 |
-| user                         | User     | User entity relation            | No       | Many-to-one, cascade delete                                                                                |
-| isAnonymous                  | boolean  | Anonymous report flag           | No       | Default: false                                                                                             |
-| categoryId                   | string   | Linked category ID              | Yes      | Foreign key to Category entity, optional                                                                   |
-| category                     | Category | Category entity relation        | Yes      | Many-to-one, optional                                                                                      |
-| createdAt                    | Date     | Creation timestamp              | No       | timestamptz, auto-generated                                                                                |
-| updatedAt                    | Date     | Last update timestamp           | No       | timestamptz, auto-generated                                                                                |
-| explanation                  | string   | Rejection/action reason         | Yes      | text type, optional                                                                                        |
-| assignedOfficerId            | string   | Assigned officer ID             | Yes      | Foreign key to User entity, optional                                                                       |
-| assignedOfficer              | User     | Assigned officer relation       | Yes      | Many-to-one with User entity, optional                                                                     |
-| processedById                | string   | Processing officer ID           | Yes      | Foreign key to User entity. Set when report is assigned or rejected. Tracks who handled the initial review |
-| assignedExternalMaintainerId | string   | Assigned external maintainer ID | Yes      | Foreign key to User entity. For reports assigned to external companies                                     |
+| Field                        | Type       | Description                     | Nullable | Notes                                                                                                      |
+| ---------------------------- | ---------- | ------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| id                           | string     | Primary key                     | No       | varchar                                                                                                    |
+| title                        | string     | Report title                    | Yes      | varchar, optional                                                                                          |
+| description                  | string     | Report description              | Yes      | text type, optional                                                                                        |
+| status                       | enum       | Report status                   | No       | Values: pending, in_progress, resolved, rejected, assigned, suspended. Default: pending. Visibility rules apply. When a technical officer is removed from an office, reports in states assigned/in_progress/suspended are automatically reassigned.      |
+| location                     | Point      | Geographic coordinates          | No       | PostGIS geometry(Point, 4326). Must be within municipal boundaries.                                        |
+| address                      | string     | Physical address                | Yes      | varchar, optional                                                                                          |
+| images                       | string[]   | Array of image paths/URLs       | No       | varchar array                                                                                              |
+| userId                       | string     | Linked user ID                  | No       | Foreign key to User entity                                                                                 |
+| user                         | User       | User entity relation            | No       | Many-to-one, cascade delete                                                                                |
+| isAnonymous                  | boolean    | Anonymous report flag           | No       | Default: false                                                                                             |
+| categoryId                   | string     | Linked category ID              | Yes      | Foreign key to Category entity, optional                                                                   |
+| category                     | Category   | Category entity relation        | Yes      | Many-to-one, optional                                                                                      |
+| createdAt                    | Date       | Creation timestamp              | No       | timestamptz, auto-generated                                                                                |
+| updatedAt                    | Date       | Last update timestamp           | No       | timestamptz, auto-generated                                                                                |
+| explanation                  | string     | Rejection/action reason         | Yes      | text type, optional                                                                                        |
+| assignedOfficerId            | string     | Assigned officer ID             | Yes      | Foreign key to User entity, optional                                                                       |
+| assignedOfficer              | User       | Assigned officer relation       | Yes      | Many-to-one with User entity, optional                                                                     |
+| processedById                | string     | Processing officer ID           | Yes      | Foreign key to User entity. Set when report is assigned or rejected. Tracks who handled the initial review |
+| assignedExternalMaintainerId | string     | Assigned external maintainer ID | Yes      | Foreign key to User entity. For reports assigned to external companies                                     |
+| comments                     | Comment[]  | Internal staff comments         | -        | One-to-many with Comment entity, cascade delete                                                            |
+| messages                     | Message[]  | Public messages                 | -        | One-to-many with Message entity, cascade delete                                                            |
 
 **PostGIS Integration**:
 
@@ -641,6 +740,36 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 - SRID 4326 (WGS84) for GPS/OpenStreetMap compatibility
 - Stored in WKT format: `POINT(longitude latitude)`
 - Automatic spatial index (GIST) for optimized geospatial queries
+
+#### Comment
+
+| Field     | Type   | Description                | Nullable | Notes                                   |
+| --------- | ------ | -------------------------- | -------- | --------------------------------------- |
+| id        | string | Primary key                | No       | varchar (UUID)                          |
+| content   | string | Comment text               | No       | text type                               |
+| userId    | string | Author user ID             | No       | Foreign key to User entity              |
+| user      | User   | Author user relation       | No       | Many-to-one, cascade delete             |
+| reportId  | string | Linked report ID           | No       | Foreign key to Report entity            |
+| report    | Report | Report entity relation     | No       | Many-to-one, cascade delete             |
+| createdAt | Date   | Creation timestamp         | No       | timestamptz, auto-generated             |
+| updatedAt | Date   | Last update timestamp      | No       | timestamptz, auto-generated             |
+
+**Purpose**: Internal communication channel for municipal staff coordination and technical notes. Restricted to pr_officer, tech_officer, and external_maintainer roles.
+
+#### Message
+
+| Field     | Type   | Description                | Nullable | Notes                                   |
+| --------- | ------ | -------------------------- | -------- | --------------------------------------- |
+| id        | string | Primary key                | No       | varchar (UUID)                          |
+| content   | string | Message text               | No       | text type                               |
+| userId    | string | Sender user ID             | No       | Foreign key to User entity              |
+| user      | User   | Sender user relation       | No       | Many-to-one, cascade delete             |
+| reportId  | string | Linked report ID           | No       | Foreign key to Report entity            |
+| report    | Report | Report entity relation     | No       | Many-to-one, cascade delete             |
+| createdAt | Date   | Creation timestamp         | No       | timestamptz, auto-generated             |
+| updatedAt | Date   | Last update timestamp      | No       | timestamptz, auto-generated             |
+
+**Purpose**: Public communication channel between citizens and municipal staff for updates, clarifications, and dialogue. Accessible to all authenticated users.
 
 ### Relations
 
@@ -652,6 +781,12 @@ Files: `src/api/client.ts` and `src/api/endpoints/`
 - Report ⟷ Category (ManyToOne, optional)
 - Report ⟷ User (as assignedOfficer, ManyToOne, optional)
 - Report ⟷ User (as processedBy, ManyToOne, optional)
+- Report ⟷ Comment (OneToMany, cascade delete)
+- Report ⟷ Message (OneToMany, cascade delete)
+- Comment ⟷ User (ManyToOne, cascade delete)
+- Comment ⟷ Report (ManyToOne, cascade delete)
+- Message ⟷ User (ManyToOne, cascade delete)
+- Message ⟷ Report (ManyToOne, cascade delete)
 - Category ⟷ Office (ManyToOne)
 - Office ⟷ Category (OneToMany)
 - Boundary (standalone entity, no foreign relations)
@@ -946,11 +1081,33 @@ COOKIE_SAME_SITE=lax
 # MinIO (S3-compatible storage)
 MINIO_ENDPOINT=localhost
 MINIO_PORT=9000
+MINIO_PUBLIC_ENDPOINT=localhost
+MINIO_PUBLIC_PORT=9000
 MINIO_USE_SSL=false
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
 MINIO_BUCKET_NAME=participium-reports
+
+# Email Configuration (Brevo SMTP for OTP verification)
+EMAIL_HOST=smtp-relay.brevo.com
+EMAIL_PORT=587
+EMAIL_SECURE=false
+EMAIL_USER=your-email@smtp-brevo.com
+EMAIL_PASSWORD=your-brevo-smtp-password
+EMAIL_FROM=noreply@participium.com
+
+# Telegram Bot Configuration (optional)
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+TELEGRAM_USE_WEBHOOK=false
+TELEGRAM_WEBHOOK_URL=
+TELEGRAM_MAX_REPORTS_PER_HOUR=5
 ```
+
+**Note on Email Service**: The system uses Brevo (formerly Sendinblue) as the SMTP provider for sending OTP verification emails during user registration. To obtain SMTP credentials:
+1. Sign up at [Brevo](https://www.brevo.com)
+2. Navigate to SMTP & API settings
+3. Generate an SMTP key
+4. Use `smtp-relay.brevo.com` as the host with port 587
 
 ### Starting Applications
 
@@ -1074,7 +1231,22 @@ pnpm lint          # Linting
 
 ### Docker Database
 
-Note: dev and release compose files use different container names. Use the command matching your environment.
+Note: dev and release compose files use different container names and configurations. Use the command matching your environment.
+
+**Development Compose (`compose.dev.yml`)**:
+- Container names: `participium-dev-postgres`, `participium-dev-minio`
+- Purpose: Local development with exposed ports for direct database/MinIO access
+- PostgreSQL exposed on port 5432
+- MinIO API on port 9000, Console on port 9001
+- Persistent volumes: `postgres_data_dev`, `minio_data_dev`
+
+**Release Compose (`docker-compose.yml`)**:
+- Container names: `participium-postgres`, `participium-minio`, `participium-api`, `participium-web`
+- Purpose: Production-like deployment with full application stack
+- Uses pre-built Docker images from registry
+- PostgreSQL and MinIO not directly exposed (internal network only)
+- API accessible on port 5000, Web on port 5173
+- Persistent volumes: `participium_release_pg_data`, `participium_release_minio_data`
 
 Dev compose (compose.dev.yml) container names:
 
@@ -1104,17 +1276,23 @@ docker exec -it participium-postgres psql -U admin -d participium
 
 - **Coverage available**: `apps/api/coverage/`
 - Coverage reports in formats: HTML, LCOV, Clover, JSON
-- **Unit Tests**: 189 tests for all modules
-- **E2E Tests**: 82 tests for end-to-end workflows
-- **Integration Tests**: 91 tests across 7 test suites
-- 100% coverage for users module
+- **Unit Tests**: 239 tests across all backend modules
+- **Integration Tests**: 90 tests across multiple test suites
+- **E2E Tests**: 
+  - Backend: 102 end-to-end workflow tests
+  - Frontend: 36 browser-based tests
+- High coverage across critical modules with branch coverage exceeding 84%
 - Tests include:
+  - Authentication flow with OTP email verification
   - Geospatial queries with PostGIS
   - File upload validation
   - Filename sanitization (path traversal protection)
   - Telegram username format validation
   - MinIO integration
   - Municipality user restrictions
+  - Multi-role office assignments
+  - Automatic report reassignment
+  - Internal comments and public messages
   - Rejected report access control (unit and e2e)
   - PR Officer status filtering
   - Boundary validation for report coordinates
