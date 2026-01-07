@@ -717,24 +717,134 @@ const REAL_REPORTS = [
     ],
   },
   {
-    title: '',
+    title: 'Misaligned bike lane separator',
     description:
-      '',
-    address: ', Torino',
-    lat: 45.050587,
-    lng: 7.635093,
-    categoryName: '',
-    images: ['.jpg'],
+      'The physical yellow bike lane separator is misaligned and no longer properly positioned. Its current condition reduces its effectiveness in separating the bike lane from the roadway.',
+    address: 'Corso Racconigi, 233e, Torino',
+    lat: 45.053872,
+    lng:  7.649907,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['MisalignedBikeLaneSeparator.jpg'],
   },
   {
-    title: '',
+    title: 'Wall with missing piece',
     description:
-      '',
-    address: ', Torino',
-    lat: 45.050587,
-    lng: 7.635093,
-    categoryName: '',
-    images: ['.jpg'],
+      'A section of the wall is missing.',
+    address: 'Corso Mediterraneo, Torino',
+    lat: 45.059709,
+    lng: 7.656556,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['WallWithMissingPiece.jpg'],
+  },
+  {
+    title: 'Poorly visible pedestrian crosswalks',
+    description:
+      'The pedestrian crosswalk markings are faded and difficult to see, especially in low light conditions. This reduces visibility for drivers.',
+    address: 'Via Nichelino, 2, Torino',
+    lat: 45.023935,
+    lng: 7.636890,
+    categoryName: 'Roads and Urban Furnishings',
+    images: ['PoorlyVisiblePedestrianCrosswalks.jpg'],
+  },
+  {
+    title: 'Damaged safety barrier',
+    description:
+      'The safety barrier is mostly intact, but the top section is bent downward. This damage reduces its effectiveness.',
+    address: 'Via San Paolo, 160a, Torino',
+    lat: 45.056724,
+    lng: 7.635498,
+    categoryName: 'Architectural Barriers',
+    images: ['DamagedSafetyBarrier.jpg'],
+  },
+  {
+    title: 'Damaged telecom cabinet',
+    description:
+      'The telecom cabinet shows visible damage, with a section of the exterior panel completely detached.',
+    address: 'Corso Peschiera, 93, Torino',
+    lat: 45.061014,
+    lng: 7.656677,
+    categoryName: 'Other',
+    images: [
+      'DamagedTelecomCabinet1.jpg',
+      'DamagedTelecomCabinet2.jpg',
+    ],
+  },
+  {
+    title: 'Telecom cabinet with panel held by cable tie',
+    description:
+      'A section of the telecom cabinet’s exterior panel is not properly secured and is held in place only by a cable tie.',
+    address: 'Via Bassano, 23, Torino',
+    lat: 45.053204,
+    lng: 7.636378,
+    categoryName: 'Other',
+    images: [
+      'TelecomCabinetWithPanelHeldByCableTie1.jpg',
+      'TelecomCabinetWithPanelHeldByCableTie2.jpg',
+    ],
+  },
+  {
+    title: 'Side of sidewalk damaged',
+    description:
+      'A small section on one side of the sidewalk is damaged; although limited in size, it could still pose a tripping hazard for pedestrians.',
+    address: 'Corso Luigi Einaudi, 44, Torino',
+    lat: 45.061164,
+    lng: 7.659018,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'SideOfSidewalkDamaged1.jpg',
+      'SideOfSidewalkDamaged2.jpg',
+    ],
+  },
+  {
+    title: 'Tilted Traffic Sign Pole',
+    description:
+      'The pole of a traffic sign is tilted and no longer perfectly vertical, reducing its visibility for drivers.',
+    address: 'Corso Peschiera, 132, Torino',
+    lat: 45.062721,
+    lng: 7.654925,
+    categoryName: 'Roads Signs and Traffic Lights',
+    images: ['TiltedTrafficSignPole.jpg'],
+  },
+  {
+    title: 'Deteriorated Wall',
+    description:
+      'The wall is extensively damaged, with large sections missing and crumbling.',
+    address: 'Corso Francesco Ferrucci, 153a, Torino',
+    lat: 45.060796,
+    lng: 7.656478,
+    categoryName: 'Public Green Areas and Playgrounds',
+    images: [
+      'DeterioratedWall1.jpg',
+      'DeterioratedWall2.jpg',
+    ],
+  },
+  {
+    title: 'Uneven Road Surface',
+    description:
+      'A portion of the road at the side is slightly higher than the central part of the street, and the area near the manholes is somewhat damaged. This unevenness could create difficulties for vehicles and pedestrians.',
+    address: 'Via Spalato, 14, Torino',
+    lat: 45.060859,
+    lng: 7.653455,
+    categoryName: 'Roads and Urban Furnishings',
+    images: [
+      'UnevenRoad1.jpg',
+      'UnevenRoad2.jpg',
+      'UnevenRoad3.jpg',
+    ],
+  },
+  {
+    title: 'Traffic Lights with Missing or Damaged Hoods',
+    description:
+      'Some traffic lights are missing their hoods or have hoods that are damaged or broken. The absence or damage of the hood can reduce the visibility of the lights, creating potential safety risks.',
+    address: 'Corso Castelfidardo, Torino',
+    lat: 45.061643,
+    lng: 7.658074,
+    categoryName: 'Roads Signs and Traffic Lights',
+    images: [
+      'TrafficLightsMissingHoods1.jpg',
+      'TrafficLightsMissingHoods2.jpg',
+      'TrafficLightsMissingHoods3.jpg',
+    ],
   },
 ];
 
