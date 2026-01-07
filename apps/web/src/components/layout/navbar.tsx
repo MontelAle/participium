@@ -16,6 +16,7 @@ import {
 } from '@/hooks/use-notifications';
 import { useProfile } from '@/hooks/use-profile';
 import { Bell, ChevronsUpDown, LogOut } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export function Navbar() {
@@ -69,6 +70,16 @@ export function Navbar() {
     }
   };
 
+  const [notifOpen, setNotifOpen] = useState(false);
+  const handleNotifOpenChange = (open: boolean) => {
+    setNotifOpen(open);
+    if (!open) return;
+    if (!unread || unread.length === 0) return;
+    unread.forEach((n) => {
+      if (!n.read) markRead.mutate(n.id);
+    });
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex h-18 items-center justify-between border-b bg-background/95 px-6 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/60">
       <Link
@@ -91,7 +102,10 @@ export function Navbar() {
         {user ? (
           <div className="flex items-center gap-3">
             {isCitizenUser && (
-              <DropdownMenu>
+              <DropdownMenu
+                open={notifOpen}
+                onOpenChange={handleNotifOpenChange}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative">
                     <Bell className="size-5 text-muted-foreground" />
