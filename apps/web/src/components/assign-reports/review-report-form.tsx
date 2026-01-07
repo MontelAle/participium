@@ -74,7 +74,10 @@ export function ReviewReportForm({
   const filteredOfficers = useMemo(() => {
     const cat = categories.find((c) => c.id === watchedCategory);
     if (!cat?.office?.id) return [];
-    return municipalityUsers.filter((u: User) => u.officeId === cat.office.id);
+    return municipalityUsers.filter((u: User) => 
+      u.officeId === cat.office.id || 
+      u.officeRoles?.some(role => role.officeId === cat.office.id)
+    );
   }, [municipalityUsers, categories, watchedCategory]);
 
   const canConfirm =
