@@ -458,9 +458,7 @@ const REAL_REPORTS = [
     lat: 45.056609,
     lng: 7.635214,
     categoryName: 'Architectural Barriers',
-    images: [
-      'MissingPedestrianBarrier.jpg',
-    ],
+    images: ['MissingPedestrianBarrier.jpg'],
   },
   {
     title: 'Damaged Bench Seat',
@@ -470,10 +468,7 @@ const REAL_REPORTS = [
     lat: 45.058771,
     lng: 7.632521,
     categoryName: 'Public Green Areas and Playgrounds',
-    images: [
-      'DamagedBenchSeat1.jpg',
-      'DamagedBenchSeat2.jpg',
-    ],
+    images: ['DamagedBenchSeat1.jpg', 'DamagedBenchSeat2.jpg'],
   },
   {
     title: 'Bench Missing Backrest',
@@ -483,9 +478,7 @@ const REAL_REPORTS = [
     lat: 45.054345,
     lng: 7.635278,
     categoryName: 'Public Green Areas and Playgrounds',
-    images: [
-      'BenchMissingBackrest.jpg',
-    ],
+    images: ['BenchMissingBackrest.jpg'],
   },
   {
     title: 'Wall and Fence in Poor Condition',
@@ -503,16 +496,12 @@ const REAL_REPORTS = [
   },
   {
     title: 'Street Sign on the Ground',
-    description:
-      'A steet sign is lying on the ground.',
+    description: 'A steet sign is lying on the ground.',
     address: 'Via Boston, 139a, Torino',
     lat: 45.044602,
     lng: 7.629369,
     categoryName: 'Road Signs and Traffic Lights',
-    images: [
-      'StreetSignOnTheGround1.jpg',
-      'StreetSignOnTheGround2.jpg',
-    ],
+    images: ['StreetSignOnTheGround1.jpg', 'StreetSignOnTheGround2.jpg'],
   },
   {
     title: 'Broken Transparent Panel at Bus Stop',
@@ -536,22 +525,17 @@ const REAL_REPORTS = [
     lat: 45.054348,
     lng: 7.642136,
     categoryName: 'Public Lighting',
-    images: [
-      'StreetLightNotTurningOn1.jpg',
-      'StreetLightNotTurningOn2.jpg',
-    ],
+    images: ['StreetLightNotTurningOn1.jpg', 'StreetLightNotTurningOn2.jpg'],
   },
   {
     title: 'Missing Road Sign',
     description:
       'The road sign is missing, leaving only the metal pole and an empty circular frame where the sign should be. The structure is still standing, but without the sign it is unclear what type of instruction or warning was intended. The empty frame is noticeable and could be confusing for drivers.',
-    address: 'Via Gabriele D\'Annunzio, 2a, Torino',
+    address: "Via Gabriele D'Annunzio, 2a, Torino",
     lat: 45.060403,
     lng: 7.656218,
     categoryName: 'Road Signs and Traffic Lights',
-    images: [
-      'MissingRoadSign.jpg',
-    ],
+    images: ['MissingRoadSign.jpg'],
   },
   {
     title: 'Bike Stand Leaning Badly',
@@ -569,15 +553,12 @@ const REAL_REPORTS = [
   },
   {
     title: 'Leaning Post',
-    description:
-      'The post in front of the crosswalk is leaning to one side.',
+    description: 'The post in front of the crosswalk is leaning to one side.',
     address: 'Via Giuseppe Peano, 11i, Torino',
     lat: 45.060776,
     lng: 7.660105,
     categoryName: 'Architectural Barriers',
-    images: [
-      'LeaningPost.jpg',
-    ],
+    images: ['LeaningPost.jpg'],
   },
   {
     title: 'Leaning Road Sign and Barrier',
@@ -601,9 +582,7 @@ const REAL_REPORTS = [
     lat: 45.050587,
     lng: 7.635093,
     categoryName: 'Roads and Urban Furnishings',
-    images: [
-      'CrackedRoadSidewalk.jpg',
-    ],
+    images: ['CrackedRoadSidewalk.jpg'],
   },
 ];
 
@@ -620,12 +599,14 @@ interface Repositories {
   officeRepo: Repository<Office>;
   profileRepo: Repository<Profile>;
   boundaryRepo: Repository<Boundary>;
+  userOfficeRoleRepo: Repository<UserOfficeRole>;
 }
 
 interface UserCreationContext {
   userRepo: Repository<User>;
   accountRepo: Repository<Account>;
   profileRepo: Repository<Profile>;
+  userOfficeRoleRepo: Repository<UserOfficeRole>;
   commonPassword: string;
   rolesMap: Map<string, Role>;
   officesMap: Map<string, Office>;
@@ -650,6 +631,7 @@ function getRepositories(dataSource: DataSource): Repositories {
     officeRepo: dataSource.getRepository(Office),
     profileRepo: dataSource.getRepository(Profile),
     boundaryRepo: dataSource.getRepository(Boundary),
+    userOfficeRoleRepo: dataSource.getRepository(UserOfficeRole),
   };
 }
 
@@ -777,6 +759,7 @@ async function createUserWithAccountAndProfile(
     userRepo,
     accountRepo,
     profileRepo,
+    userOfficeRoleRepo,
     commonPassword,
     rolesMap,
     officesMap,
@@ -789,17 +772,32 @@ async function createUserWithAccountAndProfile(
     return existingUser;
   }
 
+  const role = rolesMap.get(roleName);
+  const office = officeName ? officesMap.get(officeName) : null;
+
   const user = userRepo.create({
     id: nanoid(),
     firstName,
     lastName,
     username,
     email,
-    role: rolesMap.get(roleName),
-    office: officeName ? officesMap.get(officeName) : null,
+    role: role,
+    office: office,
     isEmailVerified: true,
   });
   await userRepo.save(user);
+
+  if (office && role) {
+    await userOfficeRoleRepo.save({
+      id: nanoid(),
+      userId: user.id,
+      officeId: office.id,
+      roleId: role.id,
+      user: user,
+      office: office,
+      role: role,
+    });
+  }
 
   await accountRepo.save({
     id: nanoid(),
@@ -876,28 +874,30 @@ async function seedExternalMaintainers(
   }
 }
 
-/**
- * Seeds a single tech_officer with multiple office assignments
- * to demonstrate multi-role functionality
- */
 async function seedMultiRoleTechOfficer(
   dataSource: DataSource,
   context: UserCreationContext,
 ): Promise<void> {
-  const { userRepo, accountRepo, profileRepo, commonPassword, rolesMap, officesMap } = context;
-  
+  const {
+    userRepo,
+    accountRepo,
+    profileRepo,
+    commonPassword,
+    rolesMap,
+    officesMap,
+  } = context;
+
   const username = 'tech_multi_role';
   const existingUser = await userRepo.findOne({ where: { username } });
-  
+
   if (existingUser) {
     console.log(`Multi-role tech officer already exists: ${username}`);
     return;
   }
 
-  // Create user with deprecated fields (first office as primary)
   const techRole = rolesMap.get('tech_officer');
   const maintenanceOffice = officesMap.get('maintenance');
-  
+
   const user = userRepo.create({
     id: nanoid(),
     firstName: 'Multi',
@@ -909,7 +909,6 @@ async function seedMultiRoleTechOfficer(
   });
   await userRepo.save(user);
 
-  // Create account and profile
   await accountRepo.save({
     id: nanoid(),
     user,
@@ -926,10 +925,9 @@ async function seedMultiRoleTechOfficer(
     }),
   );
 
-  // Create UserOfficeRole assignments for multiple offices
   const userOfficeRoleRepo = dataSource.getRepository(UserOfficeRole);
   const officesToAssign = ['maintenance', 'infrastructure', 'public_services'];
-  
+
   for (const officeName of officesToAssign) {
     const office = officesMap.get(officeName);
     if (office) {
@@ -944,7 +942,9 @@ async function seedMultiRoleTechOfficer(
     }
   }
 
-  console.log(`Created multi-role tech officer: ${username} with ${officesToAssign.length} office assignments`);
+  console.log(
+    `Created multi-role tech officer: ${username} with ${officesToAssign.length} office assignments`,
+  );
 }
 
 async function seedCitizenUsers(context: UserCreationContext): Promise<User[]> {
@@ -1064,6 +1064,9 @@ async function createReport(
   isAnonymous: boolean,
   category: Category,
   imagesDir: string,
+  status: ReportStatus,
+  assignedOfficer: User | null,
+  processedBy: User | null,
 ): Promise<Report> {
   const reportId = nanoid();
 
@@ -1078,7 +1081,7 @@ async function createReport(
     id: reportId,
     title: realReport.title,
     description: realReport.description,
-    status: ReportStatus.RESOLVED,
+    status: status,
     address: realReport.address,
     location: {
       type: 'Point',
@@ -1089,6 +1092,10 @@ async function createReport(
     category,
     createdAt: faker.date.recent({ days: 30 }),
     isAnonymous,
+    assignedOfficer: assignedOfficer || undefined,
+    assignedOfficerId: assignedOfficer?.id,
+    processedBy: processedBy || undefined,
+    processedById: processedBy?.id,
   });
 
   return report;
@@ -1096,6 +1103,7 @@ async function createReport(
 
 async function seedReports(
   reportRepo: Repository<Report>,
+  userRepo: Repository<User>,
   minioProvider: MinioProvider,
   citizenUsers: User[],
   categoriesMap: Map<string, Category>,
@@ -1117,6 +1125,21 @@ async function seedReports(
   const luigiVerdi = citizenUsers.find((u) => u.username === 'luigi_verdi');
   const reportsToSave: Report[] = [];
 
+  const findOfficerForCategory = async (categoryName: string) => {
+    const category = categoriesMap.get(categoryName);
+    if (!category || !category.office) return null;
+
+    const officerUsername = `tech_${category.office.name}_1`;
+    const officer = await userRepo.findOne({
+      where: { username: officerUsername },
+    });
+    return officer;
+  };
+
+  const adminUser = await userRepo.findOne({
+    where: { username: 'system_admin' },
+  });
+
   for (let idx = 0; idx < REAL_REPORTS.length; idx++) {
     const realReport = REAL_REPORTS[idx];
     const { user, isAnonymous } = determineReportUser(
@@ -1131,6 +1154,42 @@ async function seedReports(
       continue;
     }
 
+    let status: ReportStatus;
+
+    if (idx === 0) status = ReportStatus.PENDING;
+    else if (idx === 1) status = ReportStatus.REJECTED;
+    else if (idx === 2) status = ReportStatus.ASSIGNED;
+    else if (idx === 3) status = ReportStatus.IN_PROGRESS;
+    else if (idx === 4) status = ReportStatus.SUSPENDED;
+    else {
+      const rand = Math.random();
+      if (rand < 0.75) status = ReportStatus.RESOLVED;
+      else if (rand < 0.85) status = ReportStatus.IN_PROGRESS;
+      else if (rand < 0.9) status = ReportStatus.ASSIGNED;
+      else if (rand < 0.95) status = ReportStatus.PENDING;
+      else status = ReportStatus.REJECTED;
+    }
+
+    let assignedOfficer: User | null = null;
+    let processedBy: User | null = null;
+
+    if (
+      [
+        ReportStatus.ASSIGNED,
+        ReportStatus.IN_PROGRESS,
+        ReportStatus.SUSPENDED,
+        ReportStatus.RESOLVED,
+      ].includes(status)
+    ) {
+      assignedOfficer = await findOfficerForCategory(realReport.categoryName);
+    }
+
+    if (status === ReportStatus.RESOLVED && assignedOfficer) {
+      processedBy = assignedOfficer;
+    } else if (status === ReportStatus.REJECTED) {
+      processedBy = adminUser || null;
+    }
+
     const report = await createReport(
       reportRepo,
       minioProvider,
@@ -1139,13 +1198,18 @@ async function seedReports(
       isAnonymous,
       category,
       imagesDir,
+      status,
+      assignedOfficer,
+      processedBy,
     );
 
     reportsToSave.push(report);
   }
 
   await reportRepo.save(reportsToSave);
-  console.log(`Created ${reportsToSave.length} real reports in Torino.`);
+  console.log(
+    `Created ${reportsToSave.length} real reports in Torino with varied statuses.`,
+  );
 }
 
 // ============================================================================
@@ -1171,6 +1235,7 @@ export async function seedDatabase(
     userRepo: repositories.userRepo,
     accountRepo: repositories.accountRepo,
     profileRepo: repositories.profileRepo,
+    userOfficeRoleRepo: repositories.userOfficeRoleRepo,
     commonPassword,
     rolesMap,
     officesMap,
@@ -1183,6 +1248,7 @@ export async function seedDatabase(
 
   await seedReports(
     repositories.reportRepo,
+    repositories.userRepo,
     minioProvider,
     citizenUsers,
     categoriesMap,

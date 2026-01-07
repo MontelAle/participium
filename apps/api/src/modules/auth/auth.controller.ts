@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   HttpCode,
+  HttpException,
   HttpStatus,
   Post,
   Req,
@@ -47,6 +48,17 @@ export class AuthController {
   ): Promise<LoginResponseDto> {
     if (!req.user) {
       throw new UnauthorizedException('Invalid username or password');
+    }
+
+    if (!req.user.isEmailVerified) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Email not verified. Please verify your email to continue.',
+          email: req.user.email,
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     const { user, session, token } = await this.authService.login(

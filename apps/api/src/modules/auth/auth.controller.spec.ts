@@ -1,5 +1,9 @@
 import { Profile, Session } from '@entities';
-import { UnauthorizedException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -16,7 +20,12 @@ describe('AuthController', () => {
   let controller: AuthController;
   let authService: AuthService;
 
-  const mockUser = { id: 1, username: 'testuser' };
+  const mockUser = {
+    id: 1,
+    username: 'testuser',
+    email: 'test@test.com',
+    isEmailVerified: true,
+  };
   const mockSession = { id: 123, userId: 1 };
   const mockToken = 'session-token';
   const mockCookie = {
@@ -134,6 +143,42 @@ describe('AuthController', () => {
 
       expect(authService.login).not.toHaveBeenCalled();
       expect(res.cookie).not.toHaveBeenCalled();
+    });
+
+    it('should throw HttpException when email is not verified', async () => {
+      const loginDto: LoginDto = {
+        username: 'testuser',
+        password: 'password',
+      };
+
+      const unverifiedUser = { ...mockUser, isEmailVerified: false };
+
+      const req: any = {
+        user: unverifiedUser,
+        ip: '127.0.0.1',
+        headers: { 'user-agent': 'jest' },
+      };
+      const res: any = { cookie: jest.fn() };
+
+      await expect(controller.login(loginDto, req, res)).rejects.toThrow(
+        HttpException,
+      );
+
+      try {
+        await controller.login(loginDto, req, res);
+        fail('Should have thrown an HttpException');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+
+        const httpError = error as HttpException;
+
+        expect(httpError.getStatus()).toBe(HttpStatus.UNAUTHORIZED);
+        expect(httpError.getResponse()).toEqual({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'Email not verified. Please verify your email to continue.',
+          email: unverifiedUser.email,
+        });
+      }
     });
   });
 

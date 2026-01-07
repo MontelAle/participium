@@ -371,6 +371,7 @@ describe('AppController (e2e)', () => {
         firstName: 'John',
         lastName: 'Doe',
         roleId: 'role_1',
+        isEmailVerified: true,
         role: {
           id: 'role_1',
           name: 'admin',
@@ -385,6 +386,7 @@ describe('AppController (e2e)', () => {
         firstName: 'Jane',
         lastName: 'Smith',
         roleId: 'role_2',
+        isEmailVerified: true,
         role: { id: 'role_2', name: 'user', label: 'User', isMunicipal: false },
       },
       {
@@ -394,6 +396,7 @@ describe('AppController (e2e)', () => {
         firstName: 'Paul',
         lastName: 'Rogers',
         roleId: 'role_3',
+        isEmailVerified: true,
         role: {
           id: 'role_3',
           name: 'municipal_pr_officer',
@@ -408,6 +411,7 @@ describe('AppController (e2e)', () => {
         firstName: 'tech_officer',
         lastName: 'One',
         roleId: 'role_5',
+        isEmailVerified: true,
         officeId: 'office_1',
         role: {
           id: 'role_5',
@@ -423,6 +427,7 @@ describe('AppController (e2e)', () => {
         firstName: 'tech_officer',
         lastName: 'Two',
         roleId: 'role_5',
+        isEmailVerified: true,
         officeId: 'office_1',
         role: {
           id: 'role_5',
@@ -438,6 +443,7 @@ describe('AppController (e2e)', () => {
         firstName: 'External',
         lastName: 'Maintainer',
         roleId: 'role_6',
+        isEmailVerified: true,
         officeId: 'office_2',
         role: {
           id: 'role_6',
@@ -445,6 +451,16 @@ describe('AppController (e2e)', () => {
           label: 'External Maintainer',
           isMunicipal: false,
         },
+      },
+      {
+        id: 'user_unverified',
+        email: 'unverified@example.com',
+        username: 'unverified_user',
+        firstName: 'Not',
+        lastName: 'Verified',
+        roleId: 'role_2',
+        isEmailVerified: false,
+        role: { id: 'role_2', name: 'user', label: 'User', isMunicipal: false },
       },
     ];
 
@@ -466,6 +482,14 @@ describe('AppController (e2e)', () => {
         accountId: 'jane',
         hashedPassword: 'hashed_password_2',
         user: mockUsers[1],
+      },
+      {
+        id: 'account_unverified',
+        userId: 'user_unverified',
+        providerId: 'local',
+        accountId: 'unverified',
+        hashedPassword: 'hashed_password_uv',
+        user: mockUsers[6],
       },
     ];
 
@@ -797,6 +821,15 @@ describe('AppController (e2e)', () => {
     testingModuleBuilder.overrideGuard(LocalAuthGuard).useValue({
       canActivate: (context: any) => {
         const req = context.switchToHttp().getRequest();
+        if (req.body && req.body.username) {
+          const foundUser = mockUsers.find(
+            (u) => u.username === req.body.username,
+          );
+          if (foundUser) {
+            req.user = foundUser;
+            return true;
+          }
+        }
         req.user = mockUser;
         return true;
       },
@@ -938,6 +971,7 @@ describe('AppController (e2e)', () => {
             username: 'john01',
             firstName: 'John',
             lastName: 'Doe',
+            isEmailVerified: true,
             id: expect.any(String),
             role: expect.objectContaining({
               id: expect.any(String),
@@ -961,6 +995,21 @@ describe('AppController (e2e)', () => {
       : String(setCookie2 || '');
     sessionCookie = cookies;
     expect(cookies).toMatch(/session_token=[^;]+/);
+  });
+
+  it('POST /auth/login with unverified user returns 401 and specific error message', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ username: 'unverified_user', password: 'AnyPassword' })
+      .expect(401);
+
+    expect(res.body).toEqual(
+      expect.objectContaining({
+        statusCode: 401,
+        message: 'Email not verified. Please verify your email to continue.',
+        email: 'unverified@example.com',
+      }),
+    );
   });
 
   it('POST /auth/logout with valid session returns 200', async () => {
@@ -1569,6 +1618,78 @@ describe('AppController (e2e)', () => {
       .set('Cookie', 'session_token=sess_1.secret')
       .send({ status: 'resolved' })
       .expect(404);
+  });
+
+  // ============================================================================
+  // ANONYMOUS REPORTING PRIVACY & SANITIZATION
+  // ============================================================================
+
+  let anonymousReportId: string;
+
+  it('POST /reports creates an anonymous report and returns isAnonymous: true', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/reports')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .field('title', 'Anonymous Noise Complaint')
+      .field('description', 'Loud noise at night')
+      .field('longitude', '7.6869')
+      .field('latitude', '45.0703')
+      .field('categoryId', 'cat_1')
+      .field('isAnonymous', 'true')
+      .attach('images', Buffer.from('fake-image'), 'anon.jpg')
+      .expect(201);
+
+    expect(res.body.data.isAnonymous).toBe(true);
+    expect(res.body.data.id).toBeDefined();
+    anonymousReportId = res.body.data.id;
+  });
+
+  it('GET /reports/:id as AUTHOR (user_1) returns user details (Author Bypass)', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/reports/${anonymousReportId}`)
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body.data.id).toBe(anonymousReportId);
+    expect(res.body.data.isAnonymous).toBe(true);
+    expect(res.body.data.user).toBeDefined();
+    expect(res.body.data.user.id).toBe('user_1');
+    expect(res.body.data.user.username).toBeDefined();
+  });
+
+  it('GET /reports/:id as OTHER USER (user_2) sanitizes user details', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/reports/${anonymousReportId}`)
+      .set('Cookie', 'session_token=sess_2.secret')
+      .expect(200);
+
+    expect(res.body.data.isAnonymous).toBe(true);
+    expect(res.body.data.user).toBeNull();
+  });
+
+  it('GET /reports/:id as TECH OFFICER (Privileged) returns user details', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/reports/${anonymousReportId}`)
+      .set('Cookie', 'session_token=sess_officer_1.secret')
+      .expect(200);
+
+    expect(res.body.data.isAnonymous).toBe(true);
+    expect(res.body.data.user).toBeDefined();
+    expect(res.body.data.user.id).toBe('user_1');
+  });
+
+  it('GET /reports list view sanitizes anonymous reports for standard users', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/reports')
+      .set('Cookie', 'session_token=sess_2.secret')
+      .expect(200);
+
+    const targetReport = res.body.data.find(
+      (r: any) => r.id === anonymousReportId,
+    );
+    expect(targetReport).toBeDefined();
+    expect(targetReport.isAnonymous).toBe(true);
+    expect(targetReport.user).toBeNull();
   });
 
   // ============================================================================
@@ -2718,6 +2839,57 @@ describe('AppController (e2e)', () => {
       .expect(200);
 
     expect(res.body.data.length).toBeGreaterThanOrEqual(2);
+  });
+
+  // ============================================================================
+  // Notifications Endpoints (Focused E2E Tests)
+  // These tests are written to avoid relying on pre-seeded notification data.
+  // They verify auth, shape and error handling of the notifications endpoints.
+  // ============================================================================
+
+  it('GET /notifications without authentication returns 403', async () => {
+    await request(app.getHttpServer()).get('/notifications').expect(403);
+  });
+
+  it('GET /notifications with authentication returns 200 and array data', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/notifications')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body).toHaveProperty('success', true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('GET /notifications?unread=1 returns only unread items when present', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/notifications?unread=1')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(200);
+
+    expect(res.body).toHaveProperty('success', true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+
+    // If there are items, they should be unread
+    if (res.body.data.length > 0) {
+      for (const n of res.body.data) {
+        expect(n).toHaveProperty('read');
+        expect(n.read).toBe(false);
+      }
+    }
+  });
+
+  it('PATCH /notifications/:id/read without authentication returns 403', async () => {
+    await request(app.getHttpServer())
+      .patch('/notifications/non-existent-id/read')
+      .expect(403);
+  });
+
+  it('PATCH /notifications/:id/read with auth for non-existent id returns 404', async () => {
+    await request(app.getHttpServer())
+      .patch('/notifications/non-existent-id/read')
+      .set('Cookie', 'session_token=sess_1.secret')
+      .expect(404);
   });
 
   // ============================================================================

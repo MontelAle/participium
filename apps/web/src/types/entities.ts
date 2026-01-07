@@ -104,6 +104,17 @@ export type Session = {
   impersonatedBy?: string;
 };
 
+export type UserOfficeRole = {
+  id: string;
+  userId: string;
+  officeId: string;
+  office: Office;
+  roleId: string;
+  role: Role;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export type User = {
   id: string;
   email: string;
@@ -116,6 +127,7 @@ export type User = {
   updatedAt: Date;
   officeId?: string;
   office?: Office;
+  officeRoles?: UserOfficeRole[];
 };
 
 export type Comment = {
