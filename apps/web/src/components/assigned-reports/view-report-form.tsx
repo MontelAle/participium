@@ -12,7 +12,7 @@ import { useCategories } from '@/hooks/use-categories';
 import { useExternalMaintainers } from '@/hooks/use-external-maintainers';
 import { useOffices } from '@/hooks/use-offices';
 import { useUpdateReport } from '@/hooks/use-reports';
-import { cn, prettifyStatus } from '@/lib/utils';
+import { cn, getNextStatusOptions, prettifyStatus } from '@/lib/utils';
 import type { Report, ReportStatus, UpdateReportDto } from '@/types';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -52,21 +52,6 @@ export function ViewAssignedReport({
   const { isTechnicalOfficer, user } = useAuth();
 
   const allowedNextStatuses = useMemo(() => {
-    const getNextStatusOptions = (currentStatus: ReportStatus) => {
-      switch (currentStatus) {
-        case 'assigned':
-          return ['assigned', 'in_progress'];
-        case 'in_progress':
-          return ['in_progress', 'resolved', 'suspended'];
-        case 'suspended':
-          return ['suspended', 'in_progress'];
-        case 'resolved':
-          return ['resolved'];
-        default:
-          return [];
-      }
-    };
-
     return getNextStatusOptions(report.status as ReportStatus);
   }, [report.status]);
 

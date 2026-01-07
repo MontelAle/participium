@@ -396,16 +396,10 @@ export class ReportsService {
           REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_NOT_ASSIGNED_TO_REPORT,
         );
       }
-      this.validateExternalMaintainerStatusChange(report, updateReportDto);
     }
 
-    // Allow privileged officers to change status following allowed transitions
-    if (
-      actor?.role?.name === 'pr_officer' ||
-      actor?.role?.name === 'tech_officer'
-    ) {
-      this.validateOfficerStatusChange(report, updateReportDto, actor);
-    }
+    // Validate status transition
+    this.validateStatusChange(report, updateReportDto);
 
     this.updateReportLocation(report, updateReportDto);
 
@@ -637,100 +631,44 @@ export class ReportsService {
     }
   }
 
-  private validateExternalMaintainerStatusChange(
-    report: Report,
-    updateDto: UpdateReportDto,
-  ): void {
+  private validateStatusChange(report: Report, updateDto: UpdateReportDto) {
     if (!updateDto.status) {
       return;
     }
-
-    const allowedTransitions: Record<ReportStatus, string[]> = {
-      pending: [],
-      assigned: ['in_progress'],
-      in_progress: ['resolved', 'suspended'],
-      resolved: [],
-      rejected: [],
-      suspended: ['in_progress'],
+    const transitions: Record<ReportStatus, ReportStatus[]> = {
+      pending: [
+        ReportStatus.PENDING,
+        ReportStatus.ASSIGNED,
+        ReportStatus.REJECTED,
+      ],
+      assigned: [
+        ReportStatus.ASSIGNED,
+        ReportStatus.SUSPENDED,
+        ReportStatus.IN_PROGRESS,
+      ],
+      in_progress: [
+        ReportStatus.IN_PROGRESS,
+        ReportStatus.RESOLVED,
+        ReportStatus.SUSPENDED,
+      ],
+      resolved: [ReportStatus.RESOLVED],
+      rejected: [ReportStatus.REJECTED],
+      suspended: [
+        ReportStatus.SUSPENDED,
+        ReportStatus.IN_PROGRESS,
+        ReportStatus.ASSIGNED,
+      ],
     };
-
-    const allowedNextStatuses = allowedTransitions[report.status];
+    const allowedNextStatuses = transitions[report.status];
 
     if (
       !allowedNextStatuses ||
       !allowedNextStatuses.includes(updateDto.status)
     ) {
       throw new BadRequestException(
-        REPORT_ERROR_MESSAGES.EXTERNAL_MAINTAINER_INVALID_STATUS_TRANSITION(
+        REPORT_ERROR_MESSAGES.INVALID_STATUS_TRANSITION(
           report.status,
           updateDto.status,
-        ),
-      );
-    }
-  }
-
-  private validateOfficerStatusChange(
-    report: Report,
-    updateDto: UpdateReportDto,
-    actor: User,
-  ): void {
-    if (!updateDto.status) return;
-
-    // Define allowed transitions per officer role
-    const prOfficerTransitions: Record<ReportStatus, ReportStatus[]> = {
-      pending: [
-        ReportStatus.IN_PROGRESS,
-        ReportStatus.ASSIGNED,
-        ReportStatus.REJECTED,
-      ],
-      assigned: [
-        ReportStatus.IN_PROGRESS,
-        ReportStatus.REJECTED,
-        ReportStatus.SUSPENDED,
-        ReportStatus.ASSIGNED,
-      ],
-      in_progress: [
-        ReportStatus.RESOLVED,
-        ReportStatus.REJECTED,
-        ReportStatus.SUSPENDED,
-      ],
-      resolved: [],
-      rejected: [],
-      suspended: [ReportStatus.IN_PROGRESS],
-    };
-
-    const techOfficerTransitions: Record<ReportStatus, ReportStatus[]> = {
-      pending: [ReportStatus.ASSIGNED],
-      assigned: [
-        ReportStatus.IN_PROGRESS,
-        ReportStatus.REJECTED,
-        ReportStatus.SUSPENDED,
-        ReportStatus.ASSIGNED,
-      ],
-      in_progress: [ReportStatus.RESOLVED, ReportStatus.SUSPENDED],
-      resolved: [],
-      rejected: [],
-      suspended: [ReportStatus.IN_PROGRESS],
-    };
-
-    const roleName = actor.role?.name;
-    let allowedNext: ReportStatus[] | undefined;
-
-    if (roleName === 'pr_officer') {
-      allowedNext = prOfficerTransitions[report.status];
-    } else if (roleName === 'tech_officer') {
-      allowedNext = techOfficerTransitions[report.status];
-    }
-
-    if (
-      !allowedNext ||
-      !allowedNext.includes(updateDto.status as ReportStatus)
-    ) {
-      throw new BadRequestException(
-        REPORT_ERROR_MESSAGES.OFFICER_INVALID_STATUS_TRANSITION(
-          report.status,
-          updateDto.status,
-          roleName,
         ),
       );
     }

@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useUpdateReport } from '@/hooks/use-reports';
-import { cn, getStatusConfig } from '@/lib/utils';
+import { cn, getNextStatusOptions, getStatusConfig } from '@/lib/utils';
 import type { Report, ReportStatus, UpdateReportDto } from '@/types';
 import {
   CalendarClock,
@@ -49,21 +49,6 @@ export function ViewAssignedExternalReport({
       status: report.status,
     },
   });
-
-  const getNextStatusOptions = (currentStatus: ReportStatus) => {
-    switch (currentStatus) {
-      case 'assigned':
-        return ['assigned', 'in_progress'];
-      case 'in_progress':
-        return ['in_progress', 'resolved', 'suspended'];
-      case 'suspended':
-        return ['suspended', 'in_progress'];
-      case 'resolved':
-        return ['resolved'];
-      default:
-        return [];
-    }
-  };
 
   const handleConfirm = async (data: { status: ReportStatus }) => {
     const updateData: UpdateReportDto = {
@@ -142,11 +127,13 @@ export function ViewAssignedExternalReport({
                     <SelectValue placeholder="Change status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getNextStatusOptions(report.status).map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {getStatusConfig(s as ReportStatus).label}
-                      </SelectItem>
-                    ))}
+                    {getNextStatusOptions(report.status)
+                      .filter((s) => s !== 'suspended')
+                      .map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {getStatusConfig(s as ReportStatus).label}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
