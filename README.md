@@ -20,6 +20,21 @@ Screenshots:
 
 The recommended way to run the full Participium stack (Frontend + Backend + Database + Storage) is using Docker Compose. This ensures all services share the correct network and volumes
 
+## Prerequisites
+
+**Important:** The application requires a `.env` file with valid credentials for external services:
+- **SMTP Server** - for sending email notifications
+- **Telegram Bot Token** - for Telegram bot integration
+
+See `.env.example` in the repository for all required environment variables. Copy it to `.env` and fill in your credentials:
+
+```bash
+cp .env.example .env
+# Edit .env with your SMTP and Telegram Bot credentials
+```
+
+Without a properly configured `.env` file, the application will fail to start.
+
 ## 1. Create a compose.yml file
 
 Copy the following content into a file named docker-compose.yml:
@@ -30,6 +45,7 @@ name: participium-release
 services:
   api:
     image: giova21/participium-api:latest
+    pull_policy: always
     container_name: participium-api
     restart: always
     depends_on:
@@ -37,7 +53,9 @@ services:
       - minio
     environment:
       PORT: 5000
-      FRONTEND_URL: http://localhost:5173
+      NODE_ENV: ${NODE_ENV:-production}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      BACKEND_URL: ${BACKEND_URL:-http://localhost:5000/api}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_USER: ${POSTGRES_USER:-admin}
@@ -45,12 +63,26 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-participium}
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
-      MINIO_PUBLIC_ENDPOINT: localhost
-      MINIO_PUBLIC_PORT: 9000
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost}
+      MINIO_PUBLIC_PORT: ${MINIO_PUBLIC_PORT:-9000}
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      MINIO_BUCKET_NAME: participium-reports
-      MINIO_USE_SSL: "false"
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-participium-reports}
+      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_SECURE: ${EMAIL_SECURE:-false}
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@participium.com}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_USE_WEBHOOK: ${TELEGRAM_USE_WEBHOOK:-false}
+      TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL}
+      TELEGRAM_MAX_REPORTS_PER_HOUR: ${TELEGRAM_MAX_REPORTS_PER_HOUR:-5}
+      COOKIE_HTTP_ONLY: ${COOKIE_HTTP_ONLY:-true}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      COOKIE_SAME_SITE: ${COOKIE_SAME_SITE:-lax}
+      SESSION_EXPIRES_IN_SECONDS: ${SESSION_EXPIRES_IN_SECONDS:-86400}
     ports:
       - "5000:5000"
     networks:
@@ -58,6 +90,7 @@ services:
 
   web:
     image: giova21/participium-web:latest
+    pull_policy: always
     container_name: participium-web
     restart: always
     ports:
@@ -77,7 +110,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: ${POSTGRES_DB:-participium}
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - participium_pg_data:/var/lib/postgresql
     networks:
       - participium-net
 
@@ -89,7 +122,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
-      - minio_data:/data
+      - participium_minio_data:/data
     command: server /data --console-address ":9001"
     networks:
       - participium-net
@@ -98,8 +131,10 @@ services:
       - "9000:9000"
 
 volumes:
-  postgres_data:
-  minio_data:
+  participium_pg_data:
+    name: participium_release_pg_data
+  participium_minio_data:
+    name: participium_release_minio_data
 
 networks:
   participium-net:
@@ -137,9 +172,9 @@ docker compose up -d
 
 Data is persisted using Docker named volumes to ensure it survives container restarts:
 
-- **`postgres_data`** stores the relational database and geospatial index
+- **`participium_release_pg_data`** stores the relational database and geospatial index
 
-- **`minio_data`** Stores the uploaded files/blobs
+- **`participium_release_minio_data`** stores the uploaded files/blobs
 
 To reset the data completely, run:
 
@@ -161,7 +196,19 @@ Note: External Maintainer and External Company credentials will be added in futu
 
 ## Environment Variables
 
-You can customize the deployment by setting these variables in your docker-compose.yml or .env file
+You can customize the deployment by setting these variables in your docker-compose.yml or .env file. See `.env.example` in the repository for a complete list.
+
+### Required External Services
+
+| Variable               | Description                      | Example                  |
+| :--------------------- | :------------------------------- | :----------------------- |
+| `EMAIL_HOST`           | SMTP server hostname (required)  | `smtp.gmail.com`         |
+| `EMAIL_PORT`           | SMTP server port (required)      | `587`                    |
+| `EMAIL_USER`           | SMTP username (required)         | `your-email@gmail.com`   |
+| `EMAIL_PASSWORD`       | SMTP password (required)         | `your-app-password`      |
+| `TELEGRAM_BOT_TOKEN`   | Telegram bot token (required)    | `your_bot_token_here`    |
+
+### Optional Configuration
 
 | Variable              | Description         | Default               |
 | :-------------------- | :------------------ | :-------------------- |
