@@ -15,11 +15,18 @@ import {
   useUnreadNotifications,
 } from '@/hooks/use-notifications';
 import { useProfile } from '@/hooks/use-profile';
-import { Bell, ChevronsUpDown, LinkIcon, LogOut } from 'lucide-react';
+import { Bell, ChevronsUpDown, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export function Navbar() {
-  const { user, logout, isMunicipalityUser } = useAuth();
+  const {
+    user,
+    logout,
+    isMunicipalityUser,
+    isMunicipalPrOfficer,
+    isTechnicalOfficer,
+    isExternal,
+  } = useAuth();
   const { data: notifications } = useNotifications();
   const { data: unread } = useUnreadNotifications();
   const markRead = useMarkNotificationRead();
@@ -36,6 +43,26 @@ export function Navbar() {
     const firstName = profile?.user.firstName.charAt(0) || '?';
     const lastName = profile?.user.lastName.charAt(0) || '?';
     return (firstName + lastName).toUpperCase();
+  };
+
+  const getReportRoute = (reportId: string): string => {
+    if (isMunicipalPrOfficer) {
+      return `/app/assign-reports/view/${reportId}`;
+    }
+    if (isTechnicalOfficer) {
+      return `/app/assigned-reports/view/${reportId}`;
+    }
+    if (isExternal) {
+      return `/app/external/assigned-reports/${reportId}`;
+    }
+    return `/reports/view/${reportId}`;
+  };
+
+  const handleNotificationClick = (notificationId: string, reportId?: string) => {
+    markRead.mutate(notificationId);
+    if (reportId) {
+      navigate(getReportRoute(reportId));
+    }
   };
 
   return (
@@ -79,8 +106,8 @@ export function Navbar() {
                   notifications.slice(0, 10).map((n) => (
                     <DropdownMenuItem
                       key={n.id}
-                      onClick={() => markRead.mutate(n.id)}
-                      className={`flex flex-col items-start gap-1 ${n.read ? 'opacity-60' : ''}`}
+                      onClick={() => handleNotificationClick(n.id, n.reportId)}
+                      className={`flex flex-col items-start gap-1 cursor-pointer ${n.read ? 'opacity-60' : ''} ${n.reportId ? 'hover:bg-accent' : ''}`}
                     >
                       <div className="text-sm font-medium whitespace-normal break-all">
                         {n.message}
@@ -88,14 +115,6 @@ export function Navbar() {
                       <div className="text-xs text-muted-foreground">
                         {new Date(n.createdAt).toLocaleString()}
                       </div>
-                      <Link
-                        to={n.reportId ? `/reports/view/${n.reportId}` : '#'}
-                        className="mt-1"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <LinkIcon className="size-4 text-muted-foreground mt-1" />
-                      </Link>
                     </DropdownMenuItem>
                   ))
                 ) : (
