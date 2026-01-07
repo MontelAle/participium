@@ -435,7 +435,10 @@ export class ReportsService {
       report.userId
     ) {
       try {
-        const message = `Your report${report.title ? ` \"${report.title}\"` : ''} status changed to ${updateReportDto.status}`;
+        const humanStatus = (updateReportDto.status as string)
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+        const message = `Your report${report.title ? ` "${report.title}"` : ''} status changed to ${humanStatus}`;
         const notification = this.notificationRepository.create({
           userId: report.userId,
           type: 'report_status_changed',

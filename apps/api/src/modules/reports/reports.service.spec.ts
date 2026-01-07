@@ -2140,7 +2140,7 @@ describe('ReportsService', () => {
 
       expect(service['notificationRepository'].create).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: `Your report status changed to resolved`,
+          message: `Your report status changed to Resolved`,
         }),
       );
 
