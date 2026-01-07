@@ -802,7 +802,7 @@ const REAL_REPORTS = [
     address: 'Corso Peschiera, 132, Torino',
     lat: 45.062721,
     lng: 7.654925,
-    categoryName: 'Roads Signs and Traffic Lights',
+    categoryName: 'Road Signs and Traffic Lights',
     images: ['TiltedTrafficSignPole.jpg'],
   },
   {
@@ -839,7 +839,7 @@ const REAL_REPORTS = [
     address: 'Corso Castelfidardo, Torino',
     lat: 45.061643,
     lng: 7.658074,
-    categoryName: 'Roads Signs and Traffic Lights',
+    categoryName: 'Road Signs and Traffic Lights',
     images: [
       'TrafficLightsMissingHoods1.jpg',
       'TrafficLightsMissingHoods2.jpg',
