@@ -110,7 +110,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   const logout = useCallback(async () => {
-    // Immediately clear client auth state to stop components from triggering queries
+    // First attempt server-side logout to invalidate the session,
+    // then clear local client auth state to avoid race conditions
+    try {
+      await logoutMutation.mutateAsync();
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+
+    // Clear client auth state to stop components from triggering queries
     setUser(null);
     try {
       localStorage.removeItem('user');
@@ -122,13 +130,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.removeQueries();
     } catch (e) {
       console.error('Error clearing queries on logout', e);
-    }
-
-    // Attempt server-side logout but don't wait on it to prevent further client polling
-    try {
-      await logoutMutation.mutateAsync();
-    } catch (err) {
-      console.error('Logout error:', err);
     }
   }, [logoutMutation, queryClient]);
 
