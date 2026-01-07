@@ -1,3 +1,21 @@
+# Participium - Municipal Services Portal
+
+Participium is a full‑stack municipal services portal developed as a university assignment by a team of six. It enables citizens to submit geolocated reports with photos and lets municipal staff review, triage, and manage those reports using role-based dashboards and map views. The project demonstrates full-stack skills including backend APIs, frontend interfaces, geospatial data handling, and object storage.
+
+- Backend: NestJS (TypeScript) — see `apps/api`
+- Frontend: React + Vite (TypeScript) — see `apps/web`
+- Database: PostgreSQL with PostGIS for geospatial queries
+- Object storage: MinIO for report attachments
+
+Screenshots:
+
+![Guest map view](docs/images/guest-map-view.png)
+![User map view](docs/images/user-map-view.png)
+![Create report](docs/images/user-create-report.png)
+![PR officer dashboard](docs/images/pr-officer-dashboard.png)
+
+---
+
 # Quick Start (Full Stack Deployment)
 
 The recommended way to run the full Participium stack (Frontend + Backend + Database + Storage) is using Docker Compose. This ensures all services share the correct network and volumes
