@@ -1143,6 +1143,7 @@ async function seedMultiRoleTechOfficer(
     email: 'tech.multi@participium.com',
     role: techRole,
     office: maintenanceOffice,
+    isEmailVerified: true,
   });
   await userRepo.save(user);
 

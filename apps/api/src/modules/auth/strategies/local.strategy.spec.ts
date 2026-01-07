@@ -55,6 +55,28 @@ describe('LocalStrategy', () => {
       expect(result).toEqual(mockUser);
     });
 
+    it('should return user when email is used instead of username', async () => {
+      const mockUser = {
+        id: 'user-id',
+        email: 'test@example.com',
+        username: 'testuser',
+        firstName: 'Test',
+        lastName: 'User',
+      };
+
+      (authService.validateUser as jest.Mock).mockResolvedValue({
+        user: mockUser,
+      });
+
+      const result = await strategy.validate('test@example.com', 'password123');
+
+      expect(authService.validateUser).toHaveBeenCalledWith(
+        'test@example.com',
+        'password123',
+      );
+      expect(result).toEqual(mockUser);
+    });
+
     it('should throw UnauthorizedException when credentials are invalid', async () => {
       (authService.validateUser as jest.Mock).mockResolvedValue(null);
 
