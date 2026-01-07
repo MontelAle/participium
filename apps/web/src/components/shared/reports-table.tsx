@@ -2,14 +2,14 @@ import { Button } from '@/components/ui/button';
 import {
   TableBody,
   TableCell,
-  TableColumnHeader,
+  TableHead,
   TableHeader,
   TableHeaderGroup,
   TableProvider,
   TableRow,
 } from '@/components/ui/shadcn-io/table';
-import type { Report } from '@/types';
 import { prettifyStatus } from '@/lib/utils';
+import type { Report } from '@/types';
 import {
   type CellContext,
   type ColumnDef,
@@ -24,17 +24,13 @@ export type ReportsTableProps = {
   viewBasePath: string;
 };
 
-const CategoryCell = ({
-  getValue,
-}: CellContext<Report, Report['category']>) => {
-  const category = getValue();
-  return typeof category === 'object' && category !== null
-    ? category.name
-    : String(category ?? '');
+const CategoryCell = ({ row }: CellContext<Report, unknown>) => {
+  const categoryName = row.original.category?.name;
+  return <>{categoryName || ''}</>;
 };
 
-const StatusCell = ({ getValue }: CellContext<Report, Report['status']>) => {
-  const status = getValue();
+const StatusCell = ({ row }: CellContext<Report, unknown>) => {
+  const status = row.original.status;
   let bgColor = 'bg-gray-100 text-gray-700';
   if (status === 'pending') bgColor = 'bg-yellow-100 text-yellow-800';
   else if (status === 'in_progress') bgColor = 'bg-blue-100 text-blue-800';
@@ -46,7 +42,7 @@ const StatusCell = ({ getValue }: CellContext<Report, Report['status']>) => {
     <span
       className={`inline-flex items-center rounded-md px-2.5 py-0.5 text-sm font-medium ${bgColor} border whitespace-nowrap`}
     >
-      {prettifyStatus(status)}
+      {prettifyStatus(status || '')}
     </span>
   );
 };
@@ -111,9 +107,8 @@ export function ReportsTable({
                 className="bg-muted/40 hover:bg-muted/40 border-b"
               >
                 {({ header }) => (
-                  <TableColumnHeader
-                    column={header.column}
-                    title={header.column.columnDef.header as string}
+                  <TableHead
+                    header={header}
                     className="h-12 text-sm font-semibold text-muted-foreground px-4 first:pl-6"
                   />
                 )}

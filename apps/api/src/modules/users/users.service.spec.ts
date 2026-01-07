@@ -1,4 +1,13 @@
-import { Account, Category, Office, Profile, Report, Role, User, UserOfficeRole } from '@entities';
+import {
+  Account,
+  Category,
+  Office,
+  Profile,
+  Report,
+  Role,
+  User,
+  UserOfficeRole,
+} from '@entities';
 import {
   BadRequestException,
   ConflictException,
@@ -139,7 +148,7 @@ describe('UsersService', () => {
     accountRepository = module.get(getRepositoryToken(Account));
     roleRepository = module.get(getRepositoryToken(Role));
     officeRepository = module.get(getRepositoryToken(Office));
-    profileRepository = module.get(getRepositoryToken(Profile)); // <-- Add this line
+    profileRepository = module.get(getRepositoryToken(Profile));
     userOfficeRoleRepository = module.get(getRepositoryToken(UserOfficeRole));
     reportRepository = module.get(getRepositoryToken(Report));
     reportsService = module.get(ReportsService);
@@ -167,7 +176,13 @@ describe('UsersService', () => {
       const result = await service.findMunicipalityUsers();
 
       expect(userRepository.find).toHaveBeenCalledWith({
-        relations: ['role', 'office', 'officeRoles', 'officeRoles.office', 'officeRoles.role'],
+        relations: [
+          'role',
+          'office',
+          'officeRoles',
+          'officeRoles.office',
+          'officeRoles.role',
+        ],
         where: { role: { isMunicipal: true } },
         order: { firstName: 'ASC', lastName: 'ASC' },
       });
@@ -210,8 +225,8 @@ describe('UsersService', () => {
       userRepository.findOne
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null);
-      profileRepository.create.mockReturnValue({} as Profile); // Mock profile creation
-      profileRepository.save.mockResolvedValue({} as Profile); // Mock profile save
+      profileRepository.create.mockReturnValue({} as Profile);
+      profileRepository.save.mockResolvedValue({} as Profile);
 
       const createdUser = { ...mockUser, id: 'new-id' };
       userRepository.create.mockReturnValue(createdUser);
@@ -271,7 +286,6 @@ describe('UsersService', () => {
       };
       delete dtoWithoutOfficeId.officeRoleAssignments;
 
-      // Mock role as a regular role (not external_maintainer)
       roleRepository.findOne.mockResolvedValue({
         id: 'role-1',
         name: 'tech_officer',
@@ -384,8 +398,8 @@ describe('UsersService', () => {
       userRepository.findOne
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null);
-      profileRepository.create.mockReturnValue({} as Profile); // Mock profile creation
-      profileRepository.save.mockResolvedValue({} as Profile); // Mock profile save
+      profileRepository.create.mockReturnValue({} as Profile);
+      profileRepository.save.mockResolvedValue({} as Profile);
 
       const createdUser = { ...mockUser, id: 'new-ext-maint' };
       userRepository.create.mockReturnValue(createdUser);
@@ -418,8 +432,8 @@ describe('UsersService', () => {
       userRepository.findOne
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null);
-      profileRepository.create.mockReturnValue({} as Profile); // Mock profile creation
-      profileRepository.save.mockResolvedValue({} as Profile); // Mock profile save
+      profileRepository.create.mockReturnValue({} as Profile);
+      profileRepository.save.mockResolvedValue({} as Profile);
 
       const createdUser = { ...mockUser, id: 'new-officer' };
       userRepository.create.mockReturnValue(createdUser);
@@ -430,6 +444,75 @@ describe('UsersService', () => {
 
       expect(result).toEqual(createdUser);
       expect(userRepository.save).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if one of the offices in assignments does not exist', async () => {
+      const dtoWithBadOffice: CreateMunicipalityUserDto = {
+        ...createDto,
+        officeRoleAssignments: [{ roleId: 'role-1', officeId: 'bad-office' }],
+      };
+
+      roleRepository.findOne.mockResolvedValue({
+        id: 'role-1',
+        name: 'tech_officer',
+      } as Role);
+      userRepository.findOne.mockResolvedValue(null);
+
+      mockManager.getRepository = jest.fn((entity) => {
+        if (entity === Office)
+          return { findOne: jest.fn().mockResolvedValue(null) };
+        if (entity === User)
+          return { findOne: jest.fn().mockResolvedValue(null) };
+        if (entity === Role)
+          return {
+            findOne: jest
+              .fn()
+              .mockResolvedValue({ id: 'role-1', name: 'tech_officer' }),
+          };
+        return {};
+      });
+
+      await expect(
+        service.createMunicipalityUser(dtoWithBadOffice),
+      ).rejects.toThrow(
+        new NotFoundException(USER_ERROR_MESSAGES.OFFICE_NOT_FOUND),
+      );
+    });
+
+    it('should hit the "null" office branches when creating external_maintainer without office (bypassing validation via spy)', async () => {
+      const dto: CreateMunicipalityUserDto = {
+        ...createDto,
+        roleId: 'ext-role',
+        officeId: undefined,
+      };
+
+      const validationSpy = jest
+        .spyOn(service as any, 'validateOfficeRoleMatch')
+        .mockImplementation(() => {});
+
+      const mockRole = { id: 'ext-role', name: 'external_maintainer' } as Role;
+
+      mockManager.getRepository.mockImplementation((entity) => {
+        if (entity === User)
+          return {
+            findOne: jest.fn(),
+            create: jest.fn().mockReturnValue({ id: 'u1' }),
+            save: jest.fn().mockResolvedValue({ id: 'u1' }),
+          };
+        if (entity === Role)
+          return { findOne: jest.fn().mockResolvedValue(mockRole) };
+        if (entity === Office) return { findOne: jest.fn() };
+        if (entity === UserOfficeRole)
+          return { create: jest.fn(), save: jest.fn() };
+        if (entity === Account) return { create: jest.fn(), save: jest.fn() };
+        if (entity === Profile) return { create: jest.fn(), save: jest.fn() };
+        return null;
+      });
+
+      await service.createMunicipalityUser(dto);
+
+      expect(validationSpy).toHaveBeenCalled();
+      validationSpy.mockRestore();
     });
   });
 
@@ -734,6 +817,164 @@ describe('UsersService', () => {
           roleId: 'ext-role',
           officeId: 'ext-office',
         }),
+      );
+    });
+
+    it('should skip updating fields not present in DTO (coverage for partial update branches)', async () => {
+      const partialDto = { email: 'only@email.com' };
+
+      const existingUser = {
+        ...mockUser,
+        lastName: 'OriginalLast',
+        firstName: 'OriginalFirst',
+      } as User;
+      userRepository.findOne.mockResolvedValue(existingUser);
+      userRepository.findOne
+        .mockResolvedValueOnce(existingUser)
+        .mockResolvedValueOnce(null);
+
+      mockManager.getRepository.mockImplementation((entity) => {
+        if (entity === User) return userRepository;
+        if (entity === Account) return accountRepository;
+        return null;
+      });
+
+      await service.updateMunicipalityUserById('user-1', partialDto as any);
+
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'only@email.com',
+          lastName: 'OriginalLast',
+          firstName: 'OriginalFirst',
+        }),
+      );
+    });
+  });
+
+  describe('updateMunicipalityUserById - Complex Scenarios', () => {
+    const userId = 'user-1';
+    const mockExistingUser = {
+      id: userId,
+      username: 'user',
+      email: 'user@test.com',
+      firstName: 'OldName',
+      lastName: 'OldLast',
+    } as User;
+
+    beforeEach(() => {
+      userRepository.findOne.mockResolvedValue(mockExistingUser);
+    });
+
+    it('should update lastName when provided', async () => {
+      const updateDto = { lastName: 'NewLast' };
+
+      roleRepository.findOne.mockResolvedValue({ id: 'r1' } as Role);
+      officeRepository.findOne.mockResolvedValue({ id: 'o1' } as Office);
+
+      mockManager.getRepository.mockImplementation((entity) => {
+        if (entity === User) return userRepository;
+        if (entity === Account) return accountRepository;
+        return null;
+      });
+
+      await service.updateMunicipalityUserById(userId, updateDto);
+
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ lastName: 'NewLast' }),
+      );
+    });
+
+    it('should handle complex officeRoleAssignments: remove old, keep existing, add new', async () => {
+      const updateDto = {
+        officeRoleAssignments: [
+          { officeId: 'office-A', roleId: 'role-A' },
+          { officeId: 'office-C', roleId: 'role-A' },
+        ],
+      };
+
+      const existingAssignments = [
+        { id: 'assign-1', officeId: 'office-A', roleId: 'role-A' },
+        { id: 'assign-2', officeId: 'office-B', roleId: 'role-A' },
+      ] as UserOfficeRole[];
+
+      const mockUORRepo = {
+        find: jest.fn().mockResolvedValue(existingAssignments),
+        delete: jest.fn(),
+        create: jest
+          .fn()
+          .mockImplementation((dto) => ({ ...dto, id: 'new-assign' })),
+        save: jest.fn(),
+      };
+
+      roleRepository.findOne.mockResolvedValue({
+        id: 'role-A',
+        name: 'tech_officer',
+      } as Role);
+      officeRepository.findOne.mockResolvedValue({
+        id: 'office-C',
+        isExternal: false,
+      } as Office);
+
+      mockManager.getRepository.mockImplementation((entity) => {
+        if (entity === UserOfficeRole) return mockUORRepo;
+        if (entity === User) return userRepository;
+        if (entity === Account) return accountRepository;
+        return null;
+      });
+
+      await service.updateMunicipalityUserById(userId, updateDto);
+
+      expect(mockUORRepo.delete).toHaveBeenCalledWith('assign-2');
+      expect(mockUORRepo.delete).not.toHaveBeenCalledWith('assign-1');
+
+      expect(mockUORRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ officeId: 'office-C' }),
+      );
+      expect(mockUORRepo.save).toHaveBeenCalledTimes(1);
+
+      expect(userRepository.save).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException inside update loop if Role not found', async () => {
+      const updateDto = {
+        officeRoleAssignments: [{ officeId: 'office-1', roleId: 'bad-role' }],
+      };
+
+      const mockUORRepo = { find: jest.fn().mockResolvedValue([]) };
+      mockManager.getRepository.mockImplementation((entity) => {
+        if (entity === UserOfficeRole) return mockUORRepo;
+        if (entity === User) return userRepository;
+        return null;
+      });
+
+      roleRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateMunicipalityUserById(userId, updateDto),
+      ).rejects.toThrow(
+        new NotFoundException(USER_ERROR_MESSAGES.ROLE_NOT_FOUND),
+      );
+    });
+
+    it('should throw NotFoundException inside update loop if Office not found', async () => {
+      const updateDto = {
+        officeRoleAssignments: [{ officeId: 'bad-office', roleId: 'role-1' }],
+      };
+
+      const mockUORRepo = { find: jest.fn().mockResolvedValue([]) };
+      mockManager.getRepository.mockImplementation((entity) => {
+        if (entity === UserOfficeRole) return mockUORRepo;
+        if (entity === User) return userRepository;
+        return null;
+      });
+
+      roleRepository.findOne.mockResolvedValue({ id: 'role-1' } as Role);
+      officeRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateMunicipalityUserById(userId, updateDto),
+      ).rejects.toThrow(
+        new NotFoundException(USER_ERROR_MESSAGES.OFFICE_NOT_FOUND),
       );
     });
   });
@@ -1122,7 +1363,9 @@ describe('UsersService', () => {
       await expect(
         service.assignUserToOffice('user-1', 'office-1', 'role-1'),
       ).rejects.toThrow(
-        new ConflictException(USER_ERROR_MESSAGES.USER_OFFICE_ROLE_ALREADY_EXISTS),
+        new ConflictException(
+          USER_ERROR_MESSAGES.USER_OFFICE_ROLE_ALREADY_EXISTS,
+        ),
       );
     });
 
@@ -1171,6 +1414,55 @@ describe('UsersService', () => {
         ),
       );
     });
+
+    it('should throw NotFoundException if user to assign does not exist', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+      await expect(
+        service.assignUserToOffice('bad-user', 'office', 'role'),
+      ).rejects.toThrow(
+        new NotFoundException(USER_ERROR_MESSAGES.USER_NOT_FOUND('bad-user')),
+      );
+    });
+
+    it('should throw NotFoundException if role to assign does not exist', async () => {
+      userRepository.findOne.mockResolvedValue({ id: 'u1' } as User);
+      roleRepository.findOne.mockResolvedValue(null);
+      await expect(
+        service.assignUserToOffice('u1', 'office', 'bad-role'),
+      ).rejects.toThrow(
+        new NotFoundException(USER_ERROR_MESSAGES.ROLE_NOT_FOUND),
+      );
+    });
+
+    it('should throw NotFoundException if office to assign does not exist', async () => {
+      userRepository.findOne.mockResolvedValue({ id: 'u1' } as User);
+      roleRepository.findOne.mockResolvedValue({ id: 'r1' } as Role);
+      officeRepository.findOne.mockResolvedValue(null);
+      await expect(
+        service.assignUserToOffice('u1', 'bad-office', 'r1'),
+      ).rejects.toThrow(
+        new NotFoundException(USER_ERROR_MESSAGES.OFFICE_NOT_FOUND),
+      );
+    });
+
+    it('should throw BadRequestException if assigning second office to non-tech_officer', async () => {
+      const regularRole = { id: 'reg', name: 'pr_officer' } as Role;
+
+      userRepository.findOne.mockResolvedValue({ id: 'u1' } as User);
+      roleRepository.findOne.mockResolvedValue(regularRole);
+      officeRepository.findOne.mockResolvedValue({ id: 'off' } as Office);
+
+      userOfficeRoleRepository.find.mockResolvedValue([]);
+      userOfficeRoleRepository.count.mockResolvedValue(1);
+
+      await expect(
+        service.assignUserToOffice('u1', 'off', 'reg'),
+      ).rejects.toThrow(
+        new BadRequestException(
+          USER_ERROR_MESSAGES.CANNOT_ASSIGN_MULTIPLE_ROLES_TO_NON_TECH_OFFICER,
+        ),
+      );
+    });
   });
 
   describe('removeUserFromOffice', () => {
@@ -1215,7 +1507,9 @@ describe('UsersService', () => {
       await expect(
         service.removeUserFromOffice('user-1', 'office-1'),
       ).rejects.toThrow(
-        new BadRequestException(USER_ERROR_MESSAGES.MUST_KEEP_AT_LEAST_ONE_ROLE),
+        new BadRequestException(
+          USER_ERROR_MESSAGES.MUST_KEEP_AT_LEAST_ONE_ROLE,
+        ),
       );
     });
 
@@ -1227,8 +1521,16 @@ describe('UsersService', () => {
       } as UserOfficeRole;
 
       const mockOrphanReports = [
-        { id: 'report-1', assignedOfficerId: 'user-1', status: 'assigned' } as Report,
-        { id: 'report-2', assignedOfficerId: 'user-1', status: 'in_progress' } as Report,
+        {
+          id: 'report-1',
+          assignedOfficerId: 'user-1',
+          status: 'assigned',
+        } as Report,
+        {
+          id: 'report-2',
+          assignedOfficerId: 'user-1',
+          status: 'in_progress',
+        } as Report,
       ];
 
       const mockNewOfficer = { id: 'user-2', username: 'officer2' } as User;
@@ -1236,25 +1538,29 @@ describe('UsersService', () => {
       userOfficeRoleRepository.findOne.mockResolvedValue(mockAssignment);
       userOfficeRoleRepository.count.mockResolvedValue(2);
 
-      // Mock QueryBuilder for orphan reports
       const mockQueryBuilder = {
         innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue(mockOrphanReports),
       };
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
-      reportsService.findOfficerWithFewestReports.mockResolvedValue(mockNewOfficer);
+      reportsService.findOfficerWithFewestReports.mockResolvedValue(
+        mockNewOfficer,
+      );
       reportRepository.save.mockResolvedValue(mockOrphanReports[0]);
 
       await service.removeUserFromOffice('user-1', 'office-1');
 
-      // Verify reports were reassigned
       expect(mockOrphanReports[0].assignedOfficerId).toBe('user-2');
       expect(mockOrphanReports[1].assignedOfficerId).toBe('user-2');
       expect(reportRepository.save).toHaveBeenCalledTimes(2);
-      expect(reportsService.findOfficerWithFewestReports).toHaveBeenCalledWith('office-1');
+      expect(reportsService.findOfficerWithFewestReports).toHaveBeenCalledWith(
+        'office-1',
+      );
     });
 
     it('should set assignedOfficerId to null when no officers available', async () => {
@@ -1265,7 +1571,11 @@ describe('UsersService', () => {
       } as UserOfficeRole;
 
       const mockOrphanReports = [
-        { id: 'report-1', assignedOfficerId: 'user-1', status: 'assigned' } as Report,
+        {
+          id: 'report-1',
+          assignedOfficerId: 'user-1',
+          status: 'assigned',
+        } as Report,
       ];
 
       userOfficeRoleRepository.findOne.mockResolvedValue(mockAssignment);
@@ -1277,14 +1587,14 @@ describe('UsersService', () => {
         andWhere: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue(mockOrphanReports),
       };
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
-      // No available officer
       reportsService.findOfficerWithFewestReports.mockResolvedValue(null);
 
       await service.removeUserFromOffice('user-1', 'office-1');
 
-      // Verify report was set to null (unassigned)
       expect(mockOrphanReports[0].assignedOfficerId).toBe(null);
       expect(reportRepository.save).toHaveBeenCalledWith(mockOrphanReports[0]);
     });
@@ -1305,11 +1615,12 @@ describe('UsersService', () => {
         andWhere: jest.fn().mockReturnThis(),
         getMany: jest.fn().mockResolvedValue([]),
       };
-      reportRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      reportRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       await service.removeUserFromOffice('user-1', 'office-1');
 
-      // Verify query was called with correct statuses
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'report.status IN (:...statuses)',
         { statuses: ['assigned', 'in_progress', 'suspended'] },
@@ -1345,7 +1656,7 @@ describe('UsersService', () => {
           role: { id: 'role-1', name: 'tech_officer' },
         } as UserOfficeRole,
       ];
-      
+
       userOfficeRoleRepository.find.mockResolvedValue(mockUserOfficeRoles);
 
       const result = await service.userHasRole('user-1', 'tech_officer');
@@ -1427,7 +1738,9 @@ describe('UsersService', () => {
       };
 
       await expect(service.createMunicipalityUser(createDto)).rejects.toThrow(
-        new BadRequestException(USER_ERROR_MESSAGES.MISSING_ROLE_ASSIGNMENT_DATA),
+        new BadRequestException(
+          USER_ERROR_MESSAGES.MISSING_ROLE_ASSIGNMENT_DATA,
+        ),
       );
     });
 
@@ -1446,7 +1759,7 @@ describe('UsersService', () => {
 
       const mockRole = { id: 'admin-role', name: 'admin' } as Role;
       const mockOffice = { id: 'office-1', isExternal: false } as Office;
-      
+
       roleRepository.findOne.mockResolvedValue(mockRole);
       officeRepository.findOne.mockResolvedValue(mockOffice);
       userRepository.findOne

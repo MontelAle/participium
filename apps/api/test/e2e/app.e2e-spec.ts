@@ -10,21 +10,63 @@ import {
   Report,
   Role,
   Session,
+  TelegramLinkCode,
   User,
   UserOfficeRole,
 } from '@entities';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { LocalAuthGuard } from '../../src/modules/auth/guards/local-auth.guard';
 import { RolesGuard } from '../../src/modules/auth/guards/roles.guard';
 import { SessionGuard } from '../../src/modules/auth/guards/session-auth.guard';
 import { ReportsService } from '../../src/modules/reports/reports.service';
+import {
+  BUTTONS,
+  MESSAGES,
+} from '../../src/modules/telegram/constants/telegram-ui.constants';
+import { TelegramAuthService } from '../../src/modules/telegram/telegram-auth.service';
+import { TelegramBotUpdate } from '../../src/modules/telegram/telegram-bot.update';
+import { TelegramService } from '../../src/modules/telegram/telegram.service';
+import { TelegramFormatterUtil } from '../../src/modules/telegram/utils/telegram-formatter.util';
 import request = require('supertest');
 
 jest.mock('nanoid', () => ({
   nanoid: () => 'mocked-id',
+  customAlphabet: () => () => '123456',
 }));
+
+jest.mock('nestjs-telegraf', () => {
+  const mockDecorator = () => (target: any, key: string, descriptor: any) =>
+    descriptor;
+  const mockParamDecorator =
+    () => (target: any, key: string, index: number) => {};
+
+  return {
+    TelegrafModule: {
+      forRootAsync: jest
+        .fn()
+        .mockReturnValue({ module: class FakeTelegraf {} }),
+    },
+    InjectBot: () => jest.fn(),
+    Ctx: mockParamDecorator,
+    Message: mockParamDecorator,
+    Sender: mockParamDecorator,
+
+    Update: () => jest.fn(),
+    Scene: () => jest.fn(),
+
+    SceneEnter: mockDecorator,
+    SceneLeave: mockDecorator,
+    Start: mockDecorator,
+    Help: mockDecorator,
+    Command: mockDecorator,
+    Action: mockDecorator,
+    On: mockDecorator,
+    Hears: mockDecorator,
+  };
+});
 
 const createMockRepository = (data: any[] = []) => {
   const repo: any = {
@@ -244,6 +286,37 @@ const createMockRepository = (data: any[] = []) => {
   return repo;
 };
 
+const mockTelegramAuthService = {
+  linkAccount: jest.fn().mockResolvedValue(undefined),
+  generateLinkCode: jest.fn().mockResolvedValue('123456'),
+  getLinkedUser: jest.fn(),
+  isLinked: jest.fn().mockResolvedValue(false),
+  getUserId: jest.fn(),
+};
+
+const mockTelegramService = {
+  createReport: jest.fn(),
+  getCategories: jest.fn(),
+};
+
+@Module({
+  providers: [
+    { provide: TelegramAuthService, useValue: mockTelegramAuthService },
+    { provide: TelegramService, useValue: mockTelegramService },
+    TelegramBotUpdate, // <--- Inietta la vera classe Update
+    TelegramFormatterUtil, // <--- Inietta il vero Formatter
+    {
+      provide: ConfigService,
+      useValue: {
+        get: (key: string) =>
+          key === 'app.frontendUrl' ? 'http://localhost:5173' : 'mock-value',
+      },
+    },
+  ],
+  exports: [TelegramAuthService, TelegramService, TelegramBotUpdate],
+})
+class MockTelegramModule {}
+
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let AppModule: any;
@@ -263,6 +336,8 @@ describe('AppController (e2e)', () => {
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
+    process.env.TELEGRAM_BOT_TOKEN = 'mock_bot_token_for_e2e';
+
     const importedModule = await import('./../../src/app.module');
     AppModule = importedModule.AppModule;
 
@@ -277,7 +352,7 @@ describe('AppController (e2e)', () => {
       },
       {
         id: 'role_5',
-        name: 'tech_officer', // Fixed: was 'technical_officer', corrected to match actual entity name
+        name: 'tech_officer',
         label: 'Technical Officer',
         isMunicipal: true,
       },
@@ -433,7 +508,7 @@ describe('AppController (e2e)', () => {
         isExternal: true,
       },
       {
-        id: 'office_3', // Added for multi-role assignment tests
+        id: 'office_3',
         name: 'urban_planning',
         label: 'Urban Planning',
         isExternal: false,
@@ -588,6 +663,9 @@ describe('AppController (e2e)', () => {
     const { MinioProvider } = await import(
       './../../src/providers/minio/minio.provider'
     );
+    const { TelegramModule } = await import(
+      './../../src/modules/telegram/telegram.module'
+    );
 
     const mockMinioProvider = {
       uploadFile: jest
@@ -662,7 +740,10 @@ describe('AppController (e2e)', () => {
 
     testingModuleBuilder
       .overrideModule(DatabaseModule)
-      .useModule(class MockDatabaseModule {});
+      .useModule(class MockDatabaseModule {})
+      // Override del modulo reale con quello finto
+      .overrideModule(TelegramModule)
+      .useModule(MockTelegramModule);
 
     testingModuleBuilder
       .overrideProvider(getRepositoryToken(Session))
@@ -695,16 +776,16 @@ describe('AppController (e2e)', () => {
             userId: 'officer_1',
             officeId: 'office_1',
             roleId: 'role_5',
-            role: mockRoles[3], // tech_officer role (index 3, not 4!)
-            office: mockOffices[0], // Maintenance office
+            role: mockRoles[3],
+            office: mockOffices[0],
           },
           {
             id: 'uor_2',
             userId: 'officer_1',
             officeId: 'office_2',
             roleId: 'role_5',
-            role: mockRoles[3], // tech_officer role (index 3, not 4!)
-            office: mockOffices[1], // External Contractors office
+            role: mockRoles[3],
+            office: mockOffices[1],
           },
         ]),
       )
@@ -733,7 +814,10 @@ describe('AppController (e2e)', () => {
         ]),
       )
       .overrideProvider(MinioProvider)
-      .useValue(mockMinioProvider);
+      .useValue(mockMinioProvider)
+      // MOCK del repository TelegramLinkCode necessario per Auth/Profiles anche se il modulo Telegram è finto
+      .overrideProvider(getRepositoryToken(TelegramLinkCode))
+      .useValue(createMockRepository([]));
 
     testingModuleBuilder.overrideGuard(LocalAuthGuard).useValue({
       canActivate: (context: any) => {
@@ -837,7 +921,9 @@ describe('AppController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   // ============================================================================
@@ -2813,5 +2899,123 @@ describe('AppController (e2e)', () => {
       .patch('/notifications/non-existent-id/read')
       .set('Cookie', 'session_token=sess_1.secret')
       .expect(404);
+  });
+
+  // ============================================================================
+  // Telegram Bot Logic & Integration
+  // ============================================================================
+
+  describe('Telegram Bot Integration', () => {
+    let botUpdate: TelegramBotUpdate;
+    let authService: typeof mockTelegramAuthService;
+
+    const createMockContext = (telegramId: string) => ({
+      from: { id: telegramId, username: 'test_tg_user' },
+      reply: jest.fn(),
+      scene: { enter: jest.fn() },
+      answerCbQuery: jest.fn(),
+    });
+
+    beforeAll(() => {
+      botUpdate = app.get<TelegramBotUpdate>(TelegramBotUpdate);
+      authService = app.get(TelegramAuthService) as any;
+    });
+
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('POST /profiles/telegram/link links account successfully via API', async () => {
+      authService.linkAccount.mockResolvedValueOnce(undefined);
+
+      const res = await request(app.getHttpServer())
+        .post('/profiles/telegram/link')
+        .set('Cookie', 'session_token=sess_1.secret')
+        .send({ code: '123456' })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+      expect(authService.linkAccount).toHaveBeenCalledWith('123456', 'user_1');
+    });
+
+    it('Bot /start command for GUEST user shows Link Account button', async () => {
+      const ctx = createMockContext('999999');
+      authService.isLinked.mockResolvedValueOnce(false);
+
+      await botUpdate.onStart(ctx as any);
+
+      expect(authService.isLinked).toHaveBeenCalledWith('999999');
+
+      expect(ctx.reply).toHaveBeenCalledWith(
+        expect.stringContaining('Welcome to Participium'),
+        expect.objectContaining({
+          reply_markup: expect.objectContaining({
+            inline_keyboard: expect.arrayContaining([
+              expect.arrayContaining([
+                expect.objectContaining({ text: BUTTONS.LINK_ACCOUNT }),
+              ]),
+            ]),
+          }),
+        }),
+      );
+    });
+
+    it('Bot /start command for LINKED user shows New Report button', async () => {
+      const ctx = createMockContext('123456');
+      authService.isLinked.mockResolvedValueOnce(true);
+
+      await botUpdate.onStart(ctx as any);
+
+      expect(ctx.reply).toHaveBeenCalledWith(
+        expect.stringContaining('Welcome back'),
+        expect.objectContaining({
+          reply_markup: expect.objectContaining({
+            inline_keyboard: expect.arrayContaining([
+              expect.arrayContaining([
+                expect.objectContaining({ text: BUTTONS.NEW_REPORT }),
+              ]),
+            ]),
+          }),
+        }),
+      );
+    });
+
+    it('Bot /help shows different commands for Linked vs Guest users', async () => {
+      const ctxGuest = createMockContext('999');
+      const ctxUser = createMockContext('111');
+
+      authService.isLinked.mockResolvedValueOnce(false);
+      await botUpdate.onHelp(ctxGuest as any);
+      expect(ctxGuest.reply).toHaveBeenCalledWith(
+        expect.stringContaining('/link'),
+        expect.anything(),
+      );
+
+      authService.isLinked.mockResolvedValueOnce(true);
+      await botUpdate.onHelp(ctxUser as any);
+      expect(ctxUser.reply).toHaveBeenCalledWith(
+        expect.stringContaining('/newreport'),
+        expect.anything(),
+      );
+    });
+
+    it('Bot /newreport blocks execution if user is NOT linked', async () => {
+      const ctx = createMockContext('888');
+      authService.isLinked.mockResolvedValueOnce(false);
+
+      await botUpdate.onNewReport(ctx as any);
+
+      expect(ctx.reply).toHaveBeenCalledWith(MESSAGES.ERR_NOT_LINKED);
+      expect(ctx.scene.enter).not.toHaveBeenCalled();
+    });
+
+    it('Bot /newreport enters scene if user IS linked', async () => {
+      const ctx = createMockContext('777');
+      authService.isLinked.mockResolvedValueOnce(true);
+
+      await botUpdate.onNewReport(ctx as any);
+
+      expect(ctx.scene.enter).toHaveBeenCalledWith('newreport');
+    });
   });
 });
