@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Get,
   Patch,
+  Post,
   Req,
   UploadedFile,
   UseGuards,
@@ -21,10 +22,15 @@ import {
 } from '../../modules/users/constants/error-messages';
 import { ProfileResponseDto, UpdateProfileDto } from './dto/profiles.dto';
 import { ProfilesService } from './profiles.service';
+import { TelegramLinkDto } from '../telegram/dto/telegram-link.dto';
+import { TelegramAuthService } from '../telegram/telegram-auth.service';
 
 @Controller('profiles')
 export class ProfilesController {
-  constructor(private readonly profilesService: ProfilesService) {}
+  constructor(
+    private readonly profilesService: ProfilesService,
+    private readonly telegramAuthService: TelegramAuthService,
+  ) {}
   /**
    * Updates the current user's profile.
    *
@@ -90,6 +96,27 @@ export class ProfilesController {
     return {
       success: true,
       data: user,
+    };
+  }
+
+  /**
+   * Links a Telegram account to the current user's profile.
+   *
+   * @throws {400} Bad Request - Invalid or expired code
+   * @throws {401} Unauthorized - Invalid or missing session
+   * @throws {404} Not Found - Link code or profile not found
+   */
+  @Post('telegram/link')
+  @UseGuards(SessionGuard)
+  async linkTelegramAccount(
+    @Req() req: RequestWithUserSession,
+    @Body() dto: TelegramLinkDto,
+  ): Promise<{ success: boolean; message: string }> {
+    await this.telegramAuthService.linkAccount(dto.code, req.user.id);
+
+    return {
+      success: true,
+      message: 'Telegram account linked successfully',
     };
   }
 }
