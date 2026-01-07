@@ -37,11 +37,13 @@ describe('ProfilesService', () => {
     user: mockUser,
     userId: 'user-1',
     telegramUsername: '@testuser',
+    telegramId: null as string | null,
+    telegramLinkedAt: null as Date | null,
     emailNotificationsEnabled: true,
     profilePictureUrl: 'old_url',
     createdAt: new Date(),
     updatedAt: new Date(),
-  };
+  } as unknown as Profile;
 
   const mockAccount = {
     id: 'account-1',

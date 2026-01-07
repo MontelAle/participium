@@ -24,6 +24,12 @@ export class Profile {
   @Column({ nullable: true })
   telegramUsername: string | null;
 
+  @Column({ nullable: true, unique: true })
+  telegramId: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  telegramLinkedAt: Date | null;
+
   @Column({ default: true })
   emailNotificationsEnabled: boolean;
 
