@@ -39,7 +39,7 @@
 The project uses **Turborepo** to manage a monorepo workspace with:
 
 - **2 applications** (`apps/`): Backend API and Web frontend
-- **3 shared packages** (`packages/`): Common entities, ESLint and Jest configurations
+- **Shared configuration (optional)**: The repository is configured to support shared packages under `packages/*` (see `pnpm-workspace.yaml`), however in this codebase the ESLint/Jest/TypeScript configs are currently defined per-application under `apps/` (e.g. `apps/api/eslint.config.js`, `apps/web/eslint.config.js`). If you intend to centralize configs, move them into a `packages/` folder and update `pnpm-workspace.yaml` accordingly.
 
 ### Architectural Patterns
 
@@ -107,7 +107,6 @@ participium/
 │   │   │   ├── config/         # App configurations
 │   │   │   └── common/         # Types and utilities
 │   │   ├── test/               # E2E tests
-│   │   └── compose.yml         # Docker PostgreSQL
 │   │
 │   └── web/                    # React Frontend
 │       ├── src/
@@ -132,12 +131,40 @@ participium/
 │   ├── jest-config/            # Jest configurations
 │   └── typescript-config/      # TypeScript configurations
 │
-├── package.json                # Root workspace config
+├── package.json                # Root workspace config (note: `name` in this file is currently `my-turborepo`)
 ├── turbo.json                  # Turborepo config
 └── pnpm-workspace.yaml         # pnpm workspace config
 ```
 
 ---
+
+## Testing
+
+This project includes both unit and integration tests for the backend. Tests follow the existing patterns used across the repository:
+
+- Unit tests: placed next to the source files and use Jest. Unit tests mock repositories and providers where appropriate. Examples:
+  - `apps/api/src/modules/notifications/notifications.service.spec.ts`
+  - `apps/api/src/modules/notifications/notifications.controller.spec.ts`
+
+- Integration tests: start a PostgreSQL (PostGIS) container using Testcontainers and boot a real NestJS application instance. Integration tests are located under `apps/api/test/integration` and follow the same lifecycle and cleanup strategy as other integration specs in the project. Example:
+  - `apps/api/test/integration/notifications/notifications.int-spec.ts`
+
+Running tests
+
+- From the API folder run:
+
+```bash
+cd apps/api
+pnpm test
+# or
+npm run test
+```
+
+Notes and requirements
+
+- Integration tests require Docker to be available because they use Testcontainers to launch a PostgreSQL container.
+- Tests will create and tear down database resources; expect integration specs to take longer than unit tests.
+- Use Jest's `-t` filter or `--testPathPattern` to run a subset of tests during development.
 
 ## Backend API
 
@@ -696,58 +723,19 @@ radiusMeters = 5000;
 
 ---
 
-## Shared Packages
+## Shared Packages / Configs
 
-### @repo/api
+This repository is set up to support shared packages under `packages/*` (see `pnpm-workspace.yaml`). At the time of writing, there is no `packages/` folder in the repository — ESLint, Jest and TypeScript configurations are defined per-application under `apps/` (for example `apps/api/eslint.config.js`, `apps/web/eslint.config.js`).
 
-**Purpose**: Shared entities and DTOs between backend and frontend
+If you prefer centralized shared packages (recommended for larger monorepos), create a `packages/` folder and move shared configs and entities there, then update `pnpm-workspace.yaml` accordingly.
 
-**Content**:
+Common locations in this repository where configuration currently lives:
 
-- `entities/`: TypeORM definitions (User, Role, Office, Account, Session, Category, Report, Boundary, Profile)
-- `dto/`: Data Transfer Objects
-  - `auth.dto.ts` (RegisterDto, LoginDto, LoginResponseDto, LogoutResponseDto)
-  - `municipality-user.dto.ts` (CreateMunicipalityUserDto, UpdateMunicipalityUserDto, responses)
-  - `profile.dto.ts` (UpdateProfileDto, ProfileResponseDto)
-  - `report.dto.ts` (CreateReportDto, UpdateReportDto, FilterReportsDto, responses)
-  - `role.dto.ts` (RolesResponseDto)
-  - `office.dto.ts` (OfficesResponseDto)
-  - `category.dto.ts` (CategoriesResponseDto)
-  - `response.dto.ts` (Base ResponseDto interface)
+- `apps/api/eslint.config.js` — backend ESLint rules
+- `apps/web/eslint.config.js` — frontend ESLint rules
+- `apps/api/test/` — backend Jest configs
 
-### @repo/eslint-config
-
-**Purpose**: Standardized ESLint configurations
-
-**Files**:
-
-- `base.js`: Base config
-- `nest.js`: NestJS config
-- `react.js`: React config
-- `library.js`: Library config
-- `prettier-base.js`: Prettier integration
-
-### @repo/jest-config
-
-**Purpose**: Reusable Jest configurations
-
-**Exports**:
-
-- `base.ts`: Base configuration
-- `nest.ts`: NestJS config
-- `next.ts`: Next.js config (future-proof)
-
-### @repo/typescript-config
-
-**Purpose**: Shared TypeScript configurations
-
-**Files**:
-
-- `base.json`: Base config
-- `nestjs.json`: Backend config
-- `react.json`: React config
-- `react-library.json`: React library config
-- `vite.json`: Vite config
+Notes: some documentation sections below reference shared package names like `@repo/eslint-config`. Those are intended package names for a centralized layout; update or remove those references if you keep per-app configs.
 
 ---
 
@@ -904,7 +892,7 @@ This table lists the credentials (usernames) to use for testing the workflow
 - pnpm >= 8.15.5
 - Docker Desktop (for database)
 
-### Installation
+## Installation
 
 1. **Clone and install dependencies**
 
@@ -1086,12 +1074,26 @@ pnpm lint          # Linting
 
 ### Docker Database
 
+Note: dev and release compose files use different container names. Use the command matching your environment.
+
+Dev compose (compose.dev.yml) container names:
+
 ```bash
-# From apps/api/
-docker compose up -d      # Start database
-docker compose down       # Stop database
-docker compose logs       # View logs
-docker exec -it participium-postgres psql -U admin -d participium  # psql connection
+# Start (from repo root)
+docker compose -f compose.dev.yml up -d
+
+# Example psql into dev DB container
+docker exec -it participium-dev-postgres psql -U admin -d participium
+```
+
+Release compose (docker-compose.yml) container names:
+
+```bash
+# Start (from repo root)
+docker compose -f docker-compose.yml up -d
+
+# Example psql into release DB container
+docker exec -it participium-postgres psql -U admin -d participium
 ```
 
 ---
