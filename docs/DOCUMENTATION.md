@@ -1276,12 +1276,12 @@ docker exec -it participium-postgres psql -U admin -d participium
 
 - **Coverage available**: `apps/api/coverage/`
 - Coverage reports in formats: HTML, LCOV, Clover, JSON
-- **Unit Tests**: 239 tests across all backend modules
+- **Unit Tests**: 497 tests across 34 test suites (100% statement coverage, 99.49% branch coverage)
 - **Integration Tests**: 90 tests across multiple test suites
 - **E2E Tests**: 
-  - Backend: 102 end-to-end workflow tests
+  - Backend: 142 end-to-end workflow tests (7 skipped, 149 total)
   - Frontend: 36 browser-based tests
-- High coverage across critical modules with branch coverage exceeding 84%
+- Comprehensive coverage across critical modules with near-complete branch coverage
 - Tests include:
   - Authentication flow with OTP email verification
   - Geospatial queries with PostGIS
