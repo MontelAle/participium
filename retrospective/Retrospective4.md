@@ -41,7 +41,30 @@ sections:
 > place technical tasks corresponding to story `#0` and leave out story points (not applicable in this case)
 
 - Hours per task (average, standard deviation)
+
+|            | Mean   | StDev  |
+| ---------- | ------ | ------ |
+| Estimation | 1h 46m | 2h 16m |
+| Actual     | 1h 45m | 2h 15m |
+
+Normalized values:
+
+|            | Mean   | StDev |
+| ---------- | ------ | ----- |
+| Estimation | 1h 2m | 42m   |
+| Actual     | 1h 2m | 43m   |
+
+
 - Total task estimation error ratio: sum of total hours estimation / sum of total hours spent -1
+  $$
+  \frac{\sum_i spent_{task_i}}{\sum_i estimation_{task_i}} - 1
+  = \frac{96h15m}{97h} - 1
+  = -0.00773
+  \approx -0.1\%
+  $$
+
+- Absolute relative task estimation error: sum( abs( spent-task-i / estimation-task-i - 1))/n
+  $$\frac{1}{n}\sum_i^n \left| \frac{spent_{task_i}}{estimation_task_i}-1 \right| = 0.0749 \approx 7.5\%$$
 
 ## QUALITY MEASURES
 
