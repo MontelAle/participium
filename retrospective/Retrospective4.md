@@ -1,4 +1,4 @@
-# TEMPLATE FOR RETROSPECTIVE (Team ##)
+# RETROSPECTIVE 4(Team 12)
 
 The retrospective should include _at least_ the following
 sections:
@@ -49,13 +49,13 @@ sections:
 
 Normalized values:
 
-|            | Mean   | StDev |
-| ---------- | ------ | ----- |
+|            | Mean  | StDev |
+| ---------- | ----- | ----- |
 | Estimation | 1h 2m | 42m   |
 | Actual     | 1h 2m | 43m   |
 
-
 - Total task estimation error ratio: sum of total hours estimation / sum of total hours spent -1
+
   $$
   \frac{\sum_i spent_{task_i}}{\sum_i estimation_{task_i}} - 1
   = \frac{96h15m}{97h} - 1
