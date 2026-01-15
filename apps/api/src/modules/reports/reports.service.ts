@@ -157,7 +157,25 @@ export class ReportsService {
       isAnonymous: isAnonymous ?? false,
     });
 
-    return await this.reportRepository.save(report);
+    const savedReport = await this.reportRepository.save(report);
+
+    // Send notification to the user that the report has been created and is pending
+    try {
+      const message = `Your report${savedReport.title ? ` "${savedReport.title}"` : ''} status changed to Pending`;
+      const notification = this.notificationRepository.create({
+        userId: savedReport.userId,
+        type: 'report_status_changed',
+        message,
+        reportId: savedReport.id,
+        read: false,
+      });
+      await this.notificationRepository.save(notification);
+    } catch (err) {
+      // Log error if notification creation fails, but don't fail the report creation
+      console.error('Failed to create notification for report creation:', err);
+    }
+
+    return savedReport;
   }
 
   async findAll(viewer: User, filters?: FilterReportsDto): Promise<Report[]> {
