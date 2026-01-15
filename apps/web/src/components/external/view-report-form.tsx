@@ -128,6 +128,7 @@ export function ViewAssignedExternalReport({
                   </SelectTrigger>
                   <SelectContent>
                     {getNextStatusOptions(report.status)
+                    ///
                       .filter((s) => s !== 'suspended')
                       .map((s) => (
                         <SelectItem key={s} value={s}>
