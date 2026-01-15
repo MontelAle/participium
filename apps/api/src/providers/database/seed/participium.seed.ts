@@ -142,6 +142,12 @@ const CITIZENS_DATA = [
     last: 'Verdi',
     email: 'luigi.verdi@gmail.com',
   },
+  {
+    username: 'rosa_bianca',
+    first: 'Rosa',
+    last: 'Bianca',
+    email: 'rosa.bianca@gmail.com',
+  },
 ];
 
 const REAL_REPORTS = [
@@ -1478,6 +1484,28 @@ export async function seedDatabase(
     rolesMap,
     officesMap,
   };
+
+  ///
+  await createUserWithAccountAndProfile(userContext, {
+    username: 'ada_lovelace',
+    roleName: 'tech_officer',
+    firstName: 'Ada',
+    lastName: 'Lovelace',
+    email: 'ada.lovelace@participium.com',
+    officeName: 'maintenance',
+  });
+
+  await createUserWithAccountAndProfile(userContext, {
+    username: 'mimmo_schillaci',
+    roleName: 'pr_officer',
+    firstName: 'Mimmo',
+    lastName: 'Schillaci',
+    email: 'mimmo.schillaci@participium.com',
+    officeName: 'organization_office',
+  });
+  ///
+
+
 
   await seedMunicipalUsers(userContext);
   await seedMultiRoleTechOfficer(dataSource, userContext);
