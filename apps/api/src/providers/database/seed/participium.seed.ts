@@ -65,6 +65,11 @@ const EXTERNAL_OFFICES_DATA = [
     label: 'External Company 3',
     isExternal: true,
   },
+  {
+    name: 'fixroads_srl',
+    label: 'FixRoads Srl',
+    isExternal: true,
+  },
 ];
 
 const BOUNDARIES_DATA = [{ name: 'torino', label: 'Comune di Torino' }];
@@ -73,7 +78,7 @@ const CATEGORIES_DATA = [
   {
     name: 'Roads and Urban Furnishings',
     office: 'maintenance',
-    externalOffice: 'external_company_1',
+    externalOffice: 'fixroads_srl',
   },
   {
     name: 'Architectural Barriers',
@@ -1121,7 +1126,8 @@ async function seedExternalMaintainers(
   context: UserCreationContext,
 ): Promise<void> {
   for (const officeData of EXTERNAL_OFFICES_DATA) {
-    for (let i = 1; i <= 2; i++) {
+    const maxUsers = officeData.name === 'fixroads_srl' ? 1 : 2;
+    for (let i = 1; i <= maxUsers; i++) {
       const externalMaintainerUsername = `${officeData.name}_${i}`;
       await createUserWithAccountAndProfile(context, {
         username: externalMaintainerUsername,
