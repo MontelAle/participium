@@ -65,6 +65,11 @@ const EXTERNAL_OFFICES_DATA = [
     label: 'External Company 3',
     isExternal: true,
   },
+  {
+    name: 'fixroads_srl',
+    label: 'FixRoads Srl',
+    isExternal: true,
+  },
 ];
 
 const BOUNDARIES_DATA = [{ name: 'torino', label: 'Comune di Torino' }];
@@ -73,7 +78,7 @@ const CATEGORIES_DATA = [
   {
     name: 'Roads and Urban Furnishings',
     office: 'maintenance',
-    externalOffice: 'external_company_1',
+    externalOffice: 'fixroads_srl',
   },
   {
     name: 'Architectural Barriers',
@@ -141,6 +146,12 @@ const CITIZENS_DATA = [
     first: 'Luigi',
     last: 'Verdi',
     email: 'luigi.verdi@gmail.com',
+  },
+  {
+    username: 'rosa_bianca',
+    first: 'Rosa',
+    last: 'Bianca',
+    email: 'rosa.bianca@gmail.com',
   },
 ];
 
@@ -1081,6 +1092,15 @@ async function seedMunicipalUsers(context: UserCreationContext): Promise<void> {
     }
   }
 
+  await createUserWithAccountAndProfile(context, {
+    username: 'ada_lovelace',  
+    roleName: 'tech_officer', 
+    firstName: 'Ada',
+    lastName: 'Lovelace',
+    email: 'ada.lovelace@participium.com',  
+    officeName: 'maintenance',  
+  });
+
   for (let i = 1; i <= 4; i++) {
     await createUserWithAccountAndProfile(context, {
       username: `pr_officer_${i}`,
@@ -1091,13 +1111,23 @@ async function seedMunicipalUsers(context: UserCreationContext): Promise<void> {
       officeName: 'organization_office',
     });
   }
+
+  await createUserWithAccountAndProfile(context, {
+    username: 'mimmo_schillaci',
+    roleName: 'pr_officer',
+    firstName: 'Mimmo',
+    lastName: 'Schillaci',
+    email: 'mimmo.schillaci@participium.com',
+    officeName: 'organization_office',
+  });
 }
 
 async function seedExternalMaintainers(
   context: UserCreationContext,
 ): Promise<void> {
   for (const officeData of EXTERNAL_OFFICES_DATA) {
-    for (let i = 1; i <= 2; i++) {
+    const maxUsers = officeData.name === 'fixroads_srl' ? 1 : 2;
+    for (let i = 1; i <= maxUsers; i++) {
       const externalMaintainerUsername = `${officeData.name}_${i}`;
       await createUserWithAccountAndProfile(context, {
         username: externalMaintainerUsername,
