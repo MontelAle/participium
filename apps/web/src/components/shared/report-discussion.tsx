@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/contexts/auth-context';
 import { useProfile } from '@/hooks/use-profile';
 import {
   usePostReportComment,
@@ -48,6 +49,7 @@ export function ReportDiscussion({
   const isPosting =
     panel === 'comments' ? postComment.isPending : postMessage.isPending;
   const loading = panel === 'comments' ? commentsLoading : messagesLoading;
+  const { isCitizenUser } = useAuth();
 
   // If neither section is enabled, render nothing
   if (!showComments && !showMessages) return null;
@@ -226,39 +228,41 @@ export function ReportDiscussion({
           </ScrollArea>
         </div>
 
-        <div className="p-4 bg-white border-t">
-          <form
-            onSubmit={handleSubmit}
-            className="relative flex flex-col gap-2"
-          >
-            <div className="relative">
-              <Textarea
-                placeholder={
-                  panel === 'comments'
-                    ? 'Add internal note...'
-                    : 'Add message...'
-                }
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isPosting}
-                className="min-h-20 pr-12 resize-none bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20 transition-all rounded-xl"
-              />
-              <Button
-                type="submit"
-                size="icon"
-                disabled={isPosting || !text.trim()}
-                className="absolute bottom-2 right-2 h-8 w-8 rounded-lg transition-all shadow-md"
-              >
-                {isPosting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </form>
-        </div>
+        {!isCitizenUser && (
+          <div className="p-4 bg-white border-t">
+            <form
+              onSubmit={handleSubmit}
+              className="relative flex flex-col gap-2"
+            >
+              <div className="relative">
+                <Textarea
+                  placeholder={
+                    panel === 'comments'
+                      ? 'Add internal note...'
+                      : 'Add message...'
+                  }
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={isPosting}
+                  className="min-h-20 pr-12 resize-none bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20 transition-all rounded-xl"
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={isPosting || !text.trim()}
+                  className="absolute bottom-2 right-2 h-8 w-8 rounded-lg transition-all shadow-md"
+                >
+                  {isPosting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
       </Tabs>
     </Card>
   );
