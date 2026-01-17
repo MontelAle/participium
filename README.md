@@ -23,6 +23,7 @@ The recommended way to run the full Participium stack (Frontend + Backend + Data
 ## Prerequisites
 
 **Important:** The application requires a `.env` file with valid credentials for external services:
+
 - **SMTP Server** - for sending email notifications
 - **Telegram Bot Token** - for Telegram bot integration
 
@@ -193,21 +194,19 @@ On the first run, the system **automatically seeds** the database with sample us
 | External Mantainer | `external_company_1_1` | `password`|
 | System Admin | `system_admin` | `password`|
 
-Note: External Maintainer and External Company credentials will be added in future updates.
-
 ## Environment Variables
 
 You can customize the deployment by setting these variables in your docker-compose.yml or .env file. See `.env.example` in the repository for a complete list.
 
 ### Required External Services
 
-| Variable               | Description                      | Example                  |
-| :--------------------- | :------------------------------- | :----------------------- |
-| `EMAIL_HOST`           | SMTP server hostname (required)  | `smtp.gmail.com`         |
-| `EMAIL_PORT`           | SMTP server port (required)      | `587`                    |
-| `EMAIL_USER`           | SMTP username (required)         | `your-email@gmail.com`   |
-| `EMAIL_PASSWORD`       | SMTP password (required)         | `your-app-password`      |
-| `TELEGRAM_BOT_TOKEN`   | Telegram bot token (required)    | `your_bot_token_here`    |
+| Variable             | Description                     | Example                |
+| :------------------- | :------------------------------ | :--------------------- |
+| `EMAIL_HOST`         | SMTP server hostname (required) | `smtp.gmail.com`       |
+| `EMAIL_PORT`         | SMTP server port (required)     | `587`                  |
+| `EMAIL_USER`         | SMTP username (required)        | `your-email@gmail.com` |
+| `EMAIL_PASSWORD`     | SMTP password (required)        | `your-app-password`    |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token (required)   | `your_bot_token_here`  |
 
 ### Optional Configuration
 
